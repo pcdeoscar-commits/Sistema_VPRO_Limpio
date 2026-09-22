@@ -1,0 +1,28 @@
+# --- Frameworks Principales ---
+fastapi
+uvicorn
+streamlit
+
+# --- Conexión a Base de Datos (PostgreSQL) ---
+sqlalchemy
+psycopg2-binary
+
+# --- Procesamiento de Datos y Gráficos ---
+pandas
+plotly
+
+# --- Programador de Tareas en Segundo Plano ---
+apscheduler
+
+# --- Generación de PDFs, QR y Manejo de Imágenes ---
+reportlab
+fpdf
+qrcode
+pillow
+
+# --- Seguridad y Transferencia de Datos ---
+bcrypt
+requests
+python-multipart
+pydantic
+

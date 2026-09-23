@@ -8,7 +8,7 @@ import time
 import os
 import base64
 
-from modulos import mod_autos, mod_eventos, mod_kiosco, mod_checkout, mod_incidencias, mod_empleados, mod_clientes, mod_inventario, mod_proveedores, mod_reporte_gastos, mod_equipos_danados,mod_analitica_kpis, mod_manual, mod_reuniones,mod_reporte_asistencia, mod_cotizaciones, mod_rh
+from modulos_prueba import mod_autos, mod_eventos, mod_kiosco, mod_checkout, mod_incidencias, mod_empleados, mod_clientes, mod_inventario, mod_proveedores, mod_reporte_gastos, mod_equipos_danados,mod_analitica_kpis, mod_manual, mod_reuniones,mod_reporte_asistencia, mod_cotizaciones, mod_rh
 
 # 🎛️ CONFIGURACIÓN DE LIENZO MAESTRO
 st.set_page_config(
@@ -20,11 +20,11 @@ st.set_page_config(
 try:
     from core.config import API_URL, FOTOS_EQUIPOS_DIR, FOTOS_PERSONAL_DIR
 except ImportError:
-    API_URL = "http://172.16.0.10:8000"
+    API_URL = "https://172.16.0.20:8000"
     FOTOS_EQUIPOS_DIR = "Fotos_de_equipos"
     FOTOS_PERSONAL_DIR = "Fotos_de_personal"
 
-from modulos.utils_frontend import get_base64_of_bin_file
+from modulos_prueba.utils_frontend import get_base64_of_bin_file
 
 # ⚙️ INTERRUPTOR DE NAVEGACIÓN (Feature Flag)
 # Cambiar a False si se desea volver al menú clásico sin submenú de Catálogos (ABC)
@@ -148,7 +148,7 @@ def renderizar_aprobacion_horas_extras(API_URL):
                                 st.rerun()
                         st.write("")
     except Exception as e:
-        print(f"⚠️ SILENCED ERROR in app_main.py: {e}")
+        print(f"⚠️ SILENCED ERROR in app_main_prueba.py: {e}")
 
 # 📦 CONTROL DE SESIÓN GENERAL
 if "autenticado" not in st.session_state: st.session_state.autenticado = False
@@ -229,9 +229,9 @@ if not st.session_state.autenticado:    # DESIGN: NETFLIX EXECUTIVE - GRID COMPL
                             foto_render = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
                             
                             for ext in exts:
-                                ruta = os.path.join(FOTOS_PERSONAL_DIR, f"{emp['id_empleado']}{ext}")
-                                if os.path.exists(ruta):
-                                    foto_render = ruta
+                                ruta_prueba = os.path.join(FOTOS_PERSONAL_DIR, f"{emp['id_empleado']}{ext}")
+                                if os.path.exists(ruta_prueba):
+                                    foto_render = ruta_prueba
                                     break
 
                             st.image(foto_render, width='stretch')
@@ -273,9 +273,9 @@ if not st.session_state.autenticado:    # DESIGN: NETFLIX EXECUTIVE - GRID COMPL
         exts = ['.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG']
         foto_perfil = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
         for ext in exts:
-            ruta = os.path.join(FOTOS_PERSONAL_DIR, f"{emp_activo['id_empleado']}{ext}")
-            if os.path.exists(ruta):
-                foto_perfil = ruta
+            ruta_prueba = os.path.join(FOTOS_PERSONAL_DIR, f"{emp_activo['id_empleado']}{ext}")
+            if os.path.exists(ruta_prueba):
+                foto_perfil = ruta_prueba
                 break
 
         c1, c2, c3 = st.columns([1.2, 1.5, 1.2])
@@ -681,7 +681,7 @@ if modulo_a_ejecutar == "🏠 Inicio":
                         if es_fer:
                             return f"🗓️ Día no laborable ({nom_fer}) | {gira_txt}"
                     except Exception as e:
-                        print(f"⚠️ SILENCED ERROR in app_main.py: {e}")
+                        print(f"⚠️ SILENCED ERROR in app_main_prueba.py: {e}")
                 return gira_txt
 
             mensajes = []
@@ -702,7 +702,7 @@ if modulo_a_ejecutar == "🏠 Inicio":
                         if es_fer:
                             return f"🗓️ Descanso obligatorio ({nom_fer})"
                     except Exception as e:
-                        print(f"⚠️ SILENCED ERROR in app_main.py: {e}")
+                        print(f"⚠️ SILENCED ERROR in app_main_prueba.py: {e}")
                 return "❌ Ausencia — sin registro"
 
             # Retardo en entrada matutina
@@ -795,7 +795,7 @@ if modulo_a_ejecutar == "🏠 Inicio":
                         if col in ["☀️ Ent.", "☀️ Sal.", "🌙 Ent.", "🌙 Sal."] and row[col] == "--:--":
                             estilos[i] = "color:#9f1239; background-color:#ffe4e6; font-weight:bold;"
             except Exception as e:
-                print(f"⚠️ SILENCED ERROR in app_main.py: {e}")
+                print(f"⚠️ SILENCED ERROR in app_main_prueba.py: {e}")
             return estilos
 
         tabla_estilizada = df_semana.style.hide(axis="index").apply(aplicar_estilos_faltas, axis=1)
@@ -817,7 +817,7 @@ if modulo_a_ejecutar == "🏠 Inicio":
 
 
     except Exception as e:
-        print(f"⚠️ SILENCED ERROR in app_main.py: {e}") # Si hay error de red, no ensuciamos el inicio
+        print(f"⚠️ SILENCED ERROR in app_main_prueba.py: {e}") # Si hay error de red, no ensuciamos el inicio
 
 elif modulo_a_ejecutar == "📝 Orden de Produccion":
     mod_eventos.renderizar_modulo(API_URL)

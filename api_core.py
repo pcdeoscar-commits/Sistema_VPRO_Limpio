@@ -18,12 +18,12 @@ from core.scheduler import init_scheduler, shutdown_scheduler
 # Exportaciones para compatibilidad retroactiva
 from core.database import (
     get_db_connection, get_db_cursor,
-    engine_autos, engine_autos_vieja,
-    engine_eventos, engine_eventos_vieja,
-    engine_personal, engine_personal_vieja,
-    engine_clientes, engine_clientes_vieja,
-    engine_inventario, engine_inventario_vieja,
-    engine_proveedores, engine_proveedores_vieja
+    engine_autos, engine_autos,
+    engine_eventos, engine_eventos,
+    engine_personal, engine_personal,
+    engine_clientes, engine_clientes,
+    engine_inventario, engine_inventario,
+    engine_proveedores, engine_proveedores
 )
 from core.security import verificar_password, encriptar_password
 from core.utils import safe_decode_hex, reparar_mojibake

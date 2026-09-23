@@ -689,8 +689,43 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
             id_reg = registro_hoy["id_registro"]
 
             if registro_hoy["hora_entrada"] is not None and registro_hoy["hora_salida"] is None:
-                conn.execute(text("UPDATE public.control_asistencia SET hora_salida = CAST(:hora AS time), observaciones = COALESCE(observaciones, '') || ' | ' || :obs WHERE id_registro = :id"), {"hora": hora_str, "obs": payload.observaciones, "id": id_reg})
-                return {"status": "SUCCESS", "mensaje": "✅ SALIDA MATUTINA REGISTRADA"}
+                # 🔍 Consultar datos del empleado para verificar excepción de Villarreal
+                row_emp = conn.execute(text("SELECT nombre FROM public.empleados WHERE TRIM(id_empleado) = :emp LIMIT 1"), {"emp": payload.id_empleado.strip()}).mappings().first()
+                nom_emp = str(row_emp["nombre"]).strip() if row_emp and row_emp.get("nombre") else "Empleado"
+                es_villarreal = "VILLARREAL" in nom_emp.upper()
+
+                # Si checa después de las 16:30:00, ya no es salida a comer, es salida de fin de jornada
+                if hora_str >= "16:30:00":
+                    if not es_villarreal:
+                        # 🚨 PRÁCTICA IRRESPONSABLE DETECTADA: Entrada matutina y salida nocturna sin checar comida
+                        obs_omision = "🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)"
+                        conn.execute(text("""
+                            UPDATE public.control_asistencia 
+                            SET hora_salida_v = CAST(:hora AS time), 
+                                estatus = 'OMISIÓN COMIDA',
+                                observaciones = COALESCE(observaciones, '') || ' | ' || :obs
+                            WHERE id_registro = :id
+                        """), {"hora": hora_str, "obs": obs_omision, "id": id_reg})
+                        
+                        msg_adv = f"⚠️ ATENCIÓN {nom_emp}: Registraste entrada en la mañana pero OMITISTE registrar tu salida y regreso de comida. Checar solo entrada y salida corrida es una práctica incorrecta y no autorizada."
+                        return {
+                            "status": "WARNING",
+                            "mensaje": "⚠️ SALIDA REGISTRADA CON ADVERTENCIA: Omitiste tus horarios de comida.",
+                            "advertencia": msg_adv
+                        }
+                    else:
+                        # Excepción oficial: Familia Villarreal registra salida vespertina limpia
+                        conn.execute(text("""
+                            UPDATE public.control_asistencia 
+                            SET hora_salida_v = CAST(:hora AS time), 
+                                observaciones = COALESCE(observaciones, '') || ' | ' || :obs 
+                            WHERE id_registro = :id
+                        """), {"hora": hora_str, "obs": payload.observaciones, "id": id_reg})
+                        return {"status": "SUCCESS", "mensaje": "✅ SALIDA VESPERTINA REGISTRADA"}
+                else:
+                    # Checada normal antes de las 16:30:00 -> Salida a comer
+                    conn.execute(text("UPDATE public.control_asistencia SET hora_salida = CAST(:hora AS time), observaciones = COALESCE(observaciones, '') || ' | ' || :obs WHERE id_registro = :id"), {"hora": hora_str, "obs": payload.observaciones, "id": id_reg})
+                    return {"status": "SUCCESS", "mensaje": "✅ SALIDA MATUTINA REGISTRADA"}
             elif registro_hoy["hora_salida"] is not None and registro_hoy.get("hora_entrada_v") is None:
                 conn.execute(text("UPDATE public.control_asistencia SET hora_entrada_v = CAST(:hora AS time), observaciones = COALESCE(observaciones, '') || ' | ' || :obs WHERE id_registro = :id"), {"hora": hora_str, "obs": payload.observaciones, "id": id_reg})
                 return {"status": "SUCCESS", "mensaje": "✅ ENTRADA VESPERTINA REGISTRADA"}

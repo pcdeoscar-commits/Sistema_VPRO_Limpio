@@ -94,6 +94,59 @@ def renderizar_modulo(API_URL):
                         # Limpiamos los nulos para evitar errores
                         df.fillna("--:--", inplace=True)
                         
+                        # 🌙 REGLA OPERATIVA: Checadas después de las 12:00 md pertenecen al Turno Vespertino
+                        def ajustar_turnos_vespertinos(row):
+                            h_in = str(row.get('hora_entrada', '')).strip()
+                            h_out = str(row.get('hora_salida', '')).strip()
+                            v_in = str(row.get('hora_entrada_v', '')).strip()
+                            v_out = str(row.get('hora_salida_v', '')).strip()
+                            if h_in not in ["--:--", "", "None", "00:00:00", "00:00"] and h_in >= "12:00:00" and v_in in ["--:--", "", "None"]:
+                                row['hora_entrada_v'] = h_in
+                                row['hora_salida_v'] = h_out
+                                row['hora_entrada'] = "--:--"
+                                row['hora_salida'] = "--:--"
+                            elif h_out not in ["--:--", "", "None", "00:00:00", "00:00"] and h_out >= "16:30:00" and v_out in ["--:--", "", "None"]:
+                                row['hora_salida_v'] = h_out
+                                row['hora_salida'] = "--:--"
+                            return row
+
+                        df = df.apply(ajustar_turnos_vespertinos, axis=1)
+
+                        # 🚨 DETECCIÓN DE OMISIÓN IRRESPONSABLE DE COMIDA (09:00 - 19:00)
+                        # Aplica para quienes entran en la mañana y salen en la tarde/noche sin checar comida.
+                        # Excepción oficial: Familia Villarreal NO recibe advertencia.
+                        def detectar_omision_comida(row):
+                            nom = str(row.get('nombre', '')).upper()
+                            if "VILLARREAL" in nom:
+                                return 0
+                            
+                            h_in = str(row.get('hora_entrada', '')).strip()
+                            h_out_m = str(row.get('hora_salida', '')).strip()
+                            h_in_v = str(row.get('hora_entrada_v', '')).strip()
+                            h_out_v = str(row.get('hora_salida_v', '')).strip()
+                            obs = str(row.get('observaciones', '')).upper()
+                            
+                            tiene_in_mat = (h_in not in ["--:--", "", "None", "00:00:00"] and h_in < "12:30:00")
+                            tiene_out_vesp = (h_out_v not in ["--:--", "", "None", "00:00:00"] and h_out_v >= "16:30:00")
+                            comidas_vacias = (h_out_m in ["--:--", "", "None", "00:00:00"] and h_in_v in ["--:--", "", "None", "00:00:00"])
+                            
+                            if (tiene_in_mat and tiene_out_vesp and comidas_vacias) or "OMISIÓN DE COMIDA" in obs or "OMISIÓN COMIDA" in obs:
+                                return 1
+                            return 0
+
+                        df['omision_comida'] = df.apply(detectar_omision_comida, axis=1)
+
+                        # Enriquecer notas con la advertencia si hubo omisión de comida
+                        def anotar_advertencia_comida(row):
+                            if row.get('omision_comida', 0) == 1:
+                                obs_actual = str(row.get('observaciones', '')).strip()
+                                etiqueta = "🚨 OMISIÓN IRRESPONSABLE DE COMIDA (09:00 - 19:00)"
+                                if etiqueta not in obs_actual:
+                                    row['observaciones'] = f"{etiqueta} | {obs_actual}".strip(" |")
+                            return row
+
+                        df = df.apply(anotar_advertencia_comida, axis=1)
+
                         # REGLAS DE NEGOCIO PARA ALERTAS
                         def evaluar_status(row):
                             alertas = 0
@@ -121,8 +174,18 @@ def renderizar_modulo(API_URL):
                         resumen = df.groupby('nombre').agg(
                             dias_laborados=('fecha', 'count'),
                             total_retardos=('retardos', 'sum'),
-                            total_omisiones=('omisiones', 'sum')
+                            total_omisiones=('omisiones', 'sum'),
+                            total_omisiones_comida=('omision_comida', 'sum')
                         ).reset_index()
+
+                        # Renombrar columnas para claridad de Dirección
+                        resumen.rename(columns={
+                            'nombre': 'Colaborador',
+                            'dias_laborados': 'Días Laborados',
+                            'total_retardos': 'Total Retardos',
+                            'total_omisiones': 'Celdas Vacías',
+                            'total_omisiones_comida': '🚨 Omisiones Comida (09:00-19:00)'
+                        }, inplace=True)
                         
                         # Darle formato a la tabla resumen
                         st.dataframe(resumen, use_container_width=True, hide_index=True)
@@ -141,24 +204,6 @@ def renderizar_modulo(API_URL):
                             elif len(val_str) >= 5 and ":" in val_str and val_str > "09:15:00" and val_str < "12:00:00":
                                 return 'background-color: #fef08a; color: #854d0e; font-weight: bold;'
                             return ''
-                        
-                        # 🌙 REGLA OPERATIVA: Checadas después de las 12:00 md pertenecen al Turno Vespertino
-                        def ajustar_turnos_vespertinos(row):
-                            h_in = str(row.get('hora_entrada', '')).strip()
-                            h_out = str(row.get('hora_salida', '')).strip()
-                            v_in = str(row.get('hora_entrada_v', '')).strip()
-                            v_out = str(row.get('hora_salida_v', '')).strip()
-                            if h_in not in ["--:--", "", "None", "00:00:00", "00:00"] and h_in >= "12:00:00" and v_in in ["--:--", "", "None"]:
-                                row['hora_entrada_v'] = h_in
-                                row['hora_salida_v'] = h_out
-                                row['hora_entrada'] = "--:--"
-                                row['hora_salida'] = "--:--"
-                            elif h_out not in ["--:--", "", "None", "00:00:00", "00:00"] and h_out >= "18:00:00" and v_out in ["--:--", "", "None"]:
-                                row['hora_salida_v'] = h_out
-                                row['hora_salida'] = "--:--"
-                            return row
-
-                        df = df.apply(ajustar_turnos_vespertinos, axis=1)
 
                         def marcar_pines_coordinador(row):
                             obs = str(row.get('observaciones', '')).upper()

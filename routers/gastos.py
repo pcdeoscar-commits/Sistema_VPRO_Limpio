@@ -70,40 +70,6 @@ def obtener_datos_evento_gasto(id_evento: int):
     except Exception as e: 
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/validar-incidencias/{id_evento}")
-def validar_incidencias_completas(id_evento: int):
-    """Valida que todo el personal convocado haya realizado su checkout de incidencias."""
-    try:
-        with engine_eventos.connect() as conn_e:
-            res = conn_e.execute(text("SELECT personal_convocado_op FROM public.eventos WHERE id_evento = :id"), {"id": id_evento}).first()
-            if not res or not res[0]:
-                return {"faltantes": []}
-            convocados = res[0]
-            
-        with engine_personal.connect() as conn_p:
-            nombres_str = ','.join([f"'{n.strip()}'" for n in convocados])
-            if not nombres_str: return {"faltantes": []}
-            rows = conn_p.execute(text(f"SELECT TRIM(id_empleado), nombre FROM public.empleados WHERE nombre IN ({nombres_str})")).fetchall()
-            id_to_nombre = {str(r[0]): r[1] for r in rows}
-            
-        with engine_eventos.connect() as conn_e:
-            if not id_to_nombre: return {"faltantes": []}
-            ids_str = ','.join([f"'{i}'" for i in id_to_nombre.keys()])
-            checkouts = conn_e.execute(text(f"SELECT TRIM(id_empleado), incidencias_generales FROM public.checkouts_maestro WHERE folio_op = {id_evento} AND TRIM(id_empleado) IN ({ids_str})")).fetchall()
-            
-            validos = set()
-            for c in checkouts:
-                id_e = str(c[0])
-                inc = str(c[1]).strip() if c[1] else ''
-                if inc and inc.lower() != 'favor de reportar aqui las incidencias del evento' and inc.lower() != 'sin incidencias':
-                    validos.add(id_e)
-                    
-            faltantes = [n for i, n in id_to_nombre.items() if i not in validos]
-            
-        return {"faltantes": faltantes}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/guardar")
 def guardar_informe_gastos_completo(payload: dict):
     """Guarda un nuevo informe de gastos por comprobar (maestro y detalles diarios)."""

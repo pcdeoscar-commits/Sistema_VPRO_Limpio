@@ -22,6 +22,10 @@ def inicializar_modulo_checkout(id_empleado: str):
                SELECT DISTINCT e.id_evento, encode(e.para_q_cliente::bytea,'hex'), encode(e.nombre_evento::bytea,'hex') 
                FROM public.eventos e
                WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
+                 AND NOT EXISTS (
+                     SELECT 1 FROM public.informes_gastos_maestro igm 
+                     WHERE igm.folio_vpro = e.id_evento
+                 )
                ORDER BY e.id_evento DESC
             """)
             evs = conn.execute(evs_query).fetchall()

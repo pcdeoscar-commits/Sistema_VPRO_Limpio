@@ -194,7 +194,7 @@ def guardar_o_actualizar_op(op: dict):
                 return "{}"
             if isinstance(data, str):
                 return data
-            sanitizados = [f'"{str(x).replace("\"", "\\\"")}"' for x in data]
+            sanitizados = ['"' + str(x).replace('"', '\\"') + '"' for x in data]
             return "{" + ",".join(sanitizados) + "}"
 
         payload = dict(op)

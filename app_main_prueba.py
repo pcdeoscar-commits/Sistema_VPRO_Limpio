@@ -649,7 +649,7 @@ if modulo_a_ejecutar == "🏠 Inicio":
         # 4️⃣ Función de análisis inteligente por día
         HORA_LIMITE_ENTRADA = "09:05"  # Tolerancia de 5 min
 
-        def generar_observacion(dia_idx, m_in, m_out, v_in, v_out, es_pasado_o_hoy, nota_dia="", fecha_obj=None):
+        def generar_observacion(nombre_empleado, dia_idx, m_in, m_out, v_in, v_out, es_pasado_o_hoy, nota_dia="", fecha_obj=None):
             """Analiza la asistencia del día y genera un comentario de semáforo."""
             if dia_idx >= 5:           # Sábado/Domingo — no aplica
                 return ""
@@ -684,6 +684,10 @@ if modulo_a_ejecutar == "🏠 Inicio":
                         print(f"⚠️ SILENCED ERROR in app_main_prueba.py: {e}")
                 return gira_txt
 
+            mensajes = []
+            nombre_upper = str(nombre_empleado).upper()
+            es_villarreal = "VILLARREAL" in nombre_upper or "VILLAREAL" in nombre_upper
+
             sin_m_in  = m_in  in ("--:--", "")
             sin_m_out = m_out in ("--:--", "")
             sin_v_in  = v_in  in ("--:--", "")
@@ -701,8 +705,6 @@ if modulo_a_ejecutar == "🏠 Inicio":
                         print(f"⚠️ SILENCED ERROR in app_main_prueba.py: {e}")
                 return "❌ Ausencia — sin registro"
 
-            mensajes = []
-
             # Retardo en entrada matutina
             if not sin_m_in and m_in > HORA_LIMITE_ENTRADA:
                 try:
@@ -713,17 +715,23 @@ if modulo_a_ejecutar == "🏠 Inicio":
                 except Exception:
                     mensajes.append("🕐 Retardo detectado")
 
-            # Salida matutina no registrada (pero sí entró)
-            if not sin_m_in and sin_m_out:
-                mensajes.append("⚠️ Salida mat. sin registrar")
+            # 🚨 DETECCIÓN: Entrada en la mañana y salida por la tarde/noche sin checar comida
+            es_omision_comida = (not sin_m_in and sin_m_out and sin_v_in and not sin_v_out)
+            if es_omision_comida:
+                if not es_villarreal:
+                    mensajes.append("🚨 Práctica indebida: Omisión de registro de comida (09:00 - 19:00)")
+            else:
+                # Salida matutina no registrada (pero sí entró)
+                if not sin_m_in and sin_m_out:
+                    mensajes.append("⚠️ Salida mat. sin registrar")
 
-            # Entrada vespertina faltante (pero sí tuvo jornada matutina)
-            if not sin_m_in and sin_v_in:
-                mensajes.append("⚠️ Entrada vesp. sin registrar")
+                # Entrada vespertina faltante (pero sí tuvo jornada matutina)
+                if not sin_m_in and sin_v_in:
+                    mensajes.append("⚠️ Entrada vesp. sin registrar")
 
-            # Salida vespertina faltante (pero sí entró en vespertino)
-            if not sin_v_in and sin_v_out:
-                mensajes.append("⚠️ Salida vesp. sin registrar")
+                # Salida vespertina faltante (pero sí entró en vespertino)
+                if not sin_v_in and sin_v_out:
+                    mensajes.append("⚠️ Salida vesp. sin registrar")
 
             return " | ".join(mensajes) if mensajes else "✅ Al día"
 
@@ -736,6 +744,7 @@ if modulo_a_ejecutar == "🏠 Inicio":
             es_pasado = fecha_obj_iter <= hoy
 
             obs = generar_observacion(
+                nom_usr,
                 idx_dia,
                 data["M_IN"], data["M_OUT"],
                 data["V_IN"], data["V_OUT"],
@@ -755,16 +764,24 @@ if modulo_a_ejecutar == "🏠 Inicio":
                 "📝 Observaciones": obs,
             })
 
-        # 6️⃣ Alerta global: 3 o más retardos en la semana
+        # 6️⃣ Alertas globales de la semana
         total_retardos = sum(1 for o in obs_semana if "Retardo" in o)
         total_ausencias = sum(1 for o in obs_semana if "Ausencia" in o)
+        total_omisiones_comida = sum(1 for o in obs_semana if "Omisión de registro de comida" in o or "Práctica indebida" in o)
+
+        if total_omisiones_comida > 0:
+            st.error(
+                f"🚨 **ADVERTENCIA: Este Sistema lleva un registro minucioso y veo que has omitido chequeos: ({total_omisiones_comida} día(s) con chequeo(s) irregular(es))** "
+                "TE INVITAMOS a que hagas debidamente los chequeos de ENTRADAS Y SALIDAS... Gracias. "
+            )
+
         if total_retardos >= 3:
             st.warning(
                 f"⚠️ **{total_retardos} retardos esta semana.** "
-                "Recuerda respetar el horario de entrada — más de 3 retardos pueden afectar tu evaluación."
+                "Recuerda respetar el horario de entrada — más de 3 retardos pueden afectar."
             )
         if total_ausencias > 0:
-            st.error(f"❌ **{total_ausencias} día(s) sin registro** esta semana. Verifica con tu coordinador.")
+            st.error(f"❌ **{total_ausencias-1} día(s) sin registro** esta semana. Verifica con coordinación, si amerita una corrección.")
 
         df_semana = pd.DataFrame(filas_df)
 

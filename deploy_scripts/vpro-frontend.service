@@ -1,0 +1,12 @@
+[Unit]
+Description=VPRO Frontend Streamlit
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/VPRO_Dashboard
+ExecStart=/opt/VPRO_Dashboard/venv/bin/python -m streamlit run app_main_prueba.py --server.port 8520 --server.address 172.16.0.10
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

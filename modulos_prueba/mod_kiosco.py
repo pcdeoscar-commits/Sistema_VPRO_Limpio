@@ -140,11 +140,19 @@ def renderizar_modulo(API_URL, FOTOS_PERSONAL_DIR):
                             res_final_ch = requests.post(f"{API_URL}/api/asistencia/checar", json=p_mov, verify=False)
                             
                             if res_final_ch.status_code == 200:
-                                st.toast(f"✅ ¡{nombre_s} registrado con éxito!", icon="👍")
+                                resp_data = res_final_ch.json() if res_final_ch.text else {}
+                                adv_msg = resp_data.get("advertencia")
+                                
+                                if adv_msg and "VILLARREAL" not in nombre_s.upper():
+                                    texto_llegada = "🚨 SALIDA (OMISIÓN COMIDA)"
+                                    st.toast(adv_msg, icon="⚠️")
+                                else:
+                                    adv_msg = None
+                                    st.toast(f"✅ ¡{nombre_s} registrado con éxito!", icon="👍")
                                 
                                 # Actualizamos memoria visual
                                 st.session_state.ultimo_escaneado_ui = {
-                                    "id": id_s, "nombre": nombre_s, "movimiento": tipo_mov, "hora": ahora_hora_txt, "estatus_str": texto_llegada
+                                    "id": id_s, "nombre": nombre_s, "movimiento": tipo_mov, "hora": ahora_hora_txt, "estatus_str": texto_llegada, "advertencia": adv_msg
                                 }
                                 st.session_state.historial_kiosko_ui.insert(0, {
                                     "ID": id_s, "Empleado": nombre_s, "Hora": ahora_hora_txt, "Estatus": texto_llegada
@@ -176,6 +184,15 @@ def renderizar_modulo(API_URL, FOTOS_PERSONAL_DIR):
                     st.divider()
                     st.markdown(f"<h4 style='text-align:center; margin:0;'>{u['estatus_str']}</h4>", unsafe_allow_html=True)
                     st.markdown(f"<p style='text-align:center; color:#475569; font-size:18px;'>{u['movimiento']} | ⏰ {u['hora']}</p>", unsafe_allow_html=True)
+                    
+                    if u.get('advertencia'):
+                        st.markdown(f"""
+                            <div style='background-color:#fee2e2; border: 2px solid #ef4444; border-radius: 8px; padding: 10px; margin-top: 10px; text-align:center;'>
+                                <p style='color:#991b1b; font-weight:bold; font-size:13px; margin:0;'>
+                                    {u['advertencia']}
+                                </p>
+                            </div>
+                        """, unsafe_allow_html=True)
             else:
                 with st.container(border=True): 
                     st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", use_container_width=True)

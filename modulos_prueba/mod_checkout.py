@@ -609,7 +609,7 @@ def renderizar_modulo(API_URL):
 
             inc_limpias = incidencias_limpias_mostrar if 'incidencias_limpias_mostrar' in locals() else ""
             db_val = inc_limpias.strip() if inc_limpias else ""
-            val_por_defecto = "favor de reportar aqui las incidencias del evento" if not db_val or db_val.lower() in ["ninguna", "todo bien", "ok", "none", "sin incidencias"] else db_val
+            val_por_defecto = "Sin incidencias" if not db_val or db_val.lower() in ["ninguna", "todo bien", "ok", "none"] else db_val
             nota_incidencias = st.text_area("⚠️ Incidencias Generales de la Salida:", value=val_por_defecto, height=100, key=f"txt_incidencias_checkout_{id_op_ref}_{id_sujeto_a_revisar}")
             
             c_actions1, c_actions2 = st.columns([3, 1])

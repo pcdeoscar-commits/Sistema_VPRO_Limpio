@@ -1,0 +1,12 @@
+[Unit]
+Description=VPRO Backend FastAPI
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/VPRO_Dashboard
+ExecStart=/opt/VPRO_Dashboard/venv/bin/python -m uvicorn api_core_prueba:app --host 172.16.0.10 --port 8000 --ssl-certfile cert.pem --ssl-keyfile key.pem
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

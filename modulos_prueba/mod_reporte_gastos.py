@@ -170,25 +170,6 @@ def renderizar_modulo(API_URL):
             st.info("Seleccione una Orden de Producción activa para desplegar la hoja de comprobación diaria.")
         else:
             folio_id = int(sel_folio.split(" - ")[0])
-            
-            # --- VALIDACIÓN: REPORTE DE INCIDENCIAS COMPLETOS ---
-            faltantes_incidencias = []
-            try:
-                res_val = requests.get(f"{API_URL}/api/gastos/validar-incidencias/{folio_id}", verify=False, timeout=5)
-                if res_val.status_code == 200:
-                    faltantes_incidencias = res_val.json().get("faltantes", [])
-            except Exception as e:
-                pass
-                
-            if faltantes_incidencias:
-                st.session_state.panel_vpro_visible = False
-                st.error("🚨 **¡REPORTE DE GASTOS BLOQUEADO PARA ESTA OP!**")
-                st.warning("No es posible elaborar este reporte porque falta personal por llenar su **Reporte de Incidencias** en el módulo de Checkout de retorno:")
-                for f_name in faltantes_incidencias:
-                    st.markdown(f"- 🔴 **{f_name}**")
-                st.info("Por favor, solicita a estos colaboradores que ingresen al **Módulo de Checkout (Bodega/Salida/Check-in)**, seleccionen esta OP y reemplacen el texto 'favor de reportar aqui las incidencias del evento' con sus comentarios o escribiendo 'ninguna'.")
-                st.stop()
-            
             resp_de_produccion, f_def, p_num = "NO ASIGNADO", datetime.date.today(), 0
             lista_vehiculos_op = []
     

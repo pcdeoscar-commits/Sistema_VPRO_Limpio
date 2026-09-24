@@ -102,4 +102,3 @@ def cambiar_password(payload: dict):
         return {"status": "SUCCESS", "mensaje": "Contraseña encriptada y actualizada con éxito."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

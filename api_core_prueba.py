@@ -13,6 +13,9 @@ from core.config import (
     FOTOS_EQUIPOS_DIR, 
     DIR_EVIDENCIAS_REAL
 )
+
+# 3️⃣ SERVIR ARCHIVOS ESTÁTICOS (FOTOGRAFÍAS)
+
 from core.scheduler import init_scheduler, shutdown_scheduler
 
 # Exportaciones para compatibilidad retroactiva
@@ -66,13 +69,14 @@ app = FastAPI(
 # 2️⃣ CONFIGURACIÓN DE SEGURIDAD (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # 3️⃣ MONTAJE DE DIRECTORIOS ESTÁTICOS
+app.mount("/fotos", StaticFiles(directory="Fotos_de_personal"), name="fotos")
 app.mount("/Fotos_de_equipos", StaticFiles(directory=str(FOTOS_EQUIPOS_DIR)), name="fotos")
 app.mount("/evidencias_web", StaticFiles(directory=str(DIR_EVIDENCIAS_REAL)), name="evidencias")
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict b2Mhjex3yWCeaSTPNtM7Ci4nY0lBId1lHsAc3paFsQKvjH5OlVYt5ja7ApD5LoZ
+\restrict QpfsFh5aUI4yomkU7rLrVoVPi3cCHH3UHY5ot4MNRGbVD1d4VOLqdY2KW9q3NMD
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -880,8 +880,6 @@ COPY public.checkouts_detalle (id_detalle, id_maestro, codigo_equipo, cantidad, 
 917	3	INV_VPRO_ALT_00045	3		Sin incidencias	t	
 918	3	INV_VPRO_ALT_00001	3		Sin incidencias	t	
 919	3	INV_VPRO_ALT_00097	10		Sin incidencias	t	
-2293	39	INV_ALT_1040007	7		Sin incidencias	t	
-2294	39	INV_ALT_1040008	15		Sin incidencias	t	
 1729	23	INV_ALT_2020024	1		Sin incidencias	f	
 1730	23	INV_ALT_2020023	1		Sin incidencias	f	
 1731	23	INV_ALT_2020018	1		Sin incidencias	f	
@@ -1056,11 +1054,6 @@ COPY public.checkouts_detalle (id_detalle, id_maestro, codigo_equipo, cantidad, 
 2363	38	INV_ALT_2020031	1		Sin incidencias	t	
 2364	38	INV_VPRO_ALT_00016	1		Sin incidencias	t	
 2365	38	INV_ALT_2020011	2		Sin incidencias	t	
-2301	39	INV_VPRO_ALT_00216	1		Sin incidencias	t	
-2302	39	INV_VPRO_ALT_00023	19		Sin incidencias	t	
-2303	39	INV_VPRO_ALT_00216	1		Sin incidencias	t	
-2304	39	INV_ALT_1040012	1		Sin incidencias	t	
-2305	39	INV_ALT_1040013	1		Sin incidencias	t	
 2366	38	INV_ALT_2020010	1		Sin incidencias	t	
 2367	38	INV_ALT_2020033	1		Sin incidencias	t	
 2368	38	INV_ALT_2020034	3		Sin incidencias	t	
@@ -1110,12 +1103,6 @@ COPY public.checkouts_detalle (id_detalle, id_maestro, codigo_equipo, cantidad, 
 1769	27	INV_VPRO_ALT_00023	1		Sin incidencias	t	
 1774	28	INV_VPRO_ALT_00001	3		Sin incidencias	f	
 1770	27	VPRO_ALT_17765	2		Sin incidencias	t	
-2295	39	INV_ALT_1040009	1		Sin incidencias	t	
-2296	39	INV_ALT_1190050	15		Sin incidencias	t	
-2297	39	INV_VPRO_ALT_00071	2		Sin incidencias	t	
-2298	39	INV_ALT_1040010	5		Sin incidencias	t	
-2299	39	INV_ALT_1040011	1		Sin incidencias	t	
-2300	39	INV_ALT_1130011	6		Sin incidencias	t	
 1879	35	INV_ALT_2010008	1		Sin incidencias	f	
 1880	35	INV_VPRO_ALT_00024	1		Sin incidencias	f	
 1881	35	INV_VPRO_ALT_00254	8		Sin incidencias	f	
@@ -1260,6 +1247,19 @@ COPY public.checkouts_detalle (id_detalle, id_maestro, codigo_equipo, cantidad, 
 2438	45	VPRO_ALT_74716	1		Sin incidencias	f	
 2439	45	INV_ALT_1040017	1		Sin incidencias	f	
 2440	45	INV_ALT_1040018	1		Sin incidencias	f	
+2456	39	INV_ALT_1040007	7		Sin incidencias	f	
+2457	39	INV_ALT_1040008	15		Sin incidencias	f	
+2458	39	INV_VPRO_ALT_00216	1		Sin incidencias	f	
+2459	39	INV_VPRO_ALT_00023	19		Sin incidencias	f	
+2460	39	INV_VPRO_ALT_00216	1		Sin incidencias	f	
+2461	39	INV_ALT_1040012	1		Sin incidencias	f	
+2462	39	INV_ALT_1040013	1		Sin incidencias	f	
+2463	39	INV_ALT_1040009	1		Sin incidencias	f	
+2464	39	INV_ALT_1190050	15		Sin incidencias	f	
+2465	39	INV_VPRO_ALT_00071	2		Sin incidencias	f	
+2466	39	INV_ALT_1040010	5		Sin incidencias	f	
+2467	39	INV_ALT_1040011	1		Sin incidencias	f	
+2468	39	INV_ALT_1130011	6		Sin incidencias	f	
 \.
 
 
@@ -1312,7 +1312,7 @@ COPY public.checkouts_maestro (id_maestro, folio_op, id_empleado, fecha, hora, i
 44	8	102	2026-09-18	13:16:07.653014-06	Sin incidencias	PENDIENTE	--- Sin plantilla ---
 45	20	104	2026-09-21	11:10:17.58972-06	Sin incidencias	DESPACHADO	Evento presidenta
 46	20	109	2026-09-21	11:17:53.489123-06	Sin incidencias	RECIBIDO	Evento Presidenta
-39	19	104	2026-09-17	12:49:27.589433-06	Sin incidencias	RECIBIDO	Dia del grito
+39	19	104	2026-09-21	18:47:37.525216-06	Problemas con audio	RECIBIDO	Dia del grito
 41	19	109	2026-09-17	13:23:15.297602-06	Sin incidencias	RECIBIDO	Grito de la independencia
 \.
 
@@ -1341,7 +1341,7 @@ COPY public.eventos (id_evento, folio, fec_de_elaboracion_de_op, empleado_que_cr
 11	11	2026-09-12	Manuel Eduardo Madrid	H.AYUNTAMIENTO DE BADIRAGUATO	2026-09-04	LIGA DE BALONCESTO DEL PACIFICO 2026 (TEBACAS)	12:00:00	Arena de Badiraguato	2026-09-04	22:00:00	Lic. Martha Lilia Roque (área de comiunicación)	09:00:00	Arena de Badiraguato	Manuel Antonio Madrid Zazueta	Producción vía remota desde estudio y transmisión de partidos de tebacas en Badiraguato.	Switcher\t\t\t\t\nAudio\t\t\t\t\nGráficos y marcador (OCR)\t\t\t\t\nRedes\t\t\t\t\nEXTERNOS:\t\t\t\t\nRepeticiones\t\tNOTA: El 04 de Sept. 1 comentarista se va a Badiraguato acubrir la inauguración y se retorna al día siguiente para continuar en estudio.)\t\t\nComentarista #1\t\t\t\t\nComentarista #2\t\t\t\t\n\t\t\t\t\nEN CANCHA:\t\t\t\t\nProductor Deporte\t\t\t\t\n2 cámaras fijas (sin camarógrafo) para seguimiento y repeticiones	1 Antena Starlink\t\t\n4 Encoder E3 para transmisión SRT	EXTERNO:\t\t\nCamarógrafo #1 (central de seguimiento)	Toda orden de producción esta sujeta a supervisión permanente hasta el término del evento, por cambios generados de último minuto por el cliente, siendo reportado de inmediato a Administración y Coordinación para su debido llenado y actualización en cotización y agenda.	Ana Lilia Villarreal Uribe	Martin Eduardo Sanchez Estrada	Manuel Eduardo Madrid	Gerardo Villarreal Uribe	{}	{"Edgar Javier Amarillas","Carlos Jacobo Quezada Mendoza","Cuauhtemoc Rivera Agundez","Jose Francisco Torres Sanchez","Osiel Cuauhtemoc Hernandez Aldape","Manuel Antonio Madrid Zazueta"}	{}	{"eduardo el condor"}	CERRADA (HISTÓRICO)	{"2026-09-08 | H.ayuntamiento Badiraguato - Reunión para dar seguimiento a las incidencias de los eventos de liga de baloncesto del pacifico “TEBACAS”","2026-08-31 | H.ayuntamiento Badiragutao - Reunión para el arranque de los partidos de TEBACAS","2026-08-17 | H.ayuntamiento Badiraguato - Reunión para partidos de basquetbol de TEBACAS","2026-08-13 | H.ayuntamiento Badiraguato - Reunión para eventos basquetbol de TEBACAS."}
 20	20	2026-09-21	Manuel Eduardo Madrid	GOBIERNO DEL ESTADO DE SINALOA	2026-09-20	VISITA PRESIDENCIAL INFORME : Honestidad y resultados	09:30:00	Feria Ganadera	2026-09-20	13:30:00	DES.TECNOLOGICO  (Giras-Edwin)	09:00:00	Feria Ganadera	Martin Eduardo Sanchez Estrada	MONITORES Y SWITCHER	2 monitores de 65" en base elevada\t\t\n1 switcher\t\t\ndistribucion de señal			Toda orden de producción esta sujeta a supervisión permanente hasta el término del evento, por cambios generados de último minuto por el cliente, siendo reportado de inmediato a Administración y Coordinación para su debido llenado y actualización en cotización y agenda.	Ana Lilia Villarreal Uribe	Martin Eduardo Sanchez Estrada	Manuel Eduardo Madrid	Gerardo Villarreal Uribe	{}	{"Jose Francisco Torres Sanchez","Osiel Cuauhtemoc Hernandez Aldape"}	{"VPH100 - Hyundai 2015"}	{}	ACTIVA	{}
 18	18	2026-09-10	Manuel Eduardo Madrid	GOBIERNO DEL ESTADO DE SINALOA	2026-09-11	Jornada de paz (Dia 3)	09:30:00	Villa Juárez	2026-09-11	10:00:00	DES.TECNOLOGICO  (Giras-Eduardo)	09:00:00	Villa Juárez	Martin Eduardo Sanchez Estrada	Proveeduría de internet a modulos con Satarlink y disribucion de lineas de internet fibra		Proveeduría de internet a 10 módulos\t\t\n1 antenas Starlink\t\t\nDistribución de lineas de internet red			Ana Lilia Villarreal Uribe	Martin Eduardo Sanchez Estrada	Manuel Eduardo Madrid	Gerardo Villarreal Uribe	{}	{"Cuauhtemoc Rivera Agundez"}	{"VPTiida02 - Nissan #02 2013"}	{}	CERRADA (HISTÓRICO)	{}
-19	19	2026-09-17	Manuel Eduardo Madrid	GOBIERNO DEL ESTADO DE SINALOA	2026-09-14	Grito de la independencia	09:30:00	Palacio de gobierno	2026-09-15	17:00:00	DES.TECNOLOGICO  (Giras-Eduardo)	11:00:00	Palacio de gobierno	Martin Eduardo Sanchez Estrada		Circuito a 7 cámaras\t\t\nSistema de transmision inalámbrica\t\t\nPlanta generadora de luz\t\t\t\nVuelo de Dron\t\t\nPisacables\t\t\n2 switcherTripaly para grabación\t\t\ngráficos	Distribución de lineas de internet red\nProveeduria de internet\t\nAntenas starlink	KUWA:\t\nConsola de Audio Yamaha\t\nCentro de carga\t\nSet de Cableado y extensiones	Toda orden de producción esta sujeta a supervisión permanente hasta el término del evento, por cambios generados de último minuto por el cliente, siendo reportado de inmediato a Administración y Coordinación para su debido llenado y actualización en cotización y agenda.	Ana Lilia Villarreal Uribe	Martin Eduardo Sanchez Estrada	Manuel Eduardo Madrid	Gerardo Villarreal Uribe	{}	{"Martin Eduardo Sanchez Estrada","Manuel Antonio Madrid Zazueta","Osiel Cuauhtemoc Hernandez Aldape","Jose Daniel Torres Arroyo","Jose Francisco Torres Sanchez","Cuauhtemoc Rivera Agundez","Carlos Jacobo Quezada Mendoza","Edgar Javier Amarillas"}	{"VPTiida02 - Nissan #02 2013","VPFord - Ford 1996","VPMercedes - Mercedes Benz 2022"}	{"Calixto Villa","eduardo el condor"}	CERRADA (HISTÓRICO)	{"2026-09-12 | Gobierno del estado de sinaloa - Instalación el 14 de septiembre para el grito de la independencia","2026-09-10 | Gobierno del estado de sinaloa - Reunión para evento del grito de la independencia","2026-09-17 | Gobierno del estado de sinaloa - Incidencias del evento grito de independencia"}
+19	19	2026-09-17	Manuel Eduardo Madrid	GOBIERNO DEL ESTADO DE SINALOA	2026-09-14	Grito de la independencia	09:30:00	Palacio de gobierno	2026-09-15	17:00:00	DES.TECNOLOGICO  (Giras-Eduardo)	11:00:00	Palacio de gobierno	Martin Eduardo Sanchez Estrada		Circuito a 7 cámaras\t\t\nSistema de transmision inalámbrica\t\t\nPlanta generadora de luz\t\t\t\nVuelo de Dron\t\t\nPisacables\t\t\n2 switcherTripaly para grabación\t\t\ngráficos	Distribución de lineas de internet red\nProveeduria de internet\t\nAntenas starlink	KUWA:\t\nConsola de Audio Yamaha\t\nCentro de carga\t\nSet de Cableado y extensiones	Toda orden de producción esta sujeta a supervisión permanente hasta el término del evento, por cambios generados de último minuto por el cliente, siendo reportado de inmediato a Administración y Coordinación para su debido llenado y actualización en cotización y agenda.	Ana Lilia Villarreal Uribe	Martin Eduardo Sanchez Estrada	Manuel Eduardo Madrid	Gerardo Villarreal Uribe	{}	{"Martin Eduardo Sanchez Estrada","Manuel Antonio Madrid Zazueta","Osiel Cuauhtemoc Hernandez Aldape","Jose Daniel Torres Arroyo","Jose Francisco Torres Sanchez","Cuauhtemoc Rivera Agundez","Carlos Jacobo Quezada Mendoza","Edgar Javier Amarillas"}	{"VPTiida02 - Nissan #02 2013","VPFord - Ford 1996","VPMercedes - Mercedes Benz 2022"}	{"Calixto Villa","eduardo el condor"}	ACTIVA	{"2026-09-12 | Gobierno del estado de sinaloa - Instalación el 14 de septiembre para el grito de la independencia","2026-09-10 | Gobierno del estado de sinaloa - Reunión para evento del grito de la independencia","2026-09-17 | Gobierno del estado de sinaloa - Incidencias del evento grito de independencia"}
 \.
 
 
@@ -1572,7 +1572,7 @@ SELECT pg_catalog.setval('public.asistencia_locacion_id_asistencia_seq', 243, tr
 -- Name: checkouts_detalle_id_detalle_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.checkouts_detalle_id_detalle_seq', 2455, true);
+SELECT pg_catalog.setval('public.checkouts_detalle_id_detalle_seq', 2468, true);
 
 
 --
@@ -1786,5 +1786,5 @@ ALTER TABLE ONLY public.informes_gastos_detalle
 -- PostgreSQL database dump complete
 --
 
-\unrestrict b2Mhjex3yWCeaSTPNtM7Ci4nY0lBId1lHsAc3paFsQKvjH5OlVYt5ja7ApD5LoZ
+\unrestrict QpfsFh5aUI4yomkU7rLrVoVPi3cCHH3UHY5ot4MNRGbVD1d4VOLqdY2KW9q3NMD
 

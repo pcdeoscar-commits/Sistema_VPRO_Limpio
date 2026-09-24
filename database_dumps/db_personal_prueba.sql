@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict b32TiRGcc6Ljh2Y27FeYLtgJIOOr3QMpod08vhg0jBCU35whnlkdNiCNSBNyudn
+\restrict 6xgnN9lLhB4SqRZzcbnb3UZuYy9wB2zAnjf5S9NOG1mUQvn1K0PWnAT8vbmKxAB
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -24,7 +24,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: asistencia_eventos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: asistencia_eventos; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.asistencia_eventos (
@@ -36,10 +36,10 @@ CREATE TABLE public.asistencia_eventos (
 );
 
 
-ALTER TABLE public.asistencia_eventos OWNER TO postgres;
+ALTER TABLE public.asistencia_eventos OWNER TO vpro_dbadmin;
 
 --
--- Name: asistencia_eventos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: asistencia_eventos_id_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.asistencia_eventos_id_seq
@@ -51,17 +51,17 @@ CREATE SEQUENCE public.asistencia_eventos_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.asistencia_eventos_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.asistencia_eventos_id_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: asistencia_eventos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: asistencia_eventos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.asistencia_eventos_id_seq OWNED BY public.asistencia_eventos.id;
 
 
 --
--- Name: control_asistencia; Type: TABLE; Schema: public; Owner: postgres
+-- Name: control_asistencia; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.control_asistencia (
@@ -77,10 +77,10 @@ CREATE TABLE public.control_asistencia (
 );
 
 
-ALTER TABLE public.control_asistencia OWNER TO postgres;
+ALTER TABLE public.control_asistencia OWNER TO vpro_dbadmin;
 
 --
--- Name: control_asistencia_id_registro_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: control_asistencia_id_registro_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.control_asistencia_id_registro_seq
@@ -92,17 +92,17 @@ CREATE SEQUENCE public.control_asistencia_id_registro_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.control_asistencia_id_registro_seq OWNER TO postgres;
+ALTER SEQUENCE public.control_asistencia_id_registro_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: control_asistencia_id_registro_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: control_asistencia_id_registro_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.control_asistencia_id_registro_seq OWNED BY public.control_asistencia.id_registro;
 
 
 --
--- Name: control_horas_extras; Type: TABLE; Schema: public; Owner: postgres
+-- Name: control_horas_extras; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.control_horas_extras (
@@ -126,10 +126,10 @@ CREATE TABLE public.control_horas_extras (
 );
 
 
-ALTER TABLE public.control_horas_extras OWNER TO postgres;
+ALTER TABLE public.control_horas_extras OWNER TO vpro_dbadmin;
 
 --
--- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.control_horas_extras_id_autorizacion_seq
@@ -141,17 +141,17 @@ CREATE SEQUENCE public.control_horas_extras_id_autorizacion_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.control_horas_extras_id_autorizacion_seq OWNER TO postgres;
+ALTER SEQUENCE public.control_horas_extras_id_autorizacion_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.control_horas_extras_id_autorizacion_seq OWNED BY public.control_horas_extras.id_autorizacion;
 
 
 --
--- Name: departamentos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: departamentos; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.departamentos (
@@ -160,10 +160,10 @@ CREATE TABLE public.departamentos (
 );
 
 
-ALTER TABLE public.departamentos OWNER TO postgres;
+ALTER TABLE public.departamentos OWNER TO vpro_dbadmin;
 
 --
--- Name: departamentos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: departamentos_id_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.departamentos_id_seq
@@ -175,17 +175,17 @@ CREATE SEQUENCE public.departamentos_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.departamentos_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.departamentos_id_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: departamentos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: departamentos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.departamentos_id_seq OWNED BY public.departamentos.id;
 
 
 --
--- Name: empleados; Type: TABLE; Schema: public; Owner: postgres
+-- Name: empleados; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.empleados (
@@ -220,10 +220,10 @@ CREATE TABLE public.empleados (
 );
 
 
-ALTER TABLE public.empleados OWNER TO postgres;
+ALTER TABLE public.empleados OWNER TO vpro_dbadmin;
 
 --
--- Name: log_accesos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: log_accesos; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.log_accesos (
@@ -237,10 +237,10 @@ CREATE TABLE public.log_accesos (
 );
 
 
-ALTER TABLE public.log_accesos OWNER TO postgres;
+ALTER TABLE public.log_accesos OWNER TO vpro_dbadmin;
 
 --
--- Name: log_accesos_id_log_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: log_accesos_id_log_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.log_accesos_id_log_seq
@@ -252,17 +252,17 @@ CREATE SEQUENCE public.log_accesos_id_log_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.log_accesos_id_log_seq OWNER TO postgres;
+ALTER SEQUENCE public.log_accesos_id_log_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: log_accesos_id_log_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: log_accesos_id_log_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.log_accesos_id_log_seq OWNED BY public.log_accesos.id_log;
 
 
 --
--- Name: rh_capacitacion; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_capacitacion; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_capacitacion (
@@ -286,10 +286,10 @@ CREATE TABLE public.rh_capacitacion (
 );
 
 
-ALTER TABLE public.rh_capacitacion OWNER TO postgres;
+ALTER TABLE public.rh_capacitacion OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_capacitacion_id_capacitacion_seq
@@ -301,17 +301,17 @@ CREATE SEQUENCE public.rh_capacitacion_id_capacitacion_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_capacitacion_id_capacitacion_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_capacitacion_id_capacitacion_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_capacitacion_id_capacitacion_seq OWNED BY public.rh_capacitacion.id_capacitacion;
 
 
 --
--- Name: rh_contratos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_contratos; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_contratos (
@@ -341,10 +341,10 @@ CREATE TABLE public.rh_contratos (
 );
 
 
-ALTER TABLE public.rh_contratos OWNER TO postgres;
+ALTER TABLE public.rh_contratos OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_contratos_id_contrato_seq
@@ -356,17 +356,17 @@ CREATE SEQUENCE public.rh_contratos_id_contrato_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_contratos_id_contrato_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_contratos_id_contrato_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_contratos_id_contrato_seq OWNED BY public.rh_contratos.id_contrato;
 
 
 --
--- Name: rh_documentos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_documentos; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_documentos (
@@ -386,10 +386,10 @@ CREATE TABLE public.rh_documentos (
 );
 
 
-ALTER TABLE public.rh_documentos OWNER TO postgres;
+ALTER TABLE public.rh_documentos OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_documentos_id_documento_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_documentos_id_documento_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_documentos_id_documento_seq
@@ -401,17 +401,17 @@ CREATE SEQUENCE public.rh_documentos_id_documento_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_documentos_id_documento_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_documentos_id_documento_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_documentos_id_documento_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_documentos_id_documento_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_documentos_id_documento_seq OWNED BY public.rh_documentos.id_documento;
 
 
 --
--- Name: rh_entrevistas; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_entrevistas; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_entrevistas (
@@ -440,10 +440,10 @@ CREATE TABLE public.rh_entrevistas (
 );
 
 
-ALTER TABLE public.rh_entrevistas OWNER TO postgres;
+ALTER TABLE public.rh_entrevistas OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_entrevistas_id_entrevista_seq
@@ -455,17 +455,17 @@ CREATE SEQUENCE public.rh_entrevistas_id_entrevista_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_entrevistas_id_entrevista_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_entrevistas_id_entrevista_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_entrevistas_id_entrevista_seq OWNED BY public.rh_entrevistas.id_entrevista;
 
 
 --
--- Name: rh_evaluaciones; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_evaluaciones (
@@ -495,10 +495,10 @@ CREATE TABLE public.rh_evaluaciones (
 );
 
 
-ALTER TABLE public.rh_evaluaciones OWNER TO postgres;
+ALTER TABLE public.rh_evaluaciones OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_evaluaciones_id_evaluacion_seq
@@ -510,17 +510,17 @@ CREATE SEQUENCE public.rh_evaluaciones_id_evaluacion_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_evaluaciones_id_evaluacion_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_evaluaciones_id_evaluacion_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_evaluaciones_id_evaluacion_seq OWNED BY public.rh_evaluaciones.id_evaluacion;
 
 
 --
--- Name: rh_historial; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_historial; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_historial (
@@ -538,10 +538,10 @@ CREATE TABLE public.rh_historial (
 );
 
 
-ALTER TABLE public.rh_historial OWNER TO postgres;
+ALTER TABLE public.rh_historial OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_historial_id_historial_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_historial_id_historial_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_historial_id_historial_seq
@@ -553,17 +553,17 @@ CREATE SEQUENCE public.rh_historial_id_historial_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_historial_id_historial_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_historial_id_historial_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_historial_id_historial_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_historial_id_historial_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_historial_id_historial_seq OWNED BY public.rh_historial.id_historial;
 
 
 --
--- Name: rh_incapacidades; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_incapacidades; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_incapacidades (
@@ -588,10 +588,10 @@ CREATE TABLE public.rh_incapacidades (
 );
 
 
-ALTER TABLE public.rh_incapacidades OWNER TO postgres;
+ALTER TABLE public.rh_incapacidades OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_incapacidades_id_incapacidad_seq
@@ -603,17 +603,17 @@ CREATE SEQUENCE public.rh_incapacidades_id_incapacidad_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_incapacidades_id_incapacidad_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_incapacidades_id_incapacidad_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_incapacidades_id_incapacidad_seq OWNED BY public.rh_incapacidades.id_incapacidad;
 
 
 --
--- Name: rh_permisos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_permisos; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_permisos (
@@ -639,10 +639,10 @@ CREATE TABLE public.rh_permisos (
 );
 
 
-ALTER TABLE public.rh_permisos OWNER TO postgres;
+ALTER TABLE public.rh_permisos OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_permisos_id_permiso_seq
@@ -654,17 +654,17 @@ CREATE SEQUENCE public.rh_permisos_id_permiso_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_permisos_id_permiso_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_permisos_id_permiso_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_permisos_id_permiso_seq OWNED BY public.rh_permisos.id_permiso;
 
 
 --
--- Name: rh_solicitudes_empleo; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_solicitudes_empleo (
@@ -702,10 +702,10 @@ CREATE TABLE public.rh_solicitudes_empleo (
 );
 
 
-ALTER TABLE public.rh_solicitudes_empleo OWNER TO postgres;
+ALTER TABLE public.rh_solicitudes_empleo OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq
@@ -717,17 +717,17 @@ CREATE SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq OWNED BY public.rh_solicitudes_empleo.id_solicitud;
 
 
 --
--- Name: rh_vacaciones; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_vacaciones; Type: TABLE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE TABLE public.rh_vacaciones (
@@ -752,10 +752,10 @@ CREATE TABLE public.rh_vacaciones (
 );
 
 
-ALTER TABLE public.rh_vacaciones OWNER TO postgres;
+ALTER TABLE public.rh_vacaciones OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE SEQUENCE public.rh_vacaciones_id_vacacion_seq
@@ -767,122 +767,122 @@ CREATE SEQUENCE public.rh_vacaciones_id_vacacion_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_vacaciones_id_vacacion_seq OWNER TO postgres;
+ALTER SEQUENCE public.rh_vacaciones_id_vacacion_seq OWNER TO vpro_dbadmin;
 
 --
--- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER SEQUENCE public.rh_vacaciones_id_vacacion_seq OWNED BY public.rh_vacaciones.id_vacacion;
 
 
 --
--- Name: asistencia_eventos id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: asistencia_eventos id; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.asistencia_eventos ALTER COLUMN id SET DEFAULT nextval('public.asistencia_eventos_id_seq'::regclass);
 
 
 --
--- Name: control_asistencia id_registro; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: control_asistencia id_registro; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.control_asistencia ALTER COLUMN id_registro SET DEFAULT nextval('public.control_asistencia_id_registro_seq'::regclass);
 
 
 --
--- Name: control_horas_extras id_autorizacion; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: control_horas_extras id_autorizacion; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.control_horas_extras ALTER COLUMN id_autorizacion SET DEFAULT nextval('public.control_horas_extras_id_autorizacion_seq'::regclass);
 
 
 --
--- Name: departamentos id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: departamentos id; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.departamentos ALTER COLUMN id SET DEFAULT nextval('public.departamentos_id_seq'::regclass);
 
 
 --
--- Name: log_accesos id_log; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: log_accesos id_log; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.log_accesos ALTER COLUMN id_log SET DEFAULT nextval('public.log_accesos_id_log_seq'::regclass);
 
 
 --
--- Name: rh_capacitacion id_capacitacion; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_capacitacion id_capacitacion; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_capacitacion ALTER COLUMN id_capacitacion SET DEFAULT nextval('public.rh_capacitacion_id_capacitacion_seq'::regclass);
 
 
 --
--- Name: rh_contratos id_contrato; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_contratos id_contrato; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_contratos ALTER COLUMN id_contrato SET DEFAULT nextval('public.rh_contratos_id_contrato_seq'::regclass);
 
 
 --
--- Name: rh_documentos id_documento; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_documentos id_documento; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_documentos ALTER COLUMN id_documento SET DEFAULT nextval('public.rh_documentos_id_documento_seq'::regclass);
 
 
 --
--- Name: rh_entrevistas id_entrevista; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_entrevistas id_entrevista; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_entrevistas ALTER COLUMN id_entrevista SET DEFAULT nextval('public.rh_entrevistas_id_entrevista_seq'::regclass);
 
 
 --
--- Name: rh_evaluaciones id_evaluacion; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones id_evaluacion; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_evaluaciones ALTER COLUMN id_evaluacion SET DEFAULT nextval('public.rh_evaluaciones_id_evaluacion_seq'::regclass);
 
 
 --
--- Name: rh_historial id_historial; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_historial id_historial; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_historial ALTER COLUMN id_historial SET DEFAULT nextval('public.rh_historial_id_historial_seq'::regclass);
 
 
 --
--- Name: rh_incapacidades id_incapacidad; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_incapacidades id_incapacidad; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_incapacidades ALTER COLUMN id_incapacidad SET DEFAULT nextval('public.rh_incapacidades_id_incapacidad_seq'::regclass);
 
 
 --
--- Name: rh_permisos id_permiso; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_permisos id_permiso; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_permisos ALTER COLUMN id_permiso SET DEFAULT nextval('public.rh_permisos_id_permiso_seq'::regclass);
 
 
 --
--- Name: rh_solicitudes_empleo id_solicitud; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo id_solicitud; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo ALTER COLUMN id_solicitud SET DEFAULT nextval('public.rh_solicitudes_empleo_id_solicitud_seq'::regclass);
 
 
 --
--- Name: rh_vacaciones id_vacacion; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_vacaciones id_vacacion; Type: DEFAULT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_vacaciones ALTER COLUMN id_vacacion SET DEFAULT nextval('public.rh_vacaciones_id_vacacion_seq'::regclass);
 
 
 --
--- Data for Name: asistencia_eventos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: asistencia_eventos; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.asistencia_eventos (id, id_empleado, nombre_empleado, cliente, fecha_evento) FROM stdin;
@@ -890,7 +890,7 @@ COPY public.asistencia_eventos (id, id_empleado, nombre_empleado, cliente, fecha
 
 
 --
--- Data for Name: control_asistencia; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: control_asistencia; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, hora_salida, estatus, observaciones, hora_entrada_v, hora_salida_v) FROM stdin;
@@ -1153,9 +1153,6 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 264	107	2026-09-17	09:05:22	14:01:47	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	16:05:29	\N
 268	119	2026-09-17	09:06:00	14:01:23	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	16:08:11	\N
 261	124	2026-09-17	09:05:13	14:01:28	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	16:08:19	\N
-292	201	2026-09-21	09:00:00	\N	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz)	\N	\N
-293	202	2026-09-21	09:00:00	\N	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz)	\N	\N
-294	115	2026-09-21	09:00:00	\N	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz)	\N	\N
 272	201	2026-09-16	00:00:00	\N	GIRA / LOCACIÓN	🗓️ Día no laborable (Independencia) | 📍 [EN GIRA] OP-19 - Grito de la independencia | 🌙 Continuación jornada nocturna	\N	02:14:36
 273	202	2026-09-16	00:00:00	\N	GIRA / LOCACIÓN	🗓️ Día no laborable (Independencia) | 📍 [EN GIRA] OP-19 - Grito de la independencia | 🌙 Continuación jornada nocturna	\N	02:15:25
 274	104	2026-09-16	00:00:00	\N	GIRA / LOCACIÓN	🗓️ Día no laborable (Independencia) | 📍 [EN GIRA] OP-19 - Grito de la independencia | 🌙 Continuación jornada nocturna	\N	02:15:28
@@ -1169,12 +1166,8 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 271	105	2026-09-15	11:00:00	\N	GIRA / LOCACIÓN	Kiosco - T. Matutino | 📍 [EN GIRA] OP-19 - Grito de la independencia	\N	23:59:59
 279	105	2026-09-16	00:00:00	\N	GIRA / LOCACIÓN	🗓️ Día no laborable (Independencia) | 📍 [EN GIRA] OP-19 - Grito de la independencia | 🌙 Continuación jornada nocturna	\N	02:16:47
 296	104	2026-09-21	09:00:00	\N	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz)	\N	\N
-297	119	2026-09-21	09:00:00	\N	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz)	\N	\N
 302	104	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
 303	121	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
-298	124	2026-09-21	09:00:00	\N	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz)	\N	\N
-299	107	2026-09-21	09:00:00	\N	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz)	\N	\N
-300	109	2026-09-21	09:00:00	\N	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz)	\N	\N
 304	200	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
 290	104	2026-09-18	15:47:25	15:55:17	ASISTENCIA	Kiosco - T. Vespertino | Kiosco - Fin Jornada	\N	\N
 305	109	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
@@ -1185,7 +1178,7 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 289	200	2026-09-18	09:28:26	16:43:26	RETARDO	Kiosco - T. Matutino | Kiosco - Fin Jornada	\N	\N
 309	201	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
 310	124	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
-301	113	2026-09-21	09:15:00	\N	RETARDO	Kiosco - T. Matutino | Ajuste manual | Kiosco - Comida	\N	\N
+293	202	2026-09-21	09:00:00	14:26:45	COMPLETO	Kiosco - T. Matutino | Ajuste manual (Sin luz) | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:12	19:01:02
 295	105	2026-09-21	09:00:00	\N	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz) | Kiosco - Comida	\N	\N
 285	109	2026-09-18	09:08:01	\N	RETARDO	Kiosco - T. Matutino | Ajuste manual: Salida 19:00 (Sin luz)	\N	19:00:00
 311	119	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
@@ -1200,11 +1193,41 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 313	105	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
 314	104	2026-09-20	09:00:00	16:08:00	A TIEMPO	Ajuste manual: Turno 09:00 a 16:08	\N	\N
 315	109	2026-09-20	09:00:00	16:08:00	A TIEMPO	Ajuste manual: Turno 09:00 a 16:08	\N	\N
+300	109	2026-09-21	09:00:00	18:58:49	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz) | Kiosco - Fin Jornada	\N	\N
+294	115	2026-09-21	09:00:00	14:00:41	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz) | Kiosco - Comida	\N	\N
+298	124	2026-09-21	09:00:00	14:01:07	COMPLETO	Kiosco - T. Matutino | Ajuste manual (Sin luz) | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:17	18:59:47
+301	113	2026-09-21	09:15:00	14:02:27	COMPLETO	Kiosco - T. Matutino | Ajuste manual | Kiosco - Comida | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:40	18:59:28
+297	119	2026-09-21	09:00:00	14:01:20	COMPLETO	Kiosco - T. Matutino | Ajuste manual (Sin luz) | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:45	18:59:36
+299	107	2026-09-21	09:00:00	14:00:54	COMPLETO	Kiosco - T. Matutino | Ajuste manual (Sin luz) | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:31	18:59:10
+324	121	2026-09-22	10:00:34	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+292	201	2026-09-21	09:00:00	13:49:40	A TIEMPO	Kiosco - T. Matutino | Ajuste manual (Sin luz) | Kiosco - Comida | Kiosco - T. Vespertino	16:04:57	19:00:00
+317	202	2026-09-22	08:58:24	14:02:06	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:58:09	19:00:07
+322	105	2026-09-22	09:22:00	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+323	104	2026-09-22	09:54:35	14:03:33	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:38:36	19:00:14
+325	200	2026-09-22	10:01:04	13:51:50	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+327	200	2026-09-23	08:46:24	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+328	121	2026-09-23	08:46:51	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+329	115	2026-09-23	08:46:54	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+330	201	2026-09-23	08:50:57	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+331	124	2026-09-23	08:52:30	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+332	119	2026-09-23	08:53:15	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+333	202	2026-09-23	08:57:36	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+334	107	2026-09-23	08:58:28	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+318	201	2026-09-22	08:58:39	14:15:42	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:24	18:58:32
+320	107	2026-09-22	09:08:01	14:00:39	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:49:32	18:58:37
+326	109	2026-09-22	09:30:00	18:58:46	RETARDO	Kiosco - T. Matutino | Kiosco - Fin Jornada	\N	\N
+319	119	2026-09-22	08:59:06	14:00:57	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:02:02	18:59:35
+316	124	2026-09-22	08:57:59	14:01:01	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:59:41	18:59:50
+321	113	2026-09-22	09:22:00	14:04:15	COMPLETO	Kiosco - T. Matutino | Ajuste manual | Kiosco - Comida | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:25:24	18:59:52
+335	104	2026-09-23	08:59:12	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+336	105	2026-09-23	09:04:34	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+337	113	2026-09-23	09:16:06	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+338	109	2026-09-23	09:34:14	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 \.
 
 
 --
--- Data for Name: control_horas_extras; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: control_horas_extras; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.control_horas_extras (id_autorizacion, id_registro_asistencia, id_empleado, nombre_empleado, id_evento, folio_op, nombre_evento, productor_responsable, fecha_jornada, hora_entrada, hora_salida_madrugada, corte_ordinario, horas_extra_calculadas, estatus_aprobacion, aprobado_por, fecha_aprobacion, observaciones) FROM stdin;
@@ -1220,7 +1243,7 @@ COPY public.control_horas_extras (id_autorizacion, id_registro_asistencia, id_em
 
 
 --
--- Data for Name: departamentos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: departamentos; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.departamentos (id, nombre) FROM stdin;
@@ -1233,7 +1256,7 @@ COPY public.departamentos (id, nombre) FROM stdin;
 
 
 --
--- Data for Name: empleados; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: empleados; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_ing, licencia_vence, password, rol, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, foto_url, estatus_empleado, fecha_baja, motivo_baja) FROM stdin;
@@ -1293,7 +1316,7 @@ COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_
 
 
 --
--- Data for Name: log_accesos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: log_accesos; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.log_accesos (id_log, fecha, hora, ip_origen, id_empleado, nombre_empleado, tipo_evento) FROM stdin;
@@ -1301,7 +1324,7 @@ COPY public.log_accesos (id_log, fecha, hora, ip_origen, id_empleado, nombre_emp
 
 
 --
--- Data for Name: rh_capacitacion; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_capacitacion; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_capacitacion (id_capacitacion, id_empleado, nombre_curso, tipo, institucion, fecha_inicio, fecha_fin, horas_duracion, resultado, calificacion, tiene_constancia, constancia_url, costo, pagado_por_empresa, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -1309,7 +1332,7 @@ COPY public.rh_capacitacion (id_capacitacion, id_empleado, nombre_curso, tipo, i
 
 
 --
--- Data for Name: rh_contratos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_contratos; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_contratos (id_contrato, id_empleado, folio_contrato, tipo_contrato, fecha_inicio, fecha_fin, es_indefinido, puesto_contratado, departamento, salario_mensual, dias_vacaciones_anuales, jornada, horario, clausulas_especiales, archivo_contrato_url, firmado_empleado, firmado_empresa, fecha_firma, estatus_contrato, renovacion_de, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -1317,7 +1340,7 @@ COPY public.rh_contratos (id_contrato, id_empleado, folio_contrato, tipo_contrat
 
 
 --
--- Data for Name: rh_documentos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_documentos; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_documentos (id_documento, id_empleado, tipo_documento, nombre_archivo, archivo_url, formato, fecha_emision, fecha_vencimiento, esta_vigente, verificado_por_rh, observaciones, subido_por, fecha_subida) FROM stdin;
@@ -1325,7 +1348,7 @@ COPY public.rh_documentos (id_documento, id_empleado, tipo_documento, nombre_arc
 
 
 --
--- Data for Name: rh_entrevistas; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_entrevistas; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_entrevistas (id_entrevista, id_solicitud, id_empleado, tipo_entrevista, fecha_entrevista, hora_inicio, hora_fin, entrevistador, modalidad, link_videollamada, resultado, calificacion_general, puntualidad, presentacion, conocimientos_tecnicos, actitud, comunicacion, comentarios, recomendacion, archivo_prueba_url, registrado_por, fecha_registro) FROM stdin;
@@ -1333,7 +1356,7 @@ COPY public.rh_entrevistas (id_entrevista, id_solicitud, id_empleado, tipo_entre
 
 
 --
--- Data for Name: rh_evaluaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_evaluaciones; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_evaluaciones (id_evaluacion, id_empleado, periodo, tipo, evaluador, puesto_evaluador, puntualidad, calidad_trabajo, trabajo_equipo, responsabilidad, iniciativa, comunicacion, cumplimiento_objetivos, calificacion_final, nivel_desempeno, fortalezas, areas_mejora, plan_accion, comentarios_empleado, firma_empleado, archivo_evaluacion_url, registrado_por, fecha_registro) FROM stdin;
@@ -1341,7 +1364,7 @@ COPY public.rh_evaluaciones (id_evaluacion, id_empleado, periodo, tipo, evaluado
 
 
 --
--- Data for Name: rh_historial; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_historial; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_historial (id_historial, id_empleado, fecha_evento, tipo_evento, descripcion, datos_anteriores, datos_nuevos, referencia_tabla, referencia_id, registrado_por, es_automatico) FROM stdin;
@@ -1349,7 +1372,7 @@ COPY public.rh_historial (id_historial, id_empleado, fecha_evento, tipo_evento, 
 
 
 --
--- Data for Name: rh_incapacidades; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_incapacidades; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_incapacidades (id_incapacidad, id_empleado, folio_incapacidad, tipo, fecha_inicio, fecha_fin, dias_incapacidad, numero_imss, medico_tratante, diagnostico, porcentaje_pago_imss, archivo_incapacidad_url, estatus, validado_por_rh, fecha_validacion, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -1357,7 +1380,7 @@ COPY public.rh_incapacidades (id_incapacidad, id_empleado, folio_incapacidad, ti
 
 
 --
--- Data for Name: rh_permisos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_permisos; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_permisos (id_permiso, id_empleado, folio_permiso, tipo_permiso, fecha_solicitud, fecha_inicio, fecha_fin, dias_solicitados, con_goce_de_sueldo, justificacion, archivo_justificante, estatus, aprobado_por, fecha_aprobacion, motivo_rechazo, impacta_asistencia, observaciones_rh, registrado_por, fecha_registro) FROM stdin;
@@ -1365,7 +1388,7 @@ COPY public.rh_permisos (id_permiso, id_empleado, folio_permiso, tipo_permiso, f
 
 
 --
--- Data for Name: rh_solicitudes_empleo; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_solicitudes_empleo; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_solicitudes_empleo (id_solicitud, folio, fecha_solicitud, nombre_completo, email, tel_celular, fecha_nac, rfc, curp, domicilio, escolaridad, carrera_especialidad, cedula_profesional, puesto_solicitado, depto_solicitado, experiencia_anios, experiencia_descripcion, habilidades, pretension_salarial, como_se_entero, referido_por, disponibilidad_inmediata, fecha_disponible, tiene_auto, tiene_licencia, cv_url, estatus, observaciones_rh, id_empleado_resultado, creado_por, fecha_creacion) FROM stdin;
@@ -1373,7 +1396,7 @@ COPY public.rh_solicitudes_empleo (id_solicitud, folio, fecha_solicitud, nombre_
 
 
 --
--- Data for Name: rh_vacaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_vacaciones; Type: TABLE DATA; Schema: public; Owner: vpro_dbadmin
 --
 
 COPY public.rh_vacaciones (id_vacacion, id_empleado, anio_periodo, dias_correspondientes, dias_tomados, dias_pendientes, fecha_inicio_goce, fecha_fin_goce, fecha_limite_goce, tipo, estatus, aprobado_por, fecha_aprobacion, notificado_admon, fecha_notif_admon, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -1381,112 +1404,112 @@ COPY public.rh_vacaciones (id_vacacion, id_empleado, anio_periodo, dias_correspo
 
 
 --
--- Name: asistencia_eventos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: asistencia_eventos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.asistencia_eventos_id_seq', 1, false);
 
 
 --
--- Name: control_asistencia_id_registro_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: control_asistencia_id_registro_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
-SELECT pg_catalog.setval('public.control_asistencia_id_registro_seq', 315, true);
+SELECT pg_catalog.setval('public.control_asistencia_id_registro_seq', 338, true);
 
 
 --
--- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.control_horas_extras_id_autorizacion_seq', 8, true);
 
 
 --
--- Name: departamentos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: departamentos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.departamentos_id_seq', 5, true);
 
 
 --
--- Name: log_accesos_id_log_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: log_accesos_id_log_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.log_accesos_id_log_seq', 1, false);
 
 
 --
--- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_capacitacion_id_capacitacion_seq', 1, false);
 
 
 --
--- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_contratos_id_contrato_seq', 1, false);
 
 
 --
--- Name: rh_documentos_id_documento_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_documentos_id_documento_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_documentos_id_documento_seq', 1, false);
 
 
 --
--- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_entrevistas_id_entrevista_seq', 1, false);
 
 
 --
--- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_evaluaciones_id_evaluacion_seq', 1, false);
 
 
 --
--- Name: rh_historial_id_historial_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_historial_id_historial_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_historial_id_historial_seq', 1, false);
 
 
 --
--- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_incapacidades_id_incapacidad_seq', 1, false);
 
 
 --
--- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_permisos_id_permiso_seq', 1, false);
 
 
 --
--- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_solicitudes_empleo_id_solicitud_seq', 1, false);
 
 
 --
--- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
 SELECT pg_catalog.setval('public.rh_vacaciones_id_vacacion_seq', 1, false);
 
 
 --
--- Name: asistencia_eventos asistencia_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: asistencia_eventos asistencia_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.asistencia_eventos
@@ -1494,7 +1517,7 @@ ALTER TABLE ONLY public.asistencia_eventos
 
 
 --
--- Name: control_asistencia control_asistencia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: control_asistencia control_asistencia_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.control_asistencia
@@ -1502,7 +1525,7 @@ ALTER TABLE ONLY public.control_asistencia
 
 
 --
--- Name: control_horas_extras control_horas_extras_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: control_horas_extras control_horas_extras_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.control_horas_extras
@@ -1510,7 +1533,7 @@ ALTER TABLE ONLY public.control_horas_extras
 
 
 --
--- Name: departamentos departamentos_nombre_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: departamentos departamentos_nombre_key; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.departamentos
@@ -1518,7 +1541,7 @@ ALTER TABLE ONLY public.departamentos
 
 
 --
--- Name: departamentos departamentos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: departamentos departamentos_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.departamentos
@@ -1526,7 +1549,7 @@ ALTER TABLE ONLY public.departamentos
 
 
 --
--- Name: log_accesos log_accesos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: log_accesos log_accesos_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.log_accesos
@@ -1534,7 +1557,7 @@ ALTER TABLE ONLY public.log_accesos
 
 
 --
--- Name: rh_capacitacion rh_capacitacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_capacitacion rh_capacitacion_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_capacitacion
@@ -1542,7 +1565,7 @@ ALTER TABLE ONLY public.rh_capacitacion
 
 
 --
--- Name: rh_contratos rh_contratos_folio_contrato_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_contratos rh_contratos_folio_contrato_key; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -1550,7 +1573,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_contratos rh_contratos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_contratos rh_contratos_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -1558,7 +1581,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_documentos rh_documentos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_documentos rh_documentos_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_documentos
@@ -1566,7 +1589,7 @@ ALTER TABLE ONLY public.rh_documentos
 
 
 --
--- Name: rh_entrevistas rh_entrevistas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_entrevistas rh_entrevistas_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_entrevistas
@@ -1574,7 +1597,7 @@ ALTER TABLE ONLY public.rh_entrevistas
 
 
 --
--- Name: rh_evaluaciones rh_evaluaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones rh_evaluaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_evaluaciones
@@ -1582,7 +1605,7 @@ ALTER TABLE ONLY public.rh_evaluaciones
 
 
 --
--- Name: rh_historial rh_historial_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_historial rh_historial_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_historial
@@ -1590,7 +1613,7 @@ ALTER TABLE ONLY public.rh_historial
 
 
 --
--- Name: rh_incapacidades rh_incapacidades_folio_incapacidad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_incapacidades rh_incapacidades_folio_incapacidad_key; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_incapacidades
@@ -1598,7 +1621,7 @@ ALTER TABLE ONLY public.rh_incapacidades
 
 
 --
--- Name: rh_incapacidades rh_incapacidades_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_incapacidades rh_incapacidades_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_incapacidades
@@ -1606,7 +1629,7 @@ ALTER TABLE ONLY public.rh_incapacidades
 
 
 --
--- Name: rh_permisos rh_permisos_folio_permiso_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_permisos rh_permisos_folio_permiso_key; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_permisos
@@ -1614,7 +1637,7 @@ ALTER TABLE ONLY public.rh_permisos
 
 
 --
--- Name: rh_permisos rh_permisos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_permisos rh_permisos_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_permisos
@@ -1622,7 +1645,7 @@ ALTER TABLE ONLY public.rh_permisos
 
 
 --
--- Name: rh_solicitudes_empleo rh_solicitudes_empleo_folio_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo rh_solicitudes_empleo_folio_key; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo
@@ -1630,7 +1653,7 @@ ALTER TABLE ONLY public.rh_solicitudes_empleo
 
 
 --
--- Name: rh_solicitudes_empleo rh_solicitudes_empleo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo rh_solicitudes_empleo_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo
@@ -1638,7 +1661,7 @@ ALTER TABLE ONLY public.rh_solicitudes_empleo
 
 
 --
--- Name: rh_vacaciones rh_vacaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_vacaciones rh_vacaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_vacaciones
@@ -1646,7 +1669,7 @@ ALTER TABLE ONLY public.rh_vacaciones
 
 
 --
--- Name: control_asistencia uq_empleado_fecha; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: control_asistencia uq_empleado_fecha; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.control_asistencia
@@ -1654,7 +1677,7 @@ ALTER TABLE ONLY public.control_asistencia
 
 
 --
--- Name: empleados vpro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: empleados vpro_pkey; Type: CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.empleados
@@ -1662,70 +1685,70 @@ ALTER TABLE ONLY public.empleados
 
 
 --
--- Name: idx_rh_contratos_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_contratos_empleado; Type: INDEX; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE INDEX idx_rh_contratos_empleado ON public.rh_contratos USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_contratos_estatus; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_contratos_estatus; Type: INDEX; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE INDEX idx_rh_contratos_estatus ON public.rh_contratos USING btree (estatus_contrato);
 
 
 --
--- Name: idx_rh_historial_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_historial_empleado; Type: INDEX; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE INDEX idx_rh_historial_empleado ON public.rh_historial USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_historial_tipo; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_historial_tipo; Type: INDEX; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE INDEX idx_rh_historial_tipo ON public.rh_historial USING btree (tipo_evento);
 
 
 --
--- Name: idx_rh_incap_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_incap_empleado; Type: INDEX; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE INDEX idx_rh_incap_empleado ON public.rh_incapacidades USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_permisos_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_permisos_empleado; Type: INDEX; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE INDEX idx_rh_permisos_empleado ON public.rh_permisos USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_permisos_estatus; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_permisos_estatus; Type: INDEX; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE INDEX idx_rh_permisos_estatus ON public.rh_permisos USING btree (estatus);
 
 
 --
--- Name: idx_rh_solicitudes_estatus; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_solicitudes_estatus; Type: INDEX; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE INDEX idx_rh_solicitudes_estatus ON public.rh_solicitudes_empleo USING btree (estatus);
 
 
 --
--- Name: idx_rh_vacaciones_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_vacaciones_empleado; Type: INDEX; Schema: public; Owner: vpro_dbadmin
 --
 
 CREATE INDEX idx_rh_vacaciones_empleado ON public.rh_vacaciones USING btree (id_empleado);
 
 
 --
--- Name: control_asistencia fk_empleado; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: control_asistencia fk_empleado; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.control_asistencia
@@ -1733,7 +1756,7 @@ ALTER TABLE ONLY public.control_asistencia
 
 
 --
--- Name: rh_contratos fk_renovacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_contratos fk_renovacion; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -1741,7 +1764,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_capacitacion rh_capacitacion_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_capacitacion rh_capacitacion_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_capacitacion
@@ -1749,7 +1772,7 @@ ALTER TABLE ONLY public.rh_capacitacion
 
 
 --
--- Name: rh_contratos rh_contratos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_contratos rh_contratos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -1757,7 +1780,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_documentos rh_documentos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_documentos rh_documentos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_documentos
@@ -1765,7 +1788,7 @@ ALTER TABLE ONLY public.rh_documentos
 
 
 --
--- Name: rh_entrevistas rh_entrevistas_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_entrevistas rh_entrevistas_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_entrevistas
@@ -1773,7 +1796,7 @@ ALTER TABLE ONLY public.rh_entrevistas
 
 
 --
--- Name: rh_entrevistas rh_entrevistas_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_entrevistas rh_entrevistas_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_entrevistas
@@ -1781,7 +1804,7 @@ ALTER TABLE ONLY public.rh_entrevistas
 
 
 --
--- Name: rh_evaluaciones rh_evaluaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones rh_evaluaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_evaluaciones
@@ -1789,7 +1812,7 @@ ALTER TABLE ONLY public.rh_evaluaciones
 
 
 --
--- Name: rh_historial rh_historial_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_historial rh_historial_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_historial
@@ -1797,7 +1820,7 @@ ALTER TABLE ONLY public.rh_historial
 
 
 --
--- Name: rh_incapacidades rh_incapacidades_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_incapacidades rh_incapacidades_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_incapacidades
@@ -1805,7 +1828,7 @@ ALTER TABLE ONLY public.rh_incapacidades
 
 
 --
--- Name: rh_permisos rh_permisos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_permisos rh_permisos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_permisos
@@ -1813,7 +1836,7 @@ ALTER TABLE ONLY public.rh_permisos
 
 
 --
--- Name: rh_solicitudes_empleo rh_solicitudes_empleo_id_empleado_resultado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo rh_solicitudes_empleo_id_empleado_resultado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo
@@ -1821,7 +1844,7 @@ ALTER TABLE ONLY public.rh_solicitudes_empleo
 
 
 --
--- Name: rh_vacaciones rh_vacaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_vacaciones rh_vacaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vpro_dbadmin
 --
 
 ALTER TABLE ONLY public.rh_vacaciones
@@ -1832,5 +1855,5 @@ ALTER TABLE ONLY public.rh_vacaciones
 -- PostgreSQL database dump complete
 --
 
-\unrestrict b32TiRGcc6Ljh2Y27FeYLtgJIOOr3QMpod08vhg0jBCU35whnlkdNiCNSBNyudn
+\unrestrict 6xgnN9lLhB4SqRZzcbnb3UZuYy9wB2zAnjf5S9NOG1mUQvn1K0PWnAT8vbmKxAB
 

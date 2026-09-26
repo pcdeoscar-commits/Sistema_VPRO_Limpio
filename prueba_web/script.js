@@ -3003,6 +3003,7 @@ function confirmarBajaEmpleado() {
 // 🤝 SUB-MÓDULO: REUNIONES / PROSPECTOS
 // ==========================================================================
 let memoriaReuniones = [];
+let asistentesReunionSeleccionados = [];
 
 async function cargarCatalogoReuniones() {
     const tbody = document.getElementById('tabla-reuniones-body');
@@ -3022,6 +3023,8 @@ async function cargarCatalogoReuniones() {
         if (hubBadge) hubBadge.innerText = `${total} minutas`;
 
         poblarSelectorReuniones();
+        await poblarClientesDropdownReunion();
+        await poblarAsistentesDropdownReunion();
         renderTablaReuniones(memoriaReuniones);
     } catch (e) {
         console.error("Error al cargar reuniones:", e);
@@ -3030,6 +3033,131 @@ async function cargarCatalogoReuniones() {
                 <i class="ph ph-warning-circle"></i> Error al conectar con el servidor: ${e.message}
             </td></tr>`;
         }
+    }
+}
+
+async function poblarClientesDropdownReunion() {
+    const sel = document.getElementById('reu-cliente');
+    if (!sel) return;
+    const valActual = sel.value;
+
+    let listaClientes = [];
+    if (typeof memoriaClientes !== 'undefined' && memoriaClientes && memoriaClientes.length > 0) {
+        listaClientes = memoriaClientes.map(c => c.cliente_empresa || '').filter(Boolean);
+    } else {
+        try {
+            const res = await fetch(`${API_URL}/api/reuniones/clientes`);
+            if (res.ok) {
+                const data = await res.json();
+                listaClientes = Array.isArray(data) ? data : [];
+            }
+        } catch (e) {
+            console.warn("No se pudieron cargar clientes para reunión:", e);
+        }
+    }
+
+    const unicos = [...new Set(listaClientes)].sort((a, b) => a.localeCompare(b));
+
+    sel.innerHTML = '<option value="">-- Seleccionar Cliente Registrado --</option>';
+    unicos.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        sel.appendChild(opt);
+    });
+
+    const optOtro = document.createElement('option');
+    optOtro.value = '__otro__';
+    optOtro.textContent = '➕ [Otro / Prospecto no registrado...]';
+    sel.appendChild(optOtro);
+
+    if (valActual && Array.from(sel.options).some(o => o.value === valActual)) {
+        sel.value = valActual;
+    }
+}
+
+function alCambiarClienteReunion() {
+    const sel = document.getElementById('reu-cliente');
+    const wrapOtro = document.getElementById('wrap-reu-cliente-otro');
+    const inpOtro = document.getElementById('reu-cliente-otro');
+    if (!sel || !wrapOtro) return;
+
+    if (sel.value === '__otro__') {
+        wrapOtro.style.display = 'block';
+        if (inpOtro) inpOtro.focus();
+    } else {
+        wrapOtro.style.display = 'none';
+        if (inpOtro) inpOtro.value = '';
+    }
+}
+
+async function poblarAsistentesDropdownReunion() {
+    const sel = document.getElementById('sel-reu-empleado-agregar');
+    if (!sel) return;
+
+    let listaAsistentes = [];
+    if (typeof memoriaEmpleados !== 'undefined' && memoriaEmpleados && memoriaEmpleados.length > 0) {
+        listaAsistentes = memoriaEmpleados
+            .filter(e => (e.rol || '').toUpperCase() !== 'BAJA' && (e.rol || '').toUpperCase() !== 'PROVEEDOR')
+            .map(e => e.nombre || '')
+            .filter(Boolean);
+    } else {
+        try {
+            const res = await fetch(`${API_URL}/api/reuniones/asistentes`);
+            if (res.ok) {
+                const data = await res.json();
+                listaAsistentes = Array.isArray(data) ? data : [];
+            }
+        } catch (e) {
+            console.warn("No se pudieron cargar asistentes activos:", e);
+        }
+    }
+
+    const unicos = [...new Set(listaAsistentes)].sort((a, b) => a.localeCompare(b));
+    sel.innerHTML = '<option value="">+ Seleccionar Colaborador Activo...</option>';
+    unicos.forEach(nombre => {
+        const opt = document.createElement('option');
+        opt.value = nombre;
+        opt.textContent = `👤 ${nombre}`;
+        sel.appendChild(opt);
+    });
+}
+
+function renderAsistentesTagsReunion() {
+    const cont = document.getElementById('wrap-reu-asistentes-tags');
+    if (!cont) return;
+
+    if (!asistentesReunionSeleccionados || asistentesReunionSeleccionados.length === 0) {
+        cont.innerHTML = '<span id="reu-asistentes-placeholder" style="color: #94a3b8; font-size: 12.5px;">Ningún asistente seleccionado aún.</span>';
+        return;
+    }
+
+    cont.innerHTML = asistentesReunionSeleccionados.map(nombre => `
+        <span class="tag-pill" style="background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; padding: 4px 10px; border-radius: 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <span>${nombre}</span>
+            <span style="cursor: pointer; font-weight: bold; color: #4338ca; font-size: 11px;" onclick="removerAsistenteReunion('${nombre.replace(/'/g, "\\'")}')" title="Quitar">✖</span>
+        </span>
+    `).join('');
+}
+
+function agregarAsistenteReunion(nombre) {
+    if (!nombre) return;
+    const n = nombre.trim();
+    if (!asistentesReunionSeleccionados.includes(n)) {
+        asistentesReunionSeleccionados.push(n);
+        renderAsistentesTagsReunion();
+    }
+}
+
+function removerAsistenteReunion(nombre) {
+    asistentesReunionSeleccionados = asistentesReunionSeleccionados.filter(item => item !== nombre);
+    renderAsistentesTagsReunion();
+}
+
+function agregarAsistenteExternoPrompt() {
+    const ext = prompt("Ingrese el nombre completo del asistente o contacto externo:");
+    if (ext && ext.trim()) {
+        agregarAsistenteReunion(ext.trim());
     }
 }
 
@@ -3103,14 +3231,41 @@ function alCambiarSelectorReunion() {
     const inpFecha = document.getElementById('reu-fecha');
     if (inpFecha) inpFecha.value = r.fecha_reunion || '';
 
-    const inpCliente = document.getElementById('reu-cliente');
-    if (inpCliente) inpCliente.value = r.cliente_tentativo || '';
+    // Manejar Cliente Tentativo (dropdown existente o nuevo prospecto)
+    const selCliente = document.getElementById('reu-cliente');
+    const wrapOtro = document.getElementById('wrap-reu-cliente-otro');
+    const inpOtro = document.getElementById('reu-cliente-otro');
+    if (selCliente) {
+        const valorCliente = (r.cliente_tentativo || '').trim();
+        const existeEnOpciones = Array.from(selCliente.options).some(o => o.value === valorCliente);
+        if (existeEnOpciones && valorCliente) {
+            selCliente.value = valorCliente;
+            if (wrapOtro) wrapOtro.style.display = 'none';
+            if (inpOtro) inpOtro.value = '';
+        } else if (valorCliente) {
+            selCliente.value = '__otro__';
+            if (wrapOtro) wrapOtro.style.display = 'block';
+            if (inpOtro) inpOtro.value = valorCliente;
+        } else {
+            selCliente.value = '';
+            if (wrapOtro) wrapOtro.style.display = 'none';
+            if (inpOtro) inpOtro.value = '';
+        }
+    }
 
     const inpProy = document.getElementById('reu-proyecto');
     if (inpProy) inpProy.value = r.nombre_proyecto_tentativo || '';
 
-    const inpAsis = document.getElementById('reu-asistentes');
-    if (inpAsis) inpAsis.value = r.asistentes || '';
+    // Manejar Asistentes interactivos
+    if (r.asistentes) {
+        asistentesReunionSeleccionados = String(r.asistentes)
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+    } else {
+        asistentesReunionSeleccionados = [];
+    }
+    renderAsistentesTagsReunion();
 
     const inpPres = document.getElementById('reu-presupuesto');
     if (inpPres) inpPres.value = r.presupuesto_estimado || 0;
@@ -3123,6 +3278,9 @@ function alCambiarSelectorReunion() {
 
     const lblBtn = document.getElementById('lbl-btn-guardar-reu');
     if (lblBtn) lblBtn.innerText = '🔄 Actualizar Minuta de Reunión';
+
+    const btnDel = document.getElementById('btn-eliminar-reu');
+    if (btnDel) btnDel.style.display = 'inline-flex';
 }
 
 function limpiarFormReunion() {
@@ -3135,14 +3293,20 @@ function limpiarFormReunion() {
     const inpFecha = document.getElementById('reu-fecha');
     if (inpFecha) inpFecha.value = new Date().toISOString().split('T')[0];
 
-    const inpCliente = document.getElementById('reu-cliente');
-    if (inpCliente) inpCliente.value = '';
+    const selCliente = document.getElementById('reu-cliente');
+    if (selCliente) selCliente.value = '';
+
+    const wrapOtro = document.getElementById('wrap-reu-cliente-otro');
+    if (wrapOtro) wrapOtro.style.display = 'none';
+
+    const inpOtro = document.getElementById('reu-cliente-otro');
+    if (inpOtro) inpOtro.value = '';
 
     const inpProy = document.getElementById('reu-proyecto');
     if (inpProy) inpProy.value = '';
 
-    const inpAsis = document.getElementById('reu-asistentes');
-    if (inpAsis) inpAsis.value = '';
+    asistentesReunionSeleccionados = [];
+    renderAsistentesTagsReunion();
 
     const inpPres = document.getElementById('reu-presupuesto');
     if (inpPres) inpPres.value = '';
@@ -3155,20 +3319,29 @@ function limpiarFormReunion() {
 
     const lblBtn = document.getElementById('lbl-btn-guardar-reu');
     if (lblBtn) lblBtn.innerText = '💾 Guardar Nueva Reunión';
+
+    const btnDel = document.getElementById('btn-eliminar-reu');
+    if (btnDel) btnDel.style.display = 'none';
 }
 
 async function guardarReunionForm() {
     const id = document.getElementById('reu-id')?.value;
     const fecha = document.getElementById('reu-fecha')?.value;
-    const cliente = document.getElementById('reu-cliente')?.value?.trim();
+
+    const selCliente = document.getElementById('reu-cliente')?.value;
+    let cliente = selCliente;
+    if (selCliente === '__otro__') {
+        cliente = document.getElementById('reu-cliente-otro')?.value?.trim();
+    }
+
     const proyecto = document.getElementById('reu-proyecto')?.value?.trim();
-    const asistentes = document.getElementById('reu-asistentes')?.value?.trim();
+    const asistentes = asistentesReunionSeleccionados.join(', ');
     const presupuesto = document.getElementById('reu-presupuesto')?.value;
     const fecha_probable = document.getElementById('reu-fecha-probable')?.value || null;
     const minuta = document.getElementById('reu-minuta')?.value?.trim();
 
     if (!fecha || !cliente || !proyecto || !asistentes || !minuta) {
-        alert("⚠️ Por favor, llena todos los campos marcados con asterisco (*).");
+        alert("⚠️ Por favor completa los campos obligatorios (*):\n- Fecha de Reunión\n- Cliente Tentativo\n- Nombre de la Reunión / Proyecto\n- Al menos un Asistente seleccionado\n- Minuta y Acuerdos");
         return;
     }
 
@@ -3196,7 +3369,7 @@ async function guardarReunionForm() {
             const err = await res.json().catch(() => ({ detail: res.statusText }));
             throw new Error(err.detail || "Error al guardar");
         }
-        alert(id ? "✅ Minuta actualizada correctamente." : "✅ Minuta de reunión registrada exitosamente.");
+        alert(id ? "✅ Minuta de reunión actualizada correctamente." : "✅ Minuta de reunión registrada exitosamente.");
         await cargarCatalogoReuniones();
         limpiarFormReunion();
     } catch (e) {
@@ -3204,6 +3377,33 @@ async function guardarReunionForm() {
     } finally {
         if (btn) btn.disabled = false;
     }
+}
+
+function confirmarEliminarReunion() {
+    const id = document.getElementById('reu-id')?.value;
+    if (!id) return;
+
+    const r = memoriaReuniones.find(item => String(item.id_reunion) === String(id));
+    const tituloReu = r ? `${r.cliente_tentativo} - ${r.nombre_proyecto_tentativo}` : `Reunión #${id}`;
+
+    abrirModalBaja(
+        "🚨 Confirmación de Eliminación de Minuta",
+        `¿Está seguro de que desea eliminar la minuta de <strong>${tituloReu}</strong>?<br><br><span style="color: #991b1b; font-size: 12px;">⚠️ Esta minuta se borrará permanentemente de la lista de prospectos activos.</span>`,
+        async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/reuniones/${id}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({ detail: res.statusText }));
+                    throw new Error(err.detail || "Error al eliminar");
+                }
+                alert(`💥 Minuta de reunión eliminada correctamente.`);
+                limpiarFormReunion();
+                await cargarCatalogoReuniones();
+            } catch (e) {
+                alert(`❌ No se pudo eliminar la minuta: ${e.message}`);
+            }
+        }
+    );
 }
 
 // --------------------------------------------------------------------------

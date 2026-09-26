@@ -77,6 +77,17 @@ def crear_o_actualizar_reunion(reunion: ReunionPreviaIn):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.delete("/{id_reunion}")
+def eliminar_reunion(id_reunion: int):
+    """Elimina una minuta de reunión activa."""
+    try:
+        query = text("DELETE FROM public.reuniones_previas WHERE id_reunion = :id")
+        with engine_eventos.begin() as conn:
+            conn.execute(query, {"id": id_reunion})
+        return {"status": "success", "mensaje": f"Reunión {id_reunion} eliminada exitosamente."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/historial")
 def obtener_historial_reuniones():
     """Consulta las minutas de reuniones activas que no han sido vinculadas a una OP."""

@@ -2208,29 +2208,57 @@
 
                         <input type="hidden" id="reu-id">
 
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                            <!-- Columna 1 -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                            <!-- Columna 1: Generalidades y Cliente -->
                             <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                <label class="op-form-label">Fecha de la Reunión*</label>
+                                <label class="op-form-label">📅 Fecha de la Reunión*</label>
                                 <input type="date" id="reu-fecha" class="form-input" style="margin-bottom: 14px;">
 
-                                <label class="op-form-label">Cliente Tentativo*</label>
-                                <input type="text" id="reu-cliente" class="form-input" style="margin-bottom: 14px;" placeholder="Ej. Gobierno del Estado, Heineken...">
+                                <label class="op-form-label">🏢 Cliente Tentativo (Seleccionar Cliente Existente)*</label>
+                                <select id="reu-cliente" class="form-input" style="margin-bottom: 14px; font-weight: 600;" onchange="alCambiarClienteReunion()">
+                                    <option value="">-- Seleccionar Cliente Registrado --</option>
+                                </select>
+                                <div id="wrap-reu-cliente-otro" style="display: none; margin-bottom: 14px; background: #eef2ff; border: 1px dashed #6366f1; border-radius: 8px; padding: 10px 12px;">
+                                    <label class="op-form-label" style="font-size: 12px; color: #4338ca; margin-bottom: 4px;">Nombre del Nuevo Prospecto / Cliente:</label>
+                                    <input type="text" id="reu-cliente-otro" class="form-input" placeholder="Escribe el nombre del cliente o empresa prospecto...">
+                                </div>
 
-                                <label class="op-form-label">Nombre del Proyecto*</label>
-                                <input type="text" id="reu-proyecto" class="form-input" placeholder="Ej. Gira de Trabajo, Conferencia Anual...">
+                                <label class="op-form-label">📝 Nombre de la Reunión / Proyecto Tentativo*</label>
+                                <input type="text" id="reu-proyecto" class="form-input" placeholder="Ej. Gira de Trabajo Heineken, Conferencia Médica 2026...">
+                                <span style="display: block; font-size: 11.5px; color: #64748b; margin-top: 4px;">
+                                    <i class="ph ph-info"></i> Título descriptivo de la reunión. Al convertirse en OP, se asignará como nombre oficial del evento.
+                                </span>
                             </div>
 
-                            <!-- Columna 2 -->
+                            <!-- Columna 2: Asistentes y Estimaciones -->
                             <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                <label class="op-form-label">Asistentes*</label>
-                                <input type="text" id="reu-asistentes" class="form-input" style="margin-bottom: 14px;" placeholder="Ej. Juan, Pedro, Maria...">
+                                <label class="op-form-label">👥 Asistentes de la Reunión (Personal Activo VPRO)*</label>
+                                
+                                <!-- Tags interactivos de asistentes -->
+                                <div id="wrap-reu-asistentes-tags" style="min-height: 42px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 10px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 8px;">
+                                    <span id="reu-asistentes-placeholder" style="color: #94a3b8; font-size: 12.5px;">Ningún asistente seleccionado aún.</span>
+                                </div>
 
-                                <label class="op-form-label">Presupuesto Estimado ($)</label>
-                                <input type="number" id="reu-presupuesto" class="form-input" style="margin-bottom: 14px;" step="1000" placeholder="0.00">
+                                <!-- Selector de colaboradores activos y botón externo -->
+                                <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                                    <select id="sel-reu-empleado-agregar" class="form-input" style="flex: 1; font-size: 12.5px;" onchange="agregarAsistenteReunion(this.value); this.value='';">
+                                        <option value="">+ Seleccionar Colaborador Activo...</option>
+                                    </select>
+                                    <button type="button" class="btn-cat-new" style="padding: 6px 12px; font-size: 12px; white-space: nowrap;" onclick="agregarAsistenteExternoPrompt()" title="Agregar persona o contacto externo">
+                                        <i class="ph ph-user-plus"></i> + Externo
+                                    </button>
+                                </div>
 
-                                <label class="op-form-label">Fecha Probable del Evento (Opcional)</label>
-                                <input type="date" id="reu-fecha-probable" class="form-input">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label class="op-form-label">Presupuesto Estimado ($)</label>
+                                        <input type="number" id="reu-presupuesto" class="form-input" step="1000" placeholder="0.00">
+                                    </div>
+                                    <div>
+                                        <label class="op-form-label">Fecha Probable Evento</label>
+                                        <input type="date" id="reu-fecha-probable" class="form-input">
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -2243,6 +2271,9 @@
                         <div class="cat-actions-bar">
                             <button type="button" class="btn-cat-save" id="btn-guardar-reu" onclick="guardarReunionForm()">
                                 <i class="ph ph-floppy-disk"></i> <span id="lbl-btn-guardar-reu">💾 Guardar Nueva Reunión</span>
+                            </button>
+                            <button type="button" class="btn-cat-del" id="btn-eliminar-reu" style="display: none;" onclick="confirmarEliminarReunion()">
+                                <i class="ph ph-trash"></i> Eliminar Minuta
                             </button>
                             <button type="button" class="btn-cat-new" onclick="limpiarFormReunion()">
                                 <i class="ph ph-plus-circle"></i> Nuevo / Limpiar

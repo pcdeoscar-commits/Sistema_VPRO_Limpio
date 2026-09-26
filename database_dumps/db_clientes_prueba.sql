@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict yUFt10dlgK2ne61cwj4X7uH1O95T7WEHuDf1cXCUnMXeeAiZ5ALaAgjenGvYVQ4
+\restrict WdyE4vFAaYWxhLt33Go1FYMVhRD2jzPaMgukD1UB4fsXnVQJ1LPPXAKNoSDOtAU
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -19,6 +19,11 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE IF EXISTS ONLY public.clientes DROP CONSTRAINT IF EXISTS clientes_pkey;
+ALTER TABLE IF EXISTS ONLY public.clientes DROP CONSTRAINT IF EXISTS cliente_empresa_unico;
+ALTER TABLE IF EXISTS public.clientes ALTER COLUMN id_cliente DROP DEFAULT;
+DROP SEQUENCE IF EXISTS public.clientes_id_cliente_seq;
+DROP TABLE IF EXISTS public.clientes;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -127,5 +132,5 @@ ALTER TABLE ONLY public.clientes
 -- PostgreSQL database dump complete
 --
 
-\unrestrict yUFt10dlgK2ne61cwj4X7uH1O95T7WEHuDf1cXCUnMXeeAiZ5ALaAgjenGvYVQ4
+\unrestrict WdyE4vFAaYWxhLt33Go1FYMVhRD2jzPaMgukD1UB4fsXnVQJ1LPPXAKNoSDOtAU
 

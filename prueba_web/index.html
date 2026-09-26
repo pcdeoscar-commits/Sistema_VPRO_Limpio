@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Íconos modernos Phosphor -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Librería Chart.js para Analítica y Gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Variables de color estilo SaaS (Minimalismo y Acento) */
         :root {
@@ -895,6 +897,23 @@
             background-color: rgba(239, 68, 68, 0.15);
             font-weight: 600;
         }
+
+        /* --- ESTILOS DE CHECKOUT & CHECK-IN --- */
+        .badge-chk {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-chk.nuevo { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .badge-chk.pendiente { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .badge-chk.despachado { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .badge-chk.recibido { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
     </style>
 </head>
 <body>
@@ -930,29 +949,29 @@
             <div class="nav-item" data-roles="ADMIN,VENTAS" onclick="cambiarVista('vista-cotizaciones')">
                 <div class="nav-label"><i class="ph ph-file-text"></i> <span class="nav-text">Cotizaciones</span></div>
             </div>
-            <div class="nav-item" data-roles="ADMIN,PRODUCCION" onclick="cambiarVista('vista-checkout')">
+            <div class="nav-item" data-roles="todos" onclick="cambiarVista('vista-checkout')">
                 <div class="nav-label"><i class="ph ph-package"></i> <span class="nav-text">Checkout [VPF]</span></div>
             </div>
             <div class="nav-item" data-roles="ADMIN,PRODUCCION" onclick="cambiarVista('vista-incidencias')">
                 <div class="nav-label"><i class="ph ph-warning-circle"></i> <span class="nav-text">Incidencias</span></div>
             </div>
     
-            <div class="nav-item" data-roles="ADMIN" onclick="cambiarVista('vista-danados')">
+            <div class="nav-item" data-roles="ADMIN,PRODUCCION,ALMACEN,COORDINADOR" onclick="cambiarVista('vista-danados')">
                 <div class="nav-label"><i class="ph ph-flag"></i> <span class="nav-text">Equipos con Daño</span></div>
-                <span class="nav-badge alert" id="badge-danados">3</span>
+                <span class="nav-badge alert" id="badge-danados">0</span>
             </div>
-            <div class="nav-item" data-roles="ADMIN" onclick="cambiarVista('vista-gastos')">
+            <div class="nav-item" data-roles="ADMIN,PRODUCCION,COORDINADOR" onclick="cambiarVista('vista-gastos')">
                 <div class="nav-label"><i class="ph ph-money"></i> <span class="nav-text">Reporte de Gastos</span></div>
-                <span class="nav-badge info" id="badge-gastos">9</span>
+                <span class="nav-badge info" id="badge-gastos">0</span>
             </div>
     
-            <div class="nav-item" data-roles="ADMIN" onclick="cambiarVista('vista-analitica')">
+            <div class="nav-item" data-roles="ADMIN,COORDINADOR" onclick="cambiarVista('vista-analitica')">
                 <div class="nav-label"><i class="ph ph-chart-line-up"></i> <span class="nav-text">Analítica y KPIs</span></div>
             </div>
-            <div class="nav-item" data-roles="ADMIN,RRHH" onclick="cambiarVista('vista-rh')">
+            <div class="nav-item" data-roles="ADMIN,RRHH,COORDINADOR" onclick="cambiarVista('vista-rh')">
                 <div class="nav-label"><i class="ph ph-users"></i> <span class="nav-text">Recursos Humanos</span></div>
             </div>
-            <div class="nav-item" data-roles="ADMIN,RRHH" onclick="cambiarVista('vista-checador')">
+            <div class="nav-item" data-roles="todos" onclick="cambiarVista('vista-checador')">
                 <div class="nav-label"><i class="ph ph-fingerprint"></i> <span class="nav-text">Checador</span></div>
             </div>
         </div>
@@ -1028,49 +1047,211 @@
                 </div>
             </div>
 
-            <!-- 📦 CAJA 2: VISTA KIOSCO -->
-            <div id="vista-checador" class="vista-modulo">
-                <div id="modulo-checador" class="modulo-card kiosco-ampliado">
-                    <!-- CABECERA: Reloj y Escáner -->
-                    <div class="kiosco-header">
-                        <div class="reloj-kiosco" id="reloj-pantalla">00:00:00</div>
-                        <div class="fecha-kiosco" id="fecha-pantalla">Cargando fecha...</div>
-                        <input type="password" id="input-gafete" placeholder="Pasa tu código QR por el lector digital..." autocomplete="off" autofocus>
-                        <div id="kiosco-alerta" style="display: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 15px; margin-top: 10px;"></div>
-                    </div>
+            <!-- 📦 CAJA 2: VISTA KIOSCO / CHECADOR -->
+            <div id="vista-checador" class="vista-modulo" style="max-width: 1250px; margin: 0 auto;">
+                
+                <!-- PESTAÑAS CHECADOR -->
+                <div style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; padding-bottom: 8px;">
+                    <button type="button" id="tab-checador-btn-kiosco" onclick="cambiarPestanaChecador('kiosco')" style="background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-fingerprint"></i> Terminal Kiosco en Vivo
+                    </button>
+                    <button type="button" id="tab-checador-btn-credencial" onclick="cambiarPestanaChecador('credencial')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-identification-card"></i> Mi Credencial Digital VPRO
+                    </button>
+                    <button type="button" id="tab-checador-btn-auditoria" onclick="cambiarPestanaChecador('auditoria')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-calendar-check"></i> Consulta y Auditoría de Asistencia
+                    </button>
+                </div>
 
-                    <!-- CUERPO: 2 Columnas -->
-                    <div class="kiosco-body">
-                        <!-- Columna Izquierda: Perfil Escaneado -->
-                        <div class="kiosco-perfil" id="kiosco-perfil-scan">
-                            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="scan-foto" alt="Foto">
-                            <h3 id="scan-nombre" style="margin: 10px 0 0 0;">Esperando lectura...</h3>
-                            <p id="scan-id" style="color: var(--text-muted); font-size: 12px; margin: 4px 0 16px 0;">--</p>
-                            <div id="scan-badge" style="background: #e5e7eb; color: #374151; padding: 8px; border-radius: 6px; font-weight: bold;">--</div>
+                <!-- SUBVISTA 1: TERMINAL KIOSCO EN VIVO -->
+                <div id="subvista-checador-kiosco">
+                    <div id="modulo-checador" class="modulo-card kiosco-ampliado" style="margin: 0 auto; max-width: 100%;">
+                        <!-- CABECERA: Reloj y Escáner -->
+                        <div class="kiosco-header">
+                            <div class="reloj-kiosco" id="reloj-pantalla">00:00:00</div>
+                            <div class="fecha-kiosco" id="fecha-pantalla">Cargando fecha...</div>
+                            <div style="display: flex; justify-content: center; gap: 12px; max-width: 650px; margin: 0 auto;">
+                                <input type="password" id="input-gafete" placeholder="Pasa tu código QR por el lector digital..." autocomplete="off" autofocus style="flex: 1;">
+                                <button onclick="cargarMatrizKiosco()" title="Refrescar Matriz" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 16px; cursor: pointer;">
+                                    <i class="ph ph-arrows-clockwise" style="font-size: 20px;"></i>
+                                </button>
+                            </div>
+                            <div id="kiosco-alerta" style="display: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 15px; margin-top: 14px; max-width: 650px; margin-left: auto; margin-right: auto;"></div>
                         </div>
 
-                        <!-- Columna Derecha: Matriz de Asistencia -->
-                        <div class="kiosco-matriz">
-                            <h4 style="margin-top: 0; margin-bottom: 16px; color: var(--text-main);">📊 MATRIZ DE ASISTENCIA DEL DÍA</h4>
-                            <div class="tabla-container">
-                                <table class="tabla-vpro">
-                                    <thead>
-                                        <tr>
-                                            <th>Empleado</th>
-                                            <th>Entrada Mat.</th>
-                                            <th>Salida Mat.</th>
-                                            <th>Entrada Vesp.</th>
-                                            <th>Salida Vesp.</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tabla-asistencia-body">
-                                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Esperando datos...</td></tr>
-                                    </tbody>
-                                </table>
+                        <!-- CUERPO: 2 Columnas -->
+                        <div class="kiosco-body">
+                            <!-- Columna Izquierda: Perfil Escaneado -->
+                            <div class="kiosco-perfil" id="kiosco-perfil-scan">
+                                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="scan-foto" alt="Foto">
+                                <h3 id="scan-nombre" style="margin: 10px 0 0 0; color: #0f172a; font-size: 16px;">Esperando lectura...</h3>
+                                <p id="scan-id" style="color: var(--text-muted); font-size: 12px; margin: 4px 0 16px 0;">--</p>
+                                <div id="scan-badge" style="background: #e5e7eb; color: #374151; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 13px;">--</div>
+                                <div id="scan-detalles-turno" style="margin-top: 14px; font-size: 12px; color: #64748b; text-align: left; background: white; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; display: none;">
+                                    <div><b>Matutino:</b> <span id="scan-mat-in">--</span> / <span id="scan-mat-out">--</span></div>
+                                    <div style="margin-top: 4px;"><b>Vespertino:</b> <span id="scan-vesp-in">--</span> / <span id="scan-vesp-out">--</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Columna Derecha: Matriz de Asistencia -->
+                            <div class="kiosco-matriz">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <h4 style="margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                                        📊 MATRIZ DE ASISTENCIA DEL DÍA (HOY)
+                                    </h4>
+                                    <input type="text" id="filtro-kiosco-tabla" oninput="filtrarMatrizKiosco(this.value)" placeholder="🔍 Buscar empleado..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; width: 200px;">
+                                </div>
+                                <div class="tabla-container" style="max-height: 440px;">
+                                    <table class="tabla-vpro" id="tabla-asistencia-kiosco">
+                                        <thead>
+                                            <tr>
+                                                <th>Empleado</th>
+                                                <th>Entrada Mat.</th>
+                                                <th>Salida Mat.</th>
+                                                <th>Entrada Vesp.</th>
+                                                <th>Salida Vesp.</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tabla-asistencia-body">
+                                            <tr><td colspan="5" style="text-align: center; padding: 20px;">Esperando datos del checador...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- SUBVISTA 2: MI CREDENCIAL DIGITAL VPRO -->
+                <div id="subvista-checador-credencial" style="display: none;">
+                    <div style="background: white; border-radius: 16px; border: 1px solid var(--border-color); padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); max-width: 900px; margin: 0 auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                            <div>
+                                <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                    <i class="ph ph-identification-card" style="color: var(--accent-color);"></i> Credencial Digital Institucional VPRO
+                                </h2>
+                                <p style="color: var(--text-muted); font-size: 13.5px; margin: 4px 0 0 0;">Presenta este código QR en la terminal física para registrar tus marcas diarias de asistencia.</p>
+                            </div>
+                            <button onclick="cargarCredencialPersonal()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                                <i class="ph ph-arrows-clockwise"></i> Recargar
+                            </button>
+                        </div>
+
+                        <!-- Card de Gafete / Credencial -->
+                        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 14px; padding: 24px; color: white; display: flex; flex-wrap: wrap; gap: 24px; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.15); margin-bottom: 28px;">
+                            <div style="text-align: center; min-width: 140px;">
+                                <img id="credencial-foto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Foto Colaborador" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                                <div id="credencial-badge-rol" style="background: #0284c7; color: white; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; margin-top: 10px; text-transform: uppercase;">COLABORADOR</div>
+                            </div>
+                            <div style="flex: 2; min-width: 250px;">
+                                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #38bdf8; font-weight: 700;">PRODUCCIONES VPRO S.A. DE C.V.</div>
+                                <h3 id="credencial-nombre" style="margin: 6px 0; font-size: 22px; color: #ffffff;">Cargando usuario...</h3>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; font-size: 13px;">
+                                    <div><span style="color: #94a3b8;">ID Empleado:</span> <b id="credencial-id" style="color: #f8fafc;">--</b></div>
+                                    <div><span style="color: #94a3b8;">Departamento:</span> <b id="credencial-depto" style="color: #f8fafc;">--</b></div>
+                                    <div><span style="color: #94a3b8;">Puesto:</span> <b id="credencial-puesto" style="color: #f8fafc;">--</b></div>
+                                    <div><span style="color: #94a3b8;">Ingreso:</span> <b id="credencial-ingreso" style="color: #f8fafc;">--</b></div>
+                                </div>
+                            </div>
+                            <div style="text-align: center; background: white; padding: 16px; border-radius: 12px; min-width: 160px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                                <div id="credencial-qr-container">
+                                    <img id="credencial-qr-img" src="" alt="QR Asistencia" style="width: 130px; height: 130px; object-fit: contain; display: block; margin: 0 auto;">
+                                </div>
+                                <a id="credencial-btn-descargar-qr" href="#" download="QR_VPRO.png" style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #0284c7; text-decoration: none; font-weight: 700; margin-top: 8px;">
+                                    <i class="ph ph-download-simple"></i> Descargar QR
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Bitácora Personal de Asistencia de Hoy -->
+                        <div>
+                            <h4 style="color: #0f172a; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-clock"></i> Mis Marcas de Asistencia (Hoy)
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+                                    <div style="font-size: 11px; color: #64748b; font-weight: 700;">1. ENTRADA MATUTINA</div>
+                                    <div id="mi-marca-mat-in" style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 4px;">--:--:--</div>
+                                    <div id="mi-marca-mat-in-est" style="font-size: 11px; margin-top: 4px;">--</div>
+                                </div>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+                                    <div style="font-size: 11px; color: #64748b; font-weight: 700;">2. SALIDA COMIDA</div>
+                                    <div id="mi-marca-mat-out" style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 4px;">--:--:--</div>
+                                    <div id="mi-marca-mat-out-est" style="font-size: 11px; margin-top: 4px;">--</div>
+                                </div>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+                                    <div style="font-size: 11px; color: #64748b; font-weight: 700;">3. REGRESO COMIDA</div>
+                                    <div id="mi-marca-vesp-in" style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 4px;">--:--:--</div>
+                                    <div id="mi-marca-vesp-in-est" style="font-size: 11px; margin-top: 4px;">--</div>
+                                </div>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+                                    <div style="font-size: 11px; color: #64748b; font-weight: 700;">4. SALIDA VESPERTINA</div>
+                                    <div id="mi-marca-vesp-out" style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 4px;">--:--:--</div>
+                                    <div id="mi-marca-vesp-out-est" style="font-size: 11px; margin-top: 4px;">--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBVISTA 3: AUDITORÍA GERENCIAL DE ASISTENCIA -->
+                <div id="subvista-checador-auditoria" style="display: none;">
+                    <div style="background: white; border-radius: 16px; border: 1px solid var(--border-color); padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                            <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-calendar-check" style="color: #6366f1;"></i> Auditoría y Reportes de Asistencia
+                            </h2>
+                            <button onclick="cargarAuditoriaAsistencia()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                                <i class="ph ph-arrows-clockwise"></i> Consultar
+                            </button>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Desde:</label>
+                                <input type="date" id="filtro-auditoria-inicio" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Hasta:</label>
+                                <input type="date" id="filtro-auditoria-fin" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Departamento:</label>
+                                <select id="filtro-auditoria-depto" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; min-width: 160px;">
+                                    <option value="TODOS">Todos</option>
+                                    <option value="AUDIO">Audio</option>
+                                    <option value="VIDEO">Video</option>
+                                    <option value="ILUMINACION">Iluminación</option>
+                                    <option value="PRODUCCION">Producción</option>
+                                    <option value="ADMINISTRACION">Administración</option>
+                                    <option value="SISTEMAS">Sistemas</option>
+                                    <option value="VENTAS">Ventas</option>
+                                </select>
+                            </div>
+                            <button onclick="cargarAuditoriaAsistencia()" style="background: var(--accent-color); color: white; border: none; padding: 9px 18px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                Filtrar Bitácora
+                            </button>
+                        </div>
+                        <div class="tabla-container">
+                            <table class="tabla-vpro">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Empleado</th>
+                                        <th>Entrada Mat.</th>
+                                        <th>Salida Mat.</th>
+                                        <th>Entrada Vesp.</th>
+                                        <th>Salida Vesp.</th>
+                                        <th>Estado / Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-auditoria-body">
+                                    <tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">Selecciona un rango de fechas y presiona Consultar.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- 📦 CAJA 3: VISTA ÓRDENES DE PRODUCCIÓN -->
@@ -1150,69 +1331,542 @@
 
             <!-- 📦 CAJA 4: EQUIPOS CON DAÑO -->
             <div id="vista-danados" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                
+                <!-- Encabezado -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-                    <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                        <i class="ph ph-flag" style="color: #ef4444;"></i> Radar de Equipos con Daño en Reparación
-                    </h2>
-                    <button onclick="cargarEquiposDanados()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-flag" style="color: #ef4444;"></i> Control de Equipos y Hardware en Taller / Falla
+                        </h2>
+                        <p style="color: var(--text-muted); font-size: 13.5px; margin: 4px 0 0 0;">Consola unificada con seguimiento de tickets activos en la tabla de reparaciones y expediente clínico.</p>
+                    </div>
+                    <button onclick="cargarModuloDanados()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
                         <i class="ph ph-arrows-clockwise"></i> Actualizar
                     </button>
                 </div>
-                <p style="color: var(--text-muted); font-size: 14px; margin-top: 0; margin-bottom: 20px;">Monitoreo en tiempo real de equipos reportados con fallas o en proceso de reparación en taller.</p>
-                <div class="tabla-container" style="background: white;">
-                    <table class="tabla-vpro">
-                        <thead>
-                            <tr>
-                                <th>N° Servicio</th>
-                                <th>Fecha Reporte</th>
-                                <th>Código / ID</th>
-                                <th>Equipo</th>
-                                <th>Área</th>
-                                <th>Reportó</th>
-                                <th>Estado</th>
-                                <th>Falla Detectada</th>
-                                <th>Costo Est.</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-danados-body">
-                            <tr><td colspan="9" style="text-align: center; padding: 20px;">Cargando equipos dañados...</td></tr>
-                        </tbody>
-                    </table>
+
+                <!-- Sub-pestañas Dañados -->
+                <div style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; padding-bottom: 8px;">
+                    <button type="button" id="tab-danados-btn-radar" onclick="cambiarPestanaDanados('radar')" style="background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-warning-octagon"></i> 🚨 Radar y Reportes Activos
+                    </button>
+                    <button type="button" id="tab-danados-btn-expediente" onclick="cambiarPestanaDanados('expediente')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-book-open"></i> 📖 Expediente Clínico (Historial)
+                    </button>
                 </div>
+
+                <!-- PESTAÑA 1: RADAR Y REPORTES ACTIVOS -->
+                <div id="subvista-danados-radar">
+                    
+                    <!-- Formulario Desplegable: Registrar Reporte Directo -->
+                    <details style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 24px; padding: 16px 20px;">
+                        <summary style="font-weight: 700; color: #0f172a; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14.5px; user-select: none;">
+                            <span>🛠️ REGISTRAR REPORTE DIRECTO DE OFICINA / MANTENIMIENTO INTERNO</span>
+                        </summary>
+                        <div style="margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">🔍 Teclea o selecciona el Equipo / Activo:</label>
+                                    <div id="contenedor-input-directo" style="position: relative;">
+                                        <div style="display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 10px;">
+                                            <input type="text" id="input-danos-equipo-directo" 
+                                                placeholder="🔍 Teclea nombre o código del equipo..." 
+                                                autocomplete="off"
+                                                oninput="filtrarSugerenciasDirecto(this.value)" 
+                                                onfocus="activarSugerenciasDirecto()"
+                                                onkeydown="manejarKeydownSugerenciasDirecto(event)"
+                                                style="width: 100%; border: none; outline: none; padding: 9px 0; font-size: 13px; background: transparent; font-family: inherit;">
+                                            <button type="button" id="btn-limpiar-busqueda-directo" onclick="limpiarBusquedaDirecto()" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 2px;">
+                                                <i class="ph ph-x-circle"></i>
+                                            </button>
+                                        </div>
+                                        <div id="sugerencias-directo-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 280px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 10px 24px rgba(0,0,0,0.12); z-index: 1050;">
+                                        </div>
+                                        <input type="hidden" id="danos-sel-equipo-directo" value="">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">🩺 Tipo de Evento:</label>
+                                    <select id="danos-tipo-evento" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                                        <option value="MANTENIMIENTO_TÉCNICO">Mantenimiento Técnico</option>
+                                        <option value="FALLA_OPERATIVA">Falla Operativa</option>
+                                        <option value="DAÑO_FÍSICO_OFICINA">Daño Físico Oficina</option>
+                                        <option value="RESPALDO_SISTEMAS">Respaldo Sistemas</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📊 Estado Inicial del Ticket:</label>
+                                    <select id="danos-estado-inicial" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                                        <option value="PENDIENTE">PENDIENTE</option>
+                                        <option value="EN TALLER">EN TALLER</option>
+                                        <option value="DAÑADO">DAÑADO</option>
+                                        <option value="BAJA">BAJA</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">💰 Costo Estimado Reparación ($):</label>
+                                    <input type="number" id="danos-costo-estimado" min="0" step="50" value="0.00" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 14px;">
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📝 Diagnóstico / Detalle del Daño:</label>
+                                <textarea id="danos-txt-detalle" placeholder="Ej. El aire acondicionado tira agua sobre la mesa de trabajo o la PC de edición no manda señal de video..." rows="3" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;"></textarea>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: flex-end; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📸 Adjuntar Evidencia Fotográfica (Opcional):</label>
+                                    <input type="file" id="danos-input-foto" accept="image/*" style="font-size: 12px;">
+                                </div>
+                                <button type="button" onclick="guardarReporteDirectoDanado()" style="background: var(--accent-color); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                                    💾 REGISTRAR TICKET EN POSTGRES
+                                </button>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Filtros de Auditoría -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <div>
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Desde:</label>
+                            <input type="date" id="filtro-danos-desde" onchange="aplicarFiltrosDanados()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Hasta:</label>
+                            <input type="date" id="filtro-danos-hasta" onchange="aplicarFiltrosDanados()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Departamento:</label>
+                            <select id="filtro-danos-depto" onchange="aplicarFiltrosDanados()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; min-width: 150px; font-size: 13px;">
+                                <option value="Todos">Todos</option>
+                                <option value="ADMINISTRACION">ADMINISTRACION</option>
+                                <option value="EDICION">EDICION</option>
+                                <option value="PRODUCCION">PRODUCCION</option>
+                                <option value="SISTEMAS">SISTEMAS</option>
+                                <option value="VENTAS">VENTAS</option>
+                                <option value="ALMACEN">ALMACEN</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Reportante / Responsable:</label>
+                            <select id="filtro-danos-reportante" onchange="aplicarFiltrosDanados()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; min-width: 180px; font-size: 13px;">
+                                <option value="Todos">Todos</option>
+                            </select>
+                        </div>
+                        <button onclick="resetearFiltrosDanados()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;">
+                            Resetear
+                        </button>
+                    </div>
+
+                    <!-- 4 Tarjetas KPI -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="background: #fee2e2; border: 1px solid #fca5a5; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #991b1b; text-transform: uppercase;">Tickets Activos en Taller</div>
+                            <div id="kpi-danados-total" style="font-size: 32px; font-weight: 800; color: #b91c1c; margin-top: 4px;">0</div>
+                            <div style="font-size: 11.5px; color: #7f1d1d; margin-top: 4px;">En reparación o revisión</div>
+                        </div>
+                        <div style="background: #fef3c7; border: 1px solid #fde68a; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #92400e; text-transform: uppercase;">Promedio Días Fuera</div>
+                            <div id="kpi-danados-dias" style="font-size: 32px; font-weight: 800; color: #b45309; margin-top: 4px;">0 Días</div>
+                            <div style="font-size: 11.5px; color: #78350f; margin-top: 4px;">Tiempo de inactividad promedio</div>
+                        </div>
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Mayor Reportante</div>
+                            <div id="kpi-danados-top-rep" style="font-size: 22px; font-weight: 800; color: #1d4ed8; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</div>
+                            <div style="font-size: 11.5px; color: #1e3a8a; margin-top: 4px;">Colaborador con más reportes</div>
+                        </div>
+                        <div style="background: #f3e8ff; border: 1px solid #d8b4fe; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Área Principal</div>
+                            <div id="kpi-danados-top-area" style="font-size: 22px; font-weight: 800; color: #7e22ce; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</div>
+                            <div style="font-size: 11.5px; color: #581c87; margin-top: 4px;">Departamento con más fallas</div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfica de Inactividad por Personal -->
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-chart-bar" style="color: #ef4444;"></i> Gráfico de Inactividad y Tickets por Personal
+                        </h4>
+                        <div style="height: 260px; position: relative;">
+                            <canvas id="chart-danados-personal"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Matriz Activa de Reparaciones -->
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-table"></i> Matriz Activa de Reparaciones
+                            </h4>
+                            <input type="text" id="buscar-danados-tabla" oninput="filtrarTablaDanadosEnVivo(this.value)" placeholder="🔍 Buscar ticket, equipo, reportó..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; width: 250px;">
+                        </div>
+                        <div class="tabla-container" style="max-height: 420px;">
+                            <table class="tabla-vpro">
+                                <thead>
+                                    <tr>
+                                        <th>Ticket #</th>
+                                        <th>Fecha</th>
+                                        <th>Días Fuera</th>
+                                        <th>Código ID</th>
+                                        <th>Equipo</th>
+                                        <th>Departamento</th>
+                                        <th>Reportó</th>
+                                        <th>Estado</th>
+                                        <th>Falla Detectada</th>
+                                        <th>Costo Est.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-danados-body">
+                                    <tr><td colspan="10" style="text-align: center; padding: 20px;">Cargando equipos dañados...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Módulo de Actualización / Cierre de Tickets -->
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+                        <h4 style="margin: 0 0 12px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-check-circle" style="color: #16a34a;"></i> ⚙️ Actualizar o Cerrar Ticket de Reparación
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 16px; align-items: flex-end;">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Seleccione Ticket para resolver:</label>
+                                <select id="sel-ticket-danado-cerrar" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                                    <option value="">--- Seleccionar Ticket ---</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Nuevo Estado:</label>
+                                <select id="sel-estado-danado-cerrar" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                                    <option value="RESUELTO">RESUELTO</option>
+                                    <option value="REPARADO">REPARADO</option>
+                                    <option value="BAJA DEFINITIVA">BAJA DEFINITIVA</option>
+                                </select>
+                            </div>
+                            <button type="button" onclick="cerrarTicketDanado()" style="background: #16a34a; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                <i class="ph ph-check"></i> REHABILITAR EQUIPO / CERRAR
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- PESTAÑA 2: EXPEDIENTE CLÍNICO DE ACTIVO -->
+                <div id="subvista-danados-expediente" style="display: none;">
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 10px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-magnifying-glass" style="color: var(--accent-color); font-size: 20px;"></i> 
+                            <span>Rastreador de Historial de Equipo</span>
+                        </h4>
+                        <p style="margin: 0 0 14px 0; font-size: 12.5px; color: #64748b;">
+                            Teclea cualquier palabra clave (marca, descripción, nombre o código) para encontrar el equipo inmediatamente sin necesidad de conocer el código.
+                        </p>
+                        <div style="position: relative;">
+                            <div id="contenedor-input-expediente" style="position: relative; width: 100%;">
+                                <div style="display: flex; align-items: center; background: white; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; transition: border-color 0.2s, box-shadow 0.2s;">
+                                    <i class="ph ph-magnifying-glass" style="color: #64748b; font-size: 18px; margin-right: 8px;"></i>
+                                    <input type="text" id="input-expediente-buscar" 
+                                        placeholder="🔍 Escribe para buscar: ej. laptop, audifonos, behringer, sony, pantalla, luces, caja..." 
+                                        autocomplete="off"
+                                        oninput="filtrarSugerenciasExpediente(this.value)" 
+                                        onfocus="activarSugerenciasExpediente()" 
+                                        onkeydown="manejarKeydownSugerenciasExpediente(event)"
+                                        style="width: 100%; border: none; outline: none; padding: 11px 0; font-size: 13.5px; background: transparent; color: #0f172a; font-family: inherit;">
+                                    <button type="button" id="btn-limpiar-busqueda-expediente" onclick="limpiarBusquedaExpediente()" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; font-size: 16px;">
+                                        <i class="ph ph-x-circle"></i>
+                                    </button>
+                                </div>
+                                <!-- Menú flotante de resultados en vivo -->
+                                <div id="sugerencias-expediente-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 320px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 12px 28px rgba(15,23,42,0.15); z-index: 1050;">
+                                </div>
+                                <input type="hidden" id="sel-expediente-equipo-buscar" value="">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ficha del Activo y Foto -->
+                    <div id="danos-expediente-resultado" style="display: none;">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                                <h3 id="expediente-codigo-titulo" style="margin-top: 0; color: #0f172a;">📁 Expediente Clínico: --</h3>
+                                <div style="margin-top: 14px; font-size: 13.5px; line-height: 1.8;">
+                                    <div><b>Equipo:</b> <span id="expediente-nombre-equipo">--</span></div>
+                                    <div><b>Estatus Actual:</b> <span id="expediente-estatus-badge" style="background: #fef3c7; color: #92400e; padding: 3px 10px; border-radius: 12px; font-weight: 700; font-size: 12px;">--</span></div>
+                                    <div><b>Total de Movimientos Registrados:</b> <span id="expediente-total-movs" style="font-weight: 700;">0</span></div>
+                                </div>
+                            </div>
+                            <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; text-align: center;">
+                                <h5 style="margin: 0 0 10px 0; color: #475569;">📸 Evidencia Fotográfica</h5>
+                                <div style="width: 100%; height: 160px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px;">
+                                    <img id="expediente-foto-img" src="" alt="Sin Foto" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                    <div id="expediente-sin-foto" style="color: #94a3b8; font-size: 12.5px;">No hay foto vinculada</div>
+                                </div>
+                                <input type="file" id="expediente-nueva-foto" accept="image/*" style="font-size: 11px;">
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Historial Clínico -->
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-clock-counter-clockwise"></i> ⏳ Historial de Reparaciones y Movimientos
+                            </h4>
+                            <div class="tabla-container" style="max-height: 380px;">
+                                <table class="tabla-vpro">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Folio OP / Ref</th>
+                                            <th>Empleado</th>
+                                            <th>Tipo Evento</th>
+                                            <th>Detalle / Falla</th>
+                                            <th>Costo</th>
+                                            <th>Estado Posterior</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-expediente-historial-body">
+                                        <tr><td colspan="7" style="text-align: center; padding: 20px;">Sin historial cargado.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- 📦 CAJA 5: REPORTE DE GASTOS -->
             <div id="vista-gastos" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                
+                <!-- Encabezado -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
-                    <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                        <i class="ph ph-money" style="color: #3b82f6;"></i> Auditoría y Reportes de Gastos Operativos
-                    </h2>
-                    <button onclick="cargarReporteGastos()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-money" style="color: #3b82f6;"></i> Rendición de Cuentas y Control de Gastos Operativos
+                        </h2>
+                        <p style="color: var(--text-muted); font-size: 13.5px; margin: 4px 0 0 0;">Comprobación de viáticos, odómetros de vehículos y auditoría financiera de eventos.</p>
+                    </div>
+                    <button onclick="cargarModuloGastos()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
                         <i class="ph ph-arrows-clockwise"></i> Actualizar
                     </button>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: 10px;">
-                        <div style="font-size: 13px; color: #1e40af; font-weight: 600;">COMPROBACIONES PENDIENTES</div>
-                        <div id="kpi-gastos-pendientes" style="font-size: 28px; font-weight: 700; color: #1d4ed8; margin-top: 4px;">--</div>
+
+                <!-- Sub-pestañas Gastos -->
+                <div style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; padding-bottom: 8px;">
+                    <button type="button" id="tab-gastos-btn-captura" onclick="cambiarPestanaGastos('captura')" style="background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-pencil-simple-line"></i> 📝 Rendición de Cuentas (Productor)
+                    </button>
+                    <button type="button" id="tab-gastos-btn-auditoria" onclick="cambiarPestanaGastos('auditoria')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-shield-check"></i> 🔍 Panel de Auditoría y Aprobación (Dirección)
+                    </button>
+                </div>
+
+                <!-- SUBVISTA 1: RENDICIÓN DE CUENTAS (PRODUCTOR) -->
+                <div id="subvista-gastos-captura">
+                    <!-- Selector de Folio OP Pendiente -->
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                        <label style="display: block; font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+                            📋 SELECCIONE FOLIO OP A RENDIR (LIBERADA POR BODEGA):
+                        </label>
+                        <select id="sel-gastos-folio-op" onchange="seleccionarFolioParaGastos(this.value)" style="width: 100%; max-width: 600px; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13.5px; font-weight: 600;">
+                            <option value="">--- Seleccionar Folio Pendiente ---</option>
+                        </select>
+                        <p style="color: #64748b; font-size: 12px; margin: 8px 0 0 0;">Solo se despliegan eventos concluidos y recibidos en almacén.</p>
+                    </div>
+
+                    <!-- Panel de Captura Dinámica -->
+                    <div id="gastos-panel-captura-formulario" style="display: none;">
+                        
+                        <!-- Tarjeta de Datos del Evento -->
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-size: 13px;">
+                                <div><span style="color: #64748b;">Folio VPRO:</span> <b id="gastos-info-folio" style="color: #0f172a;">OP-000</b></div>
+                                <div><span style="color: #64748b;">Cliente:</span> <b id="gastos-info-cliente" style="color: #0f172a;">--</b></div>
+                                <div><span style="color: #64748b;">Evento:</span> <b id="gastos-info-evento" style="color: #0f172a;">--</b></div>
+                                <div><span style="color: #64748b;">Productor Resp.:</span> <b id="gastos-info-productor" style="color: #0f172a;">--</b></div>
+                            </div>
+                        </div>
+
+                        <!-- Fila de Fechas, Empleado e Importe Entregado -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; background: #f8fafc; padding: 18px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📅 Fecha Desde:</label>
+                                <input type="date" id="gastos-input-desde" onchange="recalcularDiasGastos()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📅 Fecha Hasta:</label>
+                                <input type="date" id="gastos-input-hasta" onchange="recalcularDiasGastos()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">👤 Empleado que Rinde:</label>
+                                <input type="text" id="gastos-input-empleado" disabled style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #e2e8f0;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">🏢 Departamento:</label>
+                                <input type="text" id="gastos-input-depto" disabled style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: #e2e8f0;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 700; color: #1e40af; margin-bottom: 4px;">💰 Presupuesto Entregado ($):</label>
+                                <input type="number" id="gastos-input-entregado" min="0" step="100" value="0.00" oninput="recalcularTotalesGastos()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 2px solid #3b82f6; font-size: 14px; font-weight: 700;">
+                            </div>
+                        </div>
+
+                        <!-- Registro de Odómetros por Unidad Asignada -->
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                            <h4 style="margin: 0 0 14px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-car" style="color: #3b82f6;"></i> 🚗 Registro de Odómetros por Unidad Asignada
+                            </h4>
+                            <div id="gastos-odometros-lista" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                                <p style="color: var(--text-muted); font-size: 13px;">Cargando unidades asignadas...</p>
+                            </div>
+                        </div>
+
+                        <!-- Matriz Dinámica de Gastos por Día -->
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                <div>
+                                    <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                        <i class="ph ph-table"></i> 📊 Matriz Diaria de Desglose de Gastos
+                                    </h4>
+                                    <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 12.5px;">Captura el monto diario erogado en cada uno de los conceptos de viáticos.</p>
+                                </div>
+                                <button type="button" onclick="agregarFilaDiaGasto()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600;">
+                                    ➕ Agregar Día
+                                </button>
+                            </div>
+
+                            <div class="tabla-container" style="max-height: 420px; overflow-x: auto;">
+                                <table class="tabla-vpro" id="tabla-gastos-dias-captura">
+                                    <thead>
+                                        <tr>
+                                            <th>Día #</th>
+                                            <th>Fecha</th>
+                                            <th>Hotel</th>
+                                            <th>Transp.</th>
+                                            <th>Combustible</th>
+                                            <th>Casetas</th>
+                                            <th>Desayuno</th>
+                                            <th>Comida</th>
+                                            <th>Cenas</th>
+                                            <th>Varios</th>
+                                            <th>Total Día</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-gastos-dias-body">
+                                        <!-- Filas generadas por JS -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="background: #f1f5f9; font-weight: 700; color: #0f172a;">
+                                            <td colspan="2">TOTALES:</td>
+                                            <td id="tot-gasto-hotel">$0.00</td>
+                                            <td id="tot-gasto-transp">$0.00</td>
+                                            <td id="tot-gasto-combust">$0.00</td>
+                                            <td id="tot-gasto-casetas">$0.00</td>
+                                            <td id="tot-gasto-desay">$0.00</td>
+                                            <td id="tot-gasto-comida">$0.00</td>
+                                            <td id="tot-gasto-cenas">$0.00</td>
+                                            <td id="tot-gasto-varios">$0.00</td>
+                                            <td id="tot-gasto-gran-total" style="font-size: 14px; color: #1e40af;">$0.00</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Resumen Financiero y Remanente -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 18px; border-radius: 12px;">
+                                <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Presupuesto Entregado</div>
+                                <div id="resumen-gasto-entregado" style="font-size: 26px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">$0.00</div>
+                            </div>
+                            <div style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 18px; border-radius: 12px;">
+                                <div style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Total Comprobado / Gastado</div>
+                                <div id="resumen-gasto-subtotal" style="font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 4px;">$0.00</div>
+                            </div>
+                            <div id="card-gasto-remanente" style="background: #dcfce7; border: 1px solid #86efac; padding: 18px; border-radius: 12px;">
+                                <div id="lbl-gasto-remanente" style="font-size: 12px; font-weight: 700; color: #166534; text-transform: uppercase;">Remanente a Devolver a VPRO</div>
+                                <div id="resumen-gasto-remanente" style="font-size: 26px; font-weight: 800; color: #15803d; margin-top: 4px;">$0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- Botón de Envío Oficial -->
+                        <div style="text-align: right;">
+                            <button type="button" onclick="guardarInformeGastosProductor()" style="background: var(--accent-color); color: white; border: none; padding: 14px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                                <i class="ph ph-check-square-offset"></i> 💾 ENVIAR INFORME COMPLETO Y ARCHIVAR EVENTO
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="tabla-container" style="background: white;">
-                    <table class="tabla-vpro">
-                        <thead>
-                            <tr>
-                                <th>ID Informe</th>
-                                <th>Folio OP</th>
-                                <th>Evento</th>
-                                <th>Empleado Responsable</th>
-                                <th>Estatus Auditoría</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-gastos-body">
-                            <tr><td colspan="5" style="text-align: center; padding: 20px;">Cargando informes de gastos...</td></tr>
-                        </tbody>
-                    </table>
+
+                <!-- SUBVISTA 2: PANEL DE AUDITORÍA Y APROBACIÓN (DIRECCIÓN / ANA LILIA) -->
+                <div id="subvista-gastos-auditoria" style="display: none;">
+                    
+                    <!-- KPIs Auditoría -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">COMPROBACIONES PENDIENTES</div>
+                            <div id="kpi-gastos-pendientes" style="font-size: 32px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">0</div>
+                            <div style="font-size: 11.5px; color: #1e3a8a; margin-top: 4px;">Requieren cotejo y aprobación</div>
+                        </div>
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">TOTAL DE INFORMES AUDITADOS</div>
+                            <div id="kpi-gastos-auditados" style="font-size: 32px; font-weight: 800; color: #0f172a; margin-top: 4px;">0</div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 4px;">Archivados en Bóveda Histórica</div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Informes Registrados -->
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-receipt"></i> Bitácora de Informes de Rendición de Cuentas
+                            </h4>
+                            <input type="text" id="buscar-gastos-auditoria" oninput="filtrarTablaGastosAuditoria(this.value)" placeholder="🔍 Buscar informe, OP, evento..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; width: 250px;">
+                        </div>
+                        <div class="tabla-container" style="max-height: 440px;">
+                            <table class="tabla-vpro">
+                                <thead>
+                                    <tr>
+                                        <th>ID Informe</th>
+                                        <th>Folio OP</th>
+                                        <th>Evento</th>
+                                        <th>Empleado Responsable</th>
+                                        <th>Estatus Auditoría</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-gastos-body">
+                                    <tr><td colspan="6" style="text-align: center; padding: 20px;">Cargando informes de gastos...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Modal / Visor de Expediente Completo de Gastos -->
+                    <div class="modal-overlay" id="modal-gastos-expediente" style="display: none;">
+                        <div class="modal-box" style="max-width: 900px; text-align: left; width: 95%;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+                                <h3 id="modal-gasto-titulo" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 18px; color: #0f172a;">
+                                    <i class="ph ph-receipt" style="color: #3b82f6;"></i> Expediente de Comprobación: #000
+                                </h3>
+                                <button onclick="cerrarModalGastoExpediente()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted);">&times;</button>
+                            </div>
+                            
+                            <div id="modal-gasto-contenido" style="max-height: 520px; overflow-y: auto; font-size: 13px;">
+                                <!-- Llenado por JS -->
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+                                <button class="btn-cancelar" onclick="cerrarModalGastoExpediente()" style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 18px; cursor: pointer;">Cerrar</button>
+                                <button id="btn-aprobar-sellar-gasto" onclick="ejecutarAprobacionGasto()" style="background: #16a34a; color: white; border: none; padding: 10px 22px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                    <i class="ph ph-seal-check"></i> ✅ MARCAR COMO REVISADO Y APROBADO
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
+
             </div>
 
             <!-- 📦 CAJA 6: AUDITORÍA ASISTENCIA -->
@@ -2291,23 +2945,957 @@
             </div>
 
             <div id="vista-checkout" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
-                <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-package"></i> Checkout de Equipos [VPF]</h2>
-                <div class="info-banner"><i class="ph ph-check-circle"></i> Verificación de salida y retorno de equipo en almacén.</div>
+                
+                <!-- Encabezado -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                            <i class="ph ph-package" style="color: #ef4444;"></i> Checkout de Equipos [VPF]
+                        </h2>
+                        <p style="margin: 4px 0 0 0; font-size: 13.5px; color: #64748b;">
+                            Control de salida física de hardware, auditoría de daños y retorno a almacén
+                        </p>
+                    </div>
+                    <div id="checkout-badge-container">
+                        <span id="checkout-badge-estado" class="badge-chk nuevo">
+                            <i class="ph ph-clock"></i> NUEVO
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Barra de Selección Principal -->
+                <div class="op-section-card" style="margin-bottom: 20px; background: #f8fafc;">
+                    <div style="display: grid; grid-template-columns: 2fr 1.2fr auto; gap: 16px; align-items: flex-end;">
+                        <div>
+                            <label class="op-form-label"><i class="ph ph-clipboard-text"></i> 1️⃣ Orden de Producción Destino:</label>
+                            <select id="checkout-sel-op" class="op-select" onchange="alCambiarOPCheckout()">
+                                <option value="">--- Cargando órdenes de producción... ---</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="op-form-label"><i class="ph ph-user"></i> 👤 Operador / Convocado:</label>
+                            <select id="checkout-sel-empleado" class="op-select" onchange="alCambiarEmpleadoCheckout()">
+                                <option value="">--- Seleccione OP primero ---</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="button" class="btn-cat-new" onclick="cargarStatusCheckoutActual()" title="Recargar datos de la OP" style="height: 42px; margin: 0; padding: 0 16px;">
+                                <i class="ph ph-arrows-clockwise"></i> Actualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Barra de resumen de la OP -->
+                    <div id="checkout-info-op" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1; font-size: 13px; color: #475569; display: flex; flex-wrap: wrap; gap: 16px;">
+                        <span><i class="ph ph-users" style="color: #2563eb;"></i> <b>Convocados:</b> <span id="checkout-txt-convocados">--</span></span>
+                        <span><i class="ph ph-truck" style="color: #d97706;"></i> <b>Proveedores:</b> <span id="checkout-txt-proveedores">--</span></span>
+                        <span><i class="ph ph-toolbox" style="color: #16a34a;"></i> <b>Plantilla base:</b> <span id="checkout-txt-plantilla">---</span></span>
+                    </div>
+                </div>
+
+                <!-- Pestañas de Modo (Salida / Check-in) -->
+                <div class="op-tabs-header" style="margin-bottom: 20px;">
+                    <button type="button" class="op-tab-btn active" id="tab-checkout-salida" onclick="cambiarPestanaCheckout('salida')">
+                        <i class="ph ph-tray-arrow-up"></i> <span>📤 Salida de Hardware (Checkout)</span>
+                    </button>
+                    <button type="button" class="op-tab-btn" id="tab-checkout-checkin" onclick="cambiarPestanaCheckout('checkin')">
+                        <i class="ph ph-tray-arrow-down"></i> <span>📥 Retorno a Bodega (Check-in)</span>
+                    </button>
+                </div>
+
+                <!-- ============================================== -->
+                <!-- PESTAÑA 1: SALIDA DE HARDWARE (CHECKOUT)       -->
+                <!-- ============================================== -->
+                <div id="checkout-panel-salida">
+
+                    <!-- Selector de Plantilla / Kit e Inyector de Hardware -->
+                    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 16px; margin-bottom: 20px;">
+                        
+                        <!-- Cargar Kit / Plantilla -->
+                        <div class="op-section-card" style="margin-bottom: 0;">
+                            <h4 class="op-section-title" style="font-size: 14px; margin-bottom: 10px;">
+                                <i class="ph ph-bookmarks" style="color: #2563eb;"></i> Cargar Plantilla / Kit
+                            </h4>
+                            <p style="font-size: 12px; color: #64748b; margin-top: 0; margin-bottom: 8px;">
+                                Carga un conjunto predeterminado de herramientas para este operador:
+                            </p>
+                            <div style="display: flex; gap: 8px;">
+                                <select id="checkout-sel-kit" class="op-select" onchange="alSeleccionarKitCheckout()">
+                                    <option value="--- Sin plantilla ---">--- Sin plantilla ---</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Inyector Rápido de Hardware -->
+                        <div class="op-section-card" style="margin-bottom: 0;">
+                            <h4 class="op-section-title" style="font-size: 14px; margin-bottom: 10px;">
+                                <i class="ph ph-magnifying-glass-plus" style="color: #16a34a;"></i> Buscador e Inyector Rápido
+                            </h4>
+                            <div style="display: flex; gap: 8px; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <input type="text" id="checkout-buscar-hw" list="dl-catalogo-global" class="op-input" placeholder="Buscar equipo en catálogo maestro..." onchange="verificarDanoEquipoSeleccionado()">
+                                    <datalist id="dl-catalogo-global"></datalist>
+                                </div>
+                                <div style="width: 80px;">
+                                    <input type="number" id="checkout-cant-hw" class="op-input" value="1" min="1" title="Cantidad" style="text-align: center;">
+                                </div>
+                                <button type="button" class="btn-cat-save" onclick="inyectarHardwareCheckout()" style="background-color: #16a34a; white-space: nowrap; padding: 10px 14px;">
+                                    <i class="ph ph-plus-circle"></i> Agregar
+                                </button>
+                            </div>
+                            <div id="checkout-alerta-dano-hw" style="display: none; margin-top: 8px; font-size: 12px; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 6px 10px; border-radius: 6px;">
+                                ⚠️ <b>¡Atención!</b> Este equipo tiene un reporte de daño en taller. Se agregará con nota preventiva.
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Tabla de Equipos para Salida -->
+                    <div class="op-section-card" style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 class="op-section-title" style="margin: 0; font-size: 15px;">
+                                <i class="ph ph-list-checks" style="color: #ef4444;"></i> Equipos a Salir (<span id="checkout-conteo-items">0</span> artículos)
+                            </h4>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn-cat-new" onclick="agregarFilaVaciaCheckout()" style="padding: 6px 12px; font-size: 12.5px;">
+                                    <i class="ph ph-plus"></i> Fila Vacía
+                                </button>
+                                <button type="button" class="btn-cat-del" onclick="limpiarTablaSalidaCheckout()" style="padding: 6px 12px; font-size: 12.5px;">
+                                    <i class="ph ph-trash"></i> Vaciar Lista
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tabla-container" style="max-height: 420px; overflow-y: auto;">
+                            <table class="tabla-vpro" id="tabla-checkout-salida">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px; text-align: center;">#</th>
+                                        <th style="width: 140px;">Código / ID</th>
+                                        <th>Descripción del Hardware</th>
+                                        <th style="width: 90px; text-align: center;">Cant.</th>
+                                        <th>Observaciones / Notas Salida</th>
+                                        <th style="width: 60px; text-align: center;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-checkout-salida">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">
+                                            <i class="ph ph-package" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
+                                            No hay equipos agregados. Carga una plantilla o busca equipos arriba.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Guardar como plantilla / kit -->
+                        <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed #cbd5e1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <span style="font-size: 12.5px; font-weight: 600; color: #475569;">
+                                <i class="ph ph-floppy-disk"></i> Guardar esta lista como Kit:
+                            </span>
+                            <input type="text" id="checkout-nuevo-kit-nombre" class="op-input" placeholder="Nombre de plantilla (ej. Kit Cámaras y Audio)" style="max-width: 320px; padding: 6px 10px; font-size: 13px;">
+                            <button type="button" class="btn-cat-new" onclick="guardarComoPlantillaKit()" style="margin: 0; padding: 6px 14px; font-size: 12.5px;">
+                                <i class="ph ph-bookmark-simple"></i> Grabar Plantilla
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Incidencias y Proveedores -->
+                    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-bottom: 20px;">
+                        <div class="op-section-card" style="margin-bottom: 0; background: #eff6ff; border-color: #bfdbfe;">
+                            <h4 class="op-section-title" style="font-size: 14.5px; margin-bottom: 8px; color: #1e40af;">
+                                <i class="ph ph-notepad"></i> 📝 Incidencias Reportadas en Evento (Bitácora del Operador)
+                            </h4>
+                            <label class="op-form-label" style="color: #1e3a8a;">Escriba las incidencias o imprevistos ocurridos durante el evento:</label>
+                            <textarea id="checkout-salida-incidencias" class="op-textarea" rows="4" placeholder="Reporte cualquier percance, detalle técnico o imprevisto ocurrido en el evento (ej. fallas de internet/red, cambios de set, retrasos de programa, etc.)..."></textarea>
+                        </div>
+
+                        <div class="op-section-card" style="margin-bottom: 0; background: #f0fdf4; border-color: #bbf7d0;">
+                            <h4 class="op-section-title" style="font-size: 14px; margin-bottom: 8px; color: #166534;">
+                                <i class="ph ph-truck"></i> 🚚 Acta de Incidencias a Proveedor Externo (Opcional)
+                            </h4>
+                            <label class="op-form-label" style="color: #14532d;">Proveedor implicado (si hubo fallas):</label>
+                            <select id="checkout-salida-prov" class="op-select" style="margin-bottom: 8px;">
+                                <option value="--- Ninguno ---">--- Ninguno ---</option>
+                            </select>
+                            <label class="op-form-label" style="color: #14532d;">Detalles de la falta del proveedor:</label>
+                            <textarea id="checkout-salida-prov-nota" class="op-textarea" rows="2" placeholder="Describa irregularidades o faltas cometidas por el proveedor externo..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción de Salida -->
+                    <div style="display: flex; gap: 14px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+                        <button type="button" id="btn-autorizar-salida-coordinador" class="btn-cat-save" onclick="autorizarSalidaCoordinador()" style="background-color: #0f172a; display: none;">
+                            <i class="ph ph-lock-key"></i> 🔒 AUTORIZAR SALIDA (COORDINADOR)
+                        </button>
+                        <button type="button" id="btn-finalizar-salida" class="btn-cat-save" onclick="finalizarSalidaCheckout()" style="background-color: #ef4444; font-size: 15px; padding: 12px 28px;">
+                            <i class="ph ph-rocket-launch"></i> 🚀 FINALIZAR Y REGISTRAR SALIDA DE BODEGA
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- ============================================== -->
+                <!-- PESTAÑA 2: RETORNO A BODEGA (CHECK-IN)         -->
+                <!-- ============================================== -->
+                <div id="checkout-panel-checkin" style="display: none;">
+                    
+                    <div class="op-section-card" style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div>
+                                <h4 class="op-section-title" style="margin: 0; font-size: 15px;">
+                                    <i class="ph ph-check-square-offset" style="color: #16a34a;"></i> Cotejo y Revisión de Retorno (Check-in)
+                                </h4>
+                                <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">
+                                    Marca la casilla para cada artículo recibido. Si presenta fallas, quebrado o faltantes, regístralo en la columna de Notas.
+                                </p>
+                            </div>
+                            <div>
+                                <button type="button" class="btn-cat-new" onclick="marcarTodosCheckin(true)" style="padding: 6px 12px; font-size: 12px;">
+                                    <i class="ph ph-checks"></i> Cotejar Todos
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tabla-container" style="max-height: 420px; overflow-y: auto;">
+                            <table class="tabla-vpro" id="tabla-checkout-checkin">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 130px;">Código</th>
+                                        <th>Descripción del Equipo</th>
+                                        <th style="width: 70px; text-align: center;">Salió</th>
+                                        <th>Notas de Salida</th>
+                                        <th style="width: 100px; text-align: center;">¿Regresó?</th>
+                                        <th>Notas de Regreso / Daños</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-checkout-checkin">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">
+                                            No hay checkout de salida registrado para cotejar.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Incidencias Proveedor y Recepción Check-in -->
+                    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-bottom: 20px;">
+                        <div class="op-section-card" style="margin-bottom: 0; background: #eff6ff; border-color: #bfdbfe;">
+                            <h4 class="op-section-title" style="font-size: 14.5px; margin-bottom: 8px; color: #1e40af;">
+                                <i class="ph ph-notepad"></i> 📝 Incidencias Reportadas en Evento (Recepción / Cierre)
+                            </h4>
+                            <label class="op-form-label" style="color: #1e3a8a;">Actualizar o registrar bitácora de incidencias del evento:</label>
+                            <textarea id="checkout-checkin-incidencias" class="op-textarea" rows="4" placeholder="Reporte cualquier percance, detalle técnico o imprevisto ocurrido en el evento (ej. fallas de internet/red, cambios de set, retrasos de programa, etc.)..."></textarea>
+                        </div>
+
+                        <div class="op-section-card" style="margin-bottom: 0; background: #f0fdf4; border-color: #bbf7d0;">
+                            <h4 class="op-section-title" style="font-size: 14px; margin-bottom: 8px; color: #166534;">
+                                <i class="ph ph-truck"></i> 🚚 Acta de Incidencias a Proveedor Externo (Opcional)
+                            </h4>
+                            <label class="op-form-label" style="color: #14532d;">Proveedor implicado (si hubo fallas):</label>
+                            <select id="checkout-checkin-prov" class="op-select" style="margin-bottom: 8px;">
+                                <option value="--- Ninguno ---">--- Ninguno ---</option>
+                            </select>
+                            <label class="op-form-label" style="color: #14532d;">Detalles de la falta del proveedor:</label>
+                            <textarea id="checkout-checkin-prov-nota" class="op-textarea" rows="2" placeholder="Describa irregularidades o faltas cometidas por el proveedor externo..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Botón Cierre de Check-in -->
+                    <div style="display: flex; justify-content: flex-end; align-items: center;">
+                        <button type="button" class="btn-cat-save" onclick="finalizarCheckinCheckout()" style="background-color: #16a34a; font-size: 15px; padding: 12px 28px;">
+                            <i class="ph ph-check-circle"></i> 💾 FINALIZAR REVISIÓN Y REGRESO (CHECK-IN)
+                        </button>
+                    </div>
+
+                </div>
+
             </div>
 
             <div id="vista-incidencias" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
-                <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-warning-circle"></i> Incidencias Operativas</h2>
-                <div class="info-banner"><i class="ph ph-shield-warning"></i> Bitácora y seguimiento de incidencias en evento.</div>
+                
+                <!-- Encabezado -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                            <i class="ph ph-chart-bar" style="color: #4f46e5;"></i> Monitoreo y Análisis de Incidencias Operativas
+                        </h2>
+                        <p style="margin: 4px 0 0 0; font-size: 13.5px; color: #64748b;">
+                            Consola ejecutiva para evaluar calidad y desempeño de Empleados y Proveedores en Eventos VPRO
+                        </p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-cat-new" onclick="cargarModuloIncidencias()" title="Recargar bitácora de incidencias" style="height: 40px; margin: 0; padding: 0 16px;">
+                            <i class="ph ph-arrows-clockwise"></i> Recargar Datos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Barra de Filtros de Auditoría -->
+                <div class="op-section-card" style="margin-bottom: 24px; background: #f8fafc;">
+                    <h4 class="op-section-title" style="font-size: 14px; margin-bottom: 14px;">
+                        <i class="ph ph-sliders" style="color: #4f46e5;"></i> 🎯 Filtros de Auditoría
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1.5fr 1fr 1.5fr auto; gap: 16px; align-items: flex-end;">
+                        <div>
+                            <label class="op-form-label"><i class="ph ph-calendar"></i> 📅 Periodo de Análisis:</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="date" id="filtro-inc-desde" class="op-input" style="font-size: 12.5px; padding: 8px 10px;" onchange="aplicarFiltrosIncidencias()">
+                                <span style="color: #94a3b8; font-size: 13px;">a</span>
+                                <input type="date" id="filtro-inc-hasta" class="op-input" style="font-size: 12.5px; padding: 8px 10px;" onchange="aplicarFiltrosIncidencias()">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="op-form-label"><i class="ph ph-buildings"></i> 🏢 Departamento:</label>
+                            <select id="filtro-inc-depto" class="op-select" onchange="alCambiarDeptoIncidencias()">
+                                <option value="Todos">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="op-form-label"><i class="ph ph-users"></i> 👤/🚚 Evaluar a:</label>
+                            <select id="filtro-inc-actor" class="op-select" onchange="aplicarFiltrosIncidencias()">
+                                <option value="🌟 TODOS (Empleados y Proveedores)">🌟 TODOS (Empleados y Proveedores)</option>
+                                <option value="👥 TODOS LOS EMPLEADOS">👥 TODOS LOS EMPLEADOS</option>
+                                <option value="🚚 TODOS LOS PROVEEDORES">🚚 TODOS LOS PROVEEDORES</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="button" class="btn-cat-save" onclick="resetearFiltrosIncidencias()" style="background-color: #64748b; height: 42px; margin: 0; padding: 0 16px; font-size: 13px;">
+                                <i class="ph ph-arrow-counter-clockwise"></i> Resetear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjetas de Métricas KPI -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+                    <div class="op-section-card" style="margin-bottom: 0; padding: 20px; border-left: 4px solid #3b82f6;">
+                        <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                            Evaluaciones Realizadas
+                        </div>
+                        <div id="kpi-inc-total" style="font-size: 32px; font-weight: 800; color: #0f172a; line-height: 1;">
+                            0
+                        </div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Total registros auditados</div>
+                    </div>
+
+                    <div class="op-section-card" style="margin-bottom: 0; padding: 20px; border-left: 4px solid #16a34a;">
+                        <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                            Evaluaciones LIMPIAS
+                        </div>
+                        <div style="display: flex; align-items: baseline; gap: 8px;">
+                            <span id="kpi-inc-limpias" style="font-size: 32px; font-weight: 800; color: #16a34a; line-height: 1;">0</span>
+                            <span id="kpi-inc-pct-limpias" style="font-size: 12.5px; font-weight: 700; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 12px;">+0.0%</span>
+                        </div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Operación sin contratiempos</div>
+                    </div>
+
+                    <div class="op-section-card" style="margin-bottom: 0; padding: 20px; border-left: 4px solid #ef4444;">
+                        <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                            Evaluaciones CON INCIDENCIAS
+                        </div>
+                        <div style="display: flex; align-items: baseline; gap: 8px;">
+                            <span id="kpi-inc-fallas" style="font-size: 32px; font-weight: 800; color: #ef4444; line-height: 1;">0</span>
+                            <span id="kpi-inc-pct-fallas" style="font-size: 12.5px; font-weight: 700; color: #b91c1c; background: #fee2e2; padding: 2px 8px; border-radius: 12px;">-0.0%</span>
+                        </div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Reportes de fallas o daños</div>
+                    </div>
+
+                    <div class="op-section-card" style="margin-bottom: 0; padding: 20px; border-left: 4px solid #8b5cf6;">
+                        <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                            Eventos Únicos Auditados
+                        </div>
+                        <div id="kpi-inc-eventos" style="font-size: 32px; font-weight: 800; color: #6b21a8; line-height: 1;">
+                            0
+                        </div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Órdenes de Producción con registro</div>
+                    </div>
+                </div>
+
+                <!-- Gráficas de Análisis -->
+                <div class="op-section-card" style="margin-bottom: 24px;">
+                    <h4 class="op-section-title" style="margin-bottom: 16px;">
+                        <i class="ph ph-chart-pie" style="color: #4f46e5;"></i> 📊 Análisis Gráfico de Calidad Operativa
+                    </h4>
+
+                    <!-- Gráfica 1: Balance General (Barra 100% Apilada Horizontal) -->
+                    <div style="margin-bottom: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+                        <div style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                            <span>Balance General (%)</span>
+                            <span id="inc-legend-balance" style="font-size: 12px; font-weight: 600; display: flex; gap: 14px;">
+                                <span style="color: #16a34a;"><i class="ph ph-circle-fill"></i> Sin Incidencias</span>
+                                <span style="color: #ef4444;"><i class="ph ph-circle-fill"></i> Con Incidencias</span>
+                            </span>
+                        </div>
+                        <div style="height: 55px; width: 100%; position: relative;">
+                            <canvas id="chart-inc-balance"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfica 2: Detalle por Evento (Barras comparativas Verde vs Roja) -->
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
+                        <div style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 12px; display: flex; justify-content: space-between;">
+                            <span>Detalle por Evento (Orden de Producción)</span>
+                            <span style="font-size: 12px; font-weight: 600; display: flex; gap: 14px;">
+                                <span style="color: #16a34a;"><i class="ph ph-circle-fill"></i> Sin Incidencias</span>
+                                <span style="color: #ef4444;"><i class="ph ph-circle-fill"></i> Con Incidencias</span>
+                            </span>
+                        </div>
+                        <div style="height: 380px; width: 100%; position: relative;">
+                            <canvas id="chart-inc-eventos"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bitácora Detallada de Observaciones -->
+                <div class="op-section-card" style="margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                        <h4 class="op-section-title" style="margin: 0;">
+                            <i class="ph ph-notepad" style="color: #4f46e5;"></i> 📋 Bitácora Detallada de Observaciones (<span id="inc-tabla-conteo">0</span> registros)
+                        </h4>
+                        <div style="max-width: 300px; width: 100%;">
+                            <input type="text" id="inc-buscar-tabla" class="op-input" placeholder="🔍 Buscar en bitácora..." oninput="filtrarTablaIncidenciasEnVivo(this.value)" style="padding: 6px 12px; font-size: 13px;">
+                        </div>
+                    </div>
+
+                    <div class="tabla-container" style="max-height: 480px; overflow-y: auto;">
+                        <table class="tabla-vpro" id="tabla-incidencias-detallada">
+                            <thead>
+                                <tr>
+                                    <th style="width: 105px;">Fecha</th>
+                                    <th style="min-width: 220px;">Evento</th>
+                                    <th style="width: 100px; text-align: center;">Tipo</th>
+                                    <th style="min-width: 180px;">Actor</th>
+                                    <th style="width: 140px; text-align: center;">Estatus</th>
+                                    <th style="min-width: 260px;">Nota</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-incidencias-detallada">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">
+                                        Cargando bitácora de incidencias...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
+            <!-- 📊 CAJA 8: ANALÍTICA Y KPIS -->
             <div id="vista-analitica" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
-                <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-chart-line-up"></i> Analítica y Métricas KPI</h2>
-                <div class="info-banner"><i class="ph ph-trend-up"></i> Estadísticas operativas y financieras de eventos VPRO.</div>
+                
+                <!-- Encabezado y Filtro Global de Fechas -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-chart-line-up" style="color: #6366f1;"></i> VPRO Analytics | Dashboard Ejecutivo
+                        </h2>
+                        <p style="color: var(--text-muted); font-size: 13.5px; margin: 4px 0 0 0;">Visión global de indicadores clave, rentabilidad y operatividad de la empresa.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; background: #f8fafc; padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                        <label style="font-size: 12px; font-weight: 700; color: #475569;">📅 Periodo:</label>
+                        <input type="date" id="filtro-analitica-desde" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px;">
+                        <span style="color: #94a3b8; font-size: 12px;">a</span>
+                        <input type="date" id="filtro-analitica-hasta" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px;">
+                        <button onclick="cargarModuloAnalitica()" style="background: var(--accent-color); color: white; border: none; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+                            <i class="ph ph-arrows-clockwise"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sub-pestañas de Analítica -->
+                <div style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; padding-bottom: 8px;">
+                    <button type="button" id="tab-an-btn-finanzas" onclick="cambiarPestanaAnalitica('finanzas')" style="background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-currency-dollar"></i> 💰 Finanzas y Activos
+                    </button>
+                    <button type="button" id="tab-an-btn-comercial" onclick="cambiarPestanaAnalitica('comercial')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-briefcase"></i> 📈 Producción y Clientes
+                    </button>
+                    <button type="button" id="tab-an-btn-operaciones" onclick="cambiarPestanaAnalitica('operaciones')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-gear"></i> ⚙️ Operaciones y RRHH
+                    </button>
+                </div>
+
+                <!-- PESTAÑA 1: FINANZAS Y ACTIVOS -->
+                <div id="subvista-an-finanzas">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Gasto en Reparaciones</div>
+                            <div id="kpi-an-gasto-mes" style="font-size: 28px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">$0.00</div>
+                            <div style="font-size: 11.5px; color: #1e3a8a; margin-top: 4px;">En rango seleccionado</div>
+                        </div>
+                        <div style="background: #fee2e2; border: 1px solid #fca5a5; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #991b1b; text-transform: uppercase;">Equipos Dañados / Taller</div>
+                            <div id="kpi-an-equipos-danados" style="font-size: 28px; font-weight: 800; color: #b91c1c; margin-top: 4px;">0</div>
+                            <div style="font-size: 11.5px; color: #7f1d1d; margin-top: 4px;">Piezas activas en reparación</div>
+                        </div>
+                        <div style="background: #fef3c7; border: 1px solid #fde68a; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #92400e; text-transform: uppercase;">Flota Vehicular en Taller</div>
+                            <div id="kpi-an-flota-taller" style="font-size: 28px; font-weight: 800; color: #b45309; margin-top: 4px;">0</div>
+                            <div style="font-size: 11.5px; color: #78350f; margin-top: 4px;">Autos inactivos por desperfecto</div>
+                        </div>
+                        <div style="background: #f3e8ff; border: 1px solid #d8b4fe; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Seguros por Vencer</div>
+                            <div id="kpi-an-seguros-vencer" style="font-size: 28px; font-weight: 800; color: #7e22ce; margin-top: 4px;">0</div>
+                            <div style="font-size: 11.5px; color: #581c87; margin-top: 4px;">Próximos 30 días</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-chart-pie" style="color: #ef4444;"></i> Equipos Dañados por Departamento
+                            </h4>
+                            <div style="height: 280px; position: relative;">
+                                <canvas id="chart-an-deptos-danos"></canvas>
+                            </div>
+                        </div>
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-car" style="color: #f59e0b;"></i> Unidades de Flota con Desperfectos (Taller)
+                            </h4>
+                            <div style="height: 280px; position: relative;">
+                                <canvas id="chart-an-flota-fallas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PESTAÑA 2: PRODUCCIÓN Y CLIENTES -->
+                <div id="subvista-an-comercial" style="display: none;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #065f46; text-transform: uppercase;">Órdenes de Producción</div>
+                            <div id="kpi-an-ops-mes" style="font-size: 28px; font-weight: 800; color: #047857; margin-top: 4px;">0</div>
+                            <div style="font-size: 11.5px; color: #064e3b; margin-top: 4px;">Eventos en el periodo</div>
+                        </div>
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Cliente Principal</div>
+                            <div id="kpi-an-cliente-top" style="font-size: 20px; font-weight: 800; color: #1d4ed8; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</div>
+                            <div style="font-size: 11.5px; color: #1e3a8a; margin-top: 4px;">Mayor volumen de servicios</div>
+                        </div>
+                        <div style="background: #fdf4ff; border: 1px solid #f5d0fe; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #86198f; text-transform: uppercase;">Proveedores Activos</div>
+                            <div id="kpi-an-proveedores-activos" style="font-size: 28px; font-weight: 800; color: #a21caf; margin-top: 4px;">0</div>
+                            <div style="font-size: 11.5px; color: #701a75; margin-top: 4px;">Asignados a OPs</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-trophy" style="color: #10b981;"></i> Top 5 Clientes por Volumen
+                            </h4>
+                            <div style="height: 280px; position: relative;">
+                                <canvas id="chart-an-top-clientes"></canvas>
+                            </div>
+                        </div>
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-trend-up" style="color: #8b5cf6;"></i> Evolución Mensual de OPs
+                            </h4>
+                            <div style="height: 280px; position: relative;">
+                                <canvas id="chart-an-ops-mes"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PESTAÑA 3: OPERACIONES Y RRHH -->
+                <div id="subvista-an-operaciones" style="display: none;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #991b1b; text-transform: uppercase;">Tasa de Incidencias</div>
+                            <div id="kpi-an-tasa-incidencias" style="font-size: 28px; font-weight: 800; color: #dc2626; margin-top: 4px;">0%</div>
+                            <div style="font-size: 11.5px; color: #7f1d1d; margin-top: 4px;">Porcentaje de error en eventos</div>
+                        </div>
+                        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #065f46; text-transform: uppercase;">Logística a Tiempo</div>
+                            <div id="kpi-an-logistica-tiempo" style="font-size: 28px; font-weight: 800; color: #16a34a; margin-top: 4px;">100%</div>
+                            <div style="font-size: 11.5px; color: #064e3b; margin-top: 4px;">Entregas y checkouts limpios</div>
+                        </div>
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px 20px; border-radius: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Empleado Más Activo</div>
+                            <div id="kpi-an-emp-top" style="font-size: 20px; font-weight: 800; color: #2563eb; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</div>
+                            <div style="font-size: 11.5px; color: #1e3a8a; margin-top: 4px;">Mayor número de OPs asignadas</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-users-three" style="color: #3b82f6;"></i> Top 3 Colaboradores (Carga de Trabajo)
+                            </h4>
+                            <div style="height: 280px; position: relative;">
+                                <canvas id="chart-an-top-empleados"></canvas>
+                            </div>
+                        </div>
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-target" style="color: #10b981;"></i> Efectividad en Checkouts
+                            </h4>
+                            <div style="height: 280px; position: relative;">
+                                <canvas id="chart-an-efectividad"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
+            <!-- 👥 CAJA 9: RECURSOS HUMANOS -->
             <div id="vista-rh" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
-                <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-users"></i> Recursos Humanos & Expedientes</h2>
-                <div class="info-banner"><i class="ph ph-user-list"></i> Expedientes de personal, contratos y control de incidencias laborales.</div>
+                
+                <!-- Encabezado -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-users" style="color: #0284c7;"></i> Recursos Humanos & Expediente Digital
+                        </h2>
+                        <p style="color: var(--text-muted); font-size: 13.5px; margin: 4px 0 0 0;">Expediente digital de empleados, contratos, vacaciones LFT, permisos y evaluaciones laborales.</p>
+                    </div>
+                    <button onclick="cargarModuloRH()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                        <i class="ph ph-arrows-clockwise"></i> Actualizar
+                    </button>
+                </div>
+
+                <!-- Banner de Alertas Globales de RRHH -->
+                <div id="banner-rh-alertas" style="display: none; margin-bottom: 24px;"></div>
+
+                <!-- Selector de Colaborador -->
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                    <label style="display: block; font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+                        👤 SELECCIONA EL EMPLEADO A AUDITAR / EDITAR EXPEDIENTE:
+                    </label>
+                    <div style="display: flex; gap: 12px;">
+                        <select id="sel-rh-empleado" onchange="seleccionarEmpleadoRH(this.value)" style="flex: 1; max-width: 600px; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13.5px; font-weight: 600;">
+                            <option value="">--- Selecciona un Colaborador ---</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Contenedor del Expediente del Empleado -->
+                <div id="rh-expediente-container" style="display: none;">
+                    
+                    <!-- Ficha Resumen de Cabecera -->
+                    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 14px; padding: 20px 24px; color: white; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.12); margin-bottom: 24px;">
+                        <img id="rh-ficha-foto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Foto Empleado" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8;">
+                        <div style="flex: 1; min-width: 240px;">
+                            <h3 id="rh-ficha-nombre" style="margin: 0 0 4px 0; font-size: 20px; color: #ffffff;">Nombre del Empleado</h3>
+                            <div style="font-size: 13px; color: #94a3b8;">
+                                ID: <b id="rh-ficha-id" style="color: #f8fafc;">--</b> | Depto: <b id="rh-ficha-depto" style="color: #f8fafc;">--</b> | Puesto: <b id="rh-ficha-puesto" style="color: #f8fafc;">--</b>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 14px; font-size: 12.5px;">
+                            <div style="background: rgba(255,255,255,0.1); padding: 8px 14px; border-radius: 8px; text-align: center;">
+                                <div style="color: #94a3b8; font-size: 11px;">EDAD</div>
+                                <b id="rh-ficha-edad" style="font-size: 15px; color: #38bdf8;">--</b>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 8px 14px; border-radius: 8px; text-align: center;">
+                                <div style="color: #94a3b8; font-size: 11px;">ANTIGÜEDAD</div>
+                                <b id="rh-ficha-antiguedad" style="font-size: 15px; color: #4ade80;">--</b>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 8px 14px; border-radius: 8px; text-align: center;">
+                                <div style="color: #94a3b8; font-size: 11px;">ESTATUS</div>
+                                <b id="rh-ficha-estatus" style="font-size: 13px; color: #facc15;">ACTIVO</b>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-pestañas del Expediente -->
+                    <div style="display: flex; gap: 6px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; padding-bottom: 8px; overflow-x: auto;">
+                        <button type="button" id="tab-rh-btn-datos" onclick="cambiarPestanaRH('datos')" style="background: #0f172a; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12.5px;">
+                            📋 Datos Generales
+                        </button>
+                        <button type="button" id="tab-rh-btn-contratos" onclick="cambiarPestanaRH('contratos')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12.5px;">
+                            📄 Contratos
+                        </button>
+                        <button type="button" id="tab-rh-btn-vacaciones" onclick="cambiarPestanaRH('vacaciones')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12.5px;">
+                            🌴 Vacaciones (LFT)
+                        </button>
+                        <button type="button" id="tab-rh-btn-permisos" onclick="cambiarPestanaRH('permisos')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12.5px;">
+                            ⏱️ Permisos & Incapacidades
+                        </button>
+                        <button type="button" id="tab-rh-btn-capacitacion" onclick="cambiarPestanaRH('capacitacion')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12.5px;">
+                            🎓 Capacitación & Evaluación
+                        </button>
+                        <button type="button" id="tab-rh-btn-documentos" onclick="cambiarPestanaRH('documentos')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12.5px;">
+                            📁 Documentos Digitales
+                        </button>
+                    </div>
+
+                    <!-- SUB-PESTAÑA 1: DATOS GENERALES -->
+                    <div id="subvista-rh-datos">
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">📋 Ficha de Datos Personales y Laborales</h4>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+                                <div>
+                                    <label class="op-form-label">Nombre Completo:</label>
+                                    <input type="text" id="rh-gen-nombre" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Correo Electrónico:</label>
+                                    <input type="email" id="rh-gen-email" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Celular / Teléfono:</label>
+                                    <input type="text" id="rh-gen-cel" class="op-input">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+                                <div>
+                                    <label class="op-form-label">RFC:</label>
+                                    <input type="text" id="rh-gen-rfc" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">CURP:</label>
+                                    <input type="text" id="rh-gen-curp" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">NSS (IMSS):</label>
+                                    <input type="text" id="rh-gen-nss" class="op-input">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+                                <div>
+                                    <label class="op-form-label">Departamento:</label>
+                                    <input type="text" id="rh-gen-depto" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Puesto / Cargo:</label>
+                                    <input type="text" id="rh-gen-puesto" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Tipo Contrato:</label>
+                                    <select id="rh-gen-tipo-contrato" class="op-select">
+                                        <option value="PLANTA">PLANTA</option>
+                                        <option value="EVENTUAL">EVENTUAL</option>
+                                        <option value="HONORARIOS">HONORARIOS</option>
+                                        <option value="PROYECTO">PROYECTO</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+                                <div>
+                                    <label class="op-form-label">Salario Mensual Bruto ($):</label>
+                                    <input type="number" id="rh-gen-salario" step="500" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Escolaridad:</label>
+                                    <select id="rh-gen-escolaridad" class="op-select">
+                                        <option value="PRIMARIA">PRIMARIA</option>
+                                        <option value="SECUNDARIA">SECUNDARIA</option>
+                                        <option value="PREPARATORIA">PREPARATORIA</option>
+                                        <option value="TÉCNICO">TÉCNICO</option>
+                                        <option value="LICENCIATURA">LICENCIATURA</option>
+                                        <option value="MAESTRÍA">MAESTRÍA</option>
+                                        <option value="DOCTORADO">DOCTORADO</option>
+                                        <option value="OTRO">OTRO</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Estado Civil:</label>
+                                    <select id="rh-gen-estado-civil" class="op-select">
+                                        <option value="SOLTERO">SOLTERO</option>
+                                        <option value="CASADO">CASADO</option>
+                                        <option value="UNIÓN LIBRE">UNIÓN LIBRE</option>
+                                        <option value="DIVORCIADO">DIVORCIADO</option>
+                                        <option value="VIUDO">VIUDO</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                                <div>
+                                    <label class="op-form-label">Domicilio:</label>
+                                    <input type="text" id="rh-gen-domicilio" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Ciudad:</label>
+                                    <input type="text" id="rh-gen-ciudad" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Código Postal:</label>
+                                    <input type="text" id="rh-gen-cp" class="op-input">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+                                <div>
+                                    <label class="op-form-label">Contacto de Emergencia:</label>
+                                    <input type="text" id="rh-gen-contacto-emergencia" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Teléfono Emergencia:</label>
+                                    <input type="text" id="rh-gen-tel-emergencia" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Parentesco:</label>
+                                    <input type="text" id="rh-gen-parentesco" class="op-input">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 16px; margin-bottom: 24px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <div>
+                                    <label class="op-form-label">Estatus Empleado:</label>
+                                    <select id="rh-gen-estatus-empleado" class="op-select">
+                                        <option value="ACTIVO">ACTIVO</option>
+                                        <option value="BAJA">BAJA</option>
+                                        <option value="SUSPENDIDO">SUSPENDIDO</option>
+                                        <option value="VACACIONES">VACACIONES</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Fecha Baja (si aplica):</label>
+                                    <input type="date" id="rh-gen-fecha-baja" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Motivo de Baja:</label>
+                                    <input type="text" id="rh-gen-motivo-baja" placeholder="Motivo de separación laboral..." class="op-input">
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <button type="button" onclick="guardarDatosGeneralesRH()" style="background: var(--accent-color); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                                    <i class="ph ph-floppy-disk"></i> 💾 Guardar Cambios en el Expediente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-PESTAÑA 2: CONTRATOS -->
+                    <div id="subvista-rh-contratos" style="display: none;">
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">📄 Historial de Contratos Laborales</h4>
+                            <div class="tabla-container" style="max-height: 340px; margin-bottom: 24px;">
+                                <table class="tabla-vpro">
+                                    <thead>
+                                        <tr>
+                                            <th>Folio</th>
+                                            <th>Tipo</th>
+                                            <th>Inicio</th>
+                                            <th>Fin</th>
+                                            <th>Puesto</th>
+                                            <th>Salario</th>
+                                            <th>Estatus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-rh-contratos-body">
+                                        <tr><td colspan="7" style="text-align: center; padding: 20px;">Sin contratos registrados.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-PESTAÑA 3: VACACIONES -->
+                    <div id="subvista-rh-vacaciones" style="display: none;">
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">🌴 Balance de Vacaciones según Ley Federal del Trabajo (LFT)</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                                <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: 10px;">
+                                    <div style="font-size: 12px; font-weight: 700; color: #1e40af;">DÍAS CORRESPONDIENTES</div>
+                                    <div id="rh-vac-correspondientes" style="font-size: 28px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">0</div>
+                                </div>
+                                <div style="background: #fef3c7; border: 1px solid #fde68a; padding: 16px; border-radius: 10px;">
+                                    <div style="font-size: 12px; font-weight: 700; color: #92400e;">DÍAS TOMADOS</div>
+                                    <div id="rh-vac-tomados" style="font-size: 28px; font-weight: 800; color: #b45309; margin-top: 4px;">0</div>
+                                </div>
+                                <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 16px; border-radius: 10px;">
+                                    <div style="font-size: 12px; font-weight: 700; color: #065f46;">DÍAS PENDIENTES POR GOZAR</div>
+                                    <div id="rh-vac-pendientes" style="font-size: 28px; font-weight: 800; color: #047857; margin-top: 4px;">0</div>
+                                </div>
+                            </div>
+                            <div class="tabla-container" style="max-height: 340px;">
+                                <table class="tabla-vpro">
+                                    <thead>
+                                        <tr>
+                                            <th>Periodo</th>
+                                            <th>Días</th>
+                                            <th>Desde</th>
+                                            <th>Hasta</th>
+                                            <th>Estatus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-rh-vacaciones-body">
+                                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Sin periodos registrados.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-PESTAÑA 4: PERMISOS & INCAPACIDADES -->
+                    <div id="subvista-rh-permisos" style="display: none;">
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">⏱️ Historial de Permisos e Incapacidades Médicas</h4>
+                            <div class="tabla-container" style="max-height: 340px;">
+                                <table class="tabla-vpro">
+                                    <thead>
+                                        <tr>
+                                            <th>Folio</th>
+                                            <th>Tipo</th>
+                                            <th>Desde</th>
+                                            <th>Hasta</th>
+                                            <th>Días</th>
+                                            <th>Goce Sueldo</th>
+                                            <th>Estatus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-rh-permisos-body">
+                                        <tr><td colspan="7" style="text-align: center; padding: 20px;">Sin permisos o incapacidades registradas.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-PESTAÑA 5: CAPACITACIÓN & DESEMPEÑO -->
+                    <div id="subvista-rh-capacitacion" style="display: none;">
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">🎓 Capacitaciones y Evaluaciones de Desempeño</h4>
+                            <div class="tabla-container" style="max-height: 340px;">
+                                <table class="tabla-vpro">
+                                    <thead>
+                                        <tr>
+                                            <th>Periodo / Curso</th>
+                                            <th>Tipo</th>
+                                            <th>Evaluador / Institución</th>
+                                            <th>Calificación</th>
+                                            <th>Nivel de Desempeño</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-rh-evaluaciones-body">
+                                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Sin evaluaciones registradas.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-PESTAÑA 6: DOCUMENTOS DIGITALES -->
+                    <div id="subvista-rh-documentos" style="display: none;">
+                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">📁 Expediente Digital de Documentos</h4>
+                            <div class="tabla-container" style="max-height: 340px;">
+                                <table class="tabla-vpro">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo Documento</th>
+                                            <th>Nombre Archivo</th>
+                                            <th>Fecha Emisión</th>
+                                            <th>Vigencia</th>
+                                            <th>Verificado RH</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-rh-documentos-body">
+                                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Sin documentos cargados.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
             </div>
         </div>
     </div>
@@ -2326,26 +3914,134 @@
         </div>
     </div>
 
-    <!-- MODAL DE AYUDA / MANUAL -->
+    <!-- MODAL DE AYUDA / MANUAL INTEGRAL VPRO -->
     <div class="modal-overlay" id="modal-manual">
-        <div class="modal-box" style="max-width: 650px; text-align: left;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
-                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 18px; color: #0f172a;">
-                    <i class="ph ph-book-open" style="color: var(--accent-color);"></i> Manual de Usuario - VPRO Workspace
+        <div class="modal-box" style="max-width: 900px; text-align: left; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 14px; margin-bottom: 16px;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 20px; color: #0f172a;">
+                    <i class="ph ph-book-open" style="color: var(--accent-color);"></i> MANUAL DE TRAZABILIDAD OPERATIVA VPRO
                 </h3>
-                <button onclick="cerrarManual()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">&times;</button>
+                <button onclick="cerrarManual()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted);">&times;</button>
             </div>
-            <div style="max-height: 420px; overflow-y: auto; font-size: 13.5px; line-height: 1.6; color: #334155; padding-right: 8px;">
-                <h4 style="color: #0f172a; margin: 12px 0 4px 0;">📌 Registro de Asistencia (Kiosco y Checador)</h4>
-                <p>Escanea tu código QR directamente con el lector en pantalla. El sistema registrará tu entrada o salida automáticamente. Recuerda que registrar 4 marcas al día (Entrada Matutina, Salida a Comer, Entrada de Comida y Salida Vespertina) es mandatorio según la política interna.</p>
-                
-                <h4 style="color: #0f172a; margin: 16px 0 4px 0;">📋 Órdenes de Producción (OP)</h4>
-                <p>Puedes seleccionar un folio existente en el desplegable para consultar o modificar la logística de un evento, o elegir "Crear Nueva Orden" para registrar un servicio desde cero.</p>
-                
-                <h4 style="color: #0f172a; margin: 16px 0 4px 0;">🚨 Política de Horarios y Conducta</h4>
-                <p>Checar solo la entrada matutina y la salida nocturna sin registrar los tiempos de alimentos es una omisión sancionable por Recursos Humanos. Las advertencias se reflejarán de inmediato en tu panel de inicio.</p>
+            
+            <div style="flex: 1; overflow-y: auto; font-size: 14px; line-height: 1.7; color: #334155; padding-right: 12px;">
+                <div style="background: #0f172a; padding: 18px 24px; border-radius: 12px; border-left: 8px solid #38bdf8; margin-bottom: 24px; color: white;">
+                    <h4 style="margin: 0 0 6px 0; color: #f8fafc; font-size: 17px;">Flujo Integral del Sistema: De la Planeación al Cierre Financiero</h4>
+                    <p style="margin: 0; color: #bae6fd; font-size: 13px;">Este documento detalla el ciclo de vida exacto de una Orden de Producción (OP) en el Sistema VPRO. Su objetivo es que cada departamento comprenda cómo su captura de datos detona, bloquea o libera el trabajo de los demás.</p>
+                </div>
+
+                <!-- Índice Interactivo -->
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 18px; margin-bottom: 24px;">
+                    <h4 style="margin: 0 0 10px 0; color: #0f172a;">📑 Índice Interactivo del Manual</h4>
+                    <ol style="margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.8;">
+                        <li><a href="#manual-fase-1" style="color: #0284c7; text-decoration: none; font-weight: 600;">🎬 FASE 1: Planeación y Nacimiento del Proyecto (Módulo de Eventos)</a></li>
+                        <li><a href="#manual-fase-2" style="color: #0284c7; text-decoration: none; font-weight: 600;">📦 FASE 2: Despacho de Hardware (Módulo de Checkout - Salida)</a></li>
+                        <li><a href="#manual-fase-3" style="color: #0284c7; text-decoration: none; font-weight: 600;">🎥 FASE 3: Operación en Locación (Claqueta Digital)</a></li>
+                        <li><a href="#manual-fase-4" style="color: #0284c7; text-decoration: none; font-weight: 600;">📥 FASE 4: Retorno a Base y Liberación (Módulo de Checkout - Check-in)</a></li>
+                        <li><a href="#manual-fase-5" style="color: #0284c7; text-decoration: none; font-weight: 600;">🧾 FASE 5: Rendición de Cuentas (Módulo Reporte de Gastos)</a></li>
+                        <li><a href="#manual-fase-6" style="color: #0284c7; text-decoration: none; font-weight: 600;">🔎 FASE 6: Auditoría y Cierre Financiero (Dirección / Ana Lilia)</a></li>
+                        <li><a href="#manual-fase-danos" style="color: #0284c7; text-decoration: none; font-weight: 600;">🛠️ FASE ESPECIAL: Trazabilidad de Equipos Dañados (Check-in vs Instalaciones)</a></li>
+                        <li><a href="#manual-anexo-checador" style="color: #0284c7; text-decoration: none; font-weight: 600;">⏱️ ANEXO: Políticas de Asistencia y Reloj Checador (Marcaje 4 Puntos)</a></li>
+                        <li><a href="#manual-anexo-protocolo" style="color: #0284c7; text-decoration: none; font-weight: 600;">🚨 ANEXO: Protocolo de Corrección de Errores y Excepciones</a></li>
+                    </ol>
+                </div>
+
+                <div id="manual-fase-1" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">🎬 FASE 1: Planeación y Nacimiento del Proyecto (Módulo de Eventos)</h4>
+                    <p><b>Actor responsable:</b> Administración, Coordinación o Ventas.<br><b>Objetivo:</b> Crear el evento y definir a los responsables.</p>
+                    <ul style="padding-left: 20px;">
+                        <li>📝 <b>Captura de Datos Base:</b> El Coordinador llena los datos vitales: Cliente, Nombre del Evento, Locación exacta, Fecha/Hora de Instalación y Fecha/Hora del Evento.</li>
+                        <li>👤 <b>El Nombramiento del Productor:</b> Se asigna obligatoriamente un Productor Responsable. <i>Candado del Sistema:</i> El usuario seleccionado será el único en toda la empresa que tendrá permisos para rendir cuentas en el Reporte de Gastos al finalizar el evento.</li>
+                        <li>📋 <b>Logística y Convocatoria:</b> Se seleccionan los empleados de VPRO convocados, proveedores co-convocados y los vehículos de la flotilla a utilizar.</li>
+                        <li>✈️ <b>Logística de Viajes (Modo Gira):</b> Si el evento es foráneo, se activa "Asistencia Automática en Ruta", cubriendo las asistencias en el Kiosco para evitar faltas injustificadas en Recursos Humanos.</li>
+                    </ul>
+                </div>
+
+                <div id="manual-fase-2" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">📦 FASE 2: Despacho de Hardware (Módulo de Checkout - Salida)</h4>
+                    <p><b>Actor responsable:</b> Coordinador / Logística / Almacén.<br><b>Objetivo:</b> Registrar exactamente qué equipo sale de las instalaciones.</p>
+                    <ul style="padding-left: 20px;">
+                        <li>📂 <b>Apertura de la OP:</b> El personal convocado o bodega abre la orden pendiente de salida.</li>
+                        <li>🧳 <b>Carga de Equipo:</b> Se pueden usar plantillas preestablecidas (kits de audio, video o iluminación) o el Inyector Rápido de Hardware para cargar piezas específicas del inventario global.</li>
+                        <li>✅ <b>Auditoría de Salida:</b> El encargado verifica físicamente las cantidades y presiona <b>"AUTORIZAR SALIDA DE BODEGA"</b>. La OP cambia su estado a <code>DESPACHADO</code>.</li>
+                    </ul>
+                </div>
+
+                <div id="manual-fase-3" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">🎥 FASE 3: Operación en Locación (Claqueta Digital)</h4>
+                    <p><b>Actor responsable:</b> Productor Responsable.<br><b>Objetivo:</b> Controlar los tiempos de trabajo del personal en set fuera de la oficina.</p>
+                    <ul style="padding-left: 20px;">
+                        <li>📍 <b>Apertura de Llamado:</b> El Productor ingresa a la OP desde su dispositivo en set.</li>
+                        <li>🟢 <b>Iniciar Llamado:</b> Verifica qué personal está físicamente en locación y presiona <b>"INICIAR LLAMADO"</b>, sellando la hora oficial de entrada en Recursos Humanos.</li>
+                        <li>🔴 <b>Terminar Jornada:</b> Al terminar el desmontaje o llamado, presiona <b>"TERMINAR JORNADA"</b> para sellar la salida de todo su equipo de producción.</li>
+                    </ul>
+                </div>
+
+                <div id="manual-fase-4" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">📥 FASE 4: Retorno a Base y Liberación (Módulo de Checkout - Check-in)</h4>
+                    <p><b>Actor responsable:</b> Coordinación / Almacén.<br><b>Objetivo:</b> Recuperar el hardware, auditar daños y liberar la OP.</p>
+                    <ul style="padding-left: 20px;">
+                        <li>🏢 <b>Recepción Física:</b> Al regresar a base, el almacenista abre el Check-in y coteja individualmente cada ítem marcando "¿Regresó?".</li>
+                        <li>🚦 <b>Semáforo Inteligente de Daños:</b> Si un equipo regresa con falla, se redacta en "Notas de Regreso". Si contiene palabras de alerta (<i>daño, roto, falló, golpe</i>), el sistema lo clasifica en <code>DAÑADO</code> y crea un ticket en taller.</li>
+                        <li>📜 <b>Incidencias a Proveedores:</b> Si hubo fallas atribuibles a un tercero, se redacta el acta correspondiente.</li>
+                        <li>🏁 <b>Cierre de Bodega:</b> Al presionar <b>"FINALIZAR REVISIÓN Y REGRESO"</b>, la OP pasa a <code>RECIBIDO</code>. <i>Candado Financiero:</i> Es imposible comprobar gastos si Bodega no ha finalizado este paso.</li>
+                    </ul>
+                </div>
+
+                <div id="manual-fase-5" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">🧾 FASE 5: Rendición de Cuentas (Módulo Reporte de Gastos)</h4>
+                    <p><b>Actor responsable:</b> Productor Responsable.<br><b>Objetivo:</b> Comprobar el dinero de viáticos y registrar kilometrajes vehiculares.</p>
+                    <ul style="padding-left: 20px;">
+                        <li>🚗 <b>Odómetros Obligatorios:</b> El sistema exige capturar el Kilometraje Inicial y Final de cada camioneta utilizada.</li>
+                        <li>📊 <b>Matriz Diaria:</b> Se desglosan los gastos por día (Hotel, Transporte, Combustible, Casetas, Alimentos, Varios).</li>
+                        <li>🧮 <b>Cálculo del Remanente:</b> Al ingresar el Presupuesto Entregado, el sistema descuenta los gastos y dicta el saldo exacto a devolver a VPRO.</li>
+                        <li>🖋️ <b>Envío a Auditoría:</b> Al presionar <b>"ENVIAR INFORME COMPLETO"</b>, la OP se bloquea para el productor y se transfiere a Dirección.</li>
+                    </ul>
+                </div>
+
+                <div id="manual-fase-6" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">🔎 FASE 6: Auditoría y Cierre Financiero (Dirección / Ana Lilia)</h4>
+                    <p><b>Actor responsable:</b> Dirección / Administración.<br><b>Objetivo:</b> Revisar comprobantes físicos, saldar cuentas y cerrar definitivamente el evento.</p>
+                    <ul style="padding-left: 20px;">
+                        <li>🧾 <b>Cuadre Físico:</b> Dirección coteja los tickets y facturas físicas contra el desglose digital en pantalla.</li>
+                        <li>✅ <b>Sello Definitivo:</b> Al presionar <b>"MARCAR COMO REVISADO Y APROBADO"</b>, el informe se sella y la OP se transfiere a la <b>Bóveda Histórica</b> de solo lectura.</li>
+                    </ul>
+                </div>
+
+                <div id="manual-fase-danos" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">🛠️ FASE ESPECIAL: Trazabilidad de Equipos Dañados (Check-in vs Instalaciones)</h4>
+                    <ul style="padding-left: 20px;">
+                        <li>🚚 <b>Canal A - Retorno de Evento:</b> Se genera automáticamente desde el Check-in al reportar averías con prefijo <code>REP-RUT-</code> amarrado a la OP.</li>
+                        <li>🏢 <b>Canal B - Reporte Directo (Instalaciones / Oficina):</b> Cualquier colaborador puede reportar fallas de oficina (aires acondicionados, computadoras, monitores) desde el botón <i>"REGISTRAR REPORTE DIRECTO"</i> con prefijo <code>REP-INT-</code>.</li>
+                        <li>⚙️ <b>Proceso de Rehabilitación:</b> Una vez reparado en taller, se selecciona el ticket y se presiona <b>"REHABILITAR EQUIPO"</b> para regresarlo al inventario disponible.</li>
+                    </ul>
+                </div>
+
+                <div id="manual-anexo-checador" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">⏱️ ANEXO: Políticas de Asistencia y Reloj Checador (Marcaje 4 Puntos)</h4>
+                    <p>Es una política corporativa estricta registrar <b>4 marcas diarias</b> en el checador institucional:</p>
+                    <ol style="padding-left: 20px;">
+                        <li><b>1. Entrada Matutina (09:00 hrs)</b>: Tolerancia de 5 minutos (hasta las 09:05:59).</li>
+                        <li><b>2. Salida a Comer (14:00 hrs)</b>: Inicio de tiempo de alimentos.</li>
+                        <li><b>3. Regreso de Comer (16:00 hrs)</b>: Entrada del segundo turno.</li>
+                        <li><b>4. Salida Vespertina (19:00 hrs)</b>: Conclusión de jornada laboral.</li>
+                    </ol>
+                    <p style="color: #b91c1c; font-weight: 600;">⚠️ Checar únicamente entrada matutina y salida nocturna omitiendo el tiempo de alimentos constituye una omisión reglamentaria que amerita regularización ante Recursos Humanos.</p>
+                </div>
+
+                <div id="manual-anexo-protocolo" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 16px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">🚨 ANEXO: Protocolo de Corrección de Errores y Excepciones</h4>
+                    <ul style="padding-left: 20px;">
+                        <li><b>Error en Reporte de Gastos:</b> Una vez enviado, el Productor no puede editarlo. Administración tiene el privilegio exclusivo en Auditoría para corregir celdas y montos.</li>
+                        <li><b>Olvido de Cierre de Jornada en Set:</b> Si el Productor olvidó terminar jornada a las 19:00 hrs, el piloto automático del servidor cierra las jornadas pendientes o RH puede ajustarlo en Auditoría de Asistencia.</li>
+                        <li><b>Falsa alarma de daño en almacén:</b> Si se marcó DAÑADO por error, se puede acceder al Expediente Clínico del activo y rehabilitarlo manualmente a BUEN ESTADO.</li>
+                    </ul>
+                </div>
             </div>
-            <button class="btn-confirmar" onclick="cerrarManual()" style="margin-top: 16px;">Entendido</button>
+
+            <div style="border-top: 1px solid var(--border-color); padding-top: 14px; text-align: right;">
+                <button class="btn-confirmar" onclick="cerrarManual()" style="padding: 10px 24px; font-weight: 700;">Entendido y Cerrar Manual</button>
+            </div>
         </div>
     </div>
 

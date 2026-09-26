@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hIMNAfOs5vDGyKi2ylgwSKlsi7yn5gF9P3dhkVENmZ3E2qRK6YQCptA08wQECGv
+\restrict GcyLmVpOou25rQkCThfsr8vcmEzhMRzgeEUwwt7aEeVWACdqlO8xfm16BuAduBN
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -19,6 +19,19 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE IF EXISTS ONLY public.inventario_kits DROP CONSTRAINT IF EXISTS unique_codigo_inv_kits;
+ALTER TABLE IF EXISTS ONLY public.reparaciones DROP CONSTRAINT IF EXISTS reparaciones_pkey;
+ALTER TABLE IF EXISTS ONLY public.inventario DROP CONSTRAINT IF EXISTS inventario_pkey;
+ALTER TABLE IF EXISTS ONLY public.inventario_kits DROP CONSTRAINT IF EXISTS inventario_kits_pkey;
+ALTER TABLE IF EXISTS ONLY public.historial_equipo DROP CONSTRAINT IF EXISTS historial_clinico_equipo_pkey;
+ALTER TABLE IF EXISTS public.inventario_kits ALTER COLUMN id_inv_kits DROP DEFAULT;
+ALTER TABLE IF EXISTS public.historial_equipo ALTER COLUMN id_registro DROP DEFAULT;
+DROP TABLE IF EXISTS public.reparaciones;
+DROP SEQUENCE IF EXISTS public.inventario_kits_id_inv_kits_seq;
+DROP TABLE IF EXISTS public.inventario_kits;
+DROP TABLE IF EXISTS public.inventario;
+DROP SEQUENCE IF EXISTS public.historial_clinico_equipo_id_registro_seq;
+DROP TABLE IF EXISTS public.historial_equipo;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -1952,5 +1965,5 @@ ALTER TABLE ONLY public.inventario_kits
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hIMNAfOs5vDGyKi2ylgwSKlsi7yn5gF9P3dhkVENmZ3E2qRK6YQCptA08wQECGv
+\unrestrict GcyLmVpOou25rQkCThfsr8vcmEzhMRzgeEUwwt7aEeVWACdqlO8xfm16BuAduBN
 

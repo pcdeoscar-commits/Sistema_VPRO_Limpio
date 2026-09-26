@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6xgnN9lLhB4SqRZzcbnb3UZuYy9wB2zAnjf5S9NOG1mUQvn1K0PWnAT8vbmKxAB
+\restrict JSKaX542U0D94KdrXcxiHmiu8kzDuKV1OsUIcfFDB8t1ff3UEan25IuLatsnDHT
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -19,6 +19,96 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE IF EXISTS ONLY public.rh_vacaciones DROP CONSTRAINT IF EXISTS rh_vacaciones_id_empleado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_solicitudes_empleo DROP CONSTRAINT IF EXISTS rh_solicitudes_empleo_id_empleado_resultado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_permisos DROP CONSTRAINT IF EXISTS rh_permisos_id_empleado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_incapacidades DROP CONSTRAINT IF EXISTS rh_incapacidades_id_empleado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_historial DROP CONSTRAINT IF EXISTS rh_historial_id_empleado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_evaluaciones DROP CONSTRAINT IF EXISTS rh_evaluaciones_id_empleado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_entrevistas DROP CONSTRAINT IF EXISTS rh_entrevistas_id_solicitud_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_entrevistas DROP CONSTRAINT IF EXISTS rh_entrevistas_id_empleado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_documentos DROP CONSTRAINT IF EXISTS rh_documentos_id_empleado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_contratos DROP CONSTRAINT IF EXISTS rh_contratos_id_empleado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_capacitacion DROP CONSTRAINT IF EXISTS rh_capacitacion_id_empleado_fkey;
+ALTER TABLE IF EXISTS ONLY public.rh_contratos DROP CONSTRAINT IF EXISTS fk_renovacion;
+ALTER TABLE IF EXISTS ONLY public.control_asistencia DROP CONSTRAINT IF EXISTS fk_empleado;
+DROP INDEX IF EXISTS public.idx_rh_vacaciones_empleado;
+DROP INDEX IF EXISTS public.idx_rh_solicitudes_estatus;
+DROP INDEX IF EXISTS public.idx_rh_permisos_estatus;
+DROP INDEX IF EXISTS public.idx_rh_permisos_empleado;
+DROP INDEX IF EXISTS public.idx_rh_incap_empleado;
+DROP INDEX IF EXISTS public.idx_rh_historial_tipo;
+DROP INDEX IF EXISTS public.idx_rh_historial_empleado;
+DROP INDEX IF EXISTS public.idx_rh_contratos_estatus;
+DROP INDEX IF EXISTS public.idx_rh_contratos_empleado;
+ALTER TABLE IF EXISTS ONLY public.empleados DROP CONSTRAINT IF EXISTS vpro_pkey;
+ALTER TABLE IF EXISTS ONLY public.control_asistencia DROP CONSTRAINT IF EXISTS uq_empleado_fecha;
+ALTER TABLE IF EXISTS ONLY public.rh_vacaciones DROP CONSTRAINT IF EXISTS rh_vacaciones_pkey;
+ALTER TABLE IF EXISTS ONLY public.rh_solicitudes_empleo DROP CONSTRAINT IF EXISTS rh_solicitudes_empleo_pkey;
+ALTER TABLE IF EXISTS ONLY public.rh_solicitudes_empleo DROP CONSTRAINT IF EXISTS rh_solicitudes_empleo_folio_key;
+ALTER TABLE IF EXISTS ONLY public.rh_permisos DROP CONSTRAINT IF EXISTS rh_permisos_pkey;
+ALTER TABLE IF EXISTS ONLY public.rh_permisos DROP CONSTRAINT IF EXISTS rh_permisos_folio_permiso_key;
+ALTER TABLE IF EXISTS ONLY public.rh_incapacidades DROP CONSTRAINT IF EXISTS rh_incapacidades_pkey;
+ALTER TABLE IF EXISTS ONLY public.rh_incapacidades DROP CONSTRAINT IF EXISTS rh_incapacidades_folio_incapacidad_key;
+ALTER TABLE IF EXISTS ONLY public.rh_historial DROP CONSTRAINT IF EXISTS rh_historial_pkey;
+ALTER TABLE IF EXISTS ONLY public.rh_evaluaciones DROP CONSTRAINT IF EXISTS rh_evaluaciones_pkey;
+ALTER TABLE IF EXISTS ONLY public.rh_entrevistas DROP CONSTRAINT IF EXISTS rh_entrevistas_pkey;
+ALTER TABLE IF EXISTS ONLY public.rh_documentos DROP CONSTRAINT IF EXISTS rh_documentos_pkey;
+ALTER TABLE IF EXISTS ONLY public.rh_contratos DROP CONSTRAINT IF EXISTS rh_contratos_pkey;
+ALTER TABLE IF EXISTS ONLY public.rh_contratos DROP CONSTRAINT IF EXISTS rh_contratos_folio_contrato_key;
+ALTER TABLE IF EXISTS ONLY public.rh_capacitacion DROP CONSTRAINT IF EXISTS rh_capacitacion_pkey;
+ALTER TABLE IF EXISTS ONLY public.log_accesos DROP CONSTRAINT IF EXISTS log_accesos_pkey;
+ALTER TABLE IF EXISTS ONLY public.departamentos DROP CONSTRAINT IF EXISTS departamentos_pkey;
+ALTER TABLE IF EXISTS ONLY public.departamentos DROP CONSTRAINT IF EXISTS departamentos_nombre_key;
+ALTER TABLE IF EXISTS ONLY public.control_horas_extras DROP CONSTRAINT IF EXISTS control_horas_extras_pkey;
+ALTER TABLE IF EXISTS ONLY public.control_asistencia DROP CONSTRAINT IF EXISTS control_asistencia_pkey;
+ALTER TABLE IF EXISTS ONLY public.asistencia_eventos DROP CONSTRAINT IF EXISTS asistencia_eventos_pkey;
+ALTER TABLE IF EXISTS public.rh_vacaciones ALTER COLUMN id_vacacion DROP DEFAULT;
+ALTER TABLE IF EXISTS public.rh_solicitudes_empleo ALTER COLUMN id_solicitud DROP DEFAULT;
+ALTER TABLE IF EXISTS public.rh_permisos ALTER COLUMN id_permiso DROP DEFAULT;
+ALTER TABLE IF EXISTS public.rh_incapacidades ALTER COLUMN id_incapacidad DROP DEFAULT;
+ALTER TABLE IF EXISTS public.rh_historial ALTER COLUMN id_historial DROP DEFAULT;
+ALTER TABLE IF EXISTS public.rh_evaluaciones ALTER COLUMN id_evaluacion DROP DEFAULT;
+ALTER TABLE IF EXISTS public.rh_entrevistas ALTER COLUMN id_entrevista DROP DEFAULT;
+ALTER TABLE IF EXISTS public.rh_documentos ALTER COLUMN id_documento DROP DEFAULT;
+ALTER TABLE IF EXISTS public.rh_contratos ALTER COLUMN id_contrato DROP DEFAULT;
+ALTER TABLE IF EXISTS public.rh_capacitacion ALTER COLUMN id_capacitacion DROP DEFAULT;
+ALTER TABLE IF EXISTS public.log_accesos ALTER COLUMN id_log DROP DEFAULT;
+ALTER TABLE IF EXISTS public.departamentos ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.control_horas_extras ALTER COLUMN id_autorizacion DROP DEFAULT;
+ALTER TABLE IF EXISTS public.control_asistencia ALTER COLUMN id_registro DROP DEFAULT;
+ALTER TABLE IF EXISTS public.asistencia_eventos ALTER COLUMN id DROP DEFAULT;
+DROP SEQUENCE IF EXISTS public.rh_vacaciones_id_vacacion_seq;
+DROP TABLE IF EXISTS public.rh_vacaciones;
+DROP SEQUENCE IF EXISTS public.rh_solicitudes_empleo_id_solicitud_seq;
+DROP TABLE IF EXISTS public.rh_solicitudes_empleo;
+DROP SEQUENCE IF EXISTS public.rh_permisos_id_permiso_seq;
+DROP TABLE IF EXISTS public.rh_permisos;
+DROP SEQUENCE IF EXISTS public.rh_incapacidades_id_incapacidad_seq;
+DROP TABLE IF EXISTS public.rh_incapacidades;
+DROP SEQUENCE IF EXISTS public.rh_historial_id_historial_seq;
+DROP TABLE IF EXISTS public.rh_historial;
+DROP SEQUENCE IF EXISTS public.rh_evaluaciones_id_evaluacion_seq;
+DROP TABLE IF EXISTS public.rh_evaluaciones;
+DROP SEQUENCE IF EXISTS public.rh_entrevistas_id_entrevista_seq;
+DROP TABLE IF EXISTS public.rh_entrevistas;
+DROP SEQUENCE IF EXISTS public.rh_documentos_id_documento_seq;
+DROP TABLE IF EXISTS public.rh_documentos;
+DROP SEQUENCE IF EXISTS public.rh_contratos_id_contrato_seq;
+DROP TABLE IF EXISTS public.rh_contratos;
+DROP SEQUENCE IF EXISTS public.rh_capacitacion_id_capacitacion_seq;
+DROP TABLE IF EXISTS public.rh_capacitacion;
+DROP SEQUENCE IF EXISTS public.log_accesos_id_log_seq;
+DROP TABLE IF EXISTS public.log_accesos;
+DROP TABLE IF EXISTS public.empleados;
+DROP SEQUENCE IF EXISTS public.departamentos_id_seq;
+DROP TABLE IF EXISTS public.departamentos;
+DROP SEQUENCE IF EXISTS public.control_horas_extras_id_autorizacion_seq;
+DROP TABLE IF EXISTS public.control_horas_extras;
+DROP SEQUENCE IF EXISTS public.control_asistencia_id_registro_seq;
+DROP TABLE IF EXISTS public.control_asistencia;
+DROP SEQUENCE IF EXISTS public.asistencia_eventos_id_seq;
+DROP TABLE IF EXISTS public.asistencia_eventos;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -1205,24 +1295,58 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 322	105	2026-09-22	09:22:00	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 323	104	2026-09-22	09:54:35	14:03:33	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:38:36	19:00:14
 325	200	2026-09-22	10:01:04	13:51:50	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
-327	200	2026-09-23	08:46:24	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 328	121	2026-09-23	08:46:51	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-329	115	2026-09-23	08:46:54	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-330	201	2026-09-23	08:50:57	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-331	124	2026-09-23	08:52:30	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-332	119	2026-09-23	08:53:15	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-333	202	2026-09-23	08:57:36	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-334	107	2026-09-23	08:58:28	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+335	104	2026-09-23	08:59:12	14:18:33	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	15:49:14	\N
+329	115	2026-09-23	08:46:54	14:01:25	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 318	201	2026-09-22	08:58:39	14:15:42	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:24	18:58:32
 320	107	2026-09-22	09:08:01	14:00:39	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:49:32	18:58:37
 326	109	2026-09-22	09:30:00	18:58:46	RETARDO	Kiosco - T. Matutino | Kiosco - Fin Jornada	\N	\N
 319	119	2026-09-22	08:59:06	14:00:57	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:02:02	18:59:35
 316	124	2026-09-22	08:57:59	14:01:01	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:59:41	18:59:50
 321	113	2026-09-22	09:22:00	14:04:15	COMPLETO	Kiosco - T. Matutino | Ajuste manual | Kiosco - Comida | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:25:24	18:59:52
-335	104	2026-09-23	08:59:12	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 336	105	2026-09-23	09:04:34	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-337	113	2026-09-23	09:16:06	\N	RETARDO	Kiosco - T. Matutino	\N	\N
-338	109	2026-09-23	09:34:14	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+334	107	2026-09-23	08:58:28	14:01:13	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:49:02	18:59:55
+338	109	2026-09-23	09:34:14	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:40
+331	124	2026-09-23	08:52:30	14:01:45	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:09:46	19:00:10
+332	119	2026-09-23	08:53:15	14:01:36	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:09:54	18:59:37
+337	113	2026-09-23	09:16:06	14:13:19	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	19:00:04	\N
+333	202	2026-09-23	08:57:36	14:18:21	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:00:20	19:00:02
+330	201	2026-09-23	08:50:57	14:01:50	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:29	18:59:32
+327	200	2026-09-23	08:46:24	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos) | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:50
+342	121	2026-09-24	08:51:57	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+344	119	2026-09-24	09:02:49	14:01:32	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+339	115	2026-09-24	08:50:38	08:58:18	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Matutino	14:01:37	\N
+352	201	2026-09-25	08:58:16	14:05:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:00:04	18:57:39
+356	105	2026-09-25	09:06:56	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	18:59:46
+348	104	2026-09-24	09:06:55	14:04:36	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	15:49:43	\N
+358	113	2026-09-25	09:19:35	14:02:32	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:08:47	19:00:03
+351	124	2026-09-25	08:57:48	13:58:37	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:30	19:00:08
+359	202	2026-09-25	09:32:35	14:11:08	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:54:09	19:00:13
+354	119	2026-09-25	08:58:49	13:58:34	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	19:00:27	\N
+360	109	2026-09-25	09:43:59	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:32
+361	200	2026-09-25	10:08:40	13:32:52	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:24:56	19:00:35
+341	200	2026-09-24	08:50:46	13:47:59	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:45:45	18:54:18
+343	201	2026-09-24	08:58:29	14:04:51	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:06:44	18:58:41
+340	202	2026-09-24	08:50:41	14:04:59	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:53:01	19:00:15
+345	124	2026-09-24	09:02:53	14:01:15	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:06:17	19:00:27
+349	113	2026-09-24	09:14:20	14:02:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:07:38	19:00:30
+346	107	2026-09-24	09:03:30	14:01:28	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:03:55	19:00:36
+350	109	2026-09-24	09:23:49	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:46
+347	105	2026-09-24	09:03:40	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:01:09
+353	115	2026-09-25	08:58:23	13:59:00	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+357	107	2026-09-25	09:09:20	13:57:51	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:49:25	19:01:00
+355	104	2026-09-25	09:00:06	14:11:24	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	15:40:13	\N
+362	104	2026-09-26	08:55:54	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+363	202	2026-09-26	08:56:00	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+364	201	2026-09-26	08:56:06	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+365	115	2026-09-26	08:56:18	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+366	107	2026-09-26	08:59:06	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+367	124	2026-09-26	09:08:59	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+369	105	2026-09-26	09:10:01	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+370	109	2026-09-26	09:19:50	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+371	113	2026-09-26	09:21:20	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+372	200	2026-09-26	09:25:14	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+368	119	2026-09-26	09:09:22	09:52:30	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 \.
 
 
@@ -1414,7 +1538,7 @@ SELECT pg_catalog.setval('public.asistencia_eventos_id_seq', 1, false);
 -- Name: control_asistencia_id_registro_seq; Type: SEQUENCE SET; Schema: public; Owner: vpro_dbadmin
 --
 
-SELECT pg_catalog.setval('public.control_asistencia_id_registro_seq', 338, true);
+SELECT pg_catalog.setval('public.control_asistencia_id_registro_seq', 372, true);
 
 
 --
@@ -1855,5 +1979,5 @@ ALTER TABLE ONLY public.rh_vacaciones
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6xgnN9lLhB4SqRZzcbnb3UZuYy9wB2zAnjf5S9NOG1mUQvn1K0PWnAT8vbmKxAB
+\unrestrict JSKaX542U0D94KdrXcxiHmiu8kzDuKV1OsUIcfFDB8t1ff3UEan25IuLatsnDHT
 

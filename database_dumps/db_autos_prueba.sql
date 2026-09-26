@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict d4oD9LeqrJe9qNsJqbydhb8QFte0j0l17pEEd9WOgonA1huIpmcvKDFoAC0yhmg
+\restrict CBNr6BbRaERwW60zSsZDcuimp6fmIxyi5SdnVBT6FY19BigYPoIL59rO6fLdKH7
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -19,6 +19,8 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE IF EXISTS ONLY public.autos DROP CONSTRAINT IF EXISTS autos_pkey;
+DROP TABLE IF EXISTS public.autos;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -86,5 +88,5 @@ ALTER TABLE ONLY public.autos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict d4oD9LeqrJe9qNsJqbydhb8QFte0j0l17pEEd9WOgonA1huIpmcvKDFoAC0yhmg
+\unrestrict CBNr6BbRaERwW60zSsZDcuimp6fmIxyi5SdnVBT6FY19BigYPoIL59rO6fLdKH7
 

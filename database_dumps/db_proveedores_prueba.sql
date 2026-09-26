@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict BOjhtPRViVCjABoVkhlz7PpN7GQTEMpb4xOtWGU2x0T3h2T12kxXfxgzWFke3eu
+\restrict wzaR2Y1nMi3Sl49KLzoMiLtyphQ7FMrmwbywrQ8jd0iESsIicffEh748L2d7Zc0
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -19,6 +19,8 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+ALTER TABLE IF EXISTS ONLY public.proveedores DROP CONSTRAINT IF EXISTS proveedores_pkey;
+DROP TABLE IF EXISTS public.proveedores;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -68,5 +70,5 @@ ALTER TABLE ONLY public.proveedores
 -- PostgreSQL database dump complete
 --
 
-\unrestrict BOjhtPRViVCjABoVkhlz7PpN7GQTEMpb4xOtWGU2x0T3h2T12kxXfxgzWFke3eu
+\unrestrict wzaR2Y1nMi3Sl49KLzoMiLtyphQ7FMrmwbywrQ8jd0iESsIicffEh748L2d7Zc0
 

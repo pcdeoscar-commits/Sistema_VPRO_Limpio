@@ -77,7 +77,7 @@ app.add_middleware(
 
 # 3️⃣ MONTAJE DE DIRECTORIOS ESTÁTICOS
 app.mount("/fotos", StaticFiles(directory="Fotos_de_personal"), name="fotos")
-app.mount("/Fotos_de_equipos", StaticFiles(directory=str(FOTOS_EQUIPOS_DIR)), name="fotos")
+app.mount("/Fotos_de_equipos", StaticFiles(directory=str(FOTOS_EQUIPOS_DIR)), name="fotos_equipos")
 app.mount("/evidencias_web", StaticFiles(directory=str(DIR_EVIDENCIAS_REAL)), name="evidencias")
 
 # 4️⃣ REGISTRO DE ROUTERS MODULARES
@@ -100,3 +100,6 @@ app.include_router(rh.router)
 def health_check():
     """Endpoint de verificación de salud del sistema."""
     return {"status": "ONLINE", "service": "VPRO Core API Engine", "version": "8.1.0"}
+
+# 5️⃣ MONTAJE DEL FRONTEND WEB INTEGRADO (SPA)
+app.mount("/", StaticFiles(directory="prueba_web", html=True), name="frontend")

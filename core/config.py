@@ -4,6 +4,15 @@ from pathlib import Path
 # Directorio base del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Cargar variables desde .env si existe
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(env_path)
+    except ImportError:
+        pass
+
 # Configuración de Base de Datos PostgreSQL
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASS = os.getenv("DB_PASS", "1qaz2wsx")
@@ -11,7 +20,7 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 
 # URL del Backend API
-API_URL = os.getenv("API_URL", "https://172.16.0.20:8000")
+API_URL = os.getenv("API_URL", "http://localhost:8521")
 
 # Carpetas de Recursos y Evidencias
 FOTOS_EQUIPOS_DIR = BASE_DIR / "Fotos_de_equipos"

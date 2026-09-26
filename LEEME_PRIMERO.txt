@@ -1,0 +1,28 @@
+=============================================================================
+🎬 VPRO WORKSPACE ERP - INSTRUCCIONES RÁPIDAS PARA NUEVA COMPUTADORA
+=============================================================================
+
+Para poner a funcionar el sistema en esta computadora, sigue estos 3 pasos:
+
+REQUISITOS PREVIOS:
+1. Tener instalado Python 3.10 o superior (con la opción "Add to PATH" marcada).
+2. Tener instalado PostgreSQL (con usuario 'postgres' y puerto 5432).
+
+PASOS DE EJECUCIÓN:
+Paso 1: Ejecuta '1_instalar_entorno.bat'
+        -> Creará el entorno virtual e instalará todas las dependencias.
+
+Paso 2: Ejecuta '2_restaurar_bd.bat'
+        -> Creará y restaurará las 12 bases de datos de PostgreSQL con toda la
+           información y catálogos.
+
+Paso 3: Ejecuta '3_iniciar_sistema.bat'
+        -> Levantará el Backend FastAPI y el Servidor Web, abriendo automáticamente
+           el sistema en tu navegador:
+           http://localhost:5500
+
+NOTAS:
+- Para detener el sistema: ejecuta '4_detener_sistema.bat'.
+- Para ver la guía detallada: abre 'LEEME_INSTALACION.md'.
+- Si deseas cambiar la contraseña de PostgreSQL: edita el archivo '.env'.
+=============================================================================

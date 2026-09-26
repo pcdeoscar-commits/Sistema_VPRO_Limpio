@@ -25,4 +25,5 @@ bcrypt
 requests
 python-multipart
 pydantic
+python-dotenv
 

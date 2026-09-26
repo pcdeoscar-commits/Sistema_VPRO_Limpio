@@ -4,7 +4,11 @@
 // ==============================================================================
 
 // 1. CONFIGURACIÓN Y VARIABLES GLOBALES
-const API_URL = "https://172.16.0.20:8000"; 
+const API_URL = localStorage.getItem("vpro_api_url") || (
+    (!window.location.origin || window.location.origin === "null" || window.location.port === "5500")
+        ? `${window.location.protocol === "https:" ? "https:" : "http:"}//${window.location.hostname || "localhost"}:8521`
+        : window.location.origin
+); 
 
 let usuarioLogueado = null;
 let empleadoSeleccionado = null;
@@ -189,16 +193,25 @@ function cambiarVista(idVista) {
         } else if (idVista === 'vista-checador') {
             iniciarRelojKiosco();
             cargarMatrizKiosco();
+            cargarCredencialPersonal();
         } else if (idVista === 'vista-ops') {
             inicializarModuloOP();
         } else if (idVista === 'vista-danados') {
-            cargarEquiposDanados();
+            cargarModuloDanados();
         } else if (idVista === 'vista-gastos') {
-            cargarReporteGastos();
+            cargarModuloGastos();
         } else if (idVista === 'vista-auditoria') {
             cargarAuditoriaAsistencia();
         } else if (idVista === 'vista-catalogos') {
             abrirSubcatalogo((typeof subcatalogoActivoActual !== 'undefined' && subcatalogoActivoActual) ? subcatalogoActivoActual : 'hub');
+        } else if (idVista === 'vista-checkout') {
+            inicializarModuloCheckout();
+        } else if (idVista === 'vista-incidencias') {
+            cargarModuloIncidencias();
+        } else if (idVista === 'vista-analitica') {
+            cargarModuloAnalitica();
+        } else if (idVista === 'vista-rh') {
+            cargarModuloRH();
         }
     } else {
         console.warn(`Vista no encontrada: ${idVista}`);
@@ -270,7 +283,9 @@ async function cargarDatosInicio() {
                         <div class="alerta-card warning">
                             <i class="ph ph-warning-circle" style="font-size: 20px;"></i>
                             <span style="flex: 1;">⚠️ <b>${op.label || op.folio || 'Orden pendiente'}</b> | Estatus actual: <code>${op.estado || 'PENDIENTE'}</code></span>
-                            <button onclick="cambiarVista('vista-checkout')" style="background: #b45309; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600;">Ver</button>
+                            <button onclick="abrirCheckoutConOP(${op.id_evento || 0}, '${(op.label || '').replace(/'/g, "\\'")}')" style="background: #b45309; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="ph ph-arrow-right"></i> Ver
+                            </button>
                         </div>
                     `).join("");
                 } else {
@@ -455,6 +470,148 @@ async function cargarMatrizKiosco() {
     }
 }
 
+function reproducirBeepKiosco(tipo = 'ok') {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const audioCtx = new AudioContext();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        if (tipo === 'ok') {
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        } else {
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+    } catch (e) {}
+}
+
+function cambiarPestanaChecador(tab) {
+    const tabs = ['kiosco', 'credencial', 'auditoria'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`tab-checador-btn-${t}`);
+        const view = document.getElementById(`subvista-checador-${t}`);
+        if (btn && view) {
+            if (t === tab) {
+                btn.style.background = '#0f172a';
+                btn.style.color = 'white';
+                btn.style.border = 'none';
+                view.style.display = 'block';
+            } else {
+                btn.style.background = '#f1f5f9';
+                btn.style.color = '#475569';
+                btn.style.border = '1px solid #cbd5e1';
+                view.style.display = 'none';
+            }
+        }
+    });
+
+    if (tab === 'kiosco') {
+        iniciarRelojKiosco();
+        cargarMatrizKiosco();
+    } else if (tab === 'credencial') {
+        cargarCredencialPersonal();
+    } else if (tab === 'auditoria') {
+        cargarAuditoriaAsistencia();
+    }
+}
+
+function filtrarMatrizKiosco(termino) {
+    const t = (termino || "").toLowerCase().trim();
+    const rows = document.querySelectorAll("#tabla-asistencia-body tr");
+    rows.forEach(r => {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(t) ? "" : "none";
+    });
+}
+
+async function cargarCredencialPersonal() {
+    if (!usuarioLogueado) return;
+    const idEmp = String(usuarioLogueado.id_empleado || '000').trim();
+    
+    const elNombre = document.getElementById("credencial-nombre");
+    const elId = document.getElementById("credencial-id");
+    const elDepto = document.getElementById("credencial-depto");
+    const elPuesto = document.getElementById("credencial-puesto");
+    const elIngreso = document.getElementById("credencial-ingreso");
+    const elRolBadge = document.getElementById("credencial-badge-rol");
+    const elFoto = document.getElementById("credencial-foto");
+
+    if (elNombre) elNombre.innerText = usuarioLogueado.nombre_completo || 'Colaborador VPRO';
+    if (elId) elId.innerText = idEmp;
+    if (elDepto) elDepto.innerText = usuarioLogueado.depto || 'General';
+    if (elPuesto) elPuesto.innerText = usuarioLogueado.rol || 'Personal';
+    if (elRolBadge) elRolBadge.innerText = (usuarioLogueado.rol || 'OPERADOR').toUpperCase();
+    if (elFoto) elFoto.src = usuarioLogueado.foto_url || `${API_URL}/fotos/${idEmp}.jpg`;
+
+    try {
+        const resQr = await fetch(`${API_URL}/api/empleados/${idEmp}/qr`);
+        if (resQr.ok) {
+            const dataQr = await resQr.json();
+            const qrImg = document.getElementById("credencial-qr-img");
+            const btnDescargar = document.getElementById("credencial-btn-descargar-qr");
+            if (qrImg && dataQr.qr_base64) {
+                qrImg.src = dataQr.qr_base64;
+            }
+            if (btnDescargar && dataQr.qr_base64) {
+                btnDescargar.href = dataQr.qr_base64;
+                btnDescargar.download = `QR_VPRO_${idEmp}.png`;
+            }
+        }
+    } catch (e) {
+        console.warn("No se pudo cargar el QR:", e);
+    }
+
+    try {
+        const resAsist = await fetch(`${API_URL}/api/asistencia/reporte`);
+        if (resAsist.ok) {
+            const registros = await resAsist.json();
+            const hoyStr = formatearFechaLocal(new Date());
+            const miReg = registros.find(r => String(r.id_empleado).trim() === idEmp && r.fecha && r.fecha.startsWith(hoyStr));
+            
+            const matIn = document.getElementById("mi-marca-mat-in");
+            const matOut = document.getElementById("mi-marca-mat-out");
+            const vespIn = document.getElementById("mi-marca-vesp-in");
+            const vespOut = document.getElementById("mi-marca-vesp-out");
+
+            const matInEst = document.getElementById("mi-marca-mat-in-est");
+            const matOutEst = document.getElementById("mi-marca-mat-out-est");
+            const vespInEst = document.getElementById("mi-marca-vesp-in-est");
+            const vespOutEst = document.getElementById("mi-marca-vesp-out-est");
+
+            const limpiaHora = (h) => (h && h !== "None" && h !== "null" && h !== "--:--") ? String(h).substring(0, 8) : "--:--:--";
+            
+            if (miReg) {
+                const h1 = limpiaHora(miReg.hora_entrada);
+                const h2 = limpiaHora(miReg.hora_salida);
+                const h3 = limpiaHora(miReg.hora_entrada_v);
+                const h4 = limpiaHora(miReg.hora_salida_v);
+
+                if (matIn) matIn.innerText = h1;
+                if (matOut) matOut.innerText = h2;
+                if (vespIn) vespIn.innerText = h3;
+                if (vespOut) vespOut.innerText = h4;
+
+                if (matInEst) matInEst.innerHTML = h1 !== "--:--:--" ? '<span style="color:#16a34a; font-weight:700;">🟢 Registrada</span>' : '<span style="color:#94a3b8;">Pendiente</span>';
+                if (matOutEst) matOutEst.innerHTML = h2 !== "--:--:--" ? '<span style="color:#16a34a; font-weight:700;">🟢 Registrada</span>' : '<span style="color:#94a3b8;">Pendiente</span>';
+                if (vespInEst) vespInEst.innerHTML = h3 !== "--:--:--" ? '<span style="color:#16a34a; font-weight:700;">🟢 Registrada</span>' : '<span style="color:#94a3b8;">Pendiente</span>';
+                if (vespOutEst) vespOutEst.innerHTML = h4 !== "--:--:--" ? '<span style="color:#16a34a; font-weight:700;">🟢 Registrada</span>' : '<span style="color:#94a3b8;">Pendiente</span>';
+            }
+        }
+    } catch (e) {
+        console.warn("No se pudieron consultar marcas de hoy:", e);
+    }
+}
+
 function inicializarLectorKiosco() {
     const inputGafete = document.getElementById("input-gafete");
     const alertaKiosco = document.getElementById("kiosco-alerta");
@@ -477,6 +634,7 @@ function inicializarLectorKiosco() {
             const ahoraTS = Date.now();
             if (memoriaKiosco[qrCode] && (ahoraTS - memoriaKiosco[qrCode]) < 60000) {
                 mostrarAlerta("⏱️ Asistencia ya registrada recientemente.", "#fef3c7", "#92400e", "#f59e0b");
+                reproducirBeepKiosco('warn');
                 return;
             }
             memoriaKiosco[qrCode] = ahoraTS;
@@ -501,15 +659,19 @@ function inicializarLectorKiosco() {
                 } catch (e) {}
 
                 if (respuesta.ok && resultado.status !== "WARNING") {
+                    reproducirBeepKiosco('ok');
                     mostrarAlerta(`✅ ${resultado.mensaje}`, "#d1fae5", "#065f46", "#10b981");
                 } else if (resultado.status === "WARNING") {
+                    reproducirBeepKiosco('warn');
                     mostrarAlerta(`⚠️ ${resultado.mensaje}`, "#fef3c7", "#92400e", "#f59e0b");
                 } else {
+                    reproducirBeepKiosco('warn');
                     mostrarAlerta(`❌ ${resultado.detail || "Error al registrar."}`, "#fee2e2", "#991b1b", "#ef4444");
                 }
 
                 cargarMatrizKiosco();
             } catch (error) { 
+                reproducirBeepKiosco('warn');
                 mostrarAlerta("📡 Error de conexión con el servidor.", "#fee2e2", "#991b1b", "#ef4444"); 
             }
         }
@@ -1401,98 +1563,1302 @@ async function guardarOrdenOP(event) {
 // ==========================================
 // 7. MÓDULO EQUIPOS DAÑADOS
 // ==========================================
-async function cargarEquiposDanados() {
+let datosRadarDanosCache = [];
+let datosDanosFiltrados = [];
+let chartDanadosInstance = null;
+
+// ==============================================================================
+// BUSCADOR EN VIVO DE EQUIPOS PARA EXPEDIENTE CLÍNICO Y REPORTES DE DAÑOS
+// ==============================================================================
+let catalogoGlobalEquipos = [];
+let indiceFocoSugerenciaExpediente = -1;
+let indiceFocoSugerenciaDirecto = -1;
+
+function normalizarTextoBusqueda(str) {
+    return (str || "")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function resaltarTexto(texto, query) {
+    if (!query || !texto) return texto || "";
+    const cleanQuery = normalizarTextoBusqueda(query);
+    if (!cleanQuery) return texto;
+    const re = new RegExp(`(${cleanQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return String(texto).replace(re, '<mark style="background: #fef08a; color: #854d0e; padding: 0 2px; border-radius: 2px;">$1</mark>');
+}
+
+// --- Autocomplete Expediente Clínico ---
+function activarSugerenciasExpediente() {
+    const input = document.getElementById("input-expediente-buscar");
+    filtrarSugerenciasExpediente(input ? input.value : "");
+}
+
+function filtrarSugerenciasExpediente(termino) {
+    const dropdown = document.getElementById("sugerencias-expediente-dropdown");
+    const btnLimpiar = document.getElementById("btn-limpiar-busqueda-expediente");
+    if (!dropdown) return;
+
+    if (btnLimpiar) {
+        btnLimpiar.style.display = (termino && termino.trim()) ? "block" : "none";
+    }
+
+    const t = normalizarTextoBusqueda(termino);
+    indiceFocoSugerenciaExpediente = -1;
+
+    let coincidencias = [];
+    if (!t) {
+        coincidencias = catalogoGlobalEquipos.slice(0, 30);
+    } else {
+        const palabras = t.split(" ").filter(Boolean);
+        coincidencias = catalogoGlobalEquipos.filter(item => {
+            const norm = normalizarTextoBusqueda(item);
+            return palabras.every(pal => norm.includes(pal));
+        }).slice(0, 50);
+    }
+
+    if (coincidencias.length === 0) {
+        dropdown.innerHTML = `
+            <div style="padding: 16px; text-align: center; color: #64748b; font-size: 13px;">
+                <i class="ph ph-warning-circle" style="font-size: 20px; color: #f59e0b; display: block; margin-bottom: 4px;"></i>
+                No se encontraron equipos con el término: "<b>${termino}</b>"<br>
+                <span style="font-size: 11.5px; color: #94a3b8;">Intenta con otra palabra clave (marca, nombre o código).</span>
+            </div>
+        `;
+        dropdown.style.display = "block";
+        return;
+    }
+
+    dropdown.innerHTML = `
+        <div style="padding: 8px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between;">
+            <span>Coincidencias encontradas (${coincidencias.length}${coincidencias.length === 50 ? '+' : ''}):</span>
+            <span style="font-size: 10.5px; text-transform: none; color: #94a3b8;">Usa ↑ ↓ y Enter o haz clic</span>
+        </div>
+        ` + coincidencias.map((item, idx) => {
+            const partes = item.split(" - ");
+            const codigo = partes[0].trim();
+            const nombre = partes.slice(1).join(" - ").trim() || codigo;
+            return `
+                <div class="sugerencia-item-exp" data-idx="${idx}" onclick="seleccionarEquipoExpediente('${codigo.replace(/'/g, "\\'")}', '${item.replace(/'/g, "\\'")}')" 
+                     style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s;"
+                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">
+                    <div style="flex: 1; padding-right: 12px;">
+                        <div style="font-weight: 600; color: #0f172a; font-size: 13.5px; line-height: 1.3;">
+                            ${resaltarTexto(nombre, termino)}
+                        </div>
+                        <div style="font-size: 11.5px; color: #64748b; margin-top: 3px; display: flex; align-items: center; gap: 6px;">
+                            <span style="background: #e2e8f0; color: #334155; padding: 2px 7px; border-radius: 4px; font-family: monospace; font-weight: 700; font-size: 11px;">
+                                ${resaltarTexto(codigo, termino)}
+                            </span>
+                        </div>
+                    </div>
+                    <i class="ph ph-arrow-circle-right" style="color: var(--accent-color); font-size: 18px; flex-shrink: 0;"></i>
+                </div>
+            `;
+        }).join("");
+
+    dropdown.style.display = "block";
+}
+
+function ocultarSugerenciasExpediente() {
+    const dropdown = document.getElementById("sugerencias-expediente-dropdown");
+    if (dropdown) dropdown.style.display = "none";
+}
+
+function seleccionarEquipoExpediente(codigo, itemCompleto) {
+    const input = document.getElementById("input-expediente-buscar");
+    const hidden = document.getElementById("sel-expediente-equipo-buscar");
+    if (input) input.value = itemCompleto;
+    if (hidden) hidden.value = codigo;
+    ocultarSugerenciasExpediente();
+    buscarExpedienteDanado();
+}
+
+function limpiarBusquedaExpediente() {
+    const input = document.getElementById("input-expediente-buscar");
+    const hidden = document.getElementById("sel-expediente-equipo-buscar");
+    const btnLimpiar = document.getElementById("btn-limpiar-busqueda-expediente");
+    if (input) {
+        input.value = "";
+        input.focus();
+    }
+    if (hidden) hidden.value = "";
+    if (btnLimpiar) btnLimpiar.style.display = "none";
+    filtrarSugerenciasExpediente("");
+}
+
+function manejarKeydownSugerenciasExpediente(e) {
+    const dropdown = document.getElementById("sugerencias-expediente-dropdown");
+    if (!dropdown || dropdown.style.display === "none") {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            buscarExpedienteDanado();
+        }
+        return;
+    }
+
+    const items = dropdown.querySelectorAll(".sugerencia-item-exp");
+    if (items.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+        e.preventDefault();
+        indiceFocoSugerenciaExpediente = (indiceFocoSugerenciaExpediente + 1) % items.length;
+        items.forEach((it, i) => it.style.background = i === indiceFocoSugerenciaExpediente ? "#eff6ff" : "white");
+        items[indiceFocoSugerenciaExpediente].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        indiceFocoSugerenciaExpediente = (indiceFocoSugerenciaExpediente - 1 + items.length) % items.length;
+        items.forEach((it, i) => it.style.background = i === indiceFocoSugerenciaExpediente ? "#eff6ff" : "white");
+        items[indiceFocoSugerenciaExpediente].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (indiceFocoSugerenciaExpediente >= 0 && indiceFocoSugerenciaExpediente < items.length) {
+            items[indiceFocoSugerenciaExpediente].click();
+        } else {
+            buscarExpedienteDanado();
+        }
+    } else if (e.key === "Escape") {
+        ocultarSugerenciasExpediente();
+    }
+}
+
+// --- Autocomplete Reporte Directo ---
+function activarSugerenciasDirecto() {
+    const input = document.getElementById("input-danos-equipo-directo");
+    filtrarSugerenciasDirecto(input ? input.value : "");
+}
+
+function filtrarSugerenciasDirecto(termino) {
+    const dropdown = document.getElementById("sugerencias-directo-dropdown");
+    const btnLimpiar = document.getElementById("btn-limpiar-busqueda-directo");
+    if (!dropdown) return;
+
+    if (btnLimpiar) {
+        btnLimpiar.style.display = (termino && termino.trim()) ? "block" : "none";
+    }
+
+    const t = normalizarTextoBusqueda(termino);
+    let coincidencias = [];
+    if (!t) {
+        coincidencias = catalogoGlobalEquipos.slice(0, 30);
+    } else {
+        const palabras = t.split(" ").filter(Boolean);
+        coincidencias = catalogoGlobalEquipos.filter(item => {
+            const norm = normalizarTextoBusqueda(item);
+            return palabras.every(pal => norm.includes(pal));
+        }).slice(0, 50);
+    }
+
+    if (coincidencias.length === 0) {
+        dropdown.innerHTML = `<div style="padding: 12px; text-align: center; color: #64748b; font-size: 12.5px;">No se encontraron equipos</div>`;
+        dropdown.style.display = "block";
+        return;
+    }
+
+    dropdown.innerHTML = coincidencias.map((item, idx) => {
+        const partes = item.split(" - ");
+        const codigo = partes[0].trim();
+        const nombre = partes.slice(1).join(" - ").trim() || codigo;
+        return `
+            <div onclick="seleccionarEquipoDirecto('${codigo.replace(/'/g, "\\'")}', '${item.replace(/'/g, "\\'")}')" 
+                 style="padding: 9px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 13px;"
+                 onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">
+                <div>
+                    <b>${nombre}</b>
+                    <div style="font-size: 11px; color: #64748b; font-family: monospace;">${codigo}</div>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    dropdown.style.display = "block";
+}
+
+function ocultarSugerenciasDirecto() {
+    const dropdown = document.getElementById("sugerencias-directo-dropdown");
+    if (dropdown) dropdown.style.display = "none";
+}
+
+function seleccionarEquipoDirecto(codigo, itemCompleto) {
+    const input = document.getElementById("input-danos-equipo-directo");
+    const hidden = document.getElementById("danos-sel-equipo-directo");
+    if (input) input.value = itemCompleto;
+    if (hidden) hidden.value = codigo;
+    ocultarSugerenciasDirecto();
+}
+
+function limpiarBusquedaDirecto() {
+    const input = document.getElementById("input-danos-equipo-directo");
+    const hidden = document.getElementById("danos-sel-equipo-directo");
+    const btnLimpiar = document.getElementById("btn-limpiar-busqueda-directo");
+    if (input) {
+        input.value = "";
+        input.focus();
+    }
+    if (hidden) hidden.value = "";
+    if (btnLimpiar) btnLimpiar.style.display = "none";
+    filtrarSugerenciasDirecto("");
+}
+
+function manejarKeydownSugerenciasDirecto(e) {
+    if (e.key === "Escape") ocultarSugerenciasDirecto();
+}
+
+// Cierre automático al hacer clic fuera
+document.addEventListener("click", function(e) {
+    const contExp = document.getElementById("contenedor-input-expediente");
+    const dropExp = document.getElementById("sugerencias-expediente-dropdown");
+    if (dropExp && contExp && !contExp.contains(e.target) && !dropExp.contains(e.target)) {
+        dropExp.style.display = "none";
+    }
+
+    const contDir = document.getElementById("contenedor-input-directo");
+    const dropDir = document.getElementById("sugerencias-directo-dropdown");
+    if (dropDir && contDir && !contDir.contains(e.target) && !dropDir.contains(e.target)) {
+        dropDir.style.display = "none";
+    }
+});
+
+function cambiarPestanaDanados(tab) {
+    const btnRadar = document.getElementById("tab-danados-btn-radar");
+    const btnExpediente = document.getElementById("tab-danados-btn-expediente");
+    const viewRadar = document.getElementById("subvista-danados-radar");
+    const viewExpediente = document.getElementById("subvista-danados-expediente");
+
+    if (tab === 'radar') {
+        if (btnRadar) { btnRadar.style.background = '#0f172a'; btnRadar.style.color = 'white'; btnRadar.style.border = 'none'; }
+        if (btnExpediente) { btnExpediente.style.background = '#f1f5f9'; btnExpediente.style.color = '#475569'; btnExpediente.style.border = '1px solid #cbd5e1'; }
+        if (viewRadar) viewRadar.style.display = 'block';
+        if (viewExpediente) viewExpediente.style.display = 'none';
+    } else {
+        if (btnExpediente) { btnExpediente.style.background = '#0f172a'; btnExpediente.style.color = 'white'; btnExpediente.style.border = 'none'; }
+        if (btnRadar) { btnRadar.style.background = '#f1f5f9'; btnRadar.style.color = '#475569'; btnRadar.style.border = '1px solid #cbd5e1'; }
+        if (viewRadar) viewRadar.style.display = 'none';
+        if (viewExpediente) viewExpediente.style.display = 'block';
+        setTimeout(() => document.getElementById("input-expediente-buscar")?.focus(), 100);
+    }
+}
+
+async function cargarModuloDanados() {
+    try {
+        // Cargar catálogo global para los selectores si no se ha cargado
+        const [resCat, resRadar] = await Promise.all([
+            fetch(`${API_URL}/api/inventario/catalogo-global`),
+            fetch(`${API_URL}/api/inventario/radar-danos`)
+        ]);
+
+        if (resCat.ok) {
+            const catalogo = await resCat.json();
+            catalogoGlobalEquipos = catalogo || [];
+            const selDirecto = document.getElementById("danos-sel-equipo-directo");
+            const selExpediente = document.getElementById("sel-expediente-equipo-buscar");
+
+            if (selDirecto && selDirecto.tagName === 'SELECT' && selDirecto.children.length <= 1) {
+                selDirecto.innerHTML = '<option value="">--- Seleccionar Activo ---</option>' +
+                    catalogo.map(c => `<option value="${c}">${c}</option>`).join("");
+            }
+            if (selExpediente && selExpediente.tagName === 'SELECT' && selExpediente.children.length <= 1) {
+                selExpediente.innerHTML = '<option value="">--- Selecciona o escribe el equipo a auditar ---</option>' +
+                    catalogo.map(c => `<option value="${c}">${c}</option>`).join("");
+            }
+        }
+
+        if (resRadar.ok) {
+            datosRadarDanosCache = await resRadar.json();
+            const badgeDanados = document.getElementById("badge-danados");
+            if (badgeDanados) badgeDanados.innerText = datosRadarDanosCache.length || 0;
+
+            // Poblar dropdown de reportantes
+            const selReportante = document.getElementById("filtro-danos-reportante");
+            if (selReportante) {
+                const reportantes = [...new Set(datosRadarDanosCache.map(d => d["REPORTÓ"] || d["REPORTÓ_RAW"]).filter(Boolean))].sort();
+                selReportante.innerHTML = '<option value="Todos">Todos</option>' +
+                    reportantes.map(r => `<option value="${r}">${r}</option>`).join("");
+            }
+
+            // Poblar dropdown de tickets para resolver
+            const selTicketResolver = document.getElementById("sel-ticket-danado-cerrar");
+            if (selTicketResolver) {
+                selTicketResolver.innerHTML = '<option value="">--- Seleccionar Ticket ---</option>' +
+                    datosRadarDanosCache.map(d => `<option value="${d.NUM_SERVICIO}">#${d.NUM_SERVICIO} - ${d.EQUIPO} (${d.ESTADO})</option>`).join("");
+            }
+
+            aplicarFiltrosDanados();
+        }
+    } catch (err) {
+        console.error("Error al cargar radar de daños:", err);
+    }
+}
+
+function cargarEquiposDanados() {
+    cargarModuloDanados();
+}
+
+function aplicarFiltrosDanados() {
+    const fDesde = document.getElementById("filtro-danos-desde")?.value;
+    const fHasta = document.getElementById("filtro-danos-hasta")?.value;
+    const fDepto = document.getElementById("filtro-danos-depto")?.value || "Todos";
+    const fReportante = document.getElementById("filtro-danos-reportante")?.value || "Todos";
+
+    const hoy = new Date();
+
+    datosDanosFiltrados = datosRadarDanosCache.filter(item => {
+        const fRepStr = item.FECHA_REPORTE ? String(item.FECHA_REPORTE).substring(0, 10) : "";
+        if (fDesde && fRepStr && fRepStr < fDesde) return false;
+        if (fHasta && fRepStr && fRepStr > fHasta) return false;
+
+        if (fDepto !== "Todos") {
+            const dItem = String(item.DEPARTAMENTO || "").toUpperCase();
+            if (dItem !== fDepto.toUpperCase()) return false;
+        }
+
+        if (fReportante !== "Todos") {
+            const repItem = String(item["REPORTÓ"] || item["REPORTÓ_RAW"] || "").trim();
+            if (repItem !== fReportante.trim()) return false;
+        }
+
+        return true;
+    });
+
+    // Calcular días fuera para cada registro
+    datosDanosFiltrados.forEach(item => {
+        if (item.FECHA_REPORTE) {
+            const fItem = new Date(item.FECHA_REPORTE);
+            const diffTime = Math.abs(hoy - fItem);
+            item.DIAS_FUERA = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        } else {
+            item.DIAS_FUERA = 0;
+        }
+    });
+
+    // 4 KPIs
+    const elKpiTotal = document.getElementById("kpi-danados-total");
+    const elKpiDias = document.getElementById("kpi-danados-dias");
+    const elKpiTopRep = document.getElementById("kpi-danados-top-rep");
+    const elKpiTopArea = document.getElementById("kpi-danados-top-area");
+
+    if (elKpiTotal) elKpiTotal.innerText = datosDanosFiltrados.length;
+
+    const promDias = datosDanosFiltrados.length > 0 
+        ? Math.round(datosDanosFiltrados.reduce((acc, i) => acc + (i.DIAS_FUERA || 0), 0) / datosDanosFiltrados.length)
+        : 0;
+    if (elKpiDias) elKpiDias.innerText = `${promDias} Días`;
+
+    // Conteo por reportante
+    const conteoRep = {};
+    const conteoDepto = {};
+    datosDanosFiltrados.forEach(i => {
+        const r = i["REPORTÓ"] || i["REPORTÓ_RAW"] || "Sin asignar";
+        conteoRep[r] = (conteoRep[r] || 0) + 1;
+        const d = i.DEPARTAMENTO || "General";
+        conteoDepto[d] = (conteoDepto[d] || 0) + 1;
+    });
+
+    const topRep = Object.keys(conteoRep).sort((a,b) => conteoRep[b] - conteoRep[a])[0] || "--";
+    const topDepto = Object.keys(conteoDepto).sort((a,b) => conteoDepto[b] - conteoDepto[a])[0] || "--";
+
+    if (elKpiTopRep) elKpiTopRep.innerText = topRep;
+    if (elKpiTopArea) elKpiTopArea.innerText = topDepto;
+
+    // Actualizar gráfica Chart.js
+    renderizarGraficaDanadosPersonal(conteoRep);
+
+    // Renderizar tabla
+    renderizarTablaDanados(datosDanosFiltrados);
+}
+
+function renderizarGraficaDanadosPersonal(conteoRep) {
+    const canvas = document.getElementById("chart-danados-personal");
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    if (chartDanadosInstance) {
+        chartDanadosInstance.destroy();
+        chartDanadosInstance = null;
+    }
+
+    const labels = Object.keys(conteoRep).slice(0, 10);
+    const data = labels.map(l => conteoRep[l]);
+
+    chartDanadosInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Tickets Activos',
+                data: data,
+                backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                borderColor: '#dc2626',
+                borderWidth: 1.5,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` ${ctx.raw} ticket(s) activo(s)`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                },
+                x: {
+                    ticks: { maxRotation: 35, minRotation: 0 }
+                }
+            }
+        }
+    });
+}
+
+function renderizarTablaDanados(lista) {
     const tbody = document.getElementById("tabla-danados-body");
     if (!tbody) return;
 
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 24px; color: #166534; font-weight: 500;">✅ No hay equipos con daño bajo estos criterios de búsqueda.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = lista.map(eq => {
+        const estado = (eq.ESTADO || 'EN REVISIÓN').toUpperCase();
+        let badgeStyle = "background: #fef3c7; color: #92400e;";
+        if (estado.includes('TALLER') || estado.includes('GRAVE') || estado.includes('DAÑ')) badgeStyle = "background: #fee2e2; color: #991b1b;";
+        else if (estado.includes('PIEZA') || estado.includes('ESPERA')) badgeStyle = "background: #e0e7ff; color: #3730a3;";
+        else if (estado.includes('REPARADO') || estado.includes('RESUELTO')) badgeStyle = "background: #dcfce7; color: #166534;";
+
+        return `
+            <tr>
+                <td style="font-weight: 700; color: #0f172a;">#${eq.NUM_SERVICIO || '--'}</td>
+                <td>${eq.FECHA_REPORTE ? String(eq.FECHA_REPORTE).substring(0, 10) : '--'}</td>
+                <td><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">${eq.DIAS_FUERA || 0} d</span></td>
+                <td><code>${eq.ID || '--'}</code></td>
+                <td style="font-weight: 600; color: #0f172a;">${eq.EQUIPO || '--'}</td>
+                <td>${eq.DEPARTAMENTO || '--'}</td>
+                <td>${eq["REPORTÓ"] || eq["REPORTÓ_RAW"] || '--'}</td>
+                <td><span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; ${badgeStyle}">${estado}</span></td>
+                <td style="max-width: 240px; font-size: 12px; line-height: 1.4;">${eq.FALLA || '--'}</td>
+                <td style="font-weight: 700; color: #0f172a;">$${Number(eq.COSTO || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function filtrarTablaDanadosEnVivo(termino) {
+    const t = (termino || "").toLowerCase().trim();
+    if (!t) {
+        renderizarTablaDanados(datosDanosFiltrados);
+        return;
+    }
+    const filtrados = datosDanosFiltrados.filter(eq =>
+        (eq.EQUIPO && eq.EQUIPO.toLowerCase().includes(t)) ||
+        (eq.ID && eq.ID.toLowerCase().includes(t)) ||
+        (eq.DEPARTAMENTO && eq.DEPARTAMENTO.toLowerCase().includes(t)) ||
+        (eq["REPORTÓ"] && eq["REPORTÓ"].toLowerCase().includes(t)) ||
+        (eq.FALLA && eq.FALLA.toLowerCase().includes(t)) ||
+        (eq.ESTADO && eq.ESTADO.toLowerCase().includes(t)) ||
+        String(eq.NUM_SERVICIO).includes(t)
+    );
+    renderizarTablaDanados(filtrados);
+}
+
+function resetearFiltrosDanados() {
+    const fDesde = document.getElementById("filtro-danos-desde");
+    const fHasta = document.getElementById("filtro-danos-hasta");
+    const fDepto = document.getElementById("filtro-danos-depto");
+    const fReportante = document.getElementById("filtro-danos-reportante");
+    const fBuscar = document.getElementById("buscar-danados-tabla");
+
+    if (fDesde) fDesde.value = "";
+    if (fHasta) fHasta.value = "";
+    if (fDepto) fDepto.value = "Todos";
+    if (fReportante) fReportante.value = "Todos";
+    if (fBuscar) fBuscar.value = "";
+
+    aplicarFiltrosDanados();
+}
+
+async function guardarReporteDirectoDanado() {
+    const selEq = document.getElementById("danos-sel-equipo-directo")?.value;
+    const tipoEvento = document.getElementById("danos-tipo-evento")?.value;
+    const estInicial = document.getElementById("danos-estado-inicial")?.value;
+    const costo = parseFloat(document.getElementById("danos-costo-estimado")?.value || 0);
+    const detalle = document.getElementById("danos-txt-detalle")?.value.trim();
+    const fotoFile = document.getElementById("danos-input-foto")?.files?.[0];
+
+    if (!selEq || !detalle) {
+        alert("⚠️ Por favor selecciona un equipo y escribe el diagnóstico o detalle del daño.");
+        return;
+    }
+
+    const codPuro = selEq.includes(" - ") ? selEq.split(" - ")[0].trim() : selEq.trim();
+    const userId = usuarioLogueado?.id_empleado ? String(usuarioLogueado.id_empleado) : "000";
+    const userDepto = usuarioLogueado?.depto ? String(usuarioLogueado.depto).toUpperCase() : "OFICINA";
+
+    const payload = {
+        codigo_equipo: codPuro,
+        folio_vpro: "MANTENIMIENTO_INTERNO",
+        id_empleado: userId,
+        tipo_evento: tipoEvento,
+        descripcion: detalle,
+        costo_asociado: costo,
+        estado_final: estInicial,
+        departamento: userDepto
+    };
+
     try {
-        const res = await fetch(`${API_URL}/api/inventario/radar-danos`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const res = await fetch(`${API_URL}/api/inventario/historial/guardar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
 
-        const equipos = await res.json();
-        const badgeDanados = document.getElementById("badge-danados");
-        if (badgeDanados) badgeDanados.innerText = equipos.length || 0;
-
-        if (equipos.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 24px; color: #166534; font-weight: 500;">✅ No hay equipos reportados con daño actualmente. Almacén 100% operativo.</td></tr>`;
-            return;
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(err);
         }
 
-        tbody.innerHTML = equipos.map(eq => {
-            const estado = (eq.ESTADO || 'EN REVISIÓN').toUpperCase();
-            let badgeClass = "background: #fef3c7; color: #92400e;";
-            if (estado.includes('TALLER') || estado.includes('GRAVE')) badgeClass = "background: #fee2e2; color: #991b1b;";
-            else if (estado.includes('PIEZA') || estado.includes('ESPERA')) badgeClass = "background: #e0e7ff; color: #3730a3;";
+        if (fotoFile) {
+            const fd = new FormData();
+            fd.append("file", fotoFile);
+            fd.append("codigo_equipo", codPuro);
+            fd.append("folio_vpro", "MANTENIMIENTO_INTERNO");
+            await fetch(`${API_URL}/api/inventario/subir-evidencia`, {
+                method: "POST",
+                body: fd
+            });
+        }
 
-            return `
+        alert("✅ ¡Ticket de falla registrado con éxito en base de datos!");
+        document.getElementById("danos-txt-detalle").value = "";
+        document.getElementById("danos-costo-estimado").value = "0.00";
+        if (document.getElementById("danos-input-foto")) document.getElementById("danos-input-foto").value = "";
+        cargarModuloDanados();
+    } catch (e) {
+        console.error("Error al guardar ticket directo:", e);
+        alert(`❌ Error al registrar ticket: ${e.message}`);
+    }
+}
+
+async function cerrarTicketDanado() {
+    const selTicket = document.getElementById("sel-ticket-danado-cerrar")?.value;
+    const nuevoEstado = document.getElementById("sel-estado-danado-cerrar")?.value;
+
+    if (!selTicket) {
+        alert("⚠️ Por favor selecciona el ticket que deseas resolver.");
+        return;
+    }
+
+    if (!confirm(`¿Confirmas rehabilitar el equipo y marcar el ticket #${selTicket} como ${nuevoEstado}?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/reparacion/cerrar/${selTicket}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ estado_actual: nuevoEstado })
+        });
+
+        if (res.ok) {
+            alert(`✅ Ticket #${selTicket} cerrado con estado: ${nuevoEstado}. Equipo rehabilitado.`);
+            cargarModuloDanados();
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al cerrar ticket: ${err}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de comunicación: ${e.message}`);
+    }
+}
+
+async function buscarExpedienteDanado() {
+    ocultarSugerenciasExpediente();
+    let sel = document.getElementById("sel-expediente-equipo-buscar")?.value;
+    const inputVal = document.getElementById("input-expediente-buscar")?.value?.trim() || "";
+
+    let textoNombreMostrar = "";
+
+    // Si el usuario escribió directamente en el buscador o no hay selección previa
+    if (inputVal) {
+        if (inputVal.includes(" - ")) {
+            const p = inputVal.split(" - ");
+            sel = p[0].trim();
+            textoNombreMostrar = inputVal;
+        } else {
+            // Buscar coincidencia en el catálogo
+            const norm = normalizarTextoBusqueda(inputVal);
+            const matchExacto = catalogoGlobalEquipos.find(c => {
+                const p = c.split(" - ");
+                const cod = normalizarTextoBusqueda(p[0]);
+                const nom = normalizarTextoBusqueda(p.slice(1).join(" - "));
+                return cod === norm || nom === norm;
+            });
+
+            if (matchExacto) {
+                sel = matchExacto.split(" - ")[0].trim();
+                textoNombreMostrar = matchExacto;
+                const inputEl = document.getElementById("input-expediente-buscar");
+                if (inputEl) inputEl.value = matchExacto;
+            } else {
+                // Coincidencia parcial por palabras
+                const palabras = norm.split(" ").filter(Boolean);
+                const matchParcial = catalogoGlobalEquipos.find(c => {
+                    const cNorm = normalizarTextoBusqueda(c);
+                    return palabras.every(pal => cNorm.includes(pal));
+                });
+                if (matchParcial) {
+                    sel = matchParcial.split(" - ")[0].trim();
+                    textoNombreMostrar = matchParcial;
+                    const inputEl = document.getElementById("input-expediente-buscar");
+                    if (inputEl) inputEl.value = matchParcial;
+                } else {
+                    sel = inputVal;
+                    textoNombreMostrar = inputVal;
+                }
+            }
+        }
+    }
+
+    if (!sel) {
+        alert("⚠️ Por favor teclea el nombre, descripción o código del equipo a auditar.");
+        document.getElementById("input-expediente-buscar")?.focus();
+        return;
+    }
+
+    const codPuro = sel.includes(" - ") ? sel.split(" - ")[0].trim() : sel.trim();
+    const hidden = document.getElementById("sel-expediente-equipo-buscar");
+    if (hidden) hidden.value = codPuro;
+
+    const resultadoDiv = document.getElementById("danos-expediente-resultado");
+    const codTitulo = document.getElementById("expediente-codigo-titulo");
+    const nomEquipo = document.getElementById("expediente-nombre-equipo");
+    const estBadge = document.getElementById("expediente-estatus-badge");
+    const totMovs = document.getElementById("expediente-total-movs");
+    const fotoImg = document.getElementById("expediente-foto-img");
+    const sinFoto = document.getElementById("expediente-sin-foto");
+    const tbody = document.getElementById("tabla-expediente-historial-body");
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/expediente/${encodeURIComponent(codPuro)}`);
+        if (!res.ok) throw new Error("Expediente no encontrado");
+
+        const data = await res.json();
+        const historial = data.historial || [];
+
+        resultadoDiv.style.display = "block";
+        codTitulo.innerText = `📁 Expediente Clínico: ${codPuro}`;
+        nomEquipo.innerText = textoNombreMostrar || sel;
+        totMovs.innerText = historial.length;
+
+        const ultimoEst = historial.length > 0 ? (historial[0]["ESTADO POSTERIOR"] || "DESCONOCIDO") : "BUEN ESTADO";
+        estBadge.innerText = ultimoEst;
+
+        // Foto de evidencia
+        if (historial.length > 0) {
+            const folioRef = String(historial[0]["FOLIO OP / REF"] || "MANTENIMIENTO_INTERNO").replace(/[/\\ ]/g, "_").toUpperCase();
+            const codSafe = codPuro.replace(/[/\\ ]/g, "_").toUpperCase();
+            const nombreFoto = `Evidencia_${folioRef}_${codSafe}.jpg`;
+            const urlFoto = `${API_URL}/evidencias_web/${nombreFoto}`;
+
+            fotoImg.onload = () => {
+                fotoImg.style.display = "block";
+                sinFoto.style.display = "none";
+            };
+            fotoImg.onerror = () => {
+                fotoImg.style.display = "none";
+                sinFoto.style.display = "block";
+                sinFoto.innerText = "Sin foto de evidencia";
+            };
+            fotoImg.src = urlFoto;
+        } else {
+            fotoImg.style.display = "none";
+            sinFoto.style.display = "block";
+            sinFoto.innerText = "Sin movimientos registrados";
+        }
+
+        // Renderizar tabla del historial
+        if (historial.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">No hay historial de movimientos para este activo.</td></tr>`;
+        } else {
+            tbody.innerHTML = historial.map(h => `
                 <tr>
-                    <td style="font-weight: 600;">#${eq.NUM_SERVICIO || '--'}</td>
-                    <td>${eq.FECHA_REPORTE ? String(eq.FECHA_REPORTE).substring(0, 10) : '--'}</td>
-                    <td><code>${eq.ID || '--'}</code></td>
-                    <td style="font-weight: 500; color: #0f172a;">${eq.EQUIPO || '--'}</td>
-                    <td>${eq.DEPARTAMENTO || '--'}</td>
-                    <td>${eq["REPORTÓ"] || '--'}</td>
-                    <td><span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; ${badgeClass}">${estado}</span></td>
-                    <td style="max-width: 250px; font-size: 12.5px;">${eq.FALLA || '--'}</td>
-                    <td style="font-weight: 600; color: #0f172a;">$${Number(eq.COSTO || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                    <td>${h["FECHA"] ? String(h["FECHA"]).substring(0, 10) : '--'}</td>
+                    <td><b>${h["FOLIO OP / REF"] || '--'}</b></td>
+                    <td>${h["EMPLEADO"] || '--'}</td>
+                    <td><span style="background: #eff6ff; color: #1e40af; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${h["TIPO EVENTO"] || '--'}</span></td>
+                    <td style="max-width: 250px; font-size: 12.5px;">${h["DETALLE"] || '--'}</td>
+                    <td style="font-weight: 600;">$${Number(h["COSTO"] || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                    <td><span style="font-weight: 700; font-size: 11.5px;">${h["ESTADO POSTERIOR"] || '--'}</span></td>
                 </tr>
-            `;
-        }).join("");
-    } catch (err) {
-        console.error("Error al cargar equipos dañados:", err);
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #ef4444; padding: 20px;">Error al conectar con el inventario de reparaciones.</td></tr>`;
+            `).join("");
+        }
+    } catch (e) {
+        alert(`❌ Error al consultar expediente: ${e.message}`);
     }
 }
 
 // ==========================================
 // 8. MÓDULO REPORTE DE GASTOS
 // ==========================================
-async function cargarReporteGastos() {
-    const tbody = document.getElementById("tabla-gastos-body");
-    const kpiPendientes = document.getElementById("kpi-gastos-pendientes");
-    if (!tbody) return;
+let foliosPendientesGastosCache = [];
+let eventoSeleccionadoGasto = null;
+let vehiculosGastoCache = [];
+let filasDiasGastos = [];
+let informeAuditoriaSeleccionado = null;
+let informesAuditoriaCache = [];
 
+function cambiarPestanaGastos(tab) {
+    const btnCaptura = document.getElementById("tab-gastos-btn-captura");
+    const btnAuditoria = document.getElementById("tab-gastos-btn-auditoria");
+    const viewCaptura = document.getElementById("subvista-gastos-captura");
+    const viewAuditoria = document.getElementById("subvista-gastos-auditoria");
+
+    if (tab === 'captura') {
+        if (btnCaptura) { btnCaptura.style.background = '#0f172a'; btnCaptura.style.color = 'white'; btnCaptura.style.border = 'none'; }
+        if (btnAuditoria) { btnAuditoria.style.background = '#f1f5f9'; btnAuditoria.style.color = '#475569'; btnAuditoria.style.border = '1px solid #cbd5e1'; }
+        if (viewCaptura) viewCaptura.style.display = 'block';
+        if (viewAuditoria) viewAuditoria.style.display = 'none';
+    } else {
+        if (btnAuditoria) { btnAuditoria.style.background = '#0f172a'; btnAuditoria.style.color = 'white'; btnAuditoria.style.border = 'none'; }
+        if (btnCaptura) { btnCaptura.style.background = '#f1f5f9'; btnCaptura.style.color = '#475569'; btnCaptura.style.border = '1px solid #cbd5e1'; }
+        if (viewCaptura) viewCaptura.style.display = 'none';
+        if (viewAuditoria) viewAuditoria.style.display = 'block';
+    }
+}
+
+async function cargarModuloGastos() {
     try {
-        const [resPend, resLista] = await Promise.all([
+        const [resPend, resFolios, resInformes] = await Promise.all([
             fetch(`${API_URL}/api/gastos/pendientes/conteo`),
+            fetch(`${API_URL}/api/gastos/folios-pendientes`),
             fetch(`${API_URL}/api/gastos/informes-auditoria`)
         ]);
 
         if (resPend.ok) {
             const conteo = await resPend.json();
             const num = (typeof conteo === 'number') ? conteo : (conteo?.conteo || 0);
-            if (kpiPendientes) kpiPendientes.innerText = num;
+            const kpiPend = document.getElementById("kpi-gastos-pendientes");
+            if (kpiPend) kpiPend.innerText = num;
             const badgeGastos = document.getElementById("badge-gastos");
             if (badgeGastos) badgeGastos.innerText = num;
         }
 
-        if (resLista.ok) {
-            const informes = await resLista.json();
-            if (informes.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 24px; color: #166534; font-weight: 500;">✅ No hay informes de gastos pendientes de auditar.</td></tr>`;
-                return;
+        if (resFolios.ok) {
+            foliosPendientesGastosCache = await resFolios.json();
+            const selFolio = document.getElementById("sel-gastos-folio-op");
+            if (selFolio) {
+                selFolio.innerHTML = '<option value="">--- Seleccionar Folio Pendiente ---</option>' +
+                    foliosPendientesGastosCache.map(f => `<option value="${f.id_evento}">${f.id_evento} - ${f.cliente} | ${f.nombre_evento}</option>`).join("");
             }
+        }
 
-            tbody.innerHTML = informes.map(inf => {
-                const revisado = Boolean(inf.revisado);
-                const stBadge = revisado 
-                    ? `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">✅ AUDITADO</span>`
-                    : `<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">⏳ PENDIENTE</span>`;
-
-                return `
-                    <tr>
-                        <td style="font-weight: 600;">#${inf.id_informe}</td>
-                        <td><b>OP-${inf.folio_vpro}</b></td>
-                        <td style="color: #0f172a; font-weight: 500;">${inf.nombre_evento || 'Evento'}</td>
-                        <td>${inf.nombre_empleado || 'Responsable'}</td>
-                        <td>${stBadge}</td>
-                    </tr>
-                `;
-            }).join("");
+        if (resInformes.ok) {
+            informesAuditoriaCache = await resInformes.json();
+            const elAuditados = document.getElementById("kpi-gastos-auditados");
+            const auditadosCount = informesAuditoriaCache.filter(i => i.revisado).length;
+            if (elAuditados) elAuditados.innerText = auditadosCount;
+            renderizarTablaGastosAuditoria(informesAuditoriaCache);
         }
     } catch (err) {
-        console.error("Error al cargar reporte de gastos:", err);
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 20px;">Error al consultar el módulo de gastos.</td></tr>`;
+        console.error("Error al cargar módulo de gastos:", err);
+    }
+}
+
+function cargarReporteGastos() {
+    cargarModuloGastos();
+}
+
+async function seleccionarFolioParaGastos(folioId) {
+    const formPanel = document.getElementById("gastos-panel-captura-formulario");
+    if (!folioId) {
+        if (formPanel) formPanel.style.display = "none";
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/gastos/evento/${folioId}`);
+        if (!res.ok) throw new Error("No se pudo obtener datos del evento.");
+
+        const evData = await res.json();
+        eventoSeleccionadoGasto = { id_evento: folioId, ...evData };
+
+        const elFolio = document.getElementById("gastos-info-folio");
+        const elProductor = document.getElementById("gastos-info-productor");
+        const elEmpRinde = document.getElementById("gastos-input-empleado");
+        const elDepto = document.getElementById("gastos-input-depto");
+        const elDesde = document.getElementById("gastos-input-desde");
+        const elHasta = document.getElementById("gastos-input-hasta");
+
+        if (elFolio) elFolio.innerText = `OP-${folioId}`;
+        if (elProductor) elProductor.innerText = evData.productor_responsable || "No asignado";
+        if (elEmpRinde) elEmpRinde.value = usuarioLogueado?.nombre_completo || "Productor VPRO";
+        if (elDepto) elDepto.value = usuarioLogueado?.depto || "PRODUCCION";
+
+        const hoy = new Date().toISOString().substring(0, 10);
+        const fInst = evData.fec_de_instalacion ? String(evData.fec_de_instalacion).substring(0, 10) : hoy;
+        if (elDesde) elDesde.value = fInst;
+        if (elHasta) elHasta.value = hoy;
+
+        // Cargar autos y sus últimos odómetros
+        let autos = [];
+        try {
+            if (evData.carros_usados_op) {
+                if (Array.isArray(evData.carros_usados_op)) autos = evData.carros_usados_op;
+                else if (typeof evData.carros_usados_op === 'string') {
+                    autos = JSON.parse(evData.carros_usados_op.replace(/'/g, '"'));
+                }
+            }
+        } catch (e) {
+            autos = [evData.carros_usados_op];
+        }
+        autos = autos.filter(Boolean);
+        if (autos.length === 0) autos = ["Unidad General"];
+
+        vehiculosGastoCache = autos;
+        const contOdometros = document.getElementById("gastos-odometros-lista");
+        if (contOdometros) {
+            contOdometros.innerHTML = '<p style="color: var(--text-muted);">Consultando odómetros iniciales...</p>';
+            const cardsHtml = await Promise.all(autos.map(async (auto, idx) => {
+                let ultKm = 0;
+                try {
+                    const resKm = await fetch(`${API_URL}/api/gastos/ultimo-km/${encodeURIComponent(auto)}`);
+                    if (resKm.ok) {
+                        const dataKm = await resKm.json();
+                        ultKm = dataKm.ultimo_km || 0;
+                    }
+                } catch (e) {}
+
+                return `
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px;">
+                        <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">🚙 ${auto}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div>
+                                <label style="font-size: 11px; color: #64748b; font-weight: 600;">KM Inicial:</label>
+                                <input type="number" id="odo-ini-${idx}" value="${ultKm}" min="0" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #64748b; font-weight: 600;">KM Final:</label>
+                                <input type="number" id="odo-fin-${idx}" value="${ultKm}" min="0" style="width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }));
+            contOdometros.innerHTML = cardsHtml.join("");
+        }
+
+        recalcularDiasGastos();
+        if (formPanel) formPanel.style.display = "block";
+    } catch (e) {
+        alert(`❌ Error al cargar datos del evento: ${e.message}`);
+    }
+}
+
+function recalcularDiasGastos() {
+    const fDesdeStr = document.getElementById("gastos-input-desde")?.value;
+    const fHastaStr = document.getElementById("gastos-input-hasta")?.value;
+    if (!fDesdeStr || !fHastaStr) return;
+
+    const f1 = new Date(fDesdeStr);
+    const f2 = new Date(fHastaStr);
+    const diffDias = Math.max(1, Math.floor((f2 - f1) / (1000 * 60 * 60 * 24)) + 1);
+
+    filasDiasGastos = [];
+    const tbody = document.getElementById("tabla-gastos-dias-body");
+    if (!tbody) return;
+
+    let html = "";
+    for (let i = 1; i <= Math.min(diffDias, 30); i++) {
+        const fechaDia = new Date(f1);
+        fechaDia.setDate(f1.getDate() + (i - 1));
+        const fechaIso = fechaDia.toISOString().substring(0, 10);
+
+        html += `
+            <tr data-dia="${i}">
+                <td style="font-weight: 700; text-align: center;">Día ${i}</td>
+                <td><input type="date" value="${fechaIso}" style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; font-size: 12px;"></td>
+                <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-hotel" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+                <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-transp" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+                <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-combust" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+                <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-casetas" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+                <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-desay" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+                <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-comida" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+                <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-cenas" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+                <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-varios" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+                <td class="total-dia-cell" style="font-weight: 700; text-align: right; color: #0f172a;">$0.00</td>
+            </tr>
+        `;
+    }
+    tbody.innerHTML = html;
+    recalcularTotalesGastos();
+}
+
+function agregarFilaDiaGasto() {
+    const tbody = document.getElementById("tabla-gastos-dias-body");
+    if (!tbody) return;
+    const numDia = tbody.querySelectorAll("tr").length + 1;
+    const hoyIso = new Date().toISOString().substring(0, 10);
+
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-dia", numDia);
+    tr.innerHTML = `
+        <td style="font-weight: 700; text-align: center;">Día ${numDia}</td>
+        <td><input type="date" value="${hoyIso}" style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; font-size: 12px;"></td>
+        <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-hotel" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+        <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-transp" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+        <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-combust" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+        <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-casetas" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+        <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-desay" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+        <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-comida" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+        <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-cenas" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+        <td><input type="number" min="0" step="50" value="0.00" oninput="recalcularTotalesGastos()" class="gasto-cell gasto-varios" style="width: 75px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right;"></td>
+        <td class="total-dia-cell" style="font-weight: 700; text-align: right; color: #0f172a;">$0.00</td>
+    `;
+    tbody.appendChild(tr);
+    recalcularTotalesGastos();
+}
+
+function recalcularTotalesGastos() {
+    const rows = document.querySelectorAll("#tabla-gastos-dias-body tr");
+    let totHotel = 0, totTransp = 0, totCombust = 0, totCasetas = 0, totDesay = 0, totComida = 0, totCenas = 0, totVarios = 0;
+
+    rows.forEach(tr => {
+        const val = (cls) => parseFloat(tr.querySelector(`.${cls}`)?.value || 0);
+        const h = val('gasto-hotel');
+        const t = val('gasto-transp');
+        const c = val('gasto-combust');
+        const cs = val('gasto-casetas');
+        const d = val('gasto-desay');
+        const cm = val('gasto-comida');
+        const cn = val('gasto-cenas');
+        const v = val('gasto-varios');
+
+        const totalDia = h + t + c + cs + d + cm + cn + v;
+        const celTotal = tr.querySelector('.total-dia-cell');
+        if (celTotal) celTotal.innerText = `$${totalDia.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+
+        totHotel += h; totTransp += t; totCombust += c; totCasetas += cs;
+        totDesay += d; totComida += cm; totCenas += cn; totVarios += v;
+    });
+
+    const granTotal = totHotel + totTransp + totCombust + totCasetas + totDesay + totComida + totCenas + totVarios;
+
+    const fmt = n => `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+    if (document.getElementById("tot-gasto-hotel")) document.getElementById("tot-gasto-hotel").innerText = fmt(totHotel);
+    if (document.getElementById("tot-gasto-transp")) document.getElementById("tot-gasto-transp").innerText = fmt(totTransp);
+    if (document.getElementById("tot-gasto-combust")) document.getElementById("tot-gasto-combust").innerText = fmt(totCombust);
+    if (document.getElementById("tot-gasto-casetas")) document.getElementById("tot-gasto-casetas").innerText = fmt(totCasetas);
+    if (document.getElementById("tot-gasto-desay")) document.getElementById("tot-gasto-desay").innerText = fmt(totDesay);
+    if (document.getElementById("tot-gasto-comida")) document.getElementById("tot-gasto-comida").innerText = fmt(totComida);
+    if (document.getElementById("tot-gasto-cenas")) document.getElementById("tot-gasto-cenas").innerText = fmt(totCenas);
+    if (document.getElementById("tot-gasto-varios")) document.getElementById("tot-gasto-varios").innerText = fmt(totVarios);
+    if (document.getElementById("tot-gasto-gran-total")) document.getElementById("tot-gasto-gran-total").innerText = fmt(granTotal);
+
+    // Resumen y remanente
+    const entregado = parseFloat(document.getElementById("gastos-input-entregado")?.value || 0);
+    const remanente = entregado - granTotal;
+
+    if (document.getElementById("resumen-gasto-entregado")) document.getElementById("resumen-gasto-entregado").innerText = fmt(entregado);
+    if (document.getElementById("resumen-gasto-subtotal")) document.getElementById("resumen-gasto-subtotal").innerText = fmt(granTotal);
+
+    const elRemanente = document.getElementById("resumen-gasto-remanente");
+    const cardRemanente = document.getElementById("card-gasto-remanente");
+    const lblRemanente = document.getElementById("lbl-gasto-remanente");
+
+    if (elRemanente) elRemanente.innerText = fmt(Math.abs(remanente));
+    if (cardRemanente && lblRemanente) {
+        if (remanente >= 0) {
+            cardRemanente.style.background = "#dcfce7";
+            cardRemanente.style.borderColor = "#86efac";
+            if (elRemanente) elRemanente.style.color = "#15803d";
+            lblRemanente.style.color = "#166534";
+            lblRemanente.innerText = "Remanente a Devolver a VPRO";
+        } else {
+            cardRemanente.style.background = "#fee2e2";
+            cardRemanente.style.borderColor = "#fca5a5";
+            if (elRemanente) elRemanente.style.color = "#b91c1c";
+            lblRemanente.style.color = "#991b1b";
+            lblRemanente.innerText = "Saldo a Favor del Empleado (Reembolso)";
+        }
+    }
+}
+
+async function guardarInformeGastosProductor() {
+    const folioId = eventoSeleccionadoGasto?.id_evento;
+    if (!folioId) {
+        alert("⚠️ No hay un evento seleccionado.");
+        return;
+    }
+
+    const fDesde = document.getElementById("gastos-input-desde")?.value;
+    const fHasta = document.getElementById("gastos-input-hasta")?.value;
+    const entregado = parseFloat(document.getElementById("gastos-input-entregado")?.value || 0);
+    const userId = usuarioLogueado?.id_empleado ? String(usuarioLogueado.id_empleado) : "000";
+    const userDepto = usuarioLogueado?.depto || "PRODUCCION";
+
+    // Recolectar odómetros
+    let totalKmIni = 0, totalKmFin = 0;
+    const vehiculoDetalle = vehiculosGastoCache.map((auto, idx) => {
+        const ki = parseInt(document.getElementById(`odo-ini-${idx}`)?.value || 0);
+        const kf = parseInt(document.getElementById(`odo-fin-${idx}`)?.value || 0);
+        totalKmIni += ki;
+        totalKmFin += kf;
+        return `${auto} (${ki}-${kf})`;
+    }).join(", ");
+
+    // Recolectar filas de días
+    const rows = document.querySelectorAll("#tabla-gastos-dias-body tr");
+    let detalles = [];
+    let subtotal = 0;
+
+    rows.forEach(tr => {
+        const diaNum = parseInt(tr.getAttribute("data-dia") || 1);
+        const val = (cls) => parseFloat(tr.querySelector(`.${cls}`)?.value || 0);
+        const h = val('gasto-hotel');
+        const t = val('gasto-transp');
+        const c = val('gasto-combust');
+        const cs = val('gasto-casetas');
+        const d = val('gasto-desay');
+        const cm = val('gasto-comida');
+        const cn = val('gasto-cenas');
+        const v = val('gasto-varios');
+        const totalDia = h + t + c + cs + d + cm + cn + v;
+        subtotal += totalDia;
+
+        detalles.push({
+            dia_num: diaNum,
+            hotel: h,
+            transporte: t,
+            combustible: c,
+            casetas: cs,
+            desayuno: d,
+            comida: cm,
+            cenas: cn,
+            varios: v,
+            total_dia: totalDia
+        });
+    });
+
+    const restante = entregado - subtotal;
+
+    const payload = {
+        maestro: {
+            folio_vpro: parseInt(folioId),
+            id_empleado: userId,
+            periodo_desde: fDesde,
+            periodo_hasta: fHasta,
+            vehiculo: vehiculoDetalle || "General",
+            km_inicial: totalKmIni,
+            km_final: totalKmFin,
+            departamento: userDepto,
+            num_personas: 1,
+            subtotal: subtotal,
+            monto_entregado: entregado,
+            restante: restante
+        },
+        detalles: detalles
+    };
+
+    if (!confirm(`¿Confirmas enviar el informe de gastos por $${subtotal.toLocaleString('es-MX')} y remitirlo a Dirección?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/gastos/guardar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert("✅ ¡Informe de gastos guardado y remitido a Auditoría exitosamente!");
+            document.getElementById("gastos-panel-captura-formulario").style.display = "none";
+            cargarModuloGastos();
+            cambiarPestanaGastos('auditoria');
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al guardar informe: ${err}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de comunicación: ${e.message}`);
+    }
+}
+
+function renderizarTablaGastosAuditoria(lista) {
+    const tbody = document.getElementById("tabla-gastos-body");
+    if (!tbody) return;
+
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #166534; font-weight: 500;">✅ No hay informes de gastos registrados.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = lista.map(inf => {
+        const revisado = Boolean(inf.revisado);
+        const stBadge = revisado 
+            ? `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">✅ AUDITADO</span>`
+            : `<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">⏳ PENDIENTE</span>`;
+
+        return `
+            <tr>
+                <td style="font-weight: 700;">#${inf.id_informe}</td>
+                <td><b>OP-${inf.folio_vpro}</b></td>
+                <td style="color: #0f172a; font-weight: 500;">${inf.nombre_evento || 'Evento'}</td>
+                <td>${inf.nombre_empleado || 'Responsable'}</td>
+                <td>${stBadge}</td>
+                <td>
+                    <button onclick="abrirModalGastoExpediente(${inf.id_informe})" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 5px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;">
+                        👁️ Ver Expediente
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function filtrarTablaGastosAuditoria(termino) {
+    const t = (termino || "").toLowerCase().trim();
+    if (!t) {
+        renderizarTablaGastosAuditoria(informesAuditoriaCache);
+        return;
+    }
+    const filtrados = informesAuditoriaCache.filter(inf =>
+        (inf.nombre_evento && inf.nombre_evento.toLowerCase().includes(t)) ||
+        (inf.nombre_empleado && inf.nombre_empleado.toLowerCase().includes(t)) ||
+        String(inf.folio_vpro).includes(t) ||
+        String(inf.id_informe).includes(t)
+    );
+    renderizarTablaGastosAuditoria(filtrados);
+}
+
+async function abrirModalGastoExpediente(idInforme) {
+    try {
+        const res = await fetch(`${API_URL}/api/gastos/informe-completo/${idInforme}`);
+        if (!res.ok) throw new Error("No se pudo obtener el expediente.");
+
+        const data = await res.json();
+        const m = data.maestro || {};
+        const d = data.detalles || [];
+        informeAuditoriaSeleccionado = idInforme;
+
+        const titulo = document.getElementById("modal-gasto-titulo");
+        if (titulo) titulo.innerHTML = `<i class="ph ph-receipt" style="color: #3b82f6;"></i> Expediente de Comprobación: #${m.id_informe} (OP-${m.folio_vpro})`;
+
+        const cont = document.getElementById("modal-gasto-contenido");
+        if (cont) {
+            const btnAprobar = document.getElementById("btn-aprobar-sellar-gasto");
+            if (btnAprobar) {
+                btnAprobar.style.display = m.revisado ? "none" : "flex";
+            }
+
+            cont.innerHTML = `
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 13px;">
+                        <div><span style="color: #64748b;">Responsable:</span> <b>${m.nombre_empleado}</b></div>
+                        <div><span style="color: #64748b;">Departamento:</span> <b>${m.departamento}</b></div>
+                        <div><span style="color: #64748b;">Periodo:</span> <b>${m.periodo_desde} a ${m.periodo_hasta}</b></div>
+                        <div><span style="color: #64748b;">Vehículos:</span> <b>${m.vehiculo}</b></div>
+                        <div><span style="color: #64748b;">Odómetros:</span> <b>${m.km_inicial} km inicial - ${m.km_final} km final</b></div>
+                        <div><span style="color: #64748b;">Estado:</span> <b>${m.revisado ? '✅ AUDITADO Y SELLADO' : '⏳ PENDIENTE DE REVISIÓN'}</b></div>
+                    </div>
+                </div>
+
+                <h4 style="margin: 0 0 12px 0; color: #0f172a;">📊 Desglose Diario Comprobado</h4>
+                <div class="tabla-container" style="max-height: 260px; margin-bottom: 20px;">
+                    <table class="tabla-vpro">
+                        <thead>
+                            <tr>
+                                <th>Día</th>
+                                <th>Hotel</th>
+                                <th>Transp.</th>
+                                <th>Combust.</th>
+                                <th>Casetas</th>
+                                <th>Desayuno</th>
+                                <th>Comida</th>
+                                <th>Cenas</th>
+                                <th>Varios</th>
+                                <th>Total Día</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${d.map(row => `
+                                <tr>
+                                    <td>Día ${row.dia_num}</td>
+                                    <td>$${row.hotel.toFixed(2)}</td>
+                                    <td>$${row.transporte.toFixed(2)}</td>
+                                    <td>$${row.combustible.toFixed(2)}</td>
+                                    <td>$${row.casetas.toFixed(2)}</td>
+                                    <td>$${row.desayuno.toFixed(2)}</td>
+                                    <td>$${row.comida.toFixed(2)}</td>
+                                    <td>$${row.cenas.toFixed(2)}</td>
+                                    <td>$${row.varios.toFixed(2)}</td>
+                                    <td style="font-weight: 700;">$${row.total_dia.toFixed(2)}</td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+                    <div style="background: #eff6ff; padding: 14px; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #1e40af; font-weight: 700;">PRESUPUESTO ENTREGADO</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">$${m.monto_entregado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                    <div style="background: #f1f5f9; padding: 14px; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #475569; font-weight: 700;">TOTAL GASTADO / COMPROBADO</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px;">$${m.subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                    <div style="background: ${m.restante >= 0 ? '#dcfce7' : '#fee2e2'}; padding: 14px; border-radius: 8px;">
+                        <div style="font-size: 11px; color: ${m.restante >= 0 ? '#166534' : '#991b1b'}; font-weight: 700;">${m.restante >= 0 ? 'REMANENTE A DEVOLVER' : 'REEMBOLSO A FAVOR'}</div>
+                        <div style="font-size: 20px; font-weight: 800; color: ${m.restante >= 0 ? '#15803d' : '#b91c1c'}; margin-top: 4px;">$${Math.abs(m.restante).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const modal = document.getElementById("modal-gastos-expediente");
+        if (modal) modal.style.display = "flex";
+    } catch (e) {
+        alert(`❌ Error al consultar expediente: ${e.message}`);
+    }
+}
+
+function cerrarModalGastoExpediente() {
+    const modal = document.getElementById("modal-gastos-expediente");
+    if (modal) modal.style.display = "none";
+}
+
+async function ejecutarAprobacionGasto() {
+    if (!informeAuditoriaSeleccionado) return;
+
+    if (!confirm("¿Confirmas aprobar y sellar este informe de gastos? La Orden de Producción será transferida a la Bóveda Histórica.")) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/gastos/revisar/${informeAuditoriaSeleccionado}`, {
+            method: "POST"
+        });
+
+        if (res.ok) {
+            alert("✅ ¡Informe de gastos sellado y aprobado exitosamente! Evento archivado en Bóveda Histórica.");
+            cerrarModalGastoExpediente();
+            cargarModuloGastos();
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al aprobar informe: ${err}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de comunicación: ${e.message}`);
     }
 }
 
@@ -3486,3 +4852,1962 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarEmpleados();
     cargarTodosLosCatalogos();
 });
+
+// ==========================================
+// 14. MÓDULO DE CHECKOUT Y LOGÍSTICA [VPF]
+// ==========================================
+
+let opPreseleccionadaCheckout = null;
+let ordenesCheckoutDisponibles = [];
+let empleadoActivoCheckout = null;
+let mapaEmpleadosNombreAId = {};
+let itemsCheckoutSalida = [];
+let itemsCheckoutCheckin = [];
+let idMaestroCheckoutActual = null;
+let estadoBodegaCheckoutActual = "NUEVO";
+let pestanaActivaCheckout = 'salida';
+let catalogoGlobalCheckoutCargado = false;
+let radarDanosCheckoutSet = new Set();
+let proveedoresAsignadosOPCheckout = [];
+
+function abrirCheckoutConOP(idEvento, opLabel) {
+    opPreseleccionadaCheckout = { id: idEvento, label: opLabel };
+    cambiarVista('vista-checkout');
+}
+
+function cambiarPestanaCheckout(pestana) {
+    pestanaActivaCheckout = pestana;
+    const btnSalida = document.getElementById('tab-checkout-salida');
+    const btnCheckin = document.getElementById('tab-checkout-checkin');
+    const panelSalida = document.getElementById('checkout-panel-salida');
+    const panelCheckin = document.getElementById('checkout-panel-checkin');
+
+    if (pestana === 'salida') {
+        if (btnSalida) btnSalida.classList.add('active');
+        if (btnCheckin) btnCheckin.classList.remove('active');
+        if (panelSalida) panelSalida.style.display = 'block';
+        if (panelCheckin) panelCheckin.style.display = 'none';
+    } else {
+        if (btnSalida) btnSalida.classList.remove('active');
+        if (btnCheckin) btnCheckin.classList.add('active');
+        if (panelSalida) panelSalida.style.display = 'none';
+        if (panelCheckin) panelCheckin.style.display = 'block';
+    }
+}
+
+function desglosarArrayPostgres(val) {
+    if (!val) return [];
+    if (Array.isArray(val)) return val.map(x => String(x).trim()).filter(Boolean);
+    if (typeof val === 'string') {
+        let s = val.trim();
+        if (s.startsWith('{') && s.endsWith('}')) {
+            s = s.slice(1, -1);
+            const matches = s.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+            if (matches) {
+                return matches.map(m => m.replace(/^"|"$/g, '').trim()).filter(Boolean);
+            }
+            return s.split(',').map(x => x.replace(/^"|"$/g, '').trim()).filter(Boolean);
+        }
+        if (s.startsWith('[') && s.endsWith(']')) {
+            try { return JSON.parse(s).map(x => String(x).trim()).filter(Boolean); } catch(e){}
+        }
+        return [s.replace(/^"|"$/g, '').trim()].filter(Boolean);
+    }
+    return [];
+}
+
+async function inicializarModuloCheckout() {
+    if (!usuarioLogueado) return;
+
+    // 1. Cargar catálogo global y radar de daños para autocompletado si aún no se cargaron
+    if (!catalogoGlobalCheckoutCargado) {
+        try {
+            const [resCat, resDanos, resEmp] = await Promise.allSettled([
+                fetch(`${API_URL}/api/inventario/catalogo-global`).then(r => r.ok ? r.json() : []),
+                fetch(`${API_URL}/api/inventario/radar-danos`).then(r => r.ok ? r.json() : []),
+                fetch(`${API_URL}/api/empleados`).then(r => r.ok ? r.json() : [])
+            ]);
+
+            if (resCat.status === 'fulfilled' && Array.isArray(resCat.value)) {
+                const dl = document.getElementById('dl-catalogo-global');
+                if (dl) {
+                    dl.innerHTML = resCat.value.map(item => `<option value="${item}">`).join('');
+                }
+            }
+
+            if (resDanos.status === 'fulfilled' && Array.isArray(resDanos.value)) {
+                radarDanosCheckoutSet.clear();
+                resDanos.value.forEach(d => {
+                    const eq = (d.EQUIPO || d.equipo || '').toUpperCase().trim();
+                    if (eq) radarDanosCheckoutSet.add(eq);
+                });
+            }
+
+            if (resEmp.status === 'fulfilled' && Array.isArray(resEmp.value)) {
+                mapaEmpleadosNombreAId = {};
+                resEmp.value.forEach(e => {
+                    if (e.nombre && e.id_empleado) {
+                        mapaEmpleadosNombreAId[e.nombre.toUpperCase().trim()] = String(e.id_empleado).trim();
+                    }
+                });
+            }
+
+            catalogoGlobalCheckoutCargado = true;
+        } catch (e) {
+            console.warn("Aviso inicializando catálogos para checkout:", e);
+        }
+    }
+
+    // 2. Cargar lista de OPs disponibles para este empleado
+    try {
+        const idEmp = usuarioLogueado.id_empleado || "001";
+        const resInit = await fetch(`${API_URL}/api/checkout/init-data/${idEmp}`);
+        if (resInit.ok) {
+            const pack = await resInit.json();
+            ordenesCheckoutDisponibles = pack.ordenes || [];
+            
+            const selOP = document.getElementById('checkout-sel-op');
+            if (selOP) {
+                if (ordenesCheckoutDisponibles.length === 0) {
+                    selOP.innerHTML = `<option value="">--- No hay OPs activas pendientes ---</option>`;
+                } else {
+                    selOP.innerHTML = `<option value="">--- Seleccione una Orden de Producción ---</option>` +
+                        ordenesCheckoutDisponibles.map(op => `<option value="${op}">${op}</option>`).join('');
+                }
+            }
+
+            // Si venimos referenciados desde una notificación:
+            if (opPreseleccionadaCheckout) {
+                const idBuscado = opPreseleccionadaCheckout.id;
+                const prefijo = `OP-${String(idBuscado).padStart(3, '0')}`;
+                let encontrada = ordenesCheckoutDisponibles.find(op => op.startsWith(prefijo));
+                
+                // Si la OP no venía en init-data (ej. ya finalizada o usuario coordinador), agregarla dinámicamente
+                if (!encontrada && opPreseleccionadaCheckout.label) {
+                    encontrada = opPreseleccionadaCheckout.label;
+                    if (selOP) {
+                        const opt = document.createElement('option');
+                        opt.value = encontrada;
+                        opt.textContent = encontrada;
+                        selOP.appendChild(opt);
+                    }
+                }
+
+                if (encontrada && selOP) {
+                    selOP.value = encontrada;
+                    opPreseleccionadaCheckout = null;
+                    await alCambiarOPCheckout();
+                    return;
+                }
+                opPreseleccionadaCheckout = null;
+            }
+
+            // Si ya había una OP seleccionada, mantenerla; de lo contrario seleccionar la primera disponible
+            if (selOP && selOP.value) {
+                await alCambiarOPCheckout();
+            } else if (selOP && ordenesCheckoutDisponibles.length > 0) {
+                selOP.selectedIndex = 1;
+                await alCambiarOPCheckout();
+            }
+        }
+    } catch (e) {
+        console.error("Error al inicializar módulo Checkout:", e);
+    }
+}
+
+async function alCambiarOPCheckout() {
+    const selOP = document.getElementById('checkout-sel-op');
+    if (!selOP || !selOP.value) {
+        limpiarModuloCheckout();
+        return;
+    }
+
+    const opVal = selOP.value;
+    const match = opVal.match(/OP-(\d+)/i);
+    if (!match) return;
+    const idEvento = parseInt(match[1]);
+
+    await cargarStatusCheckout(idEvento);
+}
+
+function limpiarModuloCheckout() {
+    idMaestroCheckoutActual = null;
+    estadoBodegaCheckoutActual = "NUEVO";
+    itemsCheckoutSalida = [];
+    itemsCheckoutCheckin = [];
+    actualizarBadgeEstadoCheckout("NUEVO");
+    
+    const selEmp = document.getElementById('checkout-sel-empleado');
+    if (selEmp) selEmp.innerHTML = `<option value="">--- Seleccione OP primero ---</option>`;
+    
+    const txtConv = document.getElementById('checkout-txt-convocados');
+    if (txtConv) txtConv.innerText = "--";
+    const txtProv = document.getElementById('checkout-txt-proveedores');
+    if (txtProv) txtProv.innerText = "--";
+    const txtPlan = document.getElementById('checkout-txt-plantilla');
+    if (txtPlan) txtPlan.innerText = "---";
+
+    const selProvSalida = document.getElementById('checkout-salida-prov');
+    if (selProvSalida) selProvSalida.innerHTML = `<option value="--- Ninguno ---">--- Ninguno ---</option>`;
+    const selProvCheckin = document.getElementById('checkout-checkin-prov');
+    if (selProvCheckin) selProvCheckin.innerHTML = `<option value="--- Ninguno ---">--- Ninguno ---</option>`;
+
+    const notaProvSalida = document.getElementById('checkout-salida-prov-nota');
+    if (notaProvSalida) notaProvSalida.value = "";
+    const notaProvCheckin = document.getElementById('checkout-checkin-prov-nota');
+    if (notaProvCheckin) notaProvCheckin.value = "";
+    const incSalida = document.getElementById('checkout-salida-incidencias');
+    if (incSalida) incSalida.value = "";
+    const incCheckin = document.getElementById('checkout-checkin-incidencias');
+    if (incCheckin) incCheckin.value = "";
+
+    renderTablaCheckoutSalida();
+    renderTablaCheckoutCheckin();
+}
+
+async function alCambiarEmpleadoCheckout() {
+    const selEmp = document.getElementById('checkout-sel-empleado');
+    if (!selEmp || !selEmp.value) return;
+
+    empleadoActivoCheckout = selEmp.value;
+    const selOP = document.getElementById('checkout-sel-op');
+    if (!selOP || !selOP.value) return;
+    const match = selOP.value.match(/OP-(\d+)/i);
+    if (!match) return;
+    const idEvento = parseInt(match[1]);
+
+    await cargarStatusCheckout(idEvento, empleadoActivoCheckout);
+}
+
+async function cargarStatusCheckoutActual() {
+    const selOP = document.getElementById('checkout-sel-op');
+    if (!selOP || !selOP.value) return;
+    const match = selOP.value.match(/OP-(\d+)/i);
+    if (!match) return;
+    const idEvento = parseInt(match[1]);
+    await cargarStatusCheckout(idEvento, empleadoActivoCheckout);
+}
+
+async function cargarStatusCheckout(idEvento, empIdOverride = null) {
+    if (!idEvento) return;
+    const empId = empIdOverride || (usuarioLogueado ? usuarioLogueado.id_empleado : "001");
+    empleadoActivoCheckout = empId;
+
+    try {
+        const resStatus = await fetch(`${API_URL}/api/checkout/status/${idEvento}/${empId}`);
+        if (!resStatus.ok) throw new Error("Error consultando status de checkout");
+        const statusPack = await resStatus.json();
+
+        idMaestroCheckoutActual = statusPack.id_maestro;
+        estadoBodegaCheckoutActual = statusPack.estado_bodega || "NUEVO";
+        actualizarBadgeEstadoCheckout(estadoBodegaCheckoutActual);
+
+        // Desglosar convocados y proveedores
+        const convocados = desglosarArrayPostgres(statusPack.convocados);
+        const proveedores = desglosarArrayPostgres(statusPack.proveedores_op);
+        proveedoresAsignadosOPCheckout = proveedores;
+
+        // Actualizar resumen en pantalla
+        const txtConv = document.getElementById('checkout-txt-convocados');
+        if (txtConv) txtConv.innerText = convocados.length > 0 ? convocados.join(", ") : "Ninguno asignado";
+        const txtProv = document.getElementById('checkout-txt-proveedores');
+        if (txtProv) txtProv.innerText = proveedores.length > 0 ? proveedores.join(", ") : "Ninguno asignado";
+        const txtPlan = document.getElementById('checkout-txt-plantilla');
+        if (txtPlan) txtPlan.innerText = statusPack.nombre_kit || "--- Sin plantilla ---";
+
+        // Poblar selector de personal convocado
+        const selEmp = document.getElementById('checkout-sel-empleado');
+        if (selEmp) {
+            if (convocados.length === 0) {
+                selEmp.innerHTML = `<option value="${empId}">${usuarioLogueado?.nombre_completo || 'Operador Actual'}</option>`;
+            } else {
+                let optionsHtml = '';
+                convocados.forEach(nombreNom => {
+                    const norm = nombreNom.toUpperCase().trim();
+                    const idConvocado = mapaEmpleadosNombreAId[norm] || empId;
+                    optionsHtml += `<option value="${idConvocado}">${nombreNom}</option>`;
+                });
+                selEmp.innerHTML = optionsHtml;
+                if ([...selEmp.options].some(o => o.value === empId)) {
+                    selEmp.value = empId;
+                } else if (selEmp.options.length > 0) {
+                    selEmp.selectedIndex = 0;
+                    empleadoActivoCheckout = selEmp.value;
+                }
+            }
+        }
+
+        // Cargar kits del empleado activo
+        await cargarKitsEmpleadoActivo(empleadoActivoCheckout, statusPack.nombre_kit);
+
+        // Poblar dropdowns de proveedores en salida y check-in
+        const optsProv = `<option value="--- Ninguno ---">--- Ninguno ---</option>` +
+            proveedores.map(p => `<option value="${p.toUpperCase()}">${p.toUpperCase()}</option>`).join('');
+        const selProvSalida = document.getElementById('checkout-salida-prov');
+        if (selProvSalida) selProvSalida.innerHTML = optsProv;
+        const selProvCheckin = document.getElementById('checkout-checkin-prov');
+        if (selProvCheckin) selProvCheckin.innerHTML = optsProv;
+
+        // Desglosar incidencias y reporte de proveedor guardado
+        let incLimpia = statusPack.incidencias_generales || "";
+        let provIncGuardado = "--- Ninguno ---";
+        let provNotaGuardada = "";
+
+        if (incLimpia.includes("[PROVEEDOR_INCIDENTE:")) {
+            const startIdx = incLimpia.indexOf("[PROVEEDOR_INCIDENTE:");
+            const endIdx = incLimpia.indexOf("]", startIdx);
+            if (endIdx !== -1) {
+                const rawTag = incLimpia.substring(startIdx + 21, endIdx).trim();
+                if (rawTag.includes(" | NOTA: ")) {
+                    const [pName, pNote] = rawTag.split(" | NOTA: ");
+                    provIncGuardado = pName.trim().toUpperCase();
+                    provNotaGuardada = (pNote || "").trim();
+                } else {
+                    provIncGuardado = rawTag.toUpperCase();
+                }
+                incLimpia = incLimpia.substring(0, startIdx).trim();
+            }
+        }
+
+        if (selProvSalida) selProvSalida.value = provIncGuardado;
+        if (selProvCheckin) selProvCheckin.value = provIncGuardado;
+        const notaProvSalida = document.getElementById('checkout-salida-prov-nota');
+        if (notaProvSalida) notaProvSalida.value = provNotaGuardada;
+        const notaProvCheckin = document.getElementById('checkout-checkin-prov-nota');
+        if (notaProvCheckin) notaProvCheckin.value = provNotaGuardada;
+
+        // Asignar el texto a los campos editables
+        const esVacia = !incLimpia || ["sin incidencias", "sin incidencias reportadas", "ninguna", "ok", "none", "null"].includes(incLimpia.toLowerCase().trim());
+        const incSalida = document.getElementById('checkout-salida-incidencias');
+        if (incSalida) incSalida.value = !esVacia ? incLimpia : "";
+        const incCheckin = document.getElementById('checkout-checkin-incidencias');
+        if (incCheckin) incCheckin.value = !esVacia ? incLimpia : "";
+
+        // Cargar ítems de salida y checkin
+        const detalle = statusPack.detalle || [];
+        itemsCheckoutSalida = detalle.map(item => ({
+            id_detalle: item.id_detalle,
+            ID: item.ID || item.codigo || "",
+            EQUIPO: item.EQUIPO || item.Equipo || item.descripcion || "Equipo sin descripción",
+            CANT: parseInt(item.CANT || item.cantidad || 1) || 1,
+            OBSERVACIONES: item.OBSERVACIONES || item.observaciones || ""
+        }));
+
+        itemsCheckoutCheckin = detalle.map(item => ({
+            id_detalle: item.id_detalle,
+            ID: item.ID || item.codigo || "",
+            EQUIPO: item.EQUIPO || item.Equipo || item.descripcion || "Equipo sin descripción",
+            CANT_SALIDA: parseInt(item.CANT || item.cantidad || 1) || 1,
+            OBS_SALIDA: item.OBSERVACIONES || item.observaciones || "",
+            COTEJADO: Boolean(item.COTEJADO || item.cotejado || false),
+            OBS_REGRESO: item.OBS_REGRESO || item.notas_regreso || ""
+        }));
+
+        renderTablaCheckoutSalida();
+        renderTablaCheckoutCheckin();
+
+        // Control de botón de autorización de Coordinador
+        const btnCoord = document.getElementById('btn-autorizar-salida-coordinador');
+        const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase();
+        const esCoordinadorOAdmin = rolUsuario.includes('ADMIN') || rolUsuario.includes('PRODUCCION') || rolUsuario.includes('COORDINADOR');
+        
+        if (btnCoord) {
+            if (esCoordinadorOAdmin && idMaestroCheckoutActual && estadoBodegaCheckoutActual !== 'DESPACHADO' && estadoBodegaCheckoutActual !== 'RECIBIDO') {
+                btnCoord.style.display = 'inline-flex';
+            } else {
+                btnCoord.style.display = 'none';
+            }
+        }
+
+        // Si el cargamento ya está DESPACHADO, cambiar a la pestaña de Check-in automáticamente
+        if (estadoBodegaCheckoutActual === 'DESPACHADO' && pestanaActivaCheckout === 'salida' && detalle.length > 0) {
+            cambiarPestanaCheckout('checkin');
+        }
+
+    } catch (e) {
+        console.error("Error cargando status checkout:", e);
+    }
+}
+
+async function cargarKitsEmpleadoActivo(idEmpleado, plantillaSeleccionada = null) {
+    try {
+        const res = await fetch(`${API_URL}/api/checkout/kits/${idEmpleado}`);
+        const selKit = document.getElementById('checkout-sel-kit');
+        if (!selKit) return;
+
+        let kits = [];
+        if (res.ok) {
+            const data = await res.json();
+            kits = data.kits || [];
+        }
+
+        let html = `<option value="--- Sin plantilla ---">--- Sin plantilla ---</option>`;
+        kits.forEach(k => {
+            html += `<option value="${k}">${k}</option>`;
+        });
+        selKit.innerHTML = html;
+
+        if (plantillaSeleccionada && plantillaSeleccionada !== "--- Sin plantilla ---") {
+            if ([...selKit.options].some(o => o.value === plantillaSeleccionada)) {
+                selKit.value = plantillaSeleccionada;
+            } else {
+                const opt = document.createElement('option');
+                opt.value = plantillaSeleccionada;
+                opt.textContent = plantillaSeleccionada;
+                selKit.appendChild(opt);
+                selKit.value = plantillaSeleccionada;
+            }
+        }
+    } catch (e) {
+        console.warn("Aviso cargando kits del empleado:", e);
+    }
+}
+
+function actualizarBadgeEstadoCheckout(estado) {
+    const badge = document.getElementById('checkout-badge-estado');
+    if (!badge) return;
+
+    badge.className = 'badge-chk';
+    const st = (estado || 'NUEVO').toUpperCase().trim();
+    if (st === 'RECIBIDO') {
+        badge.classList.add('recibido');
+        badge.innerHTML = `<i class="ph ph-check-circle"></i> Estatus: RECIBIDO / LIBERADO`;
+    } else if (st === 'DESPACHADO') {
+        badge.classList.add('despachado');
+        badge.innerHTML = `<i class="ph ph-truck"></i> Estatus: DESPACHADO (En Evento)`;
+    } else if (st === 'PENDIENTE') {
+        badge.classList.add('pendiente');
+        badge.innerHTML = `<i class="ph ph-clock"></i> Estatus: PENDIENTE AUTORIZACIÓN`;
+    } else {
+        badge.classList.add('nuevo');
+        badge.innerHTML = `<i class="ph ph-sparkle"></i> Estatus: NUEVO (Sin Salida)`;
+    }
+}
+
+function renderTablaCheckoutSalida() {
+    const tbody = document.getElementById('tbody-checkout-salida');
+    const badgeCount = document.getElementById('checkout-conteo-items');
+    if (badgeCount) badgeCount.innerText = itemsCheckoutSalida.length;
+
+    if (!tbody) return;
+    if (itemsCheckoutSalida.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">
+                    <i class="ph ph-package" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
+                    No hay equipos agregados. Carga una plantilla o busca equipos arriba.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = itemsCheckoutSalida.map((item, idx) => `
+        <tr>
+            <td style="text-align: center; font-weight: 600; color: #64748b;">${idx + 1}</td>
+            <td>
+                <input type="text" class="op-input" value="${(item.ID || '').replace(/"/g, '&quot;')}" onchange="actualizarItemSalida(${idx}, 'ID', this.value)" style="font-family: monospace; font-size: 12px; padding: 6px 8px;">
+            </td>
+            <td>
+                <input type="text" class="op-input" value="${(item.EQUIPO || '').replace(/"/g, '&quot;')}" onchange="actualizarItemSalida(${idx}, 'EQUIPO', this.value)" style="font-size: 13px; font-weight: 500; padding: 6px 8px;">
+            </td>
+            <td style="text-align: center;">
+                <input type="number" min="1" class="op-input" value="${item.CANT || 1}" onchange="actualizarItemSalida(${idx}, 'CANT', parseInt(this.value)||1)" style="text-align: center; font-size: 13px; font-weight: 600; padding: 6px 4px; width: 60px;">
+            </td>
+            <td>
+                <input type="text" class="op-input" value="${(item.OBSERVACIONES || '').replace(/"/g, '&quot;')}" onchange="actualizarItemSalida(${idx}, 'OBSERVACIONES', this.value)" placeholder="Notas..." style="font-size: 12.5px; padding: 6px 8px;">
+            </td>
+            <td style="text-align: center;">
+                <button type="button" onclick="eliminarFilaSalida(${idx})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 4px;" title="Eliminar fila">
+                    <i class="ph ph-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function actualizarItemSalida(idx, campo, valor) {
+    if (itemsCheckoutSalida[idx]) {
+        itemsCheckoutSalida[idx][campo] = valor;
+    }
+}
+
+function eliminarFilaSalida(idx) {
+    itemsCheckoutSalida.splice(idx, 1);
+    renderTablaCheckoutSalida();
+}
+
+function agregarFilaVaciaCheckout() {
+    itemsCheckoutSalida.push({
+        ID: "",
+        EQUIPO: "",
+        CANT: 1,
+        OBSERVACIONES: ""
+    });
+    renderTablaCheckoutSalida();
+}
+
+function limpiarTablaSalidaCheckout() {
+    if (itemsCheckoutSalida.length === 0) return;
+    if (confirm("¿Estás seguro de que deseas vaciar todos los equipos de la lista de salida?")) {
+        itemsCheckoutSalida = [];
+        renderTablaCheckoutSalida();
+    }
+}
+
+async function alSeleccionarKitCheckout() {
+    const selKit = document.getElementById('checkout-sel-kit');
+    if (!selKit || !selKit.value || selKit.value === "--- Sin plantilla ---") return;
+
+    const nombreKit = selKit.value;
+    const empId = empleadoActivoCheckout || (usuarioLogueado?.id_empleado || "001");
+
+    try {
+        const res = await fetch(`${API_URL}/api/eventos/buscar_kit/${encodeURIComponent(nombreKit)}/${empId}`);
+        if (!res.ok) throw new Error("Error al obtener la plantilla de kit");
+        const data = await res.json();
+        const rawItems = data.items || [];
+        
+        let parsed = [];
+        if (typeof rawItems === 'string') {
+            try { parsed = JSON.parse(rawItems); } catch(e) { parsed = []; }
+        } else if (Array.isArray(rawItems)) {
+            parsed = rawItems;
+        }
+
+        if (parsed.length === 0) {
+            alert("⚠️ La plantilla seleccionada está vacía o no tiene artículos registrados.");
+            return;
+        }
+
+        itemsCheckoutSalida = parsed.map(it => ({
+            ID: it.ID || it.codigo || it.ID_ITEM || "",
+            EQUIPO: it.EQUIPO || it.descripcion || it.DESCRIPCION || it.Equipo || "Equipo",
+            CANT: parseInt(it.CANT || it.cantidad || it.CANTIDAD || 1) || 1,
+            OBSERVACIONES: it.OBSERVACIONES || it.observaciones || ""
+        }));
+
+        renderTablaCheckoutSalida();
+        
+        const banner = document.getElementById('checkout-txt-plantilla');
+        if (banner) banner.innerText = nombreKit;
+
+    } catch (e) {
+        console.error("Error cargando kit:", e);
+        alert("Error cargando la plantilla de kit: " + e.message);
+    }
+}
+
+function verificarDanoEquipoSeleccionado() {
+    const input = document.getElementById('checkout-buscar-hw');
+    const alerta = document.getElementById('checkout-alerta-dano-hw');
+    if (!input || !alerta) return;
+
+    const val = (input.value || '').trim();
+    if (!val) {
+        alerta.style.display = 'none';
+        return;
+    }
+
+    let nombreEq = val;
+    if (val.includes(' - ')) {
+        nombreEq = val.split(' - ').slice(1).join(' - ').trim();
+    }
+
+    const tieneDano = [...radarDanosCheckoutSet].some(d => nombreEq.toUpperCase().includes(d) || d.includes(nombreEq.toUpperCase()));
+    if (tieneDano) {
+        alerta.style.display = 'block';
+    } else {
+        alerta.style.display = 'none';
+    }
+}
+
+function inyectarHardwareCheckout() {
+    const inputHw = document.getElementById('checkout-buscar-hw');
+    const inputCant = document.getElementById('checkout-cant-hw');
+    if (!inputHw) return;
+
+    const val = (inputHw.value || '').trim();
+    if (!val) {
+        alert("Selecciona o escribe un equipo para agregar.");
+        return;
+    }
+
+    const cant = parseInt(inputCant?.value || 1) || 1;
+    let cod = "";
+    let nombre = val;
+
+    if (val.includes(' - ')) {
+        const partes = val.split(' - ');
+        cod = partes[0].trim();
+        nombre = partes.slice(1).join(' - ').trim();
+    }
+
+    // Sensor de daño al vuelo
+    let obsDano = "";
+    const tieneDano = [...radarDanosCheckoutSet].some(d => nombre.toUpperCase().includes(d) || d.includes(nombre.toUpperCase()));
+    if (tieneDano) {
+        obsDano = "⚠️ [LLEVA DAÑO REPORTADO]";
+    }
+
+    // Verificar si ya existe en la lista de salida
+    const yaExiste = itemsCheckoutSalida.find(it => 
+        (cod && it.ID && it.ID.toUpperCase() === cod.toUpperCase()) || 
+        (it.EQUIPO && it.EQUIPO.toUpperCase() === nombre.toUpperCase())
+    );
+
+    if (yaExiste) {
+        yaExiste.CANT = (yaExiste.CANT || 1) + cant;
+        if (obsDano && !yaExiste.OBSERVACIONES.includes("DAÑO")) {
+            yaExiste.OBSERVACIONES = (yaExiste.OBSERVACIONES + " " + obsDano).trim();
+        }
+    } else {
+        itemsCheckoutSalida.push({
+            ID: cod,
+            EQUIPO: nombre,
+            CANT: cant,
+            OBSERVACIONES: obsDano
+        });
+    }
+
+    inputHw.value = "";
+    if (inputCant) inputCant.value = 1;
+    verificarDanoEquipoSeleccionado();
+    renderTablaCheckoutSalida();
+}
+
+async function guardarComoPlantillaKit() {
+    const inputNombre = document.getElementById('checkout-nuevo-kit-nombre');
+    const nombre = (inputNombre?.value || '').trim();
+    if (!nombre) {
+        alert("⚠️ Ingresa un nombre para la nueva plantilla / kit.");
+        return;
+    }
+    if (itemsCheckoutSalida.length === 0) {
+        alert("⚠️ La lista de equipos está vacía. Agrega equipos antes de guardar la plantilla.");
+        return;
+    }
+
+    const empId = empleadoActivoCheckout || (usuarioLogueado?.id_empleado || "001");
+    const payload = {
+        id_empleado: empId,
+        nombre_kit: nombre,
+        items: itemsCheckoutSalida.map(it => ({
+            ID: it.ID || '',
+            EQUIPO: it.EQUIPO || '',
+            OBSERVACIONES: it.OBSERVACIONES || ''
+        })),
+        usuario_actual: usuarioLogueado?.nombre_completo || 'OPERADOR'
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/api/checkout/grabar-kit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert(`✅ Plantilla "${nombre}" guardada con éxito en tu perfil.`);
+            inputNombre.value = "";
+            await cargarKitsEmpleadoActivo(empId, nombre);
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al grabar plantilla: ${err}`);
+        }
+    } catch (e) {
+        console.error("Error al grabar kit:", e);
+        alert("Error de conexión al grabar plantilla.");
+    }
+}
+
+async function finalizarSalidaCheckout() {
+    const selOP = document.getElementById('checkout-sel-op');
+    if (!selOP || !selOP.value) {
+        alert("⚠️ Debes seleccionar una Orden de Producción.");
+        return;
+    }
+
+    const match = selOP.value.match(/OP-(\d+)/i);
+    if (!match) return;
+    const idEvento = parseInt(match[1]);
+
+    if (itemsCheckoutSalida.length === 0) {
+        alert("⚠️ La lista de equipos a salir está vacía. Carga un kit o inyecta hardware.");
+        return;
+    }
+
+    const empId = empleadoActivoCheckout || (usuarioLogueado?.id_empleado || "001");
+    const selKit = document.getElementById('checkout-sel-kit')?.value || "--- Sin plantilla ---";
+    const notaIncidenciasInput = (document.getElementById('checkout-salida-incidencias')?.value || '').trim();
+    const notaIncidencias = notaIncidenciasInput || "Sin incidencias reportadas.";
+
+    // Proveedor
+    const provSel = document.getElementById('checkout-salida-prov')?.value || "--- Ninguno ---";
+    const provNota = document.getElementById('checkout-salida-prov-nota')?.value || "";
+    let tagProv = "";
+    if (provSel !== "--- Ninguno ---" && provNota.trim()) {
+        tagProv = `\n[PROVEEDOR_INCIDENTE: ${provSel} | NOTA: ${provNota.trim()}]`;
+    }
+
+    const incidenciasFinal = `${notaIncidencias.trim()}${tagProv}`.trim();
+
+    const itemsFinales = itemsCheckoutSalida.map(it => ({
+        ID: it.ID || '',
+        codigo: it.ID || '',
+        CANT: it.CANT || 1,
+        cantidad: it.CANT || 1,
+        OBSERVACIONES: it.OBSERVACIONES || '',
+        observaciones: it.OBSERVACIONES || '',
+        EQUIPO: it.EQUIPO || '',
+        descripcion: it.EQUIPO || ''
+    }));
+
+    const payload = {
+        id_evento: idEvento,
+        id_sujeto_a_revisar: empId,
+        incidencias_generales: incidenciasFinal,
+        nombre_kit: selKit,
+        items: itemsFinales
+    };
+
+    try {
+        const btn = document.getElementById('btn-finalizar-salida');
+        if (btn) btn.disabled = true;
+
+        const res = await fetch(`${API_URL}/api/checkout/finalizar-salida`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert("🚀 ¡Salida de hardware y Checkout registrados exitosamente!");
+            await cargarStatusCheckout(idEvento, empId);
+            cargarBadges();
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al registrar salida: ${err}`);
+        }
+    } catch (e) {
+        console.error("Error al finalizar salida:", e);
+        alert("Error de conexión al registrar salida.");
+    } finally {
+        const btn = document.getElementById('btn-finalizar-salida');
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function autorizarSalidaCoordinador() {
+    if (!idMaestroCheckoutActual) {
+        alert("⚠️ No se puede autorizar: primero debe registrarse la salida base de la OP.");
+        return;
+    }
+
+    const notaIncidencias = document.getElementById('checkout-salida-incidencias')?.value || "Despacho autorizado por Coordinador.";
+
+    const itemsFinales = itemsCheckoutSalida.map(it => ({
+        id_detalle: it.id_detalle,
+        ID: it.ID || '',
+        codigo: it.ID || '',
+        CANT: it.CANT || 1,
+        cantidad: it.CANT || 1,
+        OBSERVACIONES: it.OBSERVACIONES || '',
+        observaciones: it.OBSERVACIONES || ''
+    }));
+
+    const payload = {
+        id_maestro: idMaestroCheckoutActual,
+        incidencias_generales: notaIncidencias.trim(),
+        items: itemsFinales
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/api/checkout/verificar-salida-coordinador`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert("🔒 ¡Cargamento DESPACHADO y autorizado por Coordinación!");
+            await cargarStatusCheckoutActual();
+            cargarBadges();
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al autorizar salida: ${err}`);
+        }
+    } catch (e) {
+        console.error("Error al autorizar salida:", e);
+        alert("Error de conexión al autorizar salida.");
+    }
+}
+
+function renderTablaCheckoutCheckin() {
+    const tbody = document.getElementById('tbody-checkout-checkin');
+    if (!tbody) return;
+
+    if (itemsCheckoutCheckin.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">
+                    No hay checkout de salida registrado para cotejar en esta OP.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = itemsCheckoutCheckin.map((item, idx) => `
+        <tr>
+            <td><code style="font-size: 12px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${item.ID || '--'}</code></td>
+            <td style="font-weight: 500; font-size: 13px;">${item.EQUIPO || 'Equipo sin descripción'}</td>
+            <td style="text-align: center; font-weight: 700; color: #0f172a;">${item.CANT_SALIDA || 1}</td>
+            <td style="color: #64748b; font-size: 12.5px;">${item.OBS_SALIDA || '---'}</td>
+            <td style="text-align: center;">
+                <input type="checkbox" ${item.COTEJADO ? 'checked' : ''} onchange="actualizarCheckinCotejo(${idx}, this.checked)" style="width: 20px; height: 20px; cursor: pointer; accent-color: #16a34a;">
+            </td>
+            <td>
+                <input type="text" class="op-input" value="${(item.OBS_REGRESO || '').replace(/"/g, '&quot;')}" onchange="actualizarCheckinNota(${idx}, this.value)" placeholder="Buen estado / reportar daños..." style="font-size: 12.5px; padding: 6px 8px;">
+            </td>
+        </tr>
+    `).join('');
+}
+
+function actualizarCheckinCotejo(idx, checked) {
+    if (itemsCheckoutCheckin[idx]) {
+        itemsCheckoutCheckin[idx].COTEJADO = checked;
+    }
+}
+
+function actualizarCheckinNota(idx, valor) {
+    if (itemsCheckoutCheckin[idx]) {
+        itemsCheckoutCheckin[idx].OBS_REGRESO = valor;
+    }
+}
+
+function marcarTodosCheckin(valor) {
+    itemsCheckoutCheckin.forEach(it => {
+        it.COTEJADO = valor;
+    });
+    renderTablaCheckoutCheckin();
+}
+
+async function finalizarCheckinCheckout() {
+    if (!idMaestroCheckoutActual) {
+        alert("⚠️ No hay registro maestro de salida para cotejar en esta OP.");
+        return;
+    }
+
+    const selOP = document.getElementById('checkout-sel-op');
+    const match = selOP?.value?.match(/OP-(\d+)/i);
+    if (!match) return;
+    const idEvento = parseInt(match[1]);
+
+    // Verificar si algún artículo no fue cotejado
+    const sinCotejar = itemsCheckoutCheckin.filter(it => !it.COTEJADO);
+    if (sinCotejar.length > 0) {
+        const confirmar = confirm(`⚠️ Atención: Hay ${sinCotejar.length} artículo(s) que NO marcaste como recibidos. ¿Deseas finalizar el Check-in de todas formas?`);
+        if (!confirmar) return;
+    }
+
+    const notaRecepcionInput = (document.getElementById('checkout-checkin-incidencias')?.value || '').trim();
+    const notaRecepcion = notaRecepcionInput || "Sin incidencias reportadas.";
+
+    // Proveedor
+    const provSel = document.getElementById('checkout-checkin-prov')?.value || "--- Ninguno ---";
+    const provNota = document.getElementById('checkout-checkin-prov-nota')?.value || "";
+    let tagProv = "";
+    if (provSel !== "--- Ninguno ---" && provNota.trim()) {
+        tagProv = `\n[PROVEEDOR_INCIDENTE: ${provSel} | NOTA: ${provNota.trim()}]`;
+    }
+
+    const incidenciasFinal = `${notaRecepcion.trim()}${tagProv}`.trim();
+
+    const itemsFinales = itemsCheckoutCheckin.map(it => {
+        const nota = (it.OBS_REGRESO || '').trim();
+        const textoAnalisis = nota.toLowerCase();
+        const tieneDano = ["dañ", "dan", "rot", "quebrad", "fall", "perd", "golp"].some(p => textoAnalisis.includes(p));
+        
+        return {
+            id_detalle: it.id_detalle,
+            ID: it.ID || '',
+            COTEJADO: Boolean(it.COTEJADO),
+            cotejado: Boolean(it.COTEJADO),
+            OBS_REGRESO: nota,
+            notas_regreso: nota,
+            estatus_equipo: tieneDano ? "DAÑADO" : ""
+        };
+    });
+
+    const payload = {
+        id_maestro: idMaestroCheckoutActual,
+        id_evento: idEvento,
+        incidencias_generales: incidenciasFinal,
+        items: itemsFinales
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/api/checkout/finalizar-checkin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert("🔒 ¡Check-in y retorno de hardware registrado con éxito! La OP ha quedado LIBERADA.");
+            await cargarStatusCheckoutActual();
+            cargarBadges();
+            if (typeof cargarDatosInicio === 'function') cargarDatosInicio();
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al finalizar check-in: ${err}`);
+        }
+    } catch (e) {
+        console.error("Error al finalizar check-in:", e);
+        alert("Error de conexión al finalizar check-in.");
+    }
+}
+
+// ==========================================
+// 15. MÓDULO DE INCIDENCIAS OPERATIVAS
+// ==========================================
+
+let rawEvaluacionesIncidencias = [];
+let evaluacionesFiltradasIncidencias = [];
+let chartIncBalanceInstance = null;
+let chartIncEventosInstance = null;
+
+async function cargarModuloIncidencias() {
+    try {
+        const tbody = document.getElementById('tbody-incidencias-detallada');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #64748b;"><i class="ph ph-spinner" style="font-size: 24px;"></i> Cargando evaluaciones de incidencias...</td></tr>`;
+        }
+
+        const res = await fetch(`${API_URL}/api/incidencias/reporte`);
+        if (!res.ok) throw new Error("Error al obtener reporte de incidencias");
+        const dataJson = await res.json();
+
+        // Procesar cerebro separador de evaluaciones (idéntico a mod_incidencias.py)
+        rawEvaluacionesIncidencias = [];
+        dataJson.forEach(row => {
+            const textoRaw = (row.incidencias_generales || "").trim();
+            const empNombre = row.nombre_empleado || "Sin Nombre";
+            const evento = row.nombre_evento || "Evento General";
+            const fecha = row.fecha || "";
+            const depto = (row.depto_real || "Sin Departamento").trim();
+
+            let provNombre = null;
+            let provNota = "";
+            let empText = textoRaw;
+
+            if (textoRaw.includes("[PROVEEDOR_INCIDENTE:")) {
+                const sIdx = textoRaw.indexOf("[PROVEEDOR_INCIDENTE:");
+                const eIdx = textoRaw.indexOf("]", sIdx);
+                if (eIdx !== -1) {
+                    const provRaw = textoRaw.substring(sIdx + 21, eIdx).trim();
+                    if (provRaw.includes(" | NOTA: ")) {
+                        const partes = provRaw.split(" | NOTA: ");
+                        provNombre = partes[0].trim();
+                        provNota = partes[1].trim();
+                    } else {
+                        provNombre = provRaw;
+                        provNota = "Incidencia reportada (Sin detalles)";
+                    }
+                    empText = (textoRaw.substring(0, sIdx).trim() + " " + textoRaw.substring(eIdx + 1).trim()).trim();
+                }
+            }
+
+            function clasificarTexto(texto) {
+                if (!texto) return "✅ Sin Incidencias";
+                const t = texto.toLowerCase().trim();
+                if (t.startsWith("sin incidencia") || ["ninguna", "todo bien", "exito", "ok", "n/a", "none", "---", ""].includes(t)) {
+                    return "✅ Sin Incidencias";
+                }
+                return "⚠️ Con Incidencias";
+            }
+
+            // 1. Calificamos al empleado
+            rawEvaluacionesIncidencias.push({
+                Fecha: fecha,
+                Evento: evento,
+                Actor: empNombre,
+                Tipo: "Empleado",
+                Departamento: depto,
+                Estatus: clasificarTexto(empText),
+                Nota: empText.trim() ? empText.trim() : "Operación Limpia"
+            });
+
+            // 2. Calificamos al proveedor si fue reportado
+            if (provNombre && !provNombre.toUpperCase().includes("--- NINGUNO ---")) {
+                rawEvaluacionesIncidencias.push({
+                    Fecha: fecha,
+                    Evento: evento,
+                    Actor: provNombre,
+                    Tipo: "Proveedor",
+                    Departamento: "Externo (Proveedor)",
+                    Estatus: "⚠️ Con Incidencias",
+                    Nota: provNota.trim() ? provNota.trim() : "Falla de proveedor reportada"
+                });
+            }
+        });
+
+        // Configurar rango de fechas inicial
+        const fechas = rawEvaluacionesIncidencias.map(e => e.Fecha).filter(Boolean).sort();
+        if (fechas.length > 0) {
+            const fMin = fechas[0];
+            const fMax = fechas[fechas.length - 1];
+            const inputDesde = document.getElementById('filtro-inc-desde');
+            const inputHasta = document.getElementById('filtro-inc-hasta');
+            if (inputDesde && !inputDesde.value) inputDesde.value = fMin;
+            if (inputHasta && !inputHasta.value) inputHasta.value = fMax;
+        }
+
+        // Poblar departamentos
+        poblarFiltroDepartamentosIncidencias();
+
+        // Poblar actores
+        poblarFiltroActoresIncidencias();
+
+        // Aplicar filtros y renderizar
+        aplicarFiltrosIncidencias();
+
+    } catch (e) {
+        console.error("Error al cargar módulo de incidencias:", e);
+        const tbody = document.getElementById('tbody-incidencias-detallada');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar las incidencias: ${e.message}</td></tr>`;
+    }
+}
+
+function poblarFiltroDepartamentosIncidencias() {
+    const selDepto = document.getElementById('filtro-inc-depto');
+    if (!selDepto) return;
+
+    const deptos = new Set();
+    rawEvaluacionesIncidencias.forEach(e => {
+        if (e.Tipo === 'Empleado' && e.Departamento) deptos.add(e.Departamento);
+    });
+
+    const ordenados = Array.from(deptos).sort();
+    selDepto.innerHTML = `<option value="Todos">Todos</option>` + ordenados.map(d => `<option value="${d}">${d}</option>`).join('');
+}
+
+function alCambiarDeptoIncidencias() {
+    poblarFiltroActoresIncidencias();
+    aplicarFiltrosIncidencias();
+}
+
+function poblarFiltroActoresIncidencias() {
+    const selActor = document.getElementById('filtro-inc-actor');
+    const selDepto = document.getElementById('filtro-inc-depto');
+    if (!selActor) return;
+
+    const deptoSel = selDepto?.value || "Todos";
+    const valorActual = selActor.value;
+
+    const emps = new Set();
+    const provs = new Set();
+
+    rawEvaluacionesIncidencias.forEach(e => {
+        if (e.Tipo === 'Empleado') {
+            if (deptoSel === "Todos" || e.Departamento === deptoSel) {
+                emps.add(e.Actor);
+            }
+        } else if (e.Tipo === 'Proveedor') {
+            provs.add(e.Actor);
+        }
+    });
+
+    const empsList = Array.from(emps).sort();
+    const provsList = Array.from(provs).sort();
+
+    let html = `
+        <option value="🌟 TODOS (Empleados y Proveedores)">🌟 TODOS (Empleados y Proveedores)</option>
+        <option value="👥 TODOS LOS EMPLEADOS">👥 TODOS LOS EMPLEADOS</option>
+        <option value="🚚 TODOS LOS PROVEEDORES">🚚 TODOS LOS PROVEEDORES</option>
+    `;
+
+    if (empsList.length > 0) {
+        html += `<optgroup label="--- EMPLEADOS INDIVIDUALES ---">`;
+        empsList.forEach(nom => {
+            html += `<option value="${nom}">${nom}</option>`;
+        });
+        html += `</optgroup>`;
+    }
+
+    if (provsList.length > 0) {
+        html += `<optgroup label="--- PROVEEDORES INDIVIDUALES ---">`;
+        provsList.forEach(nom => {
+            html += `<option value="${nom}">${nom}</option>`;
+        });
+        html += `</optgroup>`;
+    }
+
+    selActor.innerHTML = html;
+    if ([...selActor.options].some(o => o.value === valorActual)) {
+        selActor.value = valorActual;
+    } else {
+        selActor.selectedIndex = 0;
+    }
+}
+
+function resetearFiltrosIncidencias() {
+    const fechas = rawEvaluacionesIncidencias.map(e => e.Fecha).filter(Boolean).sort();
+    if (fechas.length > 0) {
+        const inputDesde = document.getElementById('filtro-inc-desde');
+        const inputHasta = document.getElementById('filtro-inc-hasta');
+        if (inputDesde) inputDesde.value = fechas[0];
+        if (inputHasta) inputHasta.value = fechas[fechas.length - 1];
+    }
+    const selDepto = document.getElementById('filtro-inc-depto');
+    if (selDepto) selDepto.value = "Todos";
+    poblarFiltroActoresIncidencias();
+    const selActor = document.getElementById('filtro-inc-actor');
+    if (selActor) selActor.selectedIndex = 0;
+    const buscar = document.getElementById('inc-buscar-tabla');
+    if (buscar) buscar.value = "";
+    aplicarFiltrosIncidencias();
+}
+
+function aplicarFiltrosIncidencias() {
+    const fDesde = document.getElementById('filtro-inc-desde')?.value || "";
+    const fHasta = document.getElementById('filtro-inc-hasta')?.value || "";
+    const depto = document.getElementById('filtro-inc-depto')?.value || "Todos";
+    const actor = document.getElementById('filtro-inc-actor')?.value || "🌟 TODOS (Empleados y Proveedores)";
+
+    evaluacionesFiltradasIncidencias = rawEvaluacionesIncidencias.filter(item => {
+        // Filtro de fecha
+        if (fDesde && item.Fecha && item.Fecha < fDesde) return false;
+        if (fHasta && item.Fecha && item.Fecha > fHasta) return false;
+
+        // Filtro de depto
+        if (depto !== "Todos") {
+            if (item.Tipo === 'Empleado' && item.Departamento !== depto) return false;
+        }
+
+        // Filtro de actor
+        if (actor === "👥 TODOS LOS EMPLEADOS") {
+            if (item.Tipo !== 'Empleado') return false;
+        } else if (actor === "🚚 TODOS LOS PROVEEDORES") {
+            if (item.Tipo !== 'Proveedor') return false;
+        } else if (actor !== "🌟 TODOS (Empleados y Proveedores)") {
+            if (item.Actor !== actor) return false;
+        }
+
+        return true;
+    });
+
+    actualizarKPIsIncidencias();
+    renderizarGraficasIncidencias();
+    renderizarTablaIncidencias(evaluacionesFiltradasIncidencias);
+}
+
+function actualizarKPIsIncidencias() {
+    const total = evaluacionesFiltradasIncidencias.length;
+    const limpias = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+    const fallas = total - limpias;
+    const eventosUnicos = new Set(evaluacionesFiltradasIncidencias.map(e => e.Evento)).size;
+
+    const pctLimpias = total > 0 ? ((limpias / total) * 100).toFixed(1) : "0.0";
+    const pctFallas = total > 0 ? ((fallas / total) * 100).toFixed(1) : "0.0";
+
+    const elTotal = document.getElementById('kpi-inc-total');
+    if (elTotal) elTotal.innerText = total;
+
+    const elLimpias = document.getElementById('kpi-inc-limpias');
+    if (elLimpias) elLimpias.innerText = limpias;
+    const elPctLimpias = document.getElementById('kpi-inc-pct-limpias');
+    if (elPctLimpias) elPctLimpias.innerText = `+${pctLimpias}%`;
+
+    const elFallas = document.getElementById('kpi-inc-fallas');
+    if (elFallas) elFallas.innerText = fallas;
+    const elPctFallas = document.getElementById('kpi-inc-pct-fallas');
+    if (elPctFallas) elPctFallas.innerText = `-${pctFallas}%`;
+
+    const elEventos = document.getElementById('kpi-inc-eventos');
+    if (elEventos) elEventos.innerText = eventosUnicos;
+}
+
+function renderizarGraficasIncidencias() {
+    if (typeof Chart === 'undefined') return;
+
+    const total = evaluacionesFiltradasIncidencias.length;
+    const limpias = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+    const fallas = total - limpias;
+
+    const pctLimpias = total > 0 ? ((limpias / total) * 100) : 0;
+    const pctFallas = total > 0 ? ((fallas / total) * 100) : 0;
+
+    // 1️⃣ Gráfica 1: Balance General (Barra 100% Horizontal Apilada)
+    const ctxBalance = document.getElementById('chart-inc-balance')?.getContext('2d');
+    if (ctxBalance) {
+        if (chartIncBalanceInstance) chartIncBalanceInstance.destroy();
+
+        chartIncBalanceInstance = new Chart(ctxBalance, {
+            type: 'bar',
+            data: {
+                labels: ['Balance General'],
+                datasets: [
+                    {
+                        label: 'Sin Incidencias',
+                        data: [pctLimpias],
+                        backgroundColor: '#16a34a',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Con Incidencias',
+                        data: [pctFallas],
+                        backgroundColor: '#ef4444',
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        max: 100,
+                        ticks: { callback: v => `${v}%` }
+                    },
+                    y: {
+                        stacked: true,
+                        display: false
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2️⃣ Gráfica 2: Detalle por Evento (Barras comparativas Verde vs Roja)
+    const ctxEventos = document.getElementById('chart-inc-eventos')?.getContext('2d');
+    if (ctxEventos) {
+        if (chartIncEventosInstance) chartIncEventosInstance.destroy();
+
+        // Agrupar por Evento
+        const eventosMap = {};
+        evaluacionesFiltradasIncidencias.forEach(e => {
+            const ev = e.Evento || 'Sin Nombre';
+            if (!eventosMap[ev]) eventosMap[ev] = { limpias: 0, fallas: 0 };
+            if (e.Estatus.includes("Sin Incidencias")) eventosMap[ev].limpias++;
+            else eventosMap[ev].fallas++;
+        });
+
+        // Ordenar por volumen total o alfabético
+        const labels = Object.keys(eventosMap);
+        const dataLimpias = labels.map(k => eventosMap[k].limpias);
+        const dataFallas = labels.map(k => eventosMap[k].fallas);
+
+        chartIncEventosInstance = new Chart(ctxEventos, {
+            type: 'bar',
+            data: {
+                labels: labels.map(l => l.length > 28 ? l.substring(0, 26) + '...' : l),
+                datasets: [
+                    {
+                        label: 'Sin Incidencias',
+                        data: dataLimpias,
+                        backgroundColor: '#16a34a',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Con Incidencias',
+                        data: dataFallas,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 35,
+                            font: { size: 10.5 }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => labels[items[0].dataIndex] || ''
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function renderizarTablaIncidencias(lista) {
+    const tbody = document.getElementById('tbody-incidencias-detallada');
+    const badgeConteo = document.getElementById('inc-tabla-conteo');
+    if (badgeConteo) badgeConteo.innerText = lista.length;
+
+    if (!tbody) return;
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #16a34a; font-weight: 600;"><i class="ph ph-check-circle" style="font-size: 24px; vertical-align: middle;"></i> ✅ Operación Limpia: No se encontraron registros con los filtros actuales.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = lista.map(item => {
+        const esLimpio = item.Estatus.includes("Sin Incidencias");
+        const badgeEstatus = esLimpio
+            ? `<span style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-check-circle"></i> Sin Incidencias</span>`
+            : `<span style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-warning-circle"></i> Con Incidencias</span>`;
+
+        const badgeTipo = item.Tipo === 'Empleado'
+            ? `<span style="background: #eff6ff; color: #2563eb; font-weight: 600; font-size: 11.5px; padding: 2px 8px; border-radius: 6px;">👤 Empleado</span>`
+            : `<span style="background: #fef3c7; color: #d97706; font-weight: 600; font-size: 11.5px; padding: 2px 8px; border-radius: 6px;">🚚 Proveedor</span>`;
+
+        return `
+            <tr>
+                <td style="font-family: monospace; font-size: 12px; color: #64748b;">${item.Fecha || '--'}</td>
+                <td style="font-weight: 600; color: #0f172a; font-size: 13px;">${item.Evento}</td>
+                <td style="text-align: center;">${badgeTipo}</td>
+                <td style="font-weight: 500; font-size: 13px;">${item.Actor}</td>
+                <td style="text-align: center;">${badgeEstatus}</td>
+                <td style="color: ${esLimpio ? '#64748b' : '#b91c1c'}; font-size: 12.5px; line-height: 1.4;">${item.Nota}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function filtrarTablaIncidenciasEnVivo(termino) {
+    const t = (termino || "").toLowerCase().trim();
+    if (!t) {
+        renderizarTablaIncidencias(evaluacionesFiltradasIncidencias);
+        return;
+    }
+    const filtrados = evaluacionesFiltradasIncidencias.filter(item =>
+        (item.Evento && item.Evento.toLowerCase().includes(t)) ||
+        (item.Actor && item.Actor.toLowerCase().includes(t)) ||
+        (item.Nota && item.Nota.toLowerCase().includes(t)) ||
+        (item.Tipo && item.Tipo.toLowerCase().includes(t)) ||
+        (item.Fecha && item.Fecha.includes(t))
+    );
+    renderizarTablaIncidencias(filtrados);
+}
+
+// ==========================================
+// 16. MÓDULO ANALÍTICA Y KPIS
+// ==========================================
+let chartAnDeptosInstance = null;
+let chartAnFlotaInstance = null;
+let chartAnClientesInstance = null;
+let chartAnOpsMesInstance = null;
+let chartAnEmpleadosInstance = null;
+let chartAnEfectividadInstance = null;
+
+function cambiarPestanaAnalitica(tab) {
+    const tabs = ['finanzas', 'comercial', 'operaciones'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`tab-an-btn-${t}`);
+        const view = document.getElementById(`subvista-an-${t}`);
+        if (btn && view) {
+            if (t === tab) {
+                btn.style.background = '#0f172a';
+                btn.style.color = 'white';
+                btn.style.border = 'none';
+                view.style.display = 'block';
+            } else {
+                btn.style.background = '#f1f5f9';
+                btn.style.color = '#475569';
+                btn.style.border = '1px solid #cbd5e1';
+                view.style.display = 'none';
+            }
+        }
+    });
+}
+
+async function cargarModuloAnalitica() {
+    const elDesde = document.getElementById("filtro-analitica-desde");
+    const elHasta = document.getElementById("filtro-analitica-hasta");
+
+    const hoy = new Date();
+    const hace30d = new Date();
+    hace30d.setDate(hoy.getDate() - 30);
+
+    if (elDesde && !elDesde.value) elDesde.value = hace30d.toISOString().substring(0, 10);
+    if (elHasta && !elHasta.value) elHasta.value = hoy.toISOString().substring(0, 10);
+
+    const fIni = elDesde ? elDesde.value : "";
+    const fFin = elHasta ? elHasta.value : "";
+
+    try {
+        const url = `${API_URL}/api/dashboard/resumen?fecha_inicio=${fIni}&fecha_fin=${fFin}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        const fin = data.finanzas || {};
+        const com = data.comercial || {};
+        const op = data.operaciones || {};
+
+        // 1. FINANZAS
+        const kpiGasto = document.getElementById("kpi-an-gasto-mes");
+        const kpiEqDan = document.getElementById("kpi-an-equipos-danados");
+        const kpiFlota = document.getElementById("kpi-an-flota-taller");
+        const kpiSeg = document.getElementById("kpi-an-seguros-vencer");
+
+        if (kpiGasto) kpiGasto.innerText = `$${Number(fin.gasto_mes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+        if (kpiEqDan) kpiEqDan.innerText = fin.equipos_danados || 0;
+        if (kpiFlota) kpiFlota.innerText = fin.flota_taller || 0;
+        if (kpiSeg) kpiSeg.innerText = fin.seguros_vencer || 0;
+
+        renderGraficaDeptosDanos(fin.deptos_danos || []);
+        renderGraficaFlotaFallas(fin.estado_flota || []);
+
+        // 2. COMERCIAL
+        const kpiOps = document.getElementById("kpi-an-ops-mes");
+        const kpiCli = document.getElementById("kpi-an-cliente-top");
+        const kpiProv = document.getElementById("kpi-an-proveedores-activos");
+
+        if (kpiOps) kpiOps.innerText = com.ops_mes || 0;
+        if (kpiCli) kpiCli.innerText = com.cliente_top || "--";
+        if (kpiProv) kpiProv.innerText = com.proveedores_activos || 0;
+
+        renderGraficaTopClientes(com.top_clientes || []);
+        renderGraficaOpsMes(com.ops_por_mes || []);
+
+        // 3. OPERACIONES
+        const kpiTasa = document.getElementById("kpi-an-tasa-incidencias");
+        const kpiLog = document.getElementById("kpi-an-logistica-tiempo");
+        const kpiEmp = document.getElementById("kpi-an-emp-top");
+
+        if (kpiTasa) kpiTasa.innerText = `${op.tasa_incidencias || 0}%`;
+        if (kpiLog) kpiLog.innerText = `${op.logistica_tiempo || 100}%`;
+        if (kpiEmp) kpiEmp.innerText = op.empleado_top || "--";
+
+        renderGraficaTopEmpleados(op.top_empleados || []);
+        renderGraficaEfectividad(op.efectividad_checkouts || []);
+    } catch (e) {
+        console.error("Error al cargar analítica y KPIs:", e);
+    }
+}
+
+function renderGraficaDeptosDanos(deptos) {
+    const canvas = document.getElementById("chart-an-deptos-danos");
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (chartAnDeptosInstance) chartAnDeptosInstance.destroy();
+
+    const labels = deptos.map(d => d.depto || 'General');
+    const values = deptos.map(d => d.total || 0);
+
+    chartAnDeptosInstance = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels.length ? labels : ['Sin daños'],
+            datasets: [{
+                data: values.length ? values : [1],
+                backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+function renderGraficaFlotaFallas(flota) {
+    const canvas = document.getElementById("chart-an-flota-fallas");
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (chartAnFlotaInstance) chartAnFlotaInstance.destroy();
+
+    const fallas = flota.filter(f => {
+        const t = String(f.estado || "").toLowerCase();
+        return !t.includes("excelente") && !t.includes("ok") && t !== "e c" && t !== "ec";
+    });
+
+    const labels = fallas.map(f => `${f.num_control} (${f.marca})`);
+    const values = fallas.map(() => 1);
+
+    chartAnFlotaInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels.length ? labels : ['Flota Operativa al 100%'],
+            datasets: [{
+                label: 'Unidades',
+                data: values.length ? values : [0],
+                backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                borderColor: '#d97706',
+                borderWidth: 1.5,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+}
+
+function renderGraficaTopClientes(clientes) {
+    const canvas = document.getElementById("chart-an-top-clientes");
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (chartAnClientesInstance) chartAnClientesInstance.destroy();
+
+    const labels = clientes.map(c => c.cliente || 'Desconocido');
+    const values = clientes.map(c => c.total || 0);
+
+    chartAnClientesInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Eventos Realizados',
+                data: values,
+                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                borderColor: '#059669',
+                borderWidth: 1.5,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function renderGraficaOpsMes(ops) {
+    const canvas = document.getElementById("chart-an-ops-mes");
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (chartAnOpsMesInstance) chartAnOpsMesInstance.destroy();
+
+    const labels = ops.map(o => o.mes || '');
+    const values = ops.map(o => o.total || 0);
+
+    chartAnOpsMesInstance = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Órdenes de Producción',
+                data: values,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                tension: 0.3,
+                fill: true,
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function renderGraficaTopEmpleados(empleados) {
+    const canvas = document.getElementById("chart-an-top-empleados");
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (chartAnEmpleadosInstance) chartAnEmpleadosInstance.destroy();
+
+    const labels = empleados.map(e => e.empleado || '');
+    const values = empleados.map(e => e.total || 0);
+
+    chartAnEmpleadosInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Checkouts Asignados',
+                data: values,
+                backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                borderColor: '#2563eb',
+                borderWidth: 1.5,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true } }
+        }
+    });
+}
+
+function renderGraficaEfectividad(efectividad) {
+    const canvas = document.getElementById("chart-an-efectividad");
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (chartAnEfectividadInstance) chartAnEfectividadInstance.destroy();
+
+    const labels = efectividad.map(e => e.estado || '');
+    const values = efectividad.map(e => e.total || 0);
+
+    chartAnEfectividadInstance = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels.length ? labels : ['Sin datos'],
+            datasets: [{
+                data: values.length ? values : [1],
+                backgroundColor: ['#10b981', '#ef4444']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+// ==========================================
+// 17. MÓDULO RECURSOS HUMANOS
+// ==========================================
+let listaEmpleadosRHCache = [];
+let idEmpleadoRHActual = null;
+
+function cambiarPestanaRH(tab) {
+    const tabs = ['datos', 'contratos', 'vacaciones', 'permisos', 'capacitacion', 'documentos'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`tab-rh-btn-${t}`);
+        const view = document.getElementById(`subvista-rh-${t}`);
+        if (btn && view) {
+            if (t === tab) {
+                btn.style.background = '#0f172a';
+                btn.style.color = 'white';
+                btn.style.border = 'none';
+                view.style.display = 'block';
+            } else {
+                btn.style.background = '#f1f5f9';
+                btn.style.color = '#475569';
+                btn.style.border = '1px solid #cbd5e1';
+                view.style.display = 'none';
+            }
+        }
+    });
+}
+
+async function cargarModuloRH() {
+    try {
+        const [resEmps, resAlertas] = await Promise.all([
+            fetch(`${API_URL}/api/rh/empleados`),
+            fetch(`${API_URL}/api/rh/alertas`)
+        ]);
+
+        if (resAlertas.ok) {
+            const alertas = await resAlertas.json();
+            const banner = document.getElementById("banner-rh-alertas");
+            if (banner) {
+                if (alertas && alertas.length > 0) {
+                    banner.style.display = "block";
+                    banner.innerHTML = `
+                        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px 18px; color: #991b1b; font-size: 13px;">
+                            <b style="display: flex; align-items: center; gap: 6px; font-size: 14px; margin-bottom: 6px;">
+                                <i class="ph ph-warning-circle"></i> Alertas Activas de Recursos Humanos (${alertas.length})
+                            </b>
+                            <ul style="margin: 0; padding-left: 20px;">
+                                ${alertas.map(a => `<li>${a.mensaje || a.descripcion || 'Alerta laboral'}</li>`).join("")}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    banner.style.display = "none";
+                }
+            }
+        }
+
+        if (resEmps.ok) {
+            listaEmpleadosRHCache = await resEmps.json();
+            const selEmp = document.getElementById("sel-rh-empleado");
+            if (selEmp) {
+                selEmp.innerHTML = '<option value="">--- Selecciona un Colaborador ---</option>' +
+                    listaEmpleadosRHCache.map(e => `<option value="${e.id_empleado}">${e.id_empleado} - ${e.nombre} (${e.depto || 'General'})</option>`).join("");
+                
+                // Si el usuario actual está en la lista o hay colaboradores, autoseleccionar
+                if (!idEmpleadoRHActual && listaEmpleadosRHCache.length > 0) {
+                    const idDefault = usuarioLogueado?.id_empleado || listaEmpleadosRHCache[0].id_empleado;
+                    selEmp.value = idDefault;
+                    seleccionarEmpleadoRH(idDefault);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Error al cargar módulo RH:", err);
+    }
+}
+
+async function seleccionarEmpleadoRH(idEmpleado) {
+    if (!idEmpleado) {
+        const cont = document.getElementById("rh-expediente-container");
+        if (cont) cont.style.display = "none";
+        idEmpleadoRHActual = null;
+        return;
+    }
+    idEmpleadoRHActual = idEmpleado;
+
+    try {
+        const [resExp, resContratos, resVac, resPerm, resIncap, resCap, resEval, resDoc] = await Promise.all([
+            fetch(`${API_URL}/api/rh/empleados/${idEmpleado}`),
+            fetch(`${API_URL}/api/rh/contratos/${idEmpleado}`),
+            fetch(`${API_URL}/api/rh/vacaciones/${idEmpleado}`),
+            fetch(`${API_URL}/api/rh/permisos?id_empleado=${idEmpleado}`),
+            fetch(`${API_URL}/api/rh/incapacidades/${idEmpleado}`),
+            fetch(`${API_URL}/api/rh/capacitacion/${idEmpleado}`),
+            fetch(`${API_URL}/api/rh/evaluaciones/${idEmpleado}`),
+            fetch(`${API_URL}/api/rh/documentos/${idEmpleado}`)
+        ]);
+
+        const emp = resExp.ok ? await resExp.json() : {};
+
+        // 1. Ficha Resumen
+        const elNom = document.getElementById("rh-ficha-nombre");
+        const elId = document.getElementById("rh-ficha-id");
+        const elDep = document.getElementById("rh-ficha-depto");
+        const elPuesto = document.getElementById("rh-ficha-puesto");
+        const elEdad = document.getElementById("rh-ficha-edad");
+        const elAnt = document.getElementById("rh-ficha-antiguedad");
+        const elEst = document.getElementById("rh-ficha-estatus");
+        const elFoto = document.getElementById("rh-ficha-foto");
+
+        if (elNom) elNom.innerText = emp.nombre || '--';
+        if (elId) elId.innerText = emp.id_empleado || idEmpleado;
+        if (elDep) elDep.innerText = emp.depto || '--';
+        if (elPuesto) elPuesto.innerText = emp.puesto || '--';
+        if (elEdad) elEdad.innerText = emp.edad ? `${emp.edad} AÑOS` : '--';
+        if (elAnt) elAnt.innerText = emp.anios_trabajados !== undefined ? `${emp.anios_trabajados} AÑOS` : '--';
+        if (elEst) elEst.innerText = (emp.estatus_empleado || 'ACTIVO').toUpperCase();
+        if (elFoto) elFoto.src = emp.foto_url || `${API_URL}/fotos/${idEmpleado}.jpg`;
+
+        // 2. Datos Generales Formulario
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = (val !== null && val !== undefined && val !== "None") ? val : "";
+        };
+
+        setVal("rh-gen-nombre", emp.nombre);
+        setVal("rh-gen-email", emp.email);
+        setVal("rh-gen-cel", emp.cel);
+        setVal("rh-gen-rfc", emp.rfc);
+        setVal("rh-gen-curp", emp.curp);
+        setVal("rh-gen-nss", emp.nss);
+        setVal("rh-gen-depto", emp.depto);
+        setVal("rh-gen-puesto", emp.puesto);
+        setVal("rh-gen-tipo-contrato", emp.tipo_contrato || "PLANTA");
+        setVal("rh-gen-salario", emp.salario_mensual);
+        setVal("rh-gen-escolaridad", emp.escolaridad || "LICENCIATURA");
+        setVal("rh-gen-estado-civil", emp.estado_civil || "SOLTERO");
+        setVal("rh-gen-domicilio", emp.domicilio);
+        setVal("rh-gen-ciudad", emp.ciudad);
+        setVal("rh-gen-cp", emp.cp);
+        setVal("rh-gen-contacto-emergencia", emp.contacto_emergencia);
+        setVal("rh-gen-tel-emergencia", emp.tel_emergencia);
+        setVal("rh-gen-parentesco", emp.parentesco_emergencia);
+        setVal("rh-gen-estatus-empleado", emp.estatus_empleado || "ACTIVO");
+        setVal("rh-gen-fecha-baja", emp.fecha_baja ? String(emp.fecha_baja).substring(0, 10) : "");
+        setVal("rh-gen-motivo-baja", emp.motivo_baja);
+
+        // 3. Contratos
+        if (resContratos.ok) {
+            const contratos = await resContratos.json();
+            const tbContratos = document.getElementById("tabla-rh-contratos-body");
+            if (tbContratos) {
+                if (contratos.length === 0) {
+                    tbContratos.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">Sin historial de contratos registrados.</td></tr>`;
+                } else {
+                    tbContratos.innerHTML = contratos.map(c => `
+                        <tr>
+                            <td><b>${c.folio_contrato || '--'}</b></td>
+                            <td>${c.tipo_contrato || '--'}</td>
+                            <td>${c.fecha_inicio || '--'}</td>
+                            <td>${c.fecha_fin || 'Indefinido'}</td>
+                            <td>${c.puesto_contratado || '--'}</td>
+                            <td>$${Number(c.salario_mensual || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                            <td><span style="background: #dcfce7; color: #166534; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 4px;">${c.estatus_contrato || 'VIGENTE'}</span></td>
+                        </tr>
+                    `).join("");
+                }
+            }
+        }
+
+        // 4. Vacaciones
+        if (resVac.ok) {
+            const dataVac = await resVac.json();
+            const resumen = dataVac.resumen || {};
+            const periodos = dataVac.historial || [];
+
+            if (document.getElementById("rh-vac-correspondientes")) document.getElementById("rh-vac-correspondientes").innerText = resumen.dias_totales_correspondientes || 0;
+            if (document.getElementById("rh-vac-tomados")) document.getElementById("rh-vac-tomados").innerText = resumen.dias_tomados || 0;
+            if (document.getElementById("rh-vac-pendientes")) document.getElementById("rh-vac-pendientes").innerText = resumen.dias_pendientes || 0;
+
+            const tbVac = document.getElementById("tabla-rh-vacaciones-body");
+            if (tbVac) {
+                if (periodos.length === 0) {
+                    tbVac.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Sin periodos vacacionales registrados.</td></tr>`;
+                } else {
+                    tbVac.innerHTML = periodos.map(v => `
+                        <tr>
+                            <td>Año ${v.anio_periodo}</td>
+                            <td><b>${v.dias_tomados || 0} días</b></td>
+                            <td>${v.fecha_inicio_goce || '--'}</td>
+                            <td>${v.fecha_fin_goce || '--'}</td>
+                            <td><span style="font-weight: 700;">${v.estatus || 'APROBADO'}</span></td>
+                        </tr>
+                    `).join("");
+                }
+            }
+        }
+
+        // 5. Permisos & Incapacidades
+        const permisos = resPerm.ok ? await resPerm.json() : [];
+        const incapacidades = resIncap.ok ? await resIncap.json() : [];
+        const tbPerm = document.getElementById("tabla-rh-permisos-body");
+        if (tbPerm) {
+            const combined = [
+                ...permisos.map(p => ({ ...p, _tipo_reg: 'PERMISO' })),
+                ...incapacidades.map(i => ({ ...i, _tipo_reg: 'INCAPACIDAD IMSS' }))
+            ];
+            if (combined.length === 0) {
+                tbPerm.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">Sin permisos o incapacidades registradas.</td></tr>`;
+            } else {
+                tbPerm.innerHTML = combined.map(item => `
+                    <tr>
+                        <td><b>${item.folio_permiso || item.folio_incapacidad || '--'}</b></td>
+                        <td><span style="background: #eff6ff; color: #1e40af; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${item._tipo_reg}</span></td>
+                        <td>${item.fecha_inicio || item.fecha_solicitud || '--'}</td>
+                        <td>${item.fecha_fin || '--'}</td>
+                        <td>${item.dias_solicitados || item.dias_incapacidad || 1} días</td>
+                        <td>${item.con_goce_de_sueldo ? 'Sí' : 'No'}</td>
+                        <td><span style="font-weight: 700;">${item.estatus || 'REGISTRADO'}</span></td>
+                    </tr>
+                `).join("");
+            }
+        }
+
+        // 6. Capacitaciones & Evaluaciones
+        const cursos = resCap.ok ? await resCap.json() : [];
+        const evalua = resEval.ok ? await resEval.json() : [];
+        const tbEval = document.getElementById("tabla-rh-evaluaciones-body");
+        if (tbEval) {
+            const unificados = [
+                ...evalua.map(ev => ({ titulo: ev.periodo || 'Evaluación', tipo: 'EVALUACIÓN DESEMPEÑO', actor: ev.evaluador || '--', cal: ev.calificacion_final, nivel: ev.nivel_desempeno })),
+                ...cursos.map(c => ({ titulo: c.nombre_curso, tipo: 'CAPACITACIÓN TÉCNICA', actor: c.institucion || '--', cal: c.calificacion, nivel: c.resultado || 'APROBADO' }))
+            ];
+            if (unificados.length === 0) {
+                tbEval.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Sin evaluaciones o capacitaciones registradas.</td></tr>`;
+            } else {
+                tbEval.innerHTML = unificados.map(u => `
+                    <tr>
+                        <td><b>${u.titulo}</b></td>
+                        <td>${u.tipo}</td>
+                        <td>${u.actor}</td>
+                        <td style="font-weight: 700;">${u.cal !== null && u.cal !== undefined ? u.cal : '--'}</td>
+                        <td><span style="background: #dcfce7; color: #166534; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${u.nivel || 'APROBADO'}</span></td>
+                    </tr>
+                `).join("");
+            }
+        }
+
+        // 7. Documentos
+        if (resDoc.ok) {
+            const docs = await resDoc.json();
+            const tbDoc = document.getElementById("tabla-rh-documentos-body");
+            if (tbDoc) {
+                if (docs.length === 0) {
+                    tbDoc.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Sin documentos digitales en el expediente.</td></tr>`;
+                } else {
+                    tbDoc.innerHTML = docs.map(d => `
+                        <tr>
+                            <td><b>${d.tipo_documento || '--'}</b></td>
+                            <td>${d.nombre_archivo || '--'}</td>
+                            <td>${d.fecha_emision || '--'}</td>
+                            <td>${d.fecha_vencimiento || 'Vigente'}</td>
+                            <td>${d.verificado_por_rh ? '✅ Verificado' : '⏳ En Revisión'}</td>
+                        </tr>
+                    `).join("");
+                }
+            }
+        }
+
+        const cont = document.getElementById("rh-expediente-container");
+        if (cont) cont.style.display = "block";
+    } catch (e) {
+        console.error("Error al cargar expediente:", e);
+        alert(`❌ Error al consultar expediente de empleado: ${e.message}`);
+    }
+}
+
+async function guardarDatosGeneralesRH() {
+    if (!idEmpleadoRHActual) {
+        alert("⚠️ No hay un colaborador seleccionado.");
+        return;
+    }
+
+    const getVal = (id) => document.getElementById(id)?.value?.trim() || "";
+
+    const payload = {
+        nombre: getVal("rh-gen-nombre"),
+        email: getVal("rh-gen-email"),
+        cel: getVal("rh-gen-cel"),
+        rfc: getVal("rh-gen-rfc"),
+        curp: getVal("rh-gen-curp"),
+        nss: getVal("rh-gen-nss"),
+        depto: getVal("rh-gen-depto"),
+        puesto: getVal("rh-gen-puesto"),
+        tipo_contrato: getVal("rh-gen-tipo-contrato"),
+        salario_mensual: parseFloat(getVal("rh-gen-salario") || 0),
+        escolaridad: getVal("rh-gen-escolaridad"),
+        estado_civil: getVal("rh-gen-estado-civil"),
+        domicilio: getVal("rh-gen-domicilio"),
+        ciudad: getVal("rh-gen-ciudad"),
+        cp: getVal("rh-gen-cp"),
+        contacto_emergencia: getVal("rh-gen-contacto-emergencia"),
+        tel_emergencia: getVal("rh-gen-tel-emergencia"),
+        parentesco_emergencia: getVal("rh-gen-parentesco"),
+        estatus_empleado: getVal("rh-gen-estatus-empleado"),
+        fecha_baja: getVal("rh-gen-fecha-baja") || null,
+        motivo_baja: getVal("rh-gen-motivo-baja") || null,
+        registrado_por: usuarioLogueado?.nombre_completo || "RH"
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/api/rh/empleados/${idEmpleadoRHActual}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert("✅ ¡Expediente actualizado exitosamente en base de datos!");
+            seleccionarEmpleadoRH(idEmpleadoRHActual);
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al actualizar expediente: ${err}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de comunicación: ${e.message}`);
+    }
+}

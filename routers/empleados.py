@@ -96,4 +96,3 @@ def generar_qr_empleado(id_empleado: str):
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

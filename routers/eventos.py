@@ -110,6 +110,7 @@ def obtener_folios_activos_e_historicos():
 
 
 @router.get("/buscar/{folio}")
+@router.get("/folio/{folio}")
 def buscar_op_por_folio(folio: str):
     """Busca una orden de producción por folio en la base nueva o en la histórica,
     e integra el detalle completo de las reuniones previas vinculadas."""
@@ -259,4 +260,3 @@ def guardar_o_actualizar_op(op: dict):
         return {"status": "SUCCESS"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

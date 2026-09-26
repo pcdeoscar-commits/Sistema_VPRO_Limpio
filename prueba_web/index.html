@@ -6,6 +6,8 @@
     <title>VPRO Workspace</title>
     <!-- Tipografía moderna Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Íconos modernos Phosphor -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         /* Variables de color estilo SaaS (Minimalismo y Acento) */
         :root {
@@ -25,20 +27,140 @@
             margin: 0; 
             font-family: 'Inter', sans-serif; 
             display: flex; 
+            flex-direction: row; /* <-- Clave para el sidebar */
             background-color: transparent; 
             color: var(--text-main);
             min-height: 100vh;
         }
         
-        /* Navegación Lateral Elegante */
-        .sidebar { 
-            width: 250px; 
-            background-color: var(--bg-sidebar); 
-            padding: 24px 16px; 
+        /* --- EL SIDEBAR RETRÁCTIL PREMIUM --- */
+        .sidebar {
+            width: 78px; /* Estado colapsado: Solo íconos */
+            background-color: var(--bg-sidebar);
+            padding: 24px 12px;
             display: flex;
             flex-direction: column;
             border-right: 1px solid #1f2937;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            z-index: 100; /* Flota sobre el contenido al expandirse */
         }
+
+        .sidebar:hover {
+            width: 270px; /* Estado expandido */
+            box-shadow: 4px 0 24px rgba(0,0,0,0.5); /* Sombra elegante */
+        }
+
+        .brand {
+            display: flex; align-items: center; gap: 16px;
+            color: white; font-size: 18px; font-weight: 700;
+            margin-bottom: 40px; padding-left: 8px;
+        }
+
+        /* Oculta los textos suavemente */
+        .brand-text, .nav-text, .nav-badge { 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+        }
+        
+        /* Muestra los textos cuando la barra se expande */
+        .sidebar:hover .brand-text, 
+        .sidebar:hover .nav-text, 
+        .sidebar:hover .nav-badge { 
+            opacity: 1; 
+            transition-delay: 0.1s; 
+        }
+
+        .sidebar-menu { flex: 1; overflow-y: auto; overflow-x: hidden; }
+        .sidebar-menu::-webkit-scrollbar { display: none; }
+
+        .nav-item { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; margin-bottom: 4px; border-radius: 8px; 
+            cursor: pointer; color: var(--text-sidebar); 
+            font-weight: 500; font-size: 14px;
+            transition: all 0.2s ease; 
+        }
+        .nav-item:hover { background-color: rgba(255,255,255,0.05); color: white; }
+        .nav-item.active { background-color: var(--accent-color); color: white; }
+        
+        .nav-label { display: flex; align-items: center; gap: 16px; }
+        .nav-label i { font-size: 24px; min-width: 24px; text-align: center; }
+
+        .nav-badge {
+            font-size: 11px; font-weight: 700; padding: 2px 8px;
+            border-radius: 12px; color: white;
+        }
+        .nav-badge.alert { background-color: #ef4444; }
+        .nav-badge.info { background-color: #3b82f6; }
+        
+        .sidebar-footer { border-top: 1px solid #1f2937; padding-top: 16px; margin-top: 16px; }
+
+        /* Contenedor del desplegable */
+        .dropdown { position: relative; display: inline-block; }
+        
+        .dropbtn {
+            color: var(--text-sidebar);
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .dropbtn:hover { background-color: rgba(255,255,255,0.05); color: white; }
+
+        /* La caja que aparece al pasar el mouse */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #1f2937;
+            min-width: 240px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.4);
+            border-radius: 8px;
+            border: 1px solid #374151;
+            top: 110%; /* Lo separa un poco del botón */
+            left: 0;
+            padding: 8px;
+            z-index: 100;
+        }
+
+        .dropdown:hover .dropdown-content { display: block; }
+
+        .nav-item { 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px; 
+            margin-bottom: 4px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            color: #d1d5db; 
+            font-weight: 500; 
+            font-size: 13px;
+            transition: all 0.2s ease; 
+        }
+        .nav-item:hover { background-color: rgba(255,255,255,0.1); color: white; }
+        .nav-item.active { background-color: var(--accent-color); color: white; }
+        
+        .nav-label { display: flex; align-items: center; gap: 12px; }
+        .nav-label i { font-size: 18px; }
+
+        .nav-badge {
+            font-size: 11px; font-weight: 700; padding: 2px 8px;
+            border-radius: 12px; color: white;
+        }
+        .nav-badge.alert { background-color: #ef4444; }
+        .nav-badge.info { background-color: #3b82f6; }
+
+        .navbar-actions { display: flex; gap: 8px; align-items: center; }
+
         .brand {
             color: white;
             font-size: 20px;
@@ -50,9 +172,20 @@
             align-items: center;
             gap: 10px;
         }
+        .sidebar-menu {
+            flex: 1; 
+            overflow-y: auto; 
+            padding-right: 4px;
+        }
+        .sidebar-menu::-webkit-scrollbar { width: 4px; }
+        .sidebar-menu::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+
         .nav-item { 
-            padding: 12px; 
-            margin-bottom: 8px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px; 
+            margin-bottom: 4px; 
             border-radius: 8px; 
             cursor: pointer; 
             color: var(--text-sidebar); 
@@ -67,6 +200,33 @@
         .nav-item.active { 
             background-color: var(--accent-color); 
             color: white; 
+        }
+        
+        /* Alineación del ícono y el texto */
+        .nav-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-label i {
+            font-size: 18px; /* Tamaño del ícono */
+        }
+
+        /* Diseño de las notificaciones */
+        .nav-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: white;
+        }
+        .nav-badge.alert { background-color: #ef4444; } /* Rojo para daños */
+        .nav-badge.info { background-color: #3b82f6; } /* Azul para gastos */
+
+        .sidebar-footer {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #1f2937;
         }
 
         /* --- AJUSTE GLOBAL DE CAJAS --- */
@@ -116,47 +276,59 @@
             display: none; 
         }
 
-        /* --- CUADRÍCULA DE EMPLEADOS --- */
+        /* --- CUADRÍCULA DE EMPLEADOS (4 COLUMNAS) --- */
         .grid-empleados { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            justify-content: center; /* Centra la cuadrícula en bloque */
-            justify-items: center; /* Centra las tarjetas individualmente */
+            grid-template-columns: repeat(4, 1fr); /* Fuerza exactamente 4 columnas */
             gap: 24px; 
             width: 100%;
         }
+        
         .card { 
             background: var(--card-bg); 
-            padding: 24px; 
             border-radius: 12px; 
             border: 1px solid var(--border-color);
             text-align: center; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04); 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
             transition: transform 0.2s, box-shadow 0.2s; 
             cursor: pointer;
+            padding: 0; /* Quitamos el padding para que la foto llegue a los bordes */
+            overflow: hidden; /* Evita que la foto cuadrada se salga de las esquinas redondeadas */
+            display: flex;
+            flex-direction: column;
         }
+        
         .card:hover { 
-            transform: translateY(-4px); 
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08); 
+            transform: translateY(-6px); 
+            box-shadow: 0 12px 20px -5px rgba(0,0,0,0.15); 
         }
+        
         .card img { 
-            width: 80px; 
-            height: 80px; 
-            border-radius: 50%; 
-            object-fit: cover; 
-            margin-bottom: 16px; 
-            border: 2px solid #f3f4f6;
+            width: 100%; /* Toma todo el ancho de la tarjeta */
+            height: 280px; /* Altura fija para que todas las fotos se vean uniformes */
+            object-fit: cover; /* Recorta la foto sin deformarla ni aplastarla */
+            border-radius: 0; /* Quitamos el círculo */
+            margin-bottom: 0; 
+            border: none;
         }
+
+        /* Contenedor para la franja blanca de texto */
+        .card-info {
+            padding: 16px;
+            background: white;
+        }
+        
         .card h3 { 
             margin: 0 0 4px 0; 
             font-size: 15px; 
-            font-weight: 600; 
+            font-weight: 700; 
         }
+        
         .card p { 
-            margin: 0 0 20px 0; 
+            margin: 0; 
             color: var(--text-muted); 
             font-size: 12px; 
-            font-weight: 500;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -291,6 +463,438 @@
             gap: 24px; 
             width: 100%;
         }
+        /* --- ESTILOS DEL DASHBOARD --- */
+        #vista-dashboard {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        /* --- ESTILOS DEL MÓDULO CHECADOR AMPLIADO --- */
+        .modulo-card {
+            background: white; padding: 32px; border-radius: 16px; text-align: center;
+            border: 1px solid var(--border-color); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            max-width: 650px; margin: 40px auto; 
+        }
+        
+        /* Modificador para ensanchar el kiosco */
+        .modulo-card.kiosco-ampliado { max-width: 1100px; padding: 32px 40px; }
+        
+        .kiosco-header { border-bottom: 2px dashed var(--border-color); padding-bottom: 24px; margin-bottom: 24px; }
+        .reloj-kiosco { font-size: 72px; font-weight: 700; color: var(--text-main); font-variant-numeric: tabular-nums; letter-spacing: -2px; line-height: 1; }
+        .fecha-kiosco { font-size: 16px; color: var(--text-muted); margin-bottom: 24px; margin-top: 8px; text-transform: capitalize; }
+        
+        #input-gafete {
+            width: 100%; max-width: 600px; padding: 16px; font-size: 18px; text-align: center;
+            border: 2px solid var(--border-color); border-radius: 8px; outline: none; transition: border-color 0.2s;
+        }
+        #input-gafete:focus { border-color: var(--accent-color); }
+
+        /* Estructura de 2 Columnas */
+        .kiosco-body { display: flex; gap: 32px; text-align: left; align-items: flex-start; }
+        
+        /* Columna 1: Perfil */
+        .kiosco-perfil {
+            flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; 
+            text-align: center; background: #f9fafb; min-width: 250px;
+        }
+        .kiosco-perfil img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        /* Columna 2: Tabla de Matriz */
+        .kiosco-matriz { flex: 2.5; width: 100%; }
+        .tabla-container { max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; }
+        .tabla-container::-webkit-scrollbar { width: 6px; }
+        .tabla-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        .tabla-vpro { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .tabla-vpro th { background-color: #f1f5f9; padding: 12px; text-align: left; color: var(--text-main); font-weight: 600; position: sticky; top: 0; z-index: 10; }
+        .tabla-vpro td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-muted); }
+        .tabla-vpro tr:hover { background-color: #f8fafc; }
+        /* --- ESTILOS DE VISTAS A PRUEBA DE ERRORES --- */
+        .vista-modulo { 
+            display: none; 
+            width: 100%;
+        }
+        .vista-modulo.activa { 
+            display: block !important; 
+            animation: fadeIn 0.3s ease; 
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        .info-banner {
+            background-color: #eff6ff; color: #1e40af; padding: 16px 20px; border-radius: 8px;
+            display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 15px; border: 1px solid #bfdbfe;
+        }
+
+        .alerta-card {
+            padding: 16px 20px; border-radius: 8px; display: flex; align-items: center; gap: 12px; 
+            font-weight: 600; font-size: 14px; margin-bottom: 8px; border: 1px solid transparent;
+        }
+        .alerta-card.success { background-color: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+        .alerta-card.warning { background-color: #fffbeb; color: #b45309; border-color: #fde68a; }
+        
+        .td-error { color: #9f1239 !important; background-color: #ffe4e6 !important; font-weight: bold !important; }
+
+        /* --- ESTILOS DEL MÓDULO ORDEN DE PRODUCCIÓN --- */
+        .op-section-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .op-section-title {
+            margin: 0 0 16px 0;
+            color: #1e293b;
+            font-size: 17px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .op-form-label {
+            display: block;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .op-input, .op-select, .op-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13.5px;
+            color: #1e293b;
+            background: #f8fafc;
+            outline: none;
+            transition: all 0.2s;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .op-input:focus, .op-select:focus, .op-textarea:focus {
+            border-color: #ef4444;
+            background: #ffffff;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+        }
+        .op-input:disabled {
+            background: #f1f5f9;
+            color: #475569;
+            cursor: not-allowed;
+            font-weight: 600;
+        }
+        .multiselect-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+            padding: 6px 10px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            min-height: 44px;
+            transition: all 0.2s;
+        }
+        .multiselect-box:focus-within {
+            border-color: #ef4444;
+            background: #ffffff;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+        }
+        .tag-pill {
+            background-color: #ef4444;
+            color: #ffffff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 2px rgba(239, 68, 68, 0.25);
+        }
+        .tag-close {
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            opacity: 0.85;
+            transition: opacity 0.15s;
+        }
+        .tag-close:hover {
+            opacity: 1;
+        }
+        .multiselect-select {
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 13px;
+            color: #64748b;
+            flex: 1;
+            min-width: 150px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .multiselect-clear {
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: 700;
+            margin-left: auto;
+            padding: 2px 6px;
+            transition: color 0.15s;
+        }
+        .multiselect-clear:hover {
+            color: #ef4444;
+        }
+        .op-tabs-header {
+            display: flex;
+            gap: 24px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 24px;
+        }
+        .op-tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 4px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 3px solid transparent;
+            color: #64748b;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        .op-tab-btn.active {
+            border-bottom-color: #ef4444;
+            color: #ef4444;
+        }
+
+        /* --- ESTILOS DE CATÁLOGOS ABC --- */
+        .subcat-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+        .subcat-tab-btn {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .subcat-tab-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .subcat-tab-btn.active {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.25);
+        }
+        .btn-subcat-back {
+            background: #0f172a;
+            color: #ffffff;
+            border: 1px solid #0f172a;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-subcat-back:hover {
+            background: #1e293b;
+            border-color: #1e293b;
+            transform: translateX(-3px);
+        }
+        .cat-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 26px 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .cat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.04);
+            border-color: var(--accent-color);
+        }
+        .cat-accordion-btn {
+            width: 100%;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 14px;
+            transition: background 0.2s;
+        }
+        .cat-accordion-btn:hover {
+            background: #f1f5f9;
+        }
+        .cat-accordion-content {
+            display: none;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            background: #ffffff;
+        }
+        .cat-accordion-content.open {
+            display: block;
+        }
+        .cat-table-wrap {
+            max-height: 380px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+        .cat-form-tabs {
+            display: flex;
+            gap: 16px;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+        .cat-form-tab {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        .cat-form-tab.active {
+            border-bottom-color: #ef4444;
+            color: #ef4444;
+        }
+        .cat-tab-panel {
+            display: none;
+        }
+        .cat-tab-panel.active {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        .cat-actions-bar {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn-cat-save {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 22px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .btn-cat-save:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-cat-del {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-cat-del:hover {
+            background-color: #fecaca;
+            color: #b91c1c;
+        }
+        .btn-cat-new {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            transition: background 0.2s;
+        }
+        .btn-cat-new:hover {
+            background-color: #e5e7eb;
+        }
+        .nav-subitem {
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #9ca3af;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-subitem:hover {
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+        .nav-subitem.active {
+            color: #f87171;
+            background-color: rgba(239, 68, 68, 0.15);
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -299,18 +903,68 @@
         <source src="vpro_fondo.mp4" type="video/mp4">
     </video>
 
-    <!-- MENÚ LATERAL (Oculto por defecto) -->
+    <!-- SIDEBAR RETRÁCTIL INTELIGENTE -->
     <div class="sidebar" id="sidebar" style="display: none;">
         <div class="brand">
-            <span style="background: var(--accent-color); padding: 4px 8px; border-radius: 6px; font-size: 14px;">V</span>
-            VPRO Workspace
+            <span style="background: var(--accent-color); padding: 4px 8px; border-radius: 6px; font-size: 14px; min-width: 28px; text-align: center;">V</span>
+            <span class="brand-text">VPRO Workspace</span>
         </div>
         
-        <div class="nav-item active">Personal Operativo</div>
-        <div class="nav-item">Catálogos (ABC)</div>
-        <div class="nav-item">Checkout [VPF]</div>
-        <div class="nav-item">Equipos Dañados</div>
-        <div class="nav-item">Reportes</div>
+        <div class="sidebar-menu">
+            <div class="nav-item active" data-roles="todos" onclick="cambiarVista('vista-inicio')">
+                <div class="nav-label"><i class="ph ph-house"></i> <span class="nav-text">Inicio</span></div>
+            </div>
+    
+            <!-- ✅ ORDEN DE PRODUCCIÓN -->
+            <div class="nav-item" data-roles="ADMIN,PRODUCCION" onclick="cambiarVista('vista-ops')">
+                <div class="nav-label"><i class="ph ph-clipboard-text"></i> <span class="nav-text">Orden de Producción</span></div>
+            </div>
+
+            <div class="nav-item" id="nav-catalogos" data-roles="ADMIN" onclick="cambiarVista('vista-catalogos'); abrirSubcatalogo('hub');">
+                <div class="nav-label"><i class="ph ph-folder"></i> <span class="nav-text">Catálogos (ABC)</span></div>
+            </div>
+
+            <div class="nav-item" data-roles="ADMIN" onclick="cambiarVista('vista-auditoria')">
+                <div class="nav-label"><i class="ph ph-clock"></i> <span class="nav-text">Auditoría Asistencia</span></div>
+            </div>
+            <div class="nav-item" data-roles="ADMIN,VENTAS" onclick="cambiarVista('vista-cotizaciones')">
+                <div class="nav-label"><i class="ph ph-file-text"></i> <span class="nav-text">Cotizaciones</span></div>
+            </div>
+            <div class="nav-item" data-roles="ADMIN,PRODUCCION" onclick="cambiarVista('vista-checkout')">
+                <div class="nav-label"><i class="ph ph-package"></i> <span class="nav-text">Checkout [VPF]</span></div>
+            </div>
+            <div class="nav-item" data-roles="ADMIN,PRODUCCION" onclick="cambiarVista('vista-incidencias')">
+                <div class="nav-label"><i class="ph ph-warning-circle"></i> <span class="nav-text">Incidencias</span></div>
+            </div>
+    
+            <div class="nav-item" data-roles="ADMIN" onclick="cambiarVista('vista-danados')">
+                <div class="nav-label"><i class="ph ph-flag"></i> <span class="nav-text">Equipos con Daño</span></div>
+                <span class="nav-badge alert" id="badge-danados">3</span>
+            </div>
+            <div class="nav-item" data-roles="ADMIN" onclick="cambiarVista('vista-gastos')">
+                <div class="nav-label"><i class="ph ph-money"></i> <span class="nav-text">Reporte de Gastos</span></div>
+                <span class="nav-badge info" id="badge-gastos">9</span>
+            </div>
+    
+            <div class="nav-item" data-roles="ADMIN" onclick="cambiarVista('vista-analitica')">
+                <div class="nav-label"><i class="ph ph-chart-line-up"></i> <span class="nav-text">Analítica y KPIs</span></div>
+            </div>
+            <div class="nav-item" data-roles="ADMIN,RRHH" onclick="cambiarVista('vista-rh')">
+                <div class="nav-label"><i class="ph ph-users"></i> <span class="nav-text">Recursos Humanos</span></div>
+            </div>
+            <div class="nav-item" data-roles="ADMIN,RRHH" onclick="cambiarVista('vista-checador')">
+                <div class="nav-label"><i class="ph ph-fingerprint"></i> <span class="nav-text">Checador</span></div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="nav-item" data-roles="todos" onclick="abrirManual()">
+                <div class="nav-label"><i class="ph ph-question"></i> <span class="nav-text">Ayuda / Manual</span></div>
+            </div>
+            <div class="nav-item logout" onclick="cerrarSesion()">
+                <div class="nav-label"><i class="ph ph-sign-out" style="color: #ef4444;"></i> <span class="nav-text" style="color: #ef4444;">Cerrar Sesión</span></div>
+            </div>
+        </div>
     </div>
 
     <!-- CONTENIDO PRINCIPAL -->
@@ -334,23 +988,1298 @@
             </div>
         </div>
 
-        <!-- VISTA 2: ÁREA DE TRABAJO (Oculta por defecto) -->
+        <!-- CONTENEDOR PRINCIPAL -->
         <div id="vista-dashboard" style="display: none;">
-            <div class="header">
-                <div>
-                    <h1 id="dash-titulo">Dashboard</h1>
-                    <p id="dash-subtitulo">Rol: ADMIN</p>
+
+            <!-- 📦 CAJA 1: VISTA INICIO -->
+            <div id="vista-inicio" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <h2 style="margin-top: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;"><i class="ph ph-house"></i> Inicio</h2>
+                
+                <div class="info-banner" style="margin-bottom: 20px;">
+                    <i class="ph ph-info"></i> Bienvenido al Laboratorio de Pruebas VPRO. Selecciona un módulo en el menú izquierdo.
                 </div>
-                <button class="btn-cancelar" onclick="cerrarSesion()" style="width: auto; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 6px;">Cerrar Sesión</button>
+
+                <!-- ALERTA DE CONDUCTA DINÁMICA -->
+                <div id="inicio-alerta-conducta"></div>
+
+                <h3 style="color: #0f172a; margin-top: 24px;"><i class="ph ph-bell-ringing"></i> Centro de Notificaciones</h3>
+                <div id="inicio-notificaciones">
+                    <div class="alerta-card success"><i class="ph ph-check-circle"></i> Cargando notificaciones...</div>
+                </div>
+
+                <h3 style="color: #0f172a; margin-top: 32px;"><i class="ph ph-clock"></i> Mi Asistencia de la Semana</h3>
+                <div class="tabla-container" style="background: white; padding: 0;">
+                    <table class="tabla-vpro">
+                        <thead>
+                            <tr>
+                                <th>Día</th>
+                                <th>Fecha</th>
+                                <th>☀️ Ent.</th>
+                                <th>☀️ Sal.</th>
+                                <th>🌙 Ent.</th>
+                                <th>🌙 Sal.</th>
+                                <th>📝 Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inicio-tabla-asistencia">
+                            <tr><td colspan="7" style="text-align: center; padding: 20px;">Cargando semana...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            
-            <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; border: 1px solid var(--border-color);">
-                <h2 style="color: var(--text-muted);">Área de trabajo en construcción...</h2>
-                <p>Aquí inyectaremos los módulos de tu base de datos (Catálogos, Checkout, etc.)</p>
+
+            <!-- 📦 CAJA 2: VISTA KIOSCO -->
+            <div id="vista-checador" class="vista-modulo">
+                <div id="modulo-checador" class="modulo-card kiosco-ampliado">
+                    <!-- CABECERA: Reloj y Escáner -->
+                    <div class="kiosco-header">
+                        <div class="reloj-kiosco" id="reloj-pantalla">00:00:00</div>
+                        <div class="fecha-kiosco" id="fecha-pantalla">Cargando fecha...</div>
+                        <input type="password" id="input-gafete" placeholder="Pasa tu código QR por el lector digital..." autocomplete="off" autofocus>
+                        <div id="kiosco-alerta" style="display: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 15px; margin-top: 10px;"></div>
+                    </div>
+
+                    <!-- CUERPO: 2 Columnas -->
+                    <div class="kiosco-body">
+                        <!-- Columna Izquierda: Perfil Escaneado -->
+                        <div class="kiosco-perfil" id="kiosco-perfil-scan">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="scan-foto" alt="Foto">
+                            <h3 id="scan-nombre" style="margin: 10px 0 0 0;">Esperando lectura...</h3>
+                            <p id="scan-id" style="color: var(--text-muted); font-size: 12px; margin: 4px 0 16px 0;">--</p>
+                            <div id="scan-badge" style="background: #e5e7eb; color: #374151; padding: 8px; border-radius: 6px; font-weight: bold;">--</div>
+                        </div>
+
+                        <!-- Columna Derecha: Matriz de Asistencia -->
+                        <div class="kiosco-matriz">
+                            <h4 style="margin-top: 0; margin-bottom: 16px; color: var(--text-main);">📊 MATRIZ DE ASISTENCIA DEL DÍA</h4>
+                            <div class="tabla-container">
+                                <table class="tabla-vpro">
+                                    <thead>
+                                        <tr>
+                                            <th>Empleado</th>
+                                            <th>Entrada Mat.</th>
+                                            <th>Salida Mat.</th>
+                                            <th>Entrada Vesp.</th>
+                                            <th>Salida Vesp.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-asistencia-body">
+                                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Esperando datos...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📦 CAJA 3: VISTA ÓRDENES DE PRODUCCIÓN -->
+            <div id="vista-ops" class="vista-modulo">
+                <div style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                    
+                    <!-- AYUDA CONTEXTUAL (EXPANDIBLE) -->
+                    <details class="op-accordion" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 24px; padding: 14px 18px;">
+                        <summary style="font-weight: 600; color: #334155; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
+                            <span>❓ Ayuda Contextual: ¿Cómo funciona la Orden de Producción?</span>
+                        </summary>
+                        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; font-size: 13.5px; color: #475569; line-height: 1.6;">
+                            <h4 style="margin: 0 0 6px 0; color: #0f172a;">🎬 FASE 1: Planeación y Nacimiento del Proyecto</h4>
+                            <p style="margin: 0 0 8px 0;"><b>Actor responsable:</b> Administración, Coordinación o Ventas.<br><b>Objetivo:</b> Crear el evento y definir a los responsables.</p>
+                            <ul style="margin: 0; padding-left: 20px;">
+                                <li>📝 <b>Captura de Datos Base:</b> Se llenan los datos vitales: Cliente, Nombre, Locación y Fechas.</li>
+                                <li>👤 <b>El Nombramiento del Productor:</b> Se asigna obligatoriamente un Productor Responsable.</li>
+                                <li>🗂️ <b>Cierre de Ciclo Automático:</b> Cuando el evento finaliza y Ana Lilia aprueba los gastos en Auditoría, la OP pasa a la Bóveda Histórica de solo lectura.</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <!-- PESTAÑAS (TABS) -->
+                    <div class="op-tabs-header">
+                        <button type="button" id="tab-btn-activas" class="op-tab-btn active" onclick="cambiarPestanaOP('activas')">
+                            📑 Panel de OPs Activas
+                        </button>
+                        <button type="button" id="tab-btn-historico" class="op-tab-btn" onclick="cambiarPestanaOP('historico')">
+                            📦 Bóveda de Archivo Histórico
+                        </button>
+                    </div>
+
+                    <!-- CONTENIDO PESTAÑA 1: OPS ACTIVAS -->
+                    <div id="subvista-op-activas">
+                        <!-- TÍTULO DE SECCIÓN -->
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                            <span style="font-size: 20px;">📁</span>
+                            <h3 style="margin: 0; font-size: 18px; color: #0f172a; font-weight: 700;">Gestión de Folios Activos</h3>
+                            <span style="color: #94a3b8; font-size: 14px;">🔗</span>
+                        </div>
+
+                        <!-- SELECTOR DE FOLIOS ACTIVOS -->
+                        <div class="op-section-card" style="padding: 16px 20px; margin-bottom: 24px;">
+                            <label class="op-form-label">🔍 BUSCAR O SELECCIONAR FOLIO:</label>
+                            <select id="select-folios-op" onchange="cargarDetalleOP(this.value)" class="op-select" style="max-width: 600px;">
+                                <option value="">🆕 CREAR NUEVA ORDEN</option>
+                            </select>
+                        </div>
+
+                        <!-- FORMULARIO OP ACTIVA -->
+                        <div id="formulario-op-container">
+                            <p style="color: var(--text-muted); text-align: center; padding: 20px;">Cargando folios y catálogos desde el servidor...</p>
+                        </div>
+                    </div>
+
+                    <!-- CONTENIDO PESTAÑA 2: BÓVEDA HISTÓRICA -->
+                    <div id="subvista-op-historico" style="display: none;">
+                        <div class="info-banner" style="margin-bottom: 20px;">
+                            <i class="ph ph-info"></i> En esta bóveda solo aparecen las OPs que han sido selladas financieramente. La información aquí es de <b>Solo Lectura</b>.
+                        </div>
+
+                        <div class="op-section-card" style="padding: 16px 20px; margin-bottom: 24px;">
+                            <label class="op-form-label">🔍 BUSCAR O SELECCIONAR FOLIO HISTÓRICO:</label>
+                            <select id="select-folios-historicos" onchange="cargarDetalleOPHistorico(this.value)" class="op-select" style="max-width: 600px;">
+                                <option value="">Selecciona un folio histórico para consultar...</option>
+                            </select>
+                        </div>
+
+                        <!-- DETALLE OP HISTÓRICA (READ-ONLY) -->
+                        <div id="formulario-op-historico-container">
+                            <p style="color: var(--text-muted); text-align: center; padding: 20px;">Selecciona una orden histórica arriba para visualizar su expediente.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 📦 CAJA 4: EQUIPOS CON DAÑO -->
+            <div id="vista-danados" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+                    <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-flag" style="color: #ef4444;"></i> Radar de Equipos con Daño en Reparación
+                    </h2>
+                    <button onclick="cargarEquiposDanados()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                        <i class="ph ph-arrows-clockwise"></i> Actualizar
+                    </button>
+                </div>
+                <p style="color: var(--text-muted); font-size: 14px; margin-top: 0; margin-bottom: 20px;">Monitoreo en tiempo real de equipos reportados con fallas o en proceso de reparación en taller.</p>
+                <div class="tabla-container" style="background: white;">
+                    <table class="tabla-vpro">
+                        <thead>
+                            <tr>
+                                <th>N° Servicio</th>
+                                <th>Fecha Reporte</th>
+                                <th>Código / ID</th>
+                                <th>Equipo</th>
+                                <th>Área</th>
+                                <th>Reportó</th>
+                                <th>Estado</th>
+                                <th>Falla Detectada</th>
+                                <th>Costo Est.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-danados-body">
+                            <tr><td colspan="9" style="text-align: center; padding: 20px;">Cargando equipos dañados...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 📦 CAJA 5: REPORTE DE GASTOS -->
+            <div id="vista-gastos" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+                    <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-money" style="color: #3b82f6;"></i> Auditoría y Reportes de Gastos Operativos
+                    </h2>
+                    <button onclick="cargarReporteGastos()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                        <i class="ph ph-arrows-clockwise"></i> Actualizar
+                    </button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: 10px;">
+                        <div style="font-size: 13px; color: #1e40af; font-weight: 600;">COMPROBACIONES PENDIENTES</div>
+                        <div id="kpi-gastos-pendientes" style="font-size: 28px; font-weight: 700; color: #1d4ed8; margin-top: 4px;">--</div>
+                    </div>
+                </div>
+                <div class="tabla-container" style="background: white;">
+                    <table class="tabla-vpro">
+                        <thead>
+                            <tr>
+                                <th>ID Informe</th>
+                                <th>Folio OP</th>
+                                <th>Evento</th>
+                                <th>Empleado Responsable</th>
+                                <th>Estatus Auditoría</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-gastos-body">
+                            <tr><td colspan="5" style="text-align: center; padding: 20px;">Cargando informes de gastos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 📦 CAJA 6: AUDITORÍA ASISTENCIA -->
+            <div id="vista-auditoria" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <h2 style="margin-top: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-clock" style="color: #6366f1;"></i> Auditoría Gerencial de Asistencia
+                </h2>
+                <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Desde:</label>
+                        <input type="date" id="filtro-auditoria-inicio" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Hasta:</label>
+                        <input type="date" id="filtro-auditoria-fin" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Empleado:</label>
+                        <select id="filtro-auditoria-emp" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                            <option value="👥 TODOS">👥 TODOS</option>
+                        </select>
+                    </div>
+                    <button onclick="ejecutarConsultaAuditoria()" style="background: var(--accent-color); color: white; border: none; padding: 9px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-magnifying-glass"></i> Consultar
+                    </button>
+                </div>
+                <div class="tabla-container" style="background: white;">
+                    <table class="tabla-vpro">
+                        <thead>
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Fecha</th>
+                                <th>Entrada Mat.</th>
+                                <th>Salida Mat.</th>
+                                <th>Entrada Vesp.</th>
+                                <th>Salida Vesp.</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-auditoria-body">
+                            <tr><td colspan="7" style="text-align: center; padding: 20px;">Selecciona un rango y consulta.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 📦 CAJA 7: CATÁLOGOS ABC -->
+            <div id="vista-catalogos" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                
+                <!-- 🗂️ BARRA SUPERIOR DE NAVEGACIÓN (VISIBLE SÓLO DENTRO DE CADA SUB-CATÁLOGO) -->
+                <div id="subcat-topbar" class="subcat-nav" style="display: none; justify-content: space-between; align-items: center;">
+                    <button class="btn-subcat-back" onclick="abrirSubcatalogo('hub')">
+                        <i class="ph ph-arrow-left"></i> <span>Volver a Menú de Catálogos</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="subcat-tab-btn" id="btn-subcat-clientes" onclick="abrirSubcatalogo('clientes')">
+                            <i class="ph ph-users" style="color: var(--accent-color);"></i> 🏢 Clientes (<span id="tab-count-clientes">0</span>)
+                        </button>
+                        <button class="subcat-tab-btn" id="btn-subcat-autos" onclick="abrirSubcatalogo('autos')">
+                            <i class="ph ph-car" style="color: #3b82f6;"></i> 🚗 Flotilla (<span id="tab-count-autos">0</span>)
+                        </button>
+                        <button class="subcat-tab-btn" id="btn-subcat-proveedores" onclick="abrirSubcatalogo('proveedores')">
+                            <i class="ph ph-truck" style="color: #10b981;"></i> 🚚 Proveedores (<span id="tab-count-prov">0</span>)
+                        </button>
+                        <button class="subcat-tab-btn" id="btn-subcat-inventario" onclick="abrirSubcatalogo('inventario')">
+                            <i class="ph ph-barcode" style="color: #8b5cf6;"></i> 🛠️ Inventario (<span id="tab-count-inv">0</span>)
+                        </button>
+                        <button class="subcat-tab-btn" id="btn-subcat-empleados" onclick="abrirSubcatalogo('empleados')">
+                            <i class="ph ph-identification-badge" style="color: #f59e0b;"></i> 🦺 Empleados (<span id="tab-count-emp">0</span>)
+                        </button>
+                        <button class="subcat-tab-btn" id="btn-subcat-reuniones" onclick="abrirSubcatalogo('reuniones')">
+                            <i class="ph ph-handshake" style="color: #ec4899;"></i> 🤝 Reuniones (<span id="tab-count-reu">0</span>)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 🗂️ HUB PRINCIPAL DE CATÁLOGOS (6 TARJETAS / ICONOS) -->
+                <div id="subcat-hub" class="subcat-container">
+                    <div style="margin-bottom: 24px;">
+                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-folder" style="color: #f59e0b;"></i> Catálogos Operativos (Altas, Bajas y Cambios)
+                        </h2>
+                        <p style="color: var(--text-muted); font-size: 14px; margin: 6px 0 0 0;">
+                            Administración centralizada de bases de datos maestras para la operación de VPRO. Selecciona cualquier módulo para consultar o capturar:
+                        </p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                        <!-- Tarjeta 1: Clientes -->
+                        <div class="cat-card" onclick="abrirSubcatalogo('clientes')">
+                            <div style="width: 68px; height: 68px; border-radius: 16px; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                <i class="ph ph-users" style="font-size: 34px; color: #6366f1;"></i>
+                            </div>
+                            <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 17px; font-weight: 700;">Catálogo de Clientes</h3>
+                            <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.4; flex-grow: 1;">
+                                Empresas, contactos directos y directorio corporativo.
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <span id="hub-count-clientes" style="font-size: 12px; font-weight: 600; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0;">0 registros</span>
+                                <span style="color: #6366f1; font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px;">Abrir Catálogo →</span>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 2: Flotilla de Vehículos -->
+                        <div class="cat-card" onclick="abrirSubcatalogo('autos')">
+                            <div style="width: 68px; height: 68px; border-radius: 16px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                <i class="ph ph-car" style="font-size: 34px; color: #3b82f6;"></i>
+                            </div>
+                            <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 17px; font-weight: 700;">Flotilla de Vehículos</h3>
+                            <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.4; flex-grow: 1;">
+                                Unidades activas, odómetros, pólizas y placas.
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <span id="hub-count-autos" style="font-size: 12px; font-weight: 600; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0;">0 unidades</span>
+                                <span style="color: #3b82f6; font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px;">Abrir Flotilla →</span>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 3: Proveedores Externos -->
+                        <div class="cat-card" onclick="abrirSubcatalogo('proveedores')">
+                            <div style="width: 68px; height: 68px; border-radius: 16px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                <i class="ph ph-truck" style="font-size: 34px; color: #10b981;"></i>
+                            </div>
+                            <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 17px; font-weight: 700;">Proveedores Externos</h3>
+                            <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.4; flex-grow: 1;">
+                                Directorio comercial, enlaces y servicios externos.
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <span id="hub-count-prov" style="font-size: 12px; font-weight: 600; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0;">0 proveedores</span>
+                                <span style="color: #10b981; font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px;">Abrir Directorio →</span>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 4: Inventario Maestro -->
+                        <div class="cat-card" onclick="abrirSubcatalogo('inventario')">
+                            <div style="width: 68px; height: 68px; border-radius: 16px; background: rgba(139, 92, 246, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                <i class="ph ph-barcode" style="font-size: 34px; color: #8b5cf6;"></i>
+                            </div>
+                            <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 17px; font-weight: 700;">Inventario Maestro</h3>
+                            <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.4; flex-grow: 1;">
+                                Equipos audiovisuales, números de serie y kits.
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <span id="hub-count-inv" style="font-size: 12px; font-weight: 600; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0;">0 piezas</span>
+                                <span style="color: #8b5cf6; font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px;">Abrir Inventario →</span>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 5: Catálogo de Empleados -->
+                        <div class="cat-card" onclick="abrirSubcatalogo('empleados')">
+                            <div style="width: 68px; height: 68px; border-radius: 16px; background: rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                <i class="ph ph-identification-badge" style="font-size: 34px; color: #f59e0b;"></i>
+                            </div>
+                            <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 17px; font-weight: 700;">Catálogo de Empleados</h3>
+                            <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.4; flex-grow: 1;">
+                                Plantilla de personal, accesos al sistema y contraseñas.
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <span id="hub-count-emp" style="font-size: 12px; font-weight: 600; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0;">0 colaboradores</span>
+                                <span style="color: #f59e0b; font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px;">Abrir Empleados →</span>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 6: Reuniones / Prospectos -->
+                        <div class="cat-card" onclick="abrirSubcatalogo('reuniones')">
+                            <div style="width: 68px; height: 68px; border-radius: 16px; background: rgba(236, 72, 153, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                                <i class="ph ph-handshake" style="font-size: 34px; color: #ec4899;"></i>
+                            </div>
+                            <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 17px; font-weight: 700;">Reuniones / Prospectos</h3>
+                            <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.4; flex-grow: 1;">
+                                Minutas y acuerdos previos para generar Órdenes de Producción.
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <span id="hub-count-reu" style="font-size: 12px; font-weight: 600; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0;">0 minutas</span>
+                                <span style="color: #ec4899; font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px;">Abrir Reuniones →</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🏢 SUB-MÓDULO 1: CLIENTES -->
+                <div id="subcat-clientes" class="subcat-container" style="display: none;">
+                    <div style="margin-bottom: 16px;">
+                        <h3 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 18px;">
+                            🏢 Catálogo Maestro de Clientes VPRO
+                        </h3>
+                        <p style="color: var(--text-muted); font-size: 13px; margin: 3px 0 0 0;">Módulo de Altas, Bajas, Cambios y Directorio de Contactos Corporativos.</p>
+                    </div>
+
+                    <!-- Acordeón Resumen -->
+                    <button class="cat-accordion-btn" onclick="toggleAcordeonCat('acc-clientes')">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-table"></i> Ver Catálogo Completo de Clientes (<span id="badge-count-clientes">0</span> registrados)
+                        </span>
+                        <i class="ph ph-caret-down" id="caret-acc-clientes"></i>
+                    </button>
+                    <div class="cat-accordion-content" id="acc-clientes">
+                        <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
+                            <input type="text" id="filtro-clientes" class="form-input" style="max-width: 380px;" placeholder="🔍 Buscar por razón social, ciudad, contacto..." oninput="filtrarTablaClientes()">
+                            <span style="font-size: 12px; color: var(--text-muted);"><i class="ph ph-info"></i> Filtro en tiempo real</span>
+                        </div>
+                        <div class="cat-table-wrap">
+                            <table class="tabla-vpro">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Razón Social / Empresa</th>
+                                        <th>Gerente Gral.</th>
+                                        <th>Ciudad</th>
+                                        <th>Estado</th>
+                                        <th>Tel. Oficina</th>
+                                        <th>Email</th>
+                                        <th>Contacto Princ.</th>
+                                        <th>Cel. Principal</th>
+                                        <th>Contacto Alt.</th>
+                                        <th>Cel. Alt.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-clientes-body">
+                                    <tr><td colspan="11" style="text-align: center; padding: 20px;">Cargando catálogo de clientes...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Editor de Clientes -->
+                    <div class="op-section-card" style="margin-top: 16px;">
+                        <h3 class="op-section-title"><i class="ph ph-magnifying-glass"></i> Editor de Clientes</h3>
+                        <label class="op-form-label">Seleccione un cliente para editarlo, o elija 'Nuevo':</label>
+                        <select id="selector-cliente-editor" class="form-input" style="font-weight: 600; margin-bottom: 20px;" onchange="alCambiarSelectorCliente()">
+                            <option value="nuevo">➕ Registrar Nuevo Cliente</option>
+                        </select>
+
+                        <!-- Pestañas del Formulario -->
+                        <div class="cat-form-tabs">
+                            <button type="button" class="cat-form-tab active" id="tabbtn-cli-1" onclick="cambiarTabCat('cli', 1)">🏢 1. Datos de Empresa y Ubicación</button>
+                            <button type="button" class="cat-form-tab" id="tabbtn-cli-2" onclick="cambiarTabCat('cli', 2)">👤 2. Contactos Directos</button>
+                        </div>
+
+                        <!-- Tab 1 Empresa -->
+                        <div id="tabpanel-cli-1" class="cat-tab-panel active">
+                            <h4 style="margin: 0 0 16px 0; color: #1e293b;">Datos Corporativos</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                                <div>
+                                    <label class="op-form-label">ID Cliente* <span style="font-size: 11px; color: var(--text-muted);">(Número único)</span></label>
+                                    <input type="number" id="cli-id" class="form-input" min="1" placeholder="Ej. 101">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Razón Social / Nombre Empresa*</label>
+                                    <input type="text" id="cli-empresa" class="form-input" placeholder="Ej. GRUPO BALI EVENTOS SA DE CV">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Gerente General</label>
+                                    <input type="text" id="cli-gte-gral" class="form-input" placeholder="Ej. Lic. Carlos Méndez">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Ciudad</label>
+                                    <input type="text" id="cli-ciudad" class="form-input" placeholder="Ej. Hermosillo">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Estado</label>
+                                    <input type="text" id="cli-estado" class="form-input" placeholder="Ej. Sonora">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">☎️ Teléfono de Oficina</label>
+                                    <input type="text" id="cli-tel" class="form-input" placeholder="Ej. 662-1234567">
+                                </div>
+                                <div style="grid-column: 1 / -1;">
+                                    <label class="op-form-label">✉️ Email Empresa</label>
+                                    <input type="email" id="cli-email" class="form-input" placeholder="Ej. contacto@empresa.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2 Contactos -->
+                        <div id="tabpanel-cli-2" class="cat-tab-panel">
+                            <h4 style="margin: 0 0 16px 0; color: #1e293b;">Directorio de Enlaces</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                    <h5 style="margin: 0 0 12px 0; color: #0f172a;"><i class="ph ph-user"></i> Contacto Principal</h5>
+                                    <label class="op-form-label">Nombre Contacto Principal</label>
+                                    <input type="text" id="cli-contacto-princ" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. Juan Pérez">
+                                    <label class="op-form-label">📱 Celular Contacto Principal</label>
+                                    <input type="text" id="cli-cel-princ" class="form-input" placeholder="Ej. 662-9876543">
+                                </div>
+                                <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                    <h5 style="margin: 0 0 12px 0; color: #0f172a;"><i class="ph ph-user-plus"></i> Contacto Alterno</h5>
+                                    <label class="op-form-label">Nombre Contacto Alterno</label>
+                                    <input type="text" id="cli-contacto-a" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. Ana Robles">
+                                    <label class="op-form-label">📱 Celular Contacto Alterno</label>
+                                    <input type="text" id="cli-cel-a" class="form-input" placeholder="Ej. 662-5554433">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción Clientes -->
+                        <div class="cat-actions-bar">
+                            <button type="button" class="btn-cat-save" id="btn-guardar-cliente" onclick="guardarClienteForm()">
+                                <i class="ph ph-floppy-disk"></i> <span id="lbl-btn-guardar-cli">Guardar Cliente Nuevo</span>
+                            </button>
+                            <button type="button" class="btn-cat-del" id="btn-eliminar-cliente" style="display: none;" onclick="confirmarBajaCliente()">
+                                <i class="ph ph-trash"></i> Eliminar Cliente
+                            </button>
+                            <button type="button" class="btn-cat-new" onclick="limpiarFormCliente()">
+                                <i class="ph ph-plus-circle"></i> Nuevo / Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🚗 SUB-MÓDULO 2: AUTOS (FLOTILLA) -->
+                <div id="subcat-autos" class="subcat-container" style="display: none;">
+                    <div style="margin-bottom: 16px;">
+                        <h3 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 18px;">
+                            🚙 Control y Administración de Flota Vehicular
+                        </h3>
+                        <p style="color: var(--text-muted); font-size: 13px; margin: 3px 0 0 0;">Módulo de Altas, Bajas, Cambios y Control de Documentación para el Parque Vehicular.</p>
+                    </div>
+
+                    <!-- Alerta de Póliza Vencida Dinámica -->
+                    <div id="alerta-poliza-auto" style="display: none; margin-bottom: 16px;" class="alerta-card warning"></div>
+
+                    <!-- Acordeón Resumen Flota -->
+                    <button class="cat-accordion-btn" onclick="toggleAcordeonCat('acc-autos')">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-car"></i> Ver Catálogo Completo de Unidades (<span id="badge-count-autos">0</span> unidades)
+                        </span>
+                        <i class="ph ph-caret-down" id="caret-acc-autos"></i>
+                    </button>
+                    <div class="cat-accordion-content" id="acc-autos">
+                        <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
+                            <input type="text" id="filtro-autos" class="form-input" style="max-width: 380px;" placeholder="🔍 Buscar por no. control, marca, placa, estatus..." oninput="filtrarTablaAutos()">
+                            <span style="font-size: 12px; color: var(--text-muted);"><i class="ph ph-info"></i> Filtro en tiempo real</span>
+                        </div>
+                        <div class="cat-table-wrap">
+                            <table class="tabla-vpro">
+                                <thead>
+                                    <tr>
+                                        <th>No. Control</th>
+                                        <th>Tipo</th>
+                                        <th>Marca / Modelo</th>
+                                        <th>Año</th>
+                                        <th>Placa</th>
+                                        <th>Color</th>
+                                        <th>VIN / Serie</th>
+                                        <th>Km Actual</th>
+                                        <th>Estado Operativo</th>
+                                        <th>Aseguradora</th>
+                                        <th>Vence Póliza</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-autos-body">
+                                    <tr><td colspan="11" style="text-align: center; padding: 20px;">Cargando flota vehicular...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Editor de Flota -->
+                    <div class="op-section-card" style="margin-top: 16px;">
+                        <h3 class="op-section-title"><i class="ph ph-magnifying-glass"></i> Editor de Unidades</h3>
+                        <label class="op-form-label">Seleccione un vehículo para editarlo, o elija 'Nuevo' para capturar desde cero:</label>
+                        <select id="selector-auto-editor" class="form-input" style="font-weight: 600; margin-bottom: 20px;" onchange="alCambiarSelectorAuto()">
+                            <option value="nuevo">➕ Registrar Nuevo Vehículo</option>
+                        </select>
+
+                        <!-- Pestañas Formulario Autos -->
+                        <div class="cat-form-tabs">
+                            <button type="button" class="cat-form-tab active" id="tabbtn-auto-1" onclick="cambiarTabCat('auto', 1)">🚗 1. Datos del Vehículo</button>
+                            <button type="button" class="cat-form-tab" id="tabbtn-auto-2" onclick="cambiarTabCat('auto', 2)">🛡️ 2. Póliza de Seguro</button>
+                            <button type="button" class="cat-form-tab" id="tabbtn-auto-3" onclick="cambiarTabCat('auto', 3)">💰 3. Impuestos y Trámites</button>
+                            <button type="button" class="cat-form-tab" id="tabbtn-auto-4" onclick="cambiarTabCat('auto', 4)">📝 4. Historial y Comentarios</button>
+                        </div>
+
+                        <!-- Tab 1 Auto Datos -->
+                        <div id="tabpanel-auto-1" class="cat-tab-panel active">
+                            <h4 style="margin: 0 0 16px 0; color: #1e293b;">Información General de la Unidad</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                                <div>
+                                    <label class="op-form-label">Número de Control* <span style="font-size: 11px; color: var(--text-muted);">(Ej. VPFord, VPH100)</span></label>
+                                    <input type="text" id="auto-num-control" class="form-input" placeholder="Ej. VPF150">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Tipo de Vehículo</label>
+                                    <select id="auto-tipo" class="form-input">
+                                        <option value="Auto">Auto</option>
+                                        <option value="Camioneta">Camioneta</option>
+                                        <option value="Remolque">Remolque</option>
+                                        <option value="SUV">SUV</option>
+                                        <option value="VAN">VAN</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Marca</label>
+                                    <input type="text" id="auto-marca" class="form-input" placeholder="Ej. Ford">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Modelo</label>
+                                    <input type="text" id="auto-modelo" class="form-input" placeholder="Ej. F-150">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Año</label>
+                                    <input type="text" id="auto-anio" class="form-input" placeholder="Ej. 2022">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Placa Vehicular</label>
+                                    <input type="text" id="auto-placa" class="form-input" placeholder="Ej. VPR-889-A">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">No. de Serie (VIN)</label>
+                                    <input type="text" id="auto-serie" class="form-input" placeholder="Ej. 3FALP71W8...">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Color</label>
+                                    <input type="text" id="auto-color" class="form-input" placeholder="Ej. Blanco Oxford">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Carga Máxima (Kg / Ton)</label>
+                                    <input type="text" id="auto-carga" class="form-input" placeholder="Ej. 1200 Kg">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Kilometraje Actual</label>
+                                    <input type="number" id="auto-km" class="form-input" min="0" step="500" placeholder="Ej. 45000">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Estado Operativo*</label>
+                                    <select id="auto-estado" class="form-input" style="font-weight: 600;">
+                                        <option value="EXCELENTE">EXCELENTE</option>
+                                        <option value="BUENO">BUENO</option>
+                                        <option value="REGULAR">REGULAR</option>
+                                        <option value="EN REPARACIÓN">EN REPARACIÓN</option>
+                                        <option value="FUERA DE SERVICIO">FUERA DE SERVICIO</option>
+                                        <option value="BAJA">BAJA</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Fecha de Adquisición / Compra</label>
+                                    <input type="date" id="auto-fecha-compra" class="form-input">
+                                </div>
+                                <div style="grid-column: 1 / -1;">
+                                    <label class="op-form-label">Estado de Mantenimiento Preventivo</label>
+                                    <textarea id="auto-estado-mant" class="form-input" rows="2" placeholder="Diagnóstico preventivo, llantas, cambios de aceite..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2 Auto Seguro -->
+                        <div id="tabpanel-auto-2" class="cat-tab-panel">
+                            <h4 style="margin: 0 0 16px 0; color: #1e293b;">Datos de la Póliza Actual</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                                <div>
+                                    <label class="op-form-label">Aseguradora</label>
+                                    <input type="text" id="auto-aseguradora" class="form-input" placeholder="Ej. Quálitas, Chubb, GNP">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">No. de Póliza</label>
+                                    <input type="text" id="auto-no-poliza" class="form-input" placeholder="Ej. POL-998811">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Estatus Póliza</label>
+                                    <select id="auto-status-seguro" class="form-input">
+                                        <option value="ACTIVA">ACTIVA</option>
+                                        <option value="PROXIMA A VENCER">PRÓXIMA A VENCER</option>
+                                        <option value="VENCIDA">VENCIDA</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Forma de Pago</label>
+                                    <select id="auto-forma-pago" class="form-input">
+                                        <option value="Anual">Anual</option>
+                                        <option value="Semestral">Semestral</option>
+                                        <option value="Trimestral">Trimestral</option>
+                                        <option value="Mensual">Mensual</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Prima Total ($ MXN)</label>
+                                    <input type="number" id="auto-prima-total" class="form-input" min="0" step="100" placeholder="Ej. 14500.00">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Inicio de Vigencia</label>
+                                    <input type="date" id="auto-seguro-inicio" class="form-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Vencimiento de Póliza</label>
+                                    <input type="date" id="auto-seguro-vence" class="form-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3 Auto Impuestos -->
+                        <div id="tabpanel-auto-3" class="cat-tab-panel">
+                            <h4 style="margin: 0 0 16px 0; color: #1e293b;">Control de Obligaciones (Calca, Tenencia, Refrendo)</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                                <div>
+                                    <label class="op-form-label">Año de Impuesto</label>
+                                    <input type="text" id="auto-impuesto-anio" class="form-input" placeholder="Ej. 2026">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Monto Pagado ($ MXN)</label>
+                                    <input type="number" id="auto-impuesto-monto" class="form-input" min="0" step="50" placeholder="Ej. 1850.00">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Fecha de Pago</label>
+                                    <input type="date" id="auto-impuesto-pago" class="form-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Próximo Vencimiento</label>
+                                    <input type="date" id="auto-impuesto-vence" class="form-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 4 Auto Bitácora -->
+                        <div id="tabpanel-auto-4" class="cat-tab-panel">
+                            <h4 style="margin: 0 0 16px 0; color: #1e293b;">Bitácora de Servicios y Notas</h4>
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                                <div>
+                                    <label class="op-form-label">Último Mantenimiento Realizado</label>
+                                    <input type="date" id="auto-mant-fecha" class="form-input" style="max-width: 280px;">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Servicios Realizados (Frenos, Afinación, Llantas, etc.)</label>
+                                    <textarea id="auto-servicios" class="form-input" rows="2" placeholder="Detalle de trabajos ejecutados en taller..."></textarea>
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Observaciones Generales / Detalles de Carrocería</label>
+                                    <textarea id="auto-observaciones" class="form-input" rows="2" placeholder="Golpes menores, raspones, equipamiento adicional..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción Autos -->
+                        <div class="cat-actions-bar">
+                            <button type="button" class="btn-cat-save" id="btn-guardar-auto" onclick="guardarAutoForm()">
+                                <i class="ph ph-floppy-disk"></i> <span id="lbl-btn-guardar-auto">Guardar Vehículo Nuevo</span>
+                            </button>
+                            <button type="button" class="btn-cat-del" id="btn-eliminar-auto" style="display: none;" onclick="confirmarBajaAuto()">
+                                <i class="ph ph-trash"></i> Eliminar Unidad
+                            </button>
+                            <button type="button" class="btn-cat-new" onclick="limpiarFormAuto()">
+                                <i class="ph ph-plus-circle"></i> Nuevo / Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🚚 SUB-MÓDULO 3: PROVEEDORES -->
+                <div id="subcat-proveedores" class="subcat-container" style="display: none;">
+                    <div style="margin-bottom: 16px;">
+                        <h3 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 18px;">
+                            🚚 Catálogo Maestro de Proveedores VPRO
+                        </h3>
+                        <p style="color: var(--text-muted); font-size: 13px; margin: 3px 0 0 0;">Módulo de Altas, Bajas, Cambios y Directorio de Proveedores Comerciales.</p>
+                    </div>
+
+                    <!-- Acordeón Resumen Proveedores -->
+                    <button class="cat-accordion-btn" onclick="toggleAcordeonCat('acc-prov')">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-truck"></i> Ver Catálogo Completo de Proveedores (<span id="badge-count-prov">0</span> registrados)
+                        </span>
+                        <i class="ph ph-caret-down" id="caret-acc-prov"></i>
+                    </button>
+                    <div class="cat-accordion-content" id="acc-prov">
+                        <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
+                            <input type="text" id="filtro-proveedores" class="form-input" style="max-width: 380px;" placeholder="🔍 Buscar por nombre proveedor, ciudad, contacto..." oninput="filtrarTablaProveedores()">
+                            <span style="font-size: 12px; color: var(--text-muted);"><i class="ph ph-info"></i> Filtro en tiempo real</span>
+                        </div>
+                        <div class="cat-table-wrap">
+                            <table class="tabla-vpro">
+                                <thead>
+                                    <tr>
+                                        <th>Razón Social / Proveedor</th>
+                                        <th>Gerente Gral.</th>
+                                        <th>Ciudad</th>
+                                        <th>Estado</th>
+                                        <th>Tel. Oficina</th>
+                                        <th>Email Empresa</th>
+                                        <th>Contacto Princ.</th>
+                                        <th>Cel. Principal</th>
+                                        <th>Contacto Alt.</th>
+                                        <th>Cel. Alt.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-proveedores-body">
+                                    <tr><td colspan="10" style="text-align: center; padding: 20px;">Cargando catálogo de proveedores...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Editor de Proveedores -->
+                    <div class="op-section-card" style="margin-top: 16px;">
+                        <h3 class="op-section-title"><i class="ph ph-magnifying-glass"></i> Editor de Proveedores</h3>
+                        <label class="op-form-label">Seleccione un proveedor para editarlo, o elija 'Nuevo':</label>
+                        <select id="selector-prov-editor" class="form-input" style="font-weight: 600; margin-bottom: 20px;" onchange="alCambiarSelectorProveedor()">
+                            <option value="nuevo">➕ Registrar Nuevo Proveedor</option>
+                        </select>
+
+                        <!-- Pestañas Formulario Proveedores -->
+                        <div class="cat-form-tabs">
+                            <button type="button" class="cat-form-tab active" id="tabbtn-prov-1" onclick="cambiarTabCat('prov', 1)">🚚 1. Datos Corporativos y Ubicación</button>
+                            <button type="button" class="cat-form-tab" id="tabbtn-prov-2" onclick="cambiarTabCat('prov', 2)">👤 2. Contactos Directos</button>
+                        </div>
+
+                        <!-- Tab 1 Prov -->
+                        <div id="tabpanel-prov-1" class="cat-tab-panel active">
+                            <h4 style="margin: 0 0 16px 0; color: #1e293b;">Datos Comerciales</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                                <div>
+                                    <label class="op-form-label">Razón Social / Nombre Proveedor* <span style="font-size: 11px; color: var(--text-muted);">(Llave Principal)</span></label>
+                                    <input type="text" id="prov-nombre" class="form-input" placeholder="Ej. AUDIO Y LUCES DEL NORTE">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Gerente General</label>
+                                    <input type="text" id="prov-gte-gral" class="form-input" placeholder="Ej. Roberto Flores">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Ciudad</label>
+                                    <input type="text" id="prov-ciudad" class="form-input" placeholder="Ej. Hermosillo">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">Estado</label>
+                                    <input type="text" id="prov-estado" class="form-input" placeholder="Ej. Sonora">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">☎️ Teléfono de Oficina</label>
+                                    <input type="text" id="prov-tel" class="form-input" placeholder="Ej. 662-7778899">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">✉️ Email Empresa</label>
+                                    <input type="email" id="prov-email" class="form-input" placeholder="Ej. ventas@proveedor.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2 Prov Contactos -->
+                        <div id="tabpanel-prov-2" class="cat-tab-panel">
+                            <h4 style="margin: 0 0 16px 0; color: #1e293b;">Directorio de Enlaces</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                    <h5 style="margin: 0 0 12px 0; color: #0f172a;"><i class="ph ph-user"></i> Contacto Principal</h5>
+                                    <label class="op-form-label">Nombre Contacto Principal</label>
+                                    <input type="text" id="prov-contacto-princ" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. Ing. Marco Ruiz">
+                                    <label class="op-form-label">📱 Celular Contacto Principal</label>
+                                    <input type="text" id="prov-cel-princ" class="form-input" placeholder="Ej. 662-3332211">
+                                </div>
+                                <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                    <h5 style="margin: 0 0 12px 0; color: #0f172a;"><i class="ph ph-user-plus"></i> Contacto Alterno</h5>
+                                    <label class="op-form-label">Nombre Contacto Alterno</label>
+                                    <input type="text" id="prov-contacto-a" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. Lic. Laura Soto">
+                                    <label class="op-form-label">📱 Celular Contacto Alterno</label>
+                                    <input type="text" id="prov-cel-a" class="form-input" placeholder="Ej. 662-1110099">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción Proveedores -->
+                        <div class="cat-actions-bar">
+                            <button type="button" class="btn-cat-save" id="btn-guardar-prov" onclick="guardarProveedorForm()">
+                                <i class="ph ph-floppy-disk"></i> <span id="lbl-btn-guardar-prov">Guardar Proveedor Nuevo</span>
+                            </button>
+                            <button type="button" class="btn-cat-del" id="btn-eliminar-prov" style="display: none;" onclick="confirmarBajaProveedor()">
+                                <i class="ph ph-trash"></i> Eliminar Proveedor
+                            </button>
+                            <button type="button" class="btn-cat-new" onclick="limpiarFormProveedor()">
+                                <i class="ph ph-plus-circle"></i> Nuevo / Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🛠️ SUB-MÓDULO 4: INVENTARIO MAESTRO -->
+                <div id="subcat-inventario" class="subcat-container" style="display: none;">
+                    <div style="margin-bottom: 16px;">
+                        <h3 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 18px;">
+                            🛠️ Control e Inventario de Hardware VPRO
+                        </h3>
+                        <p style="color: var(--text-muted); font-size: 13px; margin: 3px 0 0 0;">Módulo de Altas, Bajas, Diagnóstico y Trazabilidad de Equipamiento Técnico.</p>
+                    </div>
+
+                    <!-- Acordeón Resumen Inventario -->
+                    <button class="cat-accordion-btn" onclick="toggleAcordeonCat('acc-inv')">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-barcode"></i> Ver Catálogo Completo de Hardware (<span id="badge-count-inv">0</span> piezas)
+                        </span>
+                        <i class="ph ph-caret-down" id="caret-acc-inv"></i>
+                    </button>
+                    <div class="cat-accordion-content" id="acc-inv">
+                        <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
+                            <input type="text" id="filtro-inventario" class="form-input" style="max-width: 380px;" placeholder="🔍 Buscar por código, descripción, serie, estado..." oninput="filtrarTablaInventario()">
+                            <span style="font-size: 12px; color: var(--text-muted);"><i class="ph ph-info"></i> Filtro en tiempo real</span>
+                        </div>
+                        <div class="cat-table-wrap">
+                            <table class="tabla-vpro">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Descripción</th>
+                                        <th>Marca</th>
+                                        <th>Modelo</th>
+                                        <th>No. Serie</th>
+                                        <th>Responsable</th>
+                                        <th>Estado</th>
+                                        <th>Ubicación</th>
+                                        <th>Responsiva</th>
+                                        <th>Fecha Compra</th>
+                                        <th>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-inventario-body">
+                                    <tr><td colspan="11" style="text-align: center; padding: 20px;">Cargando inventario maestro...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Editor de Activos -->
+                    <div class="op-section-card" style="margin-top: 16px;">
+                        <h3 class="op-section-title"><i class="ph ph-magnifying-glass"></i> Editor de Activos</h3>
+                        <label class="op-form-label">Seleccione un equipo para editarlo, o elija 'Nuevo':</label>
+                        <select id="selector-inv-editor" class="form-input" style="font-weight: 600; margin-bottom: 20px;" onchange="alCambiarSelectorInventario()">
+                            <option value="nuevo">➕ Registrar Nuevo Hardware</option>
+                        </select>
+
+                        <!-- Formulario 3 Columnas -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
+                            <!-- Col 1: Básicos -->
+                            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <h4 style="margin: 0 0 14px 0; color: #1e293b; font-size: 14px;"><i class="ph ph-tag"></i> Identificación del Equipo</h4>
+                                <label class="op-form-label">Código / ID Hardware*</label>
+                                <input type="text" id="inv-codigo" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. CAM-01, MIX-04">
+                                <label class="op-form-label">Descripción del Hardware*</label>
+                                <input type="text" id="inv-descripcion" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. Cámara Sony FX3 Cinema">
+                                <label class="op-form-label">Marca</label>
+                                <input type="text" id="inv-marca" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. Sony">
+                                <label class="op-form-label">Modelo</label>
+                                <input type="text" id="inv-modelo" class="form-input" placeholder="Ej. ILME-FX3">
+                            </div>
+
+                            <!-- Col 2: Trazabilidad -->
+                            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <h4 style="margin: 0 0 14px 0; color: #1e293b; font-size: 14px;"><i class="ph ph-shield-check"></i> Asignación y Control</h4>
+                                <label class="op-form-label">Número de Serie</label>
+                                <input type="text" id="inv-serie" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. S30998811">
+                                <label class="op-form-label">Folio Responsiva</label>
+                                <input type="text" id="inv-responsiva" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. RESP-2026-05">
+                                <label class="op-form-label">Responsable Asignado</label>
+                                <input type="text" id="inv-responsable" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. Oscar Cuauhtemoc Rivera">
+                                <label class="op-form-label">Fecha de Compra</label>
+                                <input type="date" id="inv-fecha-compra" class="form-input">
+                            </div>
+
+                            <!-- Col 3: Estado y Ubicación -->
+                            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <h4 style="margin: 0 0 14px 0; color: #1e293b; font-size: 14px;"><i class="ph ph-map-pin"></i> Ubicación y Diagnóstico</h4>
+                                <label class="op-form-label">Estado Operativo*</label>
+                                <select id="inv-estado" class="form-input" style="font-weight: 600; margin-bottom: 12px;">
+                                    <option value="BUEN ESTADO">BUEN ESTADO</option>
+                                    <option value="REVISION">REVISION / REPARACION</option>
+                                    <option value="DANADO">DANADO / REPORTADO</option>
+                                    <option value="BAJA">BAJA DEFINITIVA</option>
+                                </select>
+                                <label class="op-form-label">Ubicación en Bodega</label>
+                                <input type="text" id="inv-ubicacion" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. BODEGA PRINCIPAL, ESTANTE A-2">
+                                <label class="op-form-label">Observaciones Técnicas</label>
+                                <textarea id="inv-observaciones" class="form-input" rows="3" placeholder="Detalles de uso, accesorios incluidos..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción Inventario -->
+                        <div class="cat-actions-bar">
+                            <button type="button" class="btn-cat-save" id="btn-guardar-inv" onclick="guardarInventarioForm()">
+                                <i class="ph ph-floppy-disk"></i> <span id="lbl-btn-guardar-inv">Guardar Hardware Nuevo</span>
+                            </button>
+                            <button type="button" class="btn-cat-del" id="btn-eliminar-inv" style="display: none;" onclick="confirmarBajaInventario()">
+                                <i class="ph ph-trash"></i> Eliminar Pieza
+                            </button>
+                            <button type="button" class="btn-cat-new" onclick="limpiarFormInventario()">
+                                <i class="ph ph-plus-circle"></i> Nuevo / Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🦺 SUB-MÓDULO 5: EMPLEADOS (PLANTILLA Y ACCESOS) -->
+                <div id="subcat-empleados" class="subcat-container" style="display: none;">
+                    <div style="background: linear-gradient(90deg, #064e3b, #059669); padding: 14px 22px; border-radius: 12px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <span style="color: white; font-size: 17px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-identification-badge"></i> Catálogo de Empleados y Accesos
+                            </span>
+                            <span style="color: #a7f3d0; font-size: 13px; margin-left: 12px;">Alta al sistema · Contraseñas · Plantilla activa</span>
+                        </div>
+                    </div>
+
+                    <div class="info-banner" style="margin-bottom: 20px;">
+                        <i class="ph ph-info"></i>
+                        <span>Este módulo gestiona el acceso al sistema VPRO y credenciales operativas. Para editar expedientes completos (RFC, CURP, contratos, etc.) se utiliza el módulo de <strong>Recursos Humanos</strong>.</span>
+                    </div>
+
+                    <!-- Métricas de Colaboradores -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; text-align: center;">
+                            <div style="font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 4px;">👥 Total Plantilla</div>
+                            <div id="emp-metric-total" style="font-size: 26px; font-weight: 800; color: #0f172a;">0</div>
+                        </div>
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; text-align: center;">
+                            <div style="font-size: 13px; color: #166534; font-weight: 600; margin-bottom: 4px;">✅ Activos</div>
+                            <div id="emp-metric-activos" style="font-size: 26px; font-weight: 800; color: #15803d;">0</div>
+                        </div>
+                        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px; text-align: center;">
+                            <div style="font-size: 13px; color: #991b1b; font-weight: 600; margin-bottom: 4px;">🚪 Bajas</div>
+                            <div id="emp-metric-bajas" style="font-size: 26px; font-weight: 800; color: #b91c1c;">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Acordeón Resumen Empleados -->
+                    <button class="cat-accordion-btn" onclick="toggleAcordeonCat('acc-empleados')">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-users-three"></i> Ver Plantilla Completa (<span id="badge-count-empleados">0</span> colaboradores)
+                        </span>
+                        <i class="ph ph-caret-down" id="caret-acc-empleados"></i>
+                    </button>
+                    <div class="cat-accordion-content" id="acc-empleados">
+                        <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
+                            <input type="text" id="filtro-empleados" class="form-input" style="max-width: 380px;" placeholder="🔍 Buscar por nombre, ID, departamento, rol..." oninput="filtrarTablaEmpleados()">
+                            <span style="font-size: 12px; color: var(--text-muted);"><i class="ph ph-info"></i> Filtro en tiempo real</span>
+                        </div>
+                        <div class="cat-table-wrap">
+                            <table class="tabla-vpro">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre Completo</th>
+                                        <th>Departamento</th>
+                                        <th>Rol</th>
+                                        <th>Celular</th>
+                                        <th>Email</th>
+                                        <th>Fecha Ingreso</th>
+                                        <th>Licencia Vence</th>
+                                        <th>Estatus</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-empleados-body">
+                                    <tr><td colspan="9" style="text-align: center; padding: 20px;">Cargando plantilla...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Editor / Formulario de Empleados -->
+                    <div class="op-section-card" style="margin-top: 16px;">
+                        <h3 class="op-section-title"><i class="ph ph-user-gear"></i> Gestión y Acceso de Colaborador</h3>
+                        <label class="op-form-label">Seleccione un colaborador para editarlo/cambiar credenciales, o 'Alta de Nuevo Empleado':</label>
+                        <select id="selector-emp-editor" class="form-input" style="font-weight: 600; margin-bottom: 20px;" onchange="alCambiarSelectorEmpleado()">
+                            <option value="nuevo">➕ Alta de Nuevo Empleado al Sistema</option>
+                        </select>
+
+                        <!-- Formulario 2 Columnas -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <h4 style="margin: 0 0 14px 0; color: #1e293b; font-size: 14px;"><i class="ph ph-user"></i> Datos del Colaborador</h4>
+                                
+                                <label class="op-form-label">ID / No. de Empleado*</label>
+                                <input type="text" id="emp-id" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. 105">
+                                
+                                <label class="op-form-label">Nombre Completo*</label>
+                                <input type="text" id="emp-nombre" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. Carlos López Pérez">
+                                
+                                <label class="op-form-label">Departamento*</label>
+                                <select id="emp-depto" class="form-input" style="margin-bottom: 12px;">
+                                    <option value="ADMINISTRACION">ADMINISTRACION</option>
+                                    <option value="EDICION">EDICION</option>
+                                    <option value="PRODUCCION">PRODUCCION</option>
+                                    <option value="SISTEMAS">SISTEMAS</option>
+                                    <option value="VENTAS">VENTAS</option>
+                                    <option value="OPERACIONES">OPERACIONES</option>
+                                    <option value="LOGISTICA">LOGISTICA</option>
+                                </select>
+
+                                <label class="op-form-label">Rol de Acceso*</label>
+                                <select id="emp-rol" class="form-input">
+                                    <option value="ADMIN">ADMIN</option>
+                                    <option value="PRODUCCION">PRODUCCION</option>
+                                    <option value="COORDINADOR">COORDINADOR</option>
+                                    <option value="PRODUCTOR">PRODUCTOR</option>
+                                    <option value="CHOFER">CHOFER</option>
+                                    <option value="PROVEEDOR">PROVEEDOR</option>
+                                    <option value="BAJA">BAJA</option>
+                                </select>
+                            </div>
+
+                            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <h4 style="margin: 0 0 14px 0; color: #1e293b; font-size: 14px;"><i class="ph ph-lock-key"></i> Contacto y Credenciales</h4>
+                                
+                                <label class="op-form-label">📱 Celular / WhatsApp</label>
+                                <input type="text" id="emp-cel" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. 6621234567">
+                                
+                                <label class="op-form-label">✉️ Correo Electrónico</label>
+                                <input type="email" id="emp-email" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. colaborador@vpro.mx">
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                                    <div>
+                                        <label class="op-form-label">📅 Fecha Ingreso</label>
+                                        <input type="date" id="emp-fecha-ing" class="form-input">
+                                    </div>
+                                    <div>
+                                        <label class="op-form-label">🎂 Fecha Nacimiento</label>
+                                        <input type="date" id="emp-fecha-nac" class="form-input">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label class="op-form-label">🚗 Licencia Vence</label>
+                                        <input type="date" id="emp-licencia-vence" class="form-input">
+                                    </div>
+                                    <div>
+                                        <label class="op-form-label">🔑 Contraseña de Acceso*</label>
+                                        <input type="password" id="emp-password" class="form-input" placeholder="Contraseña">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción Empleados -->
+                        <div class="cat-actions-bar">
+                            <button type="button" class="btn-cat-save" id="btn-guardar-emp" onclick="guardarEmpleadoForm()">
+                                <i class="ph ph-floppy-disk"></i> <span id="lbl-btn-guardar-emp">Dar de Alta al Sistema</span>
+                            </button>
+                            <button type="button" class="btn-cat-del" id="btn-eliminar-emp" style="display: none;" onclick="confirmarBajaEmpleado()">
+                                <i class="ph ph-trash"></i> Eliminar Registro
+                            </button>
+                            <button type="button" class="btn-cat-new" onclick="limpiarFormEmpleado()">
+                                <i class="ph ph-plus-circle"></i> Nuevo / Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🤝 SUB-MÓDULO 6: REUNIONES / PROSPECTOS -->
+                <div id="subcat-reuniones" class="subcat-container" style="display: none;">
+                    <div style="background: linear-gradient(90deg, #be185d, #ec4899); padding: 14px 22px; border-radius: 12px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <span style="color: white; font-size: 17px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-handshake"></i> Reuniones / Prospectos
+                            </span>
+                            <span style="color: #fbcfe8; font-size: 13px; margin-left: 12px;">Minutas previas · Acuerdos comerciales · Proyectos tentativos</span>
+                        </div>
+                    </div>
+
+                    <div class="info-banner" style="margin-bottom: 20px;">
+                        <i class="ph ph-info"></i>
+                        <span>Aquí se guardan las minutas y acuerdos iniciales. Si el proyecto se aprueba, podrás ligarlo a una nueva <strong>Orden de Producción (OP)</strong>. Al hacerlo, desaparecerá de esta lista activa.</span>
+                    </div>
+
+                    <!-- Acordeón Resumen Reuniones -->
+                    <button class="cat-accordion-btn" onclick="toggleAcordeonCat('acc-reuniones')">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-calendar-check"></i> Ver Reuniones Activas (<span id="badge-count-reuniones">0</span> pendientes de OP)
+                        </span>
+                        <i class="ph ph-caret-down" id="caret-acc-reuniones"></i>
+                    </button>
+                    <div class="cat-accordion-content" id="acc-reuniones">
+                        <div class="cat-table-wrap">
+                            <table class="tabla-vpro">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Cliente Tentativo</th>
+                                        <th>Nombre del Proyecto</th>
+                                        <th>Asistentes</th>
+                                        <th>Presupuesto</th>
+                                        <th>Probable Evento</th>
+                                        <th>Minuta y Acuerdos</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-reuniones-body">
+                                    <tr><td colspan="7" style="text-align: center; padding: 20px;">Cargando minutas activas...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de Reuniones -->
+                    <div class="op-section-card" style="margin-top: 16px;">
+                        <h3 class="op-section-title"><i class="ph ph-note-pencil"></i> Captura de Minuta y Prospecto</h3>
+                        <label class="op-form-label">Seleccione un prospecto activo para modificar, o elija crear uno nuevo:</label>
+                        <select id="selector-reu-editor" class="form-input" style="font-weight: 600; margin-bottom: 20px;" onchange="alCambiarSelectorReunion()">
+                            <option value="nuevo">✨ --- REGISTRAR NUEVA REUNIÓN ---</option>
+                        </select>
+
+                        <input type="hidden" id="reu-id">
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                            <!-- Columna 1 -->
+                            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <label class="op-form-label">Fecha de la Reunión*</label>
+                                <input type="date" id="reu-fecha" class="form-input" style="margin-bottom: 14px;">
+
+                                <label class="op-form-label">Cliente Tentativo*</label>
+                                <input type="text" id="reu-cliente" class="form-input" style="margin-bottom: 14px;" placeholder="Ej. Gobierno del Estado, Heineken...">
+
+                                <label class="op-form-label">Nombre del Proyecto*</label>
+                                <input type="text" id="reu-proyecto" class="form-input" placeholder="Ej. Gira de Trabajo, Conferencia Anual...">
+                            </div>
+
+                            <!-- Columna 2 -->
+                            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <label class="op-form-label">Asistentes*</label>
+                                <input type="text" id="reu-asistentes" class="form-input" style="margin-bottom: 14px;" placeholder="Ej. Juan, Pedro, Maria...">
+
+                                <label class="op-form-label">Presupuesto Estimado ($)</label>
+                                <input type="number" id="reu-presupuesto" class="form-input" style="margin-bottom: 14px;" step="1000" placeholder="0.00">
+
+                                <label class="op-form-label">Fecha Probable del Evento (Opcional)</label>
+                                <input type="date" id="reu-fecha-probable" class="form-input">
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 16px;">
+                            <label class="op-form-label">Minuta y Acuerdos*</label>
+                            <textarea id="reu-minuta" class="form-input" rows="5" placeholder="Describe de qué hablaron, requerimientos técnicos, qué pidieron y acuerdos de seguimiento..."></textarea>
+                        </div>
+
+                        <!-- Botones de Acción Reuniones -->
+                        <div class="cat-actions-bar">
+                            <button type="button" class="btn-cat-save" id="btn-guardar-reu" onclick="guardarReunionForm()">
+                                <i class="ph ph-floppy-disk"></i> <span id="lbl-btn-guardar-reu">💾 Guardar Nueva Reunión</span>
+                            </button>
+                            <button type="button" class="btn-cat-new" onclick="limpiarFormReunion()">
+                                <i class="ph ph-plus-circle"></i> Nuevo / Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 📦 CAJAS SECUNDARIAS / VISTAS DE MÓDULOS -->
+            <div id="vista-cotizaciones" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-file-text"></i> Módulo de Cotizaciones</h2>
+                <div class="info-banner"><i class="ph ph-info"></i> Motor de presupuestos y cotizaciones listo para vincular con OPs.</div>
+            </div>
+
+            <div id="vista-checkout" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-package"></i> Checkout de Equipos [VPF]</h2>
+                <div class="info-banner"><i class="ph ph-check-circle"></i> Verificación de salida y retorno de equipo en almacén.</div>
+            </div>
+
+            <div id="vista-incidencias" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-warning-circle"></i> Incidencias Operativas</h2>
+                <div class="info-banner"><i class="ph ph-shield-warning"></i> Bitácora y seguimiento de incidencias en evento.</div>
+            </div>
+
+            <div id="vista-analitica" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-chart-line-up"></i> Analítica y Métricas KPI</h2>
+                <div class="info-banner"><i class="ph ph-trend-up"></i> Estadísticas operativas y financieras de eventos VPRO.</div>
+            </div>
+
+            <div id="vista-rh" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-users"></i> Recursos Humanos & Expedientes</h2>
+                <div class="info-banner"><i class="ph ph-user-list"></i> Expedientes de personal, contratos y control de incidencias laborales.</div>
             </div>
         </div>
-
-    </div> <!-- Cierre correcto de main-content -->
+    </div>
 
     <!-- Modal de Contraseña -->
     <div class="modal-overlay" id="modal-login">
@@ -363,6 +2292,42 @@
             <button class="btn-confirmar" onclick="verificarAcceso()">Entrar</button>
             <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
             <p id="modal-error" style="color: #dc2626; font-size: 13px; display: none; margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <!-- MODAL DE AYUDA / MANUAL -->
+    <div class="modal-overlay" id="modal-manual">
+        <div class="modal-box" style="max-width: 650px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 18px; color: #0f172a;">
+                    <i class="ph ph-book-open" style="color: var(--accent-color);"></i> Manual de Usuario - VPRO Workspace
+                </h3>
+                <button onclick="cerrarManual()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);">&times;</button>
+            </div>
+            <div style="max-height: 420px; overflow-y: auto; font-size: 13.5px; line-height: 1.6; color: #334155; padding-right: 8px;">
+                <h4 style="color: #0f172a; margin: 12px 0 4px 0;">📌 Registro de Asistencia (Kiosco y Checador)</h4>
+                <p>Escanea tu código QR directamente con el lector en pantalla. El sistema registrará tu entrada o salida automáticamente. Recuerda que registrar 4 marcas al día (Entrada Matutina, Salida a Comer, Entrada de Comida y Salida Vespertina) es mandatorio según la política interna.</p>
+                
+                <h4 style="color: #0f172a; margin: 16px 0 4px 0;">📋 Órdenes de Producción (OP)</h4>
+                <p>Puedes seleccionar un folio existente en el desplegable para consultar o modificar la logística de un evento, o elegir "Crear Nueva Orden" para registrar un servicio desde cero.</p>
+                
+                <h4 style="color: #0f172a; margin: 16px 0 4px 0;">🚨 Política de Horarios y Conducta</h4>
+                <p>Checar solo la entrada matutina y la salida nocturna sin registrar los tiempos de alimentos es una omisión sancionable por Recursos Humanos. Las advertencias se reflejarán de inmediato en tu panel de inicio.</p>
+            </div>
+            <button class="btn-confirmar" onclick="cerrarManual()" style="margin-top: 16px;">Entendido</button>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMACIÓN ELIMINACIÓN CATÁLOGOS -->
+    <div class="modal-overlay" id="modal-confirm-baja">
+        <div class="modal-box" style="max-width: 440px; text-align: center;">
+            <div style="font-size: 48px; color: #ef4444; margin-bottom: 8px;"><i class="ph ph-warning-circle"></i></div>
+            <h3 id="modal-baja-titulo" style="margin: 0 0 8px 0; font-size: 18px; color: #0f172a;">Confirmar Baja</h3>
+            <p id="modal-baja-mensaje" style="color: #475569; font-size: 13.5px; line-height: 1.5; margin-bottom: 20px;">¿Está seguro de que desea eliminar este registro?</p>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn-cancelar" onclick="cerrarModalBaja()" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-weight: 600;">❌ Cancelar</button>
+                <button class="btn-confirmar" id="modal-baja-btn-eliminar" onclick="ejecutarBajaConfirmada()" style="flex: 1; background: #dc2626; margin: 0; padding: 10px;">🔥 Sí, Eliminar</button>
+            </div>
         </div>
     </div>
 

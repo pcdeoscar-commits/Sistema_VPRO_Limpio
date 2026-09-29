@@ -449,6 +449,7 @@ def extraer_estado_asistencia_diaria(id_empleado: str):
         with engine_personal.connect() as conn: 
             row = conn.execute(query, {"emp": id_empleado.strip(), "hoy": hoy_str}).mappings().first()
         if row:
+            es_rh_justificado = str(row["estatus"] or "").upper() in ("VACACIONES", "PERMISO", "INCAPACIDAD")
             return {
                 "registrado": True, 
                 "id_registro": row["id_registro"],
@@ -458,7 +459,48 @@ def extraer_estado_asistencia_diaria(id_empleado: str):
                 "hora_salida_v": str(row["hora_salida_v"]) if row["hora_salida_v"] else None,
                 "estatus": row["estatus"], 
                 "observaciones": row["observaciones"],
-                "completo": row["hora_salida_v"] is not None 
+                "completo": es_rh_justificado or (row["hora_salida_v"] is not None),
+                "es_permiso_o_vacaciones": es_rh_justificado,
+                "tipo_justificante": row["estatus"] if es_rh_justificado else None
+            }
+
+        # 🌴 Verificar si tiene Vacaciones, Permiso o Incapacidad activa hoy en Recursos Humanos
+        query_rh = text("""
+            SELECT 'VACACIONES' as tipo, fecha_inicio_goce as f_ini, fecha_fin_goce as f_fin, observaciones as nota
+            FROM public.rh_vacaciones
+            WHERE TRIM(id_empleado) = :emp 
+              AND CAST(:hoy AS date) BETWEEN fecha_inicio_goce AND fecha_fin_goce
+              AND estatus IN ('APROBADO', 'EN_GOCE', 'DISFRUTADO', 'REGISTRADO')
+            UNION ALL
+            SELECT 'PERMISO' as tipo, fecha_inicio as f_ini, fecha_fin as f_fin, justificacion as nota
+            FROM public.rh_permisos
+            WHERE TRIM(id_empleado) = :emp 
+              AND CAST(:hoy AS date) BETWEEN fecha_inicio AND fecha_fin
+              AND estatus IN ('APROBADO', 'AUTORIZADO', 'EN_GOCE')
+            UNION ALL
+            SELECT 'INCAPACIDAD' as tipo, fecha_inicio as f_ini, fecha_fin as f_fin, diagnostico as nota
+            FROM public.rh_incapacidades
+            WHERE TRIM(id_empleado) = :emp 
+              AND CAST(:hoy AS date) BETWEEN fecha_inicio AND fecha_fin
+              AND estatus IN ('VALIDADA', 'ACTIVA', 'APROBADA')
+            LIMIT 1
+        """)
+        with engine_personal.connect() as conn_rh:
+            rh_row = conn_rh.execute(query_rh, {"emp": id_empleado.strip(), "hoy": hoy_str}).mappings().first()
+        if rh_row:
+            tipo_rh = rh_row["tipo"]
+            return {
+                "registrado": True,
+                "id_registro": None,
+                "hora_entrada": None,
+                "hora_salida": None,
+                "hora_entrada_v": None,
+                "hora_salida_v": None,
+                "estatus": tipo_rh,
+                "observaciones": f"🌴 Colaborador en {tipo_rh} (del {rh_row['f_ini']} al {rh_row['f_fin']})",
+                "completo": True,
+                "es_permiso_o_vacaciones": True,
+                "tipo_justificante": tipo_rh
             }
 
         # 🔍 Si no hay registro en oficina hoy, revisar si coordinación registró entrada en Gira
@@ -507,6 +549,36 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
 
     try:
         with engine_personal.begin() as conn:
+            # 🌴 Validar si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad activa hoy
+            rh_activo = conn.execute(text("""
+                SELECT 'VACACIONES' as tipo, fecha_inicio_goce as f_ini, fecha_fin_goce as f_fin
+                FROM public.rh_vacaciones
+                WHERE TRIM(id_empleado) = :emp 
+                  AND CAST(:hoy AS date) BETWEEN fecha_inicio_goce AND fecha_fin_goce
+                  AND estatus IN ('APROBADO', 'EN_GOCE', 'DISFRUTADO', 'REGISTRADO')
+                UNION ALL
+                SELECT 'PERMISO' as tipo, fecha_inicio as f_ini, fecha_fin as f_fin
+                FROM public.rh_permisos
+                WHERE TRIM(id_empleado) = :emp 
+                  AND CAST(:hoy AS date) BETWEEN fecha_inicio AND fecha_fin
+                  AND estatus IN ('APROBADO', 'AUTORIZADO', 'EN_GOCE')
+                UNION ALL
+                SELECT 'INCAPACIDAD' as tipo, fecha_inicio as f_ini, fecha_fin as f_fin
+                FROM public.rh_incapacidades
+                WHERE TRIM(id_empleado) = :emp 
+                  AND CAST(:hoy AS date) BETWEEN fecha_inicio AND fecha_fin
+                  AND estatus IN ('VALIDADA', 'ACTIVA', 'APROBADA')
+                LIMIT 1
+            """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str}).mappings().first()
+
+            if rh_activo:
+                tipo_rh = rh_activo["tipo"]
+                return {
+                    "status": "WARNING",
+                    "mensaje": f"🌴 Colaborador en periodo de {tipo_rh} ({rh_activo['f_ini']} al {rh_activo['f_fin']}). Su asistencia se encuentra justificada.",
+                    "tipo_rh": tipo_rh
+                }
+
             registro_hoy = conn.execute(text("""
                 SELECT id_registro, hora_entrada, hora_salida, hora_entrada_v, hora_salida_v 
                 FROM public.control_asistencia 

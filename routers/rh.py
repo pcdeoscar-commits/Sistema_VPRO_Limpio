@@ -201,6 +201,8 @@ class PermisoCreate(BaseModel):
     con_goce_de_sueldo: bool
     justificacion: Optional[str] = None
     archivo_justificante: Optional[str] = None
+    estatus: Optional[str] = "APROBADO"
+    impacta_asistencia: Optional[bool] = True
     registrado_por: Optional[str] = None
 
 class PermisoUpdate(BaseModel):
@@ -660,6 +662,13 @@ def create_contrato(payload: ContratoCreate):
             data = payload.model_dump()
             data["folio_contrato"] = folio
             data["estatus_contrato"] = "VIGENTE"
+
+            # Marcar contratos vigentes anteriores como HISTÓRICO
+            conn.execute(text("""
+                UPDATE public.rh_contratos 
+                SET estatus_contrato = 'HISTÓRICO' 
+                WHERE id_empleado = :id AND estatus_contrato = 'VIGENTE'
+            """), {"id": data["id_empleado"]})
             
             cols = list(data.keys())
             vals = [f":{c}" for c in cols]
@@ -671,9 +680,25 @@ def create_contrato(payload: ContratoCreate):
             """)
             res = conn.execute(query, data).mappings().first()
             id_contrato = res["id_contrato"]
+
+            # Actualizar datos maestros en public.empleados para mantener sincronía
+            conn.execute(text("""
+                UPDATE public.empleados 
+                SET puesto = COALESCE(:puesto, puesto),
+                    depto = COALESCE(:depto, depto),
+                    tipo_contrato = COALESCE(:tipo, tipo_contrato),
+                    salario_mensual = COALESCE(:salario, salario_mensual)
+                WHERE id_empleado = :id
+            """), {
+                "puesto": data.get("puesto_contratado"),
+                "depto": data.get("departamento"),
+                "tipo": data.get("tipo_contrato"),
+                "salario": data.get("salario_mensual"),
+                "id": data["id_empleado"]
+            })
             
             # Historial
-            _registrar_historial(conn, data["id_empleado"], "NUEVO_CONTRATO", f"Contrato {folio} generado", "rh_contratos", str(id_contrato), data.get("registrado_por", "SISTEMA"))
+            _registrar_historial(conn, data["id_empleado"], "NUEVO_CONTRATO", f"Contrato {folio} generado ({data.get('tipo_contrato', '')})", "rh_contratos", str(id_contrato), data.get("registrado_por", "SISTEMA"))
             
             return {"msg": "Contrato creado", "id_contrato": id_contrato, "folio": folio}
     except Exception as e:
@@ -741,6 +766,7 @@ def get_vacaciones(id_empleado: str):
             dias_tomados = sum([r["dias_tomados"] for r in rows if r["estatus"] in ("APROBADO", "EN_GOCE", "FINALIZADO")])
             
             resumen = {
+                "dias_totales_correspondientes": dias_totales,
                 "dias_totales_acumulados": dias_totales,
                 "dias_tomados": dias_tomados,
                 "dias_pendientes": max(0, dias_totales - dias_tomados)
@@ -761,12 +787,18 @@ def create_vacacion(payload: VacacionCreate):
                 raise HTTPException(status_code=404, detail="Empleado no encontrado")
                 
             dias_corresp = calcular_dias_vacaciones_lft(emp["fecha_ing"])
-            dias_pendientes = max(0, dias_corresp - payload.dias_tomados) # simplificado para este periodo
+            
+            # Sumar días previamente tomados
+            query_hist = text("SELECT dias_tomados FROM public.rh_vacaciones WHERE id_empleado = :id AND estatus IN ('APROBADO', 'EN_GOCE', 'FINALIZADO')")
+            rows_prev = conn.execute(query_hist, {"id": payload.id_empleado}).mappings().fetchall()
+            dias_previos = sum([r["dias_tomados"] for r in rows_prev])
+            dias_totales_tomados = dias_previos + payload.dias_tomados
+            dias_pendientes = max(0, dias_corresp - dias_totales_tomados)
             
             data = payload.model_dump()
             data["dias_correspondientes"] = dias_corresp
             data["dias_pendientes"] = dias_pendientes
-            data["estatus"] = "PENDIENTE"
+            data["estatus"] = "APROBADO"
             
             cols = list(data.keys())
             vals = [f":{c}" for c in cols]
@@ -779,6 +811,23 @@ def create_vacacion(payload: VacacionCreate):
             res = conn.execute(query, data).mappings().first()
             id_vacacion = res["id_vacacion"]
             
+            # Sincronizar con control_asistencia para justificar automáticamente ante reloj checador y Kiosco
+            try:
+                f_cur = data["fecha_inicio_goce"]
+                while f_cur <= data["fecha_fin_goce"]:
+                    conn.execute(text("""
+                        INSERT INTO public.control_asistencia (id_empleado, fecha, estatus, observaciones)
+                        VALUES (:emp, :f, 'VACACIONES', :obs)
+                        ON CONFLICT DO NOTHING
+                    """), {
+                        "emp": data["id_empleado"],
+                        "f": f_cur,
+                        "obs": f"🌴 Vacaciones LFT ({data.get('tipo', 'Gozadas')})"
+                    })
+                    f_cur += datetime.timedelta(days=1)
+            except Exception as e_asist:
+                print(f"⚠️ Error al sincronizar asistencia vacaciones: {e_asist}")
+
             _registrar_historial(conn, data["id_empleado"], "SOLICITUD_VACACIONES", f"Periodo {data['fecha_inicio_goce']} a {data['fecha_fin_goce']}", "rh_vacaciones", str(id_vacacion), data.get("registrado_por", "SISTEMA"))
             
             return {"msg": "Vacaciones registradas", "id_vacacion": id_vacacion}
@@ -845,7 +894,8 @@ def create_permiso(payload: PermisoCreate):
             data = payload.model_dump()
             data["folio_permiso"] = folio
             data["dias_solicitados"] = max(1, (data["fecha_fin"] - data["fecha_inicio"]).days + 1)
-            data["estatus"] = "PENDIENTE"
+            estatus_inicial = data.get("estatus") or "APROBADO"
+            data["estatus"] = estatus_inicial
             
             cols = list(data.keys())
             vals = [f":{c}" for c in cols]
@@ -858,7 +908,25 @@ def create_permiso(payload: PermisoCreate):
             res = conn.execute(query, data).mappings().first()
             id_permiso = res["id_permiso"]
             
-            _registrar_historial(conn, data["id_empleado"], "NUEVO_PERMISO", f"Permiso {folio} de {data['dias_solicitados']} días", "rh_permisos", str(id_permiso), data.get("registrado_por", "SISTEMA"))
+            # Si el permiso se registra aprobado y con impacto en asistencia, registrar en control_asistencia
+            if estatus_inicial == "APROBADO" and data.get("impacta_asistencia") != False:
+                f_cur = data["fecha_inicio"]
+                while f_cur <= data["fecha_fin"]:
+                    try:
+                        conn.execute(text("""
+                            INSERT INTO public.control_asistencia (id_empleado, fecha, estatus, observaciones)
+                            VALUES (:emp, :f, 'PERMISO', :obs)
+                            ON CONFLICT DO NOTHING
+                        """), {
+                            "emp": data["id_empleado"],
+                            "f": f_cur,
+                            "obs": f"⏱️ Permiso RH ({data.get('tipo_permiso', 'Permiso')}: {data.get('justificacion') or 'Autorizado'})"
+                        })
+                    except Exception as e_asist:
+                        print(f"⚠️ Error al sincronizar asistencia permiso: {e_asist}")
+                    f_cur += datetime.timedelta(days=1)
+
+            _registrar_historial(conn, data["id_empleado"], "NUEVO_PERMISO", f"Permiso {folio} de {data['dias_solicitados']} días ({estatus_inicial})", "rh_permisos", str(id_permiso), data.get("registrado_por", "SISTEMA"))
             
             return {"msg": "Permiso creado", "id_permiso": id_permiso, "folio": folio}
     except Exception as e:
@@ -884,27 +952,23 @@ def update_permiso(id_permiso: int, payload: PermisoUpdate):
             if row:
                 _registrar_historial(conn, row["id_empleado"], "ACTUALIZACION_PERMISO", f"Estatus permiso ID {id_permiso} actualizado a {row['estatus']}", "rh_permisos", str(id_permiso), update_data.get("aprobado_por", "SISTEMA"))
                 
-                # Inserción en control_asistencia si impacta (Lógica simplificada, asume tabla control_asistencia existe)
+                # Inserción en control_asistencia si impacta y está aprobado
                 if row.get("estatus") == "APROBADO" and row.get("impacta_asistencia") == True:
-                    # Rango de fechas
-                    fecha_actual = row["fecha_inicio"]
-                    while fecha_actual <= row["fecha_fin"]:
+                    f_cur = row["fecha_inicio"]
+                    while f_cur <= row["fecha_fin"]:
                         try:
-                            # Intentar insertar registro en control_asistencia
-                            query_asist = text("""
-                                INSERT INTO public.control_asistencia (num_empleado, fecha_jornada, tipo_movimiento, estatus, observaciones)
-                                VALUES (:num_empleado, :fecha, 'PERMISO', 'PERMISO', 'Permiso aprobado desde RH')
+                            conn.execute(text("""
+                                INSERT INTO public.control_asistencia (id_empleado, fecha, estatus, observaciones)
+                                VALUES (:emp, :fecha, 'PERMISO', :obs)
                                 ON CONFLICT DO NOTHING
-                            """)
-                            # Requiere que id_empleado sea un numero, extraemos si es formato VARCHAR(3) como 001
-                            try:
-                                num_emp = int(row["id_empleado"])
-                                conn.execute(query_asist, {"num_empleado": num_emp, "fecha": fecha_actual})
-                            except Exception as e:
-                                print(f"⚠️ SILENCED ERROR in rh.py: {e}") # si id_empleado no es convertible a int, omitimos.
+                            """), {
+                                "emp": row["id_empleado"],
+                                "fecha": f_cur,
+                                "obs": f"⏱️ Permiso RH: {row.get('justificacion') or 'Autorizado'}"
+                            })
                         except Exception as e:
-                            print(f"⚠️ SILENCED ERROR in rh.py: {e}")
-                        fecha_actual += datetime.timedelta(days=1)
+                            print(f"⚠️ Error al sincronizar permiso: {e}")
+                        f_cur += datetime.timedelta(days=1)
                         
             return {"msg": "Permiso actualizado"}
     except Exception as e:
@@ -947,6 +1011,23 @@ def create_incapacidad(payload: IncapacidadCreate):
             """)
             res = conn.execute(query, data).mappings().first()
             id_incapacidad = res["id_incapacidad"]
+
+            # Sincronizar automáticamente con control_asistencia
+            f_cur = data["fecha_inicio"]
+            while f_cur <= data["fecha_fin"]:
+                try:
+                    conn.execute(text("""
+                        INSERT INTO public.control_asistencia (id_empleado, fecha, estatus, observaciones)
+                        VALUES (:emp, :fecha, 'INCAPACIDAD', :obs)
+                        ON CONFLICT DO NOTHING
+                    """), {
+                        "emp": data["id_empleado"],
+                        "fecha": f_cur,
+                        "obs": f"🏥 Incapacidad IMSS {folio}: {data.get('diagnostico') or 'Médica'}"
+                    })
+                except Exception as e_asist:
+                    print(f"⚠️ Error al sincronizar asistencia incapacidad: {e_asist}")
+                f_cur += datetime.timedelta(days=1)
             
             _registrar_historial(conn, data["id_empleado"], "NUEVA_INCAPACIDAD", f"Incapacidad {folio}", "rh_incapacidades", str(id_incapacidad), data.get("registrado_por", "SISTEMA"))
             

@@ -515,6 +515,14 @@
         .vista-modulo { 
             display: none; 
             width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.65);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12);
+            padding: 32px;
+            box-sizing: border-box;
         }
         .vista-modulo.activa { 
             display: block !important; 
@@ -589,6 +597,25 @@
             color: #475569;
             cursor: not-allowed;
             font-weight: 600;
+        }
+        .form-input {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13.5px;
+            color: #1e293b;
+            background: #f8fafc;
+            outline: none;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .form-input:focus {
+            border-color: #0284c7;
+            background: #ffffff;
+            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
         }
         .multiselect-box {
             border: 1px solid #cbd5e1;
@@ -943,9 +970,6 @@
                 <div class="nav-label"><i class="ph ph-folder"></i> <span class="nav-text">Catálogos (ABC)</span></div>
             </div>
 
-            <div class="nav-item" data-roles="ADMIN" onclick="cambiarVista('vista-auditoria')">
-                <div class="nav-label"><i class="ph ph-clock"></i> <span class="nav-text">Auditoría Asistencia</span></div>
-            </div>
             <div class="nav-item" data-roles="ADMIN,VENTAS" onclick="cambiarVista('vista-cotizaciones')">
                 <div class="nav-label"><i class="ph ph-file-text"></i> <span class="nav-text">Cotizaciones</span></div>
             </div>
@@ -1011,7 +1035,7 @@
         <div id="vista-dashboard" style="display: none;">
 
             <!-- 📦 CAJA 1: VISTA INICIO -->
-            <div id="vista-inicio" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-inicio" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 <h2 style="margin-top: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;"><i class="ph ph-house"></i> Inicio</h2>
                 
                 <div class="info-banner" style="margin-bottom: 20px;">
@@ -1194,30 +1218,35 @@
                     </div>
                 </div>
 
-                <!-- SUBVISTA 3: AUDITORÍA GERENCIAL DE ASISTENCIA -->
+                <!-- SUBVISTA 3: CONSULTA Y AUDITORÍA DE ASISTENCIA -->
                 <div id="subvista-checador-auditoria" style="display: none;">
                     <div style="background: white; border-radius: 16px; border: 1px solid var(--border-color); padding: 32px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
-                            <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                                <i class="ph ph-calendar-check" style="color: #6366f1;"></i> Auditoría y Reportes de Asistencia
-                            </h2>
-                            <button onclick="cargarAuditoriaAsistencia()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
-                                <i class="ph ph-arrows-clockwise"></i> Consultar
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 19px;">
+                                    <i class="ph ph-calendar-check" style="color: #6366f1;"></i> Consulta y Auditoría de Asistencia
+                                </h2>
+                                <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #64748b;">
+                                    Reporte unificado de checador en oficina y jornadas en locación/gira.
+                                </p>
+                            </div>
+                            <button onclick="cargarAuditoriaAsistencia()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: #334155;">
+                                <i class="ph ph-arrows-clockwise"></i> Refrescar
                             </button>
                         </div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
                             <div>
                                 <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Desde:</label>
-                                <input type="date" id="filtro-auditoria-inicio" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                <input type="date" id="filtro-auditoria-inicio" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 13px;">
                             </div>
                             <div>
                                 <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Hasta:</label>
-                                <input type="date" id="filtro-auditoria-fin" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                                <input type="date" id="filtro-auditoria-fin" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 13px;">
                             </div>
                             <div>
                                 <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Departamento:</label>
-                                <select id="filtro-auditoria-depto" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; min-width: 160px;">
-                                    <option value="TODOS">Todos</option>
+                                <select id="filtro-auditoria-depto" onchange="ejecutarConsultaAuditoria()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; min-width: 150px; font-family: inherit; font-size: 13px;">
+                                    <option value="TODOS">Todos los Deptos</option>
                                     <option value="AUDIO">Audio</option>
                                     <option value="VIDEO">Video</option>
                                     <option value="ILUMINACION">Iluminación</option>
@@ -1227,9 +1256,19 @@
                                     <option value="VENTAS">Ventas</option>
                                 </select>
                             </div>
-                            <button onclick="cargarAuditoriaAsistencia()" style="background: var(--accent-color); color: white; border: none; padding: 9px 18px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                                Filtrar Bitácora
+                            <div style="flex: 1; min-width: 220px;">
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Empleado:</label>
+                                <select id="filtro-auditoria-emp" onchange="ejecutarConsultaAuditoria()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 13px;">
+                                    <option value="👥 TODOS">👥 TODOS LOS EMPLEADOS</option>
+                                </select>
+                            </div>
+                            <button onclick="ejecutarConsultaAuditoria()" style="background: var(--accent-color); color: white; border: none; padding: 9px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                                <i class="ph ph-magnifying-glass"></i> Consultar
                             </button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                            <span id="contador-auditoria-registros" style="font-size: 12.5px; color: #64748b; font-weight: 600;"></span>
+                            <input type="text" id="filtro-auditoria-tabla" oninput="filtrarTablaAuditoria(this.value)" placeholder="🔍 Filtrar en resultados..." style="padding: 7px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; width: 230px;">
                         </div>
                         <div class="tabla-container">
                             <table class="tabla-vpro">
@@ -1256,7 +1295,7 @@
 
             <!-- 📦 CAJA 3: VISTA ÓRDENES DE PRODUCCIÓN -->
             <div id="vista-ops" class="vista-modulo">
-                <div style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+                <div style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                     
                     <!-- AYUDA CONTEXTUAL (EXPANDIBLE) -->
                     <details class="op-accordion" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 24px; padding: 14px 18px;">
@@ -1330,7 +1369,7 @@
             </div>
 
             <!-- 📦 CAJA 4: EQUIPOS CON DAÑO -->
-            <div id="vista-danados" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-danados" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 
                 <!-- Encabezado -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
@@ -1636,7 +1675,7 @@
             </div>
 
             <!-- 📦 CAJA 5: REPORTE DE GASTOS -->
-            <div id="vista-gastos" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-gastos" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 
                 <!-- Encabezado -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
@@ -1869,52 +1908,9 @@
 
             </div>
 
-            <!-- 📦 CAJA 6: AUDITORÍA ASISTENCIA -->
-            <div id="vista-auditoria" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
-                <h2 style="margin-top: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                    <i class="ph ph-clock" style="color: #6366f1;"></i> Auditoría Gerencial de Asistencia
-                </h2>
-                <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                    <div>
-                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Desde:</label>
-                        <input type="date" id="filtro-auditoria-inicio" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Hasta:</label>
-                        <input type="date" id="filtro-auditoria-fin" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                    </div>
-                    <div style="flex: 1; min-width: 200px;">
-                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Empleado:</label>
-                        <select id="filtro-auditoria-emp" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                            <option value="👥 TODOS">👥 TODOS</option>
-                        </select>
-                    </div>
-                    <button onclick="ejecutarConsultaAuditoria()" style="background: var(--accent-color); color: white; border: none; padding: 9px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-magnifying-glass"></i> Consultar
-                    </button>
-                </div>
-                <div class="tabla-container" style="background: white;">
-                    <table class="tabla-vpro">
-                        <thead>
-                            <tr>
-                                <th>Empleado</th>
-                                <th>Fecha</th>
-                                <th>Entrada Mat.</th>
-                                <th>Salida Mat.</th>
-                                <th>Entrada Vesp.</th>
-                                <th>Salida Vesp.</th>
-                                <th>Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-auditoria-body">
-                            <tr><td colspan="7" style="text-align: center; padding: 20px;">Selecciona un rango y consulta.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
             <!-- 📦 CAJA 7: CATÁLOGOS ABC -->
-            <div id="vista-catalogos" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-catalogos" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 
                 <!-- 🗂️ BARRA SUPERIOR DE NAVEGACIÓN (VISIBLE SÓLO DENTRO DE CADA SUB-CATÁLOGO) -->
                 <div id="subcat-topbar" class="subcat-nav" style="display: none; justify-content: space-between; align-items: center;">
@@ -2585,12 +2581,53 @@
                     </div>
 
                     <!-- Editor de Activos -->
-                    <div class="op-section-card" style="margin-top: 16px;">
-                        <h3 class="op-section-title"><i class="ph ph-magnifying-glass"></i> Editor de Activos</h3>
-                        <label class="op-form-label">Seleccione un equipo para editarlo, o elija 'Nuevo':</label>
-                        <select id="selector-inv-editor" class="form-input" style="font-weight: 600; margin-bottom: 20px;" onchange="alCambiarSelectorInventario()">
-                            <option value="nuevo">➕ Registrar Nuevo Hardware</option>
-                        </select>
+                    <div class="op-section-card" id="editor-activos-seccion" style="margin-top: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                            <h3 class="op-section-title" style="margin: 0;"><i class="ph ph-wrench"></i> Editor de Activos y Equipamiento</h3>
+                            <button type="button" class="btn-cat-new" onclick="limpiarFormInventario()" style="margin: 0; padding: 7px 14px; font-size: 12.5px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="ph ph-plus-circle"></i> ➕ Registrar Nuevo Hardware
+                            </button>
+                        </div>
+                        
+                        <!-- Barra de Búsqueda y Selección Inteligente -->
+                        <div style="margin-bottom: 20px;">
+                            <label class="op-form-label" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                <span>Buscar equipo por Descripción o Código ID:</span>
+                                <span style="font-weight: 500; font-size: 11.5px; color: #64748b; text-transform: none;">Teclea para autocompletar entre los 854+ equipos</span>
+                            </label>
+
+                            <div id="contenedor-busqueda-inv-editor" style="position: relative; width: 100%;">
+                                <div style="display: flex; align-items: center; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                                    <i class="ph ph-magnifying-glass" style="color: #64748b; font-size: 18px; margin-right: 8px; flex-shrink: 0;"></i>
+                                    <input type="text" id="input-buscar-inv-editor"
+                                        placeholder="🔍 Teclea para buscar: ej. Sony FX3, CAM-01, Bocina, Tripie, Shure, S3099..."
+                                        autocomplete="off"
+                                        oninput="filtrarInventarioEditorSugerencias(this.value)"
+                                        onfocus="activarInventarioEditorSugerencias()"
+                                        onkeydown="manejarKeydownInventarioEditor(event)"
+                                        style="width: 100%; border: none; outline: none; padding: 11px 0; font-size: 13.5px; background: transparent; color: #0f172a; font-family: inherit;">
+                                    <button type="button" id="btn-limpiar-busqueda-inv" onclick="limpiarFormInventario()"
+                                        title="Limpiar búsqueda / Nuevo Hardware"
+                                        style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; font-size: 18px; line-height: 1;">
+                                        &times;
+                                    </button>
+                                </div>
+
+                                <!-- Desplegable de sugerencias autocompletadas -->
+                                <div id="sugerencias-inv-editor-dropdown"
+                                    style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 320px; overflow-y: auto; z-index: 1050; box-shadow: 0 12px 28px rgba(0,0,0,0.12);">
+                                </div>
+                            </div>
+
+                            <!-- Selector tradicional oculto para mantener compatibilidad total -->
+                            <select id="selector-inv-editor" style="display: none;" onchange="alCambiarSelectorInventario()">
+                                <option value="nuevo">➕ Registrar Nuevo Hardware</option>
+                            </select>
+
+                            <!-- Banner de Estado de Edición -->
+                            <div id="banner-editando-inv" style="display: none; margin-top: 10px; padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; justify-content: space-between; align-items: center;">
+                            </div>
+                        </div>
 
                         <!-- Formulario 3 Columnas -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
@@ -2939,12 +2976,12 @@
             </div>
 
             <!-- 📦 CAJAS SECUNDARIAS / VISTAS DE MÓDULOS -->
-            <div id="vista-cotizaciones" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-cotizaciones" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 <h2 style="margin-top: 0; color: #0f172a;"><i class="ph ph-file-text"></i> Módulo de Cotizaciones</h2>
                 <div class="info-banner"><i class="ph ph-info"></i> Motor de presupuestos y cotizaciones listo para vincular con OPs.</div>
             </div>
 
-            <div id="vista-checkout" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-checkout" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 
                 <!-- Encabezado -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
@@ -3215,7 +3252,7 @@
 
             </div>
 
-            <div id="vista-incidencias" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-incidencias" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 
                 <!-- Encabezado -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
@@ -3387,7 +3424,7 @@
             </div>
 
             <!-- 📊 CAJA 8: ANALÍTICA Y KPIS -->
-            <div id="vista-analitica" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-analitica" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 
                 <!-- Encabezado y Filtro Global de Fechas -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; flex-wrap: wrap; gap: 16px;">
@@ -3546,7 +3583,7 @@
             </div>
 
             <!-- 👥 CAJA 9: RECURSOS HUMANOS -->
-            <div id="vista-rh" class="vista-modulo" style="background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); padding: 32px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-rh" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 
                 <!-- Encabezado -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
@@ -3564,15 +3601,52 @@
                 <!-- Banner de Alertas Globales de RRHH -->
                 <div id="banner-rh-alertas" style="display: none; margin-bottom: 24px;"></div>
 
-                <!-- Selector de Colaborador -->
+                <!-- Selector de Colaborador con Búsqueda Inteligente -->
                 <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-                    <label style="display: block; font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
-                        👤 SELECCIONA EL EMPLEADO A AUDITAR / EDITAR EXPEDIENTE:
-                    </label>
-                    <div style="display: flex; gap: 12px;">
-                        <select id="sel-rh-empleado" onchange="seleccionarEmpleadoRH(this.value)" style="flex: 1; max-width: 600px; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13.5px; font-weight: 600;">
-                            <option value="">--- Selecciona un Colaborador ---</option>
-                        </select>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px; margin: 0;">
+                            <i class="ph ph-user-focus" style="color: var(--accent-color); font-size: 18px;"></i>
+                            <span>SELECCIONA O BUSCA EL EMPLEADO A AUDITAR / EDITAR EXPEDIENTE:</span>
+                        </label>
+                        <span style="font-size: 12px; color: #64748b;">Teclea nombre, ID, departamento o puesto para filtrar rápidamente</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; position: relative; align-items: center;">
+                        <!-- Input de Búsqueda Inteligente en Tiempo Real -->
+                        <div style="position: relative;" id="contenedor-busqueda-rh-empleado">
+                            <div style="display: flex; align-items: center; background: white; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; transition: border-color 0.2s, box-shadow 0.2s;">
+                                <i class="ph ph-magnifying-glass" style="color: #64748b; font-size: 18px; margin-right: 8px;"></i>
+                                <input type="text" id="input-buscar-rh-empleado"
+                                    placeholder="🔍 Teclea para buscar: ej. Cuauhtemoc, 201, Sistemas, Ana..."
+                                    autocomplete="off"
+                                    oninput="filtrarEmpleadosRHSugerencias(this.value)"
+                                    onfocus="activarEmpleadosRHSugerencias()"
+                                    onkeydown="manejarKeydownEmpleadosRH(event)"
+                                    style="width: 100%; border: none; outline: none; padding: 11px 0; font-size: 13.5px; background: transparent; color: #0f172a; font-family: inherit;">
+                                <button type="button" id="btn-limpiar-busqueda-rh" onclick="limpiarBusquedaRHEmpleado()"
+                                    title="Limpiar búsqueda"
+                                    style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; font-size: 16px;">
+                                    &times;
+                                </button>
+                            </div>
+                            <!-- Desplegable con resultados coincidentes -->
+                            <div id="sugerencias-rh-empleados-dropdown"
+                                style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 280px; overflow-y: auto; z-index: 1000; box-shadow: 0 12px 24px rgba(0,0,0,0.12);">
+                            </div>
+                        </div>
+
+                        <!-- Selector Tradicional Oculto (compatibilidad) y Botón de Expediente Digital Integral -->
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="sel-rh-empleado" onchange="seleccionarEmpleadoRHOpcion(this.value)" style="display: none;">
+                                <option value="">--- O selecciona de la lista completa ---</option>
+                            </select>
+                            <button type="button" id="btn-ver-expediente-completo-rh" onclick="abrirExpedienteCompletoRH()"
+                                style="width: 100%; height: 44px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25); transition: all 0.2s;"
+                                title="Ver todos los documentos, contratos, vacaciones, permisos y constancias integradas de este empleado">
+                                <i class="ph ph-folder-notch-open" style="font-size: 20px;"></i>
+                                <span>📂 Ver Expediente Digital Integral (Todo lo que tenga integrado)</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -3764,7 +3838,94 @@
                     <!-- SUB-PESTAÑA 2: CONTRATOS -->
                     <div id="subvista-rh-contratos" style="display: none;">
                         <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
-                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">📄 Historial de Contratos Laborales</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                                <div>
+                                    <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                        <i class="ph ph-file-text" style="color: #0284c7; font-size: 22px;"></i>
+                                        <span>Historial de Contratos Laborales y Condiciones de Trabajo</span>
+                                    </h4>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #64748b;">
+                                        Control de contratos individuales de trabajo, tipos de jornada, salarios y digitalización de documentos firmados (PDF, JPG, PNG).
+                                    </p>
+                                </div>
+                                <button type="button" onclick="toggleFormularioContratoRH()" style="background: #0284c7; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <i class="ph ph-file-plus" style="font-size: 18px;"></i>
+                                    <span>➕ Registrar Nuevo Contrato Laboral</span>
+                                </button>
+                            </div>
+
+                            <!-- Formulario Desplegable: Registrar Contrato -->
+                            <div id="form-registrar-contrato-rh" style="display: none; background: #f8fafc; border: 1.5px dashed #94a3b8; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h5 style="margin: 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="ph ph-scroll" style="color: #0284c7;"></i>
+                                        <span>Alta y Registro de Nuevo Contrato Laboral</span>
+                                    </h5>
+                                    <button type="button" onclick="toggleFormularioContratoRH()" style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Tipo de Contrato *:</label>
+                                        <select id="rh-ctr-tipo" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                            <option value="INDETERMINADO / PLANTA">INDETERMINADO / TIEMPO INDEFINIDO (PLANTA)</option>
+                                            <option value="DETERMINADO / EVENTUAL">DETERMINADO / TIEMPO FIJO (EVENTUAL)</option>
+                                            <option value="PERIODO DE PRUEBA / CAPACITACIÓN">PERIODO DE PRUEBA / CAPACITACIÓN INICIAL (30-90 DÍAS)</option>
+                                            <option value="HONORARIOS PROFESIONALES">HONORARIOS PROFESIONALES (ASIMILADOS / SERVICIOS)</option>
+                                            <option value="POR PROYECTO / OBRA DETERMINADA">POR PROYECTO O PRODUCCIÓN DETERMINADA</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Fecha Inicio Contrato *:</label>
+                                        <input type="date" id="rh-ctr-inicio" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Fecha Fin (dejar vacío si es Indefinido):</label>
+                                        <input type="date" id="rh-ctr-fin" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Puesto / Cargo Contratado *:</label>
+                                        <input type="text" id="rh-ctr-puesto" placeholder="Ej. Operador de Audio / Video" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Departamento:</label>
+                                        <input type="text" id="rh-ctr-depto" placeholder="Ej. Operaciones, Ventas, Sistemas" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Salario Mensual Bruto ($) *:</label>
+                                        <input type="number" id="rh-ctr-salario" step="500" placeholder="0.00" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Jornada / Horario:</label>
+                                        <input type="text" id="rh-ctr-jornada" placeholder="Ej. L-V 09:00 a 18:00 y Sáb 09:00 a 14:00" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 2fr; gap: 16px; margin-bottom: 16px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Adjuntar Contrato Firmado (PDF, PNG, JPG) *:</label>
+                                        <input type="file" id="rh-ctr-archivo" accept=".pdf,.png,.jpg,.jpeg" style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Observaciones / Cláusulas Especiales:</label>
+                                        <input type="text" id="rh-ctr-observaciones" placeholder="Ej. Incluye cláusula de confidencialidad y responsiva de equipo" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <button type="button" onclick="toggleFormularioContratoRH()" style="background: #e2e8f0; color: #475569; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                                        Cancelar
+                                    </button>
+                                    <button type="button" id="btn-guardar-ctr-rh" onclick="subirNuevoContratoRH()" style="background: #0284c7; color: white; border: none; padding: 9px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                                        <i class="ph ph-floppy-disk"></i>
+                                        <span>Guardar Contrato en Expediente</span>
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="tabla-container" style="max-height: 340px; margin-bottom: 24px;">
                                 <table class="tabla-vpro">
                                     <thead>
@@ -3776,10 +3937,11 @@
                                             <th>Puesto</th>
                                             <th>Salario</th>
                                             <th>Estatus</th>
+                                            <th style="text-align: center;">Documento Digital</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tabla-rh-contratos-body">
-                                        <tr><td colspan="7" style="text-align: center; padding: 20px;">Sin contratos registrados.</td></tr>
+                                        <tr><td colspan="8" style="text-align: center; padding: 20px;">Sin contratos registrados.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -3789,14 +3951,40 @@
                     <!-- SUB-PESTAÑA 3: VACACIONES -->
                     <div id="subvista-rh-vacaciones" style="display: none;">
                         <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
-                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">🌴 Balance de Vacaciones según Ley Federal del Trabajo (LFT)</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                                <div>
+                                    <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                        <i class="ph ph-sun-horizon" style="color: #ea580c; font-size: 22px;"></i>
+                                        <span>Balance de Vacaciones según Ley Federal del Trabajo (LFT)</span>
+                                    </h4>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #64748b;">
+                                        Control dinámico por "Bolsa de Días" conforme a la Reforma de Vacaciones Dignas (Artículos 76, 78 y 81 LFT).
+                                    </p>
+                                </div>
+                                <button type="button" onclick="toggleFormularioVacacionesRH()" style="background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <i class="ph ph-calendar-plus" style="font-size: 18px;"></i>
+                                    <span>Registrar Vacaciones (Periodo o Días Sueltos)</span>
+                                </button>
+                            </div>
+
+                            <!-- Respaldo y Fundamento Legal LFT -->
+                            <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 20px;">
+                                <b style="color: #92400e; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                                    <i class="ph ph-scales"></i> Fundamento Legal: Vacaciones Fraccionadas o Días Sueltos (Art. 78 LFT Reforma Vacaciones Dignas)
+                                </b>
+                                <p style="margin: 4px 0 0 0; font-size: 12px; color: #78350f; line-height: 1.5;">
+                                    La ley establece que el trabajador tiene derecho a 12 días continuos, pero <b>a potestad y solicitud de la persona trabajadora, dicho periodo puede ser distribuido y fraccionado en la forma y tiempo que así lo requiera</b> (días sueltos, fines de semana largos o periodos breves). El sistema descuenta cada día gozado de la bolsa acumulada, manteniendo el historial 100% auditable ante la STPS.
+                                </p>
+                            </div>
+
+                            <!-- Tarjetas de Saldo -->
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
                                 <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: 10px;">
                                     <div style="font-size: 12px; font-weight: 700; color: #1e40af;">DÍAS CORRESPONDIENTES</div>
                                     <div id="rh-vac-correspondientes" style="font-size: 28px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">0</div>
                                 </div>
                                 <div style="background: #fef3c7; border: 1px solid #fde68a; padding: 16px; border-radius: 10px;">
-                                    <div style="font-size: 12px; font-weight: 700; color: #92400e;">DÍAS TOMADOS</div>
+                                    <div style="font-size: 12px; font-weight: 700; color: #92400e;">DÍAS TOMADOS (ACUMULADOS)</div>
                                     <div id="rh-vac-tomados" style="font-size: 28px; font-weight: 800; color: #b45309; margin-top: 4px;">0</div>
                                 </div>
                                 <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 16px; border-radius: 10px;">
@@ -3804,19 +3992,75 @@
                                     <div id="rh-vac-pendientes" style="font-size: 28px; font-weight: 800; color: #047857; margin-top: 4px;">0</div>
                                 </div>
                             </div>
+
+                            <!-- Formulario Desplegable: Registrar Vacaciones -->
+                            <div id="form-registrar-vacaciones-rh" style="display: none; background: #f8fafc; border: 1.5px dashed #94a3b8; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h5 style="margin: 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="ph ph-calendar-check" style="color: #16a34a;"></i>
+                                        <span>Registrar Goce de Vacaciones (Fraccionadas o Continuas)</span>
+                                    </h5>
+                                    <button type="button" onclick="toggleFormularioVacacionesRH()" style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Modalidad de Disfrute (LFT Art. 78)*:</label>
+                                        <select id="rh-vac-tipo" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                            <option value="DÍAS SUELTOS / FRACCIONADOS">🗓️ Días Sueltos / Fraccionados (a solicitud del trabajador)</option>
+                                            <option value="PERIODO CONTINUO">🌴 Periodo Continuo (Semana o más)</option>
+                                            <option value="PUENTE / FIN DE SEMANA LARGO">🌉 Puente / Fin de Semana Largo</option>
+                                            <option value="OTRO ACUERDO LABORAL">📝 Otro Acuerdo de Disfrute</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Desde (Fecha Inicio)*:</label>
+                                        <input type="date" id="rh-vac-inicio" onchange="alCambiarFechasVacacionesRH()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Hasta (Fecha Fin)*:</label>
+                                        <input type="date" id="rh-vac-fin" onchange="alCambiarFechasVacacionesRH()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 16px; margin-bottom: 16px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Días a Descontar de Saldo*:</label>
+                                        <input type="number" id="rh-vac-dias" min="1" max="30" value="1" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 700; background: white; text-align: center;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Observaciones / Motivo (Para constancia LFT):</label>
+                                        <input type="text" id="rh-vac-motivo" placeholder="Ej. Solicitud expresa del trabajador por motivo personal / descanso post-producción..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <button type="button" onclick="toggleFormularioVacacionesRH()" style="background: #e2e8f0; color: #475569; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                                        Cancelar
+                                    </button>
+                                    <button type="button" id="btn-guardar-vac-rh" onclick="guardarSalidaVacacionesRH()" style="background: #16a34a; color: white; border: none; padding: 9px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                                        <i class="ph ph-floppy-disk"></i>
+                                        <span>Guardar y Descontar de Saldo</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tabla de Periodos / Días Gozados -->
                             <div class="tabla-container" style="max-height: 340px;">
                                 <table class="tabla-vpro">
                                     <thead>
                                         <tr>
-                                            <th>Periodo</th>
-                                            <th>Días</th>
+                                            <th>Periodo / Motivo</th>
+                                            <th>Modalidad LFT</th>
+                                            <th>Días Gozados</th>
                                             <th>Desde</th>
                                             <th>Hasta</th>
                                             <th>Estatus</th>
+                                            <th style="text-align: center;">Papeleta / Comprobante</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tabla-rh-vacaciones-body">
-                                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Sin periodos registrados.</td></tr>
+                                        <tr><td colspan="7" style="text-align: center; padding: 20px;">Sin periodos registrados.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -3826,7 +4070,176 @@
                     <!-- SUB-PESTAÑA 4: PERMISOS & INCAPACIDADES -->
                     <div id="subvista-rh-permisos" style="display: none;">
                         <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
-                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">⏱️ Historial de Permisos e Incapacidades Médicas</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                                <div>
+                                    <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                        <i class="ph ph-clock-user" style="color: #6366f1; font-size: 22px;"></i>
+                                        <span>Permisos Laborales e Incapacidades Médicas Oficiales</span>
+                                    </h4>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #64748b;">
+                                        Justificación oficial de ausencias, permisos personales, incapacidades IMSS y sincronización automática con el Reloj Checador y Kiosco.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button type="button" onclick="toggleFormularioPermisoRH()" style="background: #6366f1; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                        <i class="ph ph-calendar-plus" style="font-size: 17px;"></i>
+                                        <span>➕ Registrar Permiso Laboral</span>
+                                    </button>
+                                    <button type="button" onclick="toggleFormularioIncapacidadRH()" style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                        <i class="ph ph-first-aid-kit" style="font-size: 17px;"></i>
+                                        <span>➕ Registrar Incapacidad (IMSS)</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Formulario Desplegable: Registrar Permiso Laboral -->
+                            <div id="form-registrar-permiso-rh" style="display: none; background: #f8fafc; border: 1.5px dashed #818cf8; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h5 style="margin: 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="ph ph-clock-afternoon" style="color: #6366f1;"></i>
+                                        <span>Solicitud y Autorización de Permiso Laboral</span>
+                                    </h5>
+                                    <button type="button" onclick="toggleFormularioPermisoRH()" style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Tipo de Permiso *:</label>
+                                        <select id="rh-per-tipo" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                            <option value="ASUNTOS PERSONALES">ASUNTOS PARTICULARES / PERSONALES</option>
+                                            <option value="ASUNTOS FAMILIARES">ASUNTOS FAMILIARES URGENTES</option>
+                                            <option value="DUELO / FALLECIMIENTO">DUELO / FALLECIMIENTO DE FAMILIAR</option>
+                                            <option value="PATERNIDAD / MATERNIDAD">PATERNIDAD (5 DÍAS LFT) / MATERNIDAD</option>
+                                            <option value="CITA MÉDICA (IMSS/PARTICULAR)">CONSULTA O CITA MÉDICA (IMSS / PARTICULAR)</option>
+                                            <option value="TRÁMITE OFICIAL / GUBERNAMENTAL">TRÁMITE OFICIAL (INE, SAT, PASAPORTE)</option>
+                                            <option value="MATRIMONIO">NUPCIAS / MATRIMONIO</option>
+                                            <option value="OTRO PERMISO LABORAL">OTRO ACUERDO LABORAL</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Desde (Fecha Inicio) *:</label>
+                                        <input type="date" id="rh-per-inicio" onchange="alCambiarFechasPermisoRH()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Hasta (Fecha Fin) *:</label>
+                                        <input type="date" id="rh-per-fin" onchange="alCambiarFechasPermisoRH()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Días Solicitados:</label>
+                                        <input type="number" id="rh-per-dias" min="1" value="1" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 700; background: white; text-align: center;">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 14px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">¿Con Goce de Sueldo? *:</label>
+                                        <select id="rh-per-goce" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                            <option value="true">🟢 SÍ (Con Goce de Sueldo)</option>
+                                            <option value="false">⚪ NO (Sin Goce de Sueldo)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Estatus de Autorización:</label>
+                                        <select id="rh-per-estatus" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white; font-weight: 600;">
+                                            <option value="APROBADO">APROBADO (Justifica en Kiosco)</option>
+                                            <option value="PENDIENTE">PENDIENTE DE REVISIÓN</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Motivo / Justificación *:</label>
+                                        <input type="text" id="rh-per-motivo" placeholder="Describe brevemente la justificación..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 16px; align-items: center;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Subir Justificante / Comprobante (PDF, PNG, JPG) Opcional:</label>
+                                        <input type="file" id="rh-per-archivo" accept=".pdf,.png,.jpg,.jpeg" style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: white;">
+                                    </div>
+                                    <div style="padding-top: 18px;">
+                                        <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #334155; cursor: pointer;">
+                                            <input type="checkbox" id="rh-per-impacta" checked style="width: 16px; height: 16px; accent-color: #6366f1;">
+                                            <span>Sincronizar con Reloj Checador</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <button type="button" onclick="toggleFormularioPermisoRH()" style="background: #e2e8f0; color: #475569; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                                        Cancelar
+                                    </button>
+                                    <button type="button" id="btn-guardar-per-rh" onclick="subirNuevoPermisoRH()" style="background: #6366f1; color: white; border: none; padding: 9px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                                        <i class="ph ph-floppy-disk"></i>
+                                        <span>Guardar Permiso y Sincronizar</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Formulario Desplegable: Registrar Incapacidad IMSS -->
+                            <div id="form-registrar-incapacidad-rh" style="display: none; background: #fff5f5; border: 1.5px dashed #f87171; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h5 style="margin: 0; color: #991b1b; font-size: 14.5px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="ph ph-hospital" style="color: #ef4444;"></i>
+                                        <span>Registro de Incapacidad Médica Oficial IMSS</span>
+                                    </h5>
+                                    <button type="button" onclick="toggleFormularioIncapacidadRH()" style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1.5fr 1.5fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Tipo de Incapacidad *:</label>
+                                        <select id="rh-inc-tipo" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                            <option value="ENFERMEDAD GENERAL">ENFERMEDAD GENERAL</option>
+                                            <option value="RIESGO DE TRABAJO">RIESGO DE TRABAJO (ACCIDENTE LABORAL)</option>
+                                            <option value="ACCIDENTE EN TRAYECTO">ACCIDENTE EN TRAYECTO (CASA-TRABAJO)</option>
+                                            <option value="MATERNIDAD (PRE/POST-NATAL)">MATERNIDAD (PRE Y POST-NATAL)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Número / Folio Boleta IMSS:</label>
+                                        <input type="text" id="rh-inc-imss-folio" placeholder="Ej. AU1234567" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Fecha Inicio *:</label>
+                                        <input type="date" id="rh-inc-inicio" onchange="alCambiarFechasIncapacidadRH()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Fecha Fin *:</label>
+                                        <input type="date" id="rh-inc-fin" onchange="alCambiarFechasIncapacidadRH()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Días Amparados:</label>
+                                        <input type="number" id="rh-inc-dias" min="1" value="1" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 700; background: white; text-align: center;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Diagnóstico Médico / Motivo:</label>
+                                        <input type="text" id="rh-inc-diagnostico" placeholder="Ej. Lumbalgia aguda, esguince tobillo..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Médico Tratante / UMF:</label>
+                                        <input type="text" id="rh-inc-medico" placeholder="Ej. Dr. Martínez - UMF 68" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Adjuntar Boleta o Certificado de Incapacidad IMSS (PDF, PNG, JPG) *:</label>
+                                    <input type="file" id="rh-inc-archivo" accept=".pdf,.png,.jpg,.jpeg" style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: white;">
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <button type="button" onclick="toggleFormularioIncapacidadRH()" style="background: #e2e8f0; color: #475569; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                                        Cancelar
+                                    </button>
+                                    <button type="button" id="btn-guardar-inc-rh" onclick="subirNuevaIncapacidadRH()" style="background: #ef4444; color: white; border: none; padding: 9px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                                        <i class="ph ph-floppy-disk"></i>
+                                        <span>Guardar Incapacidad IMSS</span>
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="tabla-container" style="max-height: 340px;">
                                 <table class="tabla-vpro">
                                     <thead>
@@ -3838,10 +4251,11 @@
                                             <th>Días</th>
                                             <th>Goce Sueldo</th>
                                             <th>Estatus</th>
+                                            <th style="text-align: center;">Comprobante</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tabla-rh-permisos-body">
-                                        <tr><td colspan="7" style="text-align: center; padding: 20px;">Sin permisos o incapacidades registradas.</td></tr>
+                                        <tr><td colspan="8" style="text-align: center; padding: 20px;">Sin permisos o incapacidades registradas.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -3851,7 +4265,203 @@
                     <!-- SUB-PESTAÑA 5: CAPACITACIÓN & DESEMPEÑO -->
                     <div id="subvista-rh-capacitacion" style="display: none;">
                         <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
-                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">🎓 Capacitaciones y Evaluaciones de Desempeño</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                                <div>
+                                    <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                        <i class="ph ph-graduation-cap" style="color: #8b5cf6; font-size: 22px;"></i>
+                                        <span>Capacitaciones Técnicas, Certificaciones DC-3 y Evaluaciones de Desempeño</span>
+                                    </h4>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #64748b;">
+                                        Registro de competencias, cursos acreditados ante la STPS y valoraciones periódicas de desempeño con soporte documental digital.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button type="button" onclick="toggleFormularioCapacitacionRH()" style="background: #8b5cf6; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                        <i class="ph ph-certificate" style="font-size: 17px;"></i>
+                                        <span>➕ Registrar Curso / DC-3</span>
+                                    </button>
+                                    <button type="button" onclick="toggleFormularioEvaluacionRH()" style="background: #0f172a; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 12.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                        <i class="ph ph-chart-line-up" style="font-size: 17px;"></i>
+                                        <span>➕ Registrar Evaluación de Desempeño</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Formulario Desplegable: Registrar Capacitación -->
+                            <div id="form-registrar-capacitacion-rh" style="display: none; background: #f5f3ff; border: 1.5px dashed #a78bfa; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h5 style="margin: 0; color: #5b21b6; font-size: 14.5px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="ph ph-certificate" style="color: #8b5cf6;"></i>
+                                        <span>Registro de Curso, Taller o Certificación DC-3</span>
+                                    </h5>
+                                    <button type="button" onclick="toggleFormularioCapacitacionRH()" style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Nombre del Curso / Certificación *:</label>
+                                        <input type="text" id="rh-cap-nombre" placeholder="Ej. Operación de Mezcladoras Digitales Dante / Seguridad y Alturas DC-3" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Tipo de Formación *:</label>
+                                        <select id="rh-cap-tipo" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                            <option value="DC-3 STPS / NORMATIVA">CERTIFICACIÓN DC-3 (STPS / SEGURIDAD LABORAL)</option>
+                                            <option value="TÉCNICA ESPECIALIZADA">CAPACITACIÓN TÉCNICA ESPECIALIZADA (AUDIO/VIDEO/ILUM)</option>
+                                            <option value="SISTEMAS Y SOFTWARE">SISTEMAS, REDES Y SOFTWARE DE PRODUCCIÓN</option>
+                                            <option value="PRIMEROS AUXILIOS / PC">PROTECCIÓN CIVIL Y PRIMEROS AUXILIOS</option>
+                                            <option value="LIDERAZGO Y GESTIÓN">LIDERAZGO Y TRABAJO EN EQUIPO</option>
+                                            <option value="OTRA CAPACITACIÓN">OTRA CAPACITACIÓN INTERNA / EXTERNA</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Horas Duración:</label>
+                                        <input type="number" id="rh-cap-horas" min="1" step="0.5" value="8" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 700; background: white; text-align: center;">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Institución / Instructor / Empresa Capacitadora:</label>
+                                        <input type="text" id="rh-cap-institucion" placeholder="Ej. Yamaha Audio Academy / Cruz Roja / VPRO" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Fecha Inicio *:</label>
+                                        <input type="date" id="rh-cap-inicio" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Fecha Fin:</label>
+                                        <input type="date" id="rh-cap-fin" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Resultado / Calificación:</label>
+                                        <select id="rh-cap-resultado" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white; font-weight: 600;">
+                                            <option value="APROBADO">APROBADO</option>
+                                            <option value="EXCELENTE">EXCELENTE</option>
+                                            <option value="CON MENCIÓN">CON MENCIÓN HONORÍFICA</option>
+                                            <option value="CONSTANCIA ASISTENCIA">ASISTENCIA COMPLETA</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Adjuntar Constancia DC-3 / Diploma (PDF, PNG, JPG) *:</label>
+                                        <input type="file" id="rh-cap-archivo" accept=".pdf,.png,.jpg,.jpeg" style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Costo Inversión ($):</label>
+                                        <input type="number" id="rh-cap-costo" step="100" placeholder="0.00" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">¿Pagado por Empresa?:</label>
+                                        <select id="rh-cap-pagado" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                            <option value="true">🟢 SÍ (100% VPRO)</option>
+                                            <option value="false">⚪ NO (Colaborador / Beca)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <button type="button" onclick="toggleFormularioCapacitacionRH()" style="background: #e2e8f0; color: #475569; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                                        Cancelar
+                                    </button>
+                                    <button type="button" id="btn-guardar-cap-rh" onclick="subirNuevaCapacitacionRH()" style="background: #8b5cf6; color: white; border: none; padding: 9px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                                        <i class="ph ph-floppy-disk"></i>
+                                        <span>Guardar Capacitación en Expediente</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Formulario Desplegable: Registrar Evaluación de Desempeño -->
+                            <div id="form-registrar-evaluacion-rh" style="display: none; background: #f8fafc; border: 1.5px dashed #0f172a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h5 style="margin: 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="ph ph-chart-polar" style="color: #0f172a;"></i>
+                                        <span>Cédula de Evaluación de Desempeño Laboral (Criterios 1 a 10)</span>
+                                    </h5>
+                                    <button type="button" onclick="toggleFormularioEvaluacionRH()" style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Periodo Evaluado *:</label>
+                                        <input type="text" id="rh-eval-periodo" placeholder="Ej. 2026 - Trimestre 1 / Anual 2025" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Nombre del Evaluador *:</label>
+                                        <input type="text" id="rh-eval-evaluador" placeholder="Ej. Oscar Cuauhtemoc Rivera" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Puesto del Evaluador:</label>
+                                        <input type="text" id="rh-eval-puesto" placeholder="Ej. Director de Operaciones" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <!-- Calificación de 7 Criterios -->
+                                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                                    <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>CALIFICACIÓN POR FACTORES (Escala de 1 a 10):</span>
+                                        <span style="font-size: 13px; color: #166534; font-weight: 800;">Promedio Estimado: <span id="rh-eval-promedio-calc">10.0</span> (<span id="rh-eval-nivel-calc">EXCELENTE</span>)</span>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+                                        <div>
+                                            <label style="display: block; font-size: 11px; color: #64748b;">Puntualidad:</label>
+                                            <input type="number" id="rh-eval-puntualidad" min="1" max="10" step="0.5" value="10" oninput="alCambiarCalificacionesEvaluacionRH()" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-size: 11px; color: #64748b;">Calidad Trabajo:</label>
+                                            <input type="number" id="rh-eval-calidad" min="1" max="10" step="0.5" value="10" oninput="alCambiarCalificacionesEvaluacionRH()" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-size: 11px; color: #64748b;">Trabajo Equipo:</label>
+                                            <input type="number" id="rh-eval-equipo" min="1" max="10" step="0.5" value="10" oninput="alCambiarCalificacionesEvaluacionRH()" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-size: 11px; color: #64748b;">Responsabilidad:</label>
+                                            <input type="number" id="rh-eval-responsabilidad" min="1" max="10" step="0.5" value="10" oninput="alCambiarCalificacionesEvaluacionRH()" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-size: 11px; color: #64748b;">Iniciativa:</label>
+                                            <input type="number" id="rh-eval-iniciativa" min="1" max="10" step="0.5" value="10" oninput="alCambiarCalificacionesEvaluacionRH()" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-size: 11px; color: #64748b;">Comunicación:</label>
+                                            <input type="number" id="rh-eval-comunicacion" min="1" max="10" step="0.5" value="10" oninput="alCambiarCalificacionesEvaluacionRH()" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-size: 11px; color: #64748b;">Cumplimiento:</label>
+                                            <input type="number" id="rh-eval-cumplimiento" min="1" max="10" step="0.5" value="10" oninput="alCambiarCalificacionesEvaluacionRH()" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700;">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Principales Fortalezas Observadas:</label>
+                                        <textarea id="rh-eval-fortalezas" rows="2" placeholder="Destacada resolución de problemas en set, compromiso con el equipo..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; background: white; font-family: inherit;"></textarea>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Áreas de Oportunidad / Plan de Mejora:</label>
+                                        <textarea id="rh-eval-mejora" rows="2" placeholder="Reforzar puntualidad en desmontajes nocturnos..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; background: white; font-family: inherit;"></textarea>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Adjuntar Formato de Evaluación Firmado (PDF, PNG, JPG) Opcional:</label>
+                                    <input type="file" id="rh-eval-archivo" accept=".pdf,.png,.jpg,.jpeg" style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: white;">
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <button type="button" onclick="toggleFormularioEvaluacionRH()" style="background: #e2e8f0; color: #475569; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                                        Cancelar
+                                    </button>
+                                    <button type="button" id="btn-guardar-eval-rh" onclick="subirNuevaEvaluacionRH()" style="background: #0f172a; color: white; border: none; padding: 9px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                                        <i class="ph ph-floppy-disk"></i>
+                                        <span>Guardar Evaluación de Desempeño</span>
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="tabla-container" style="max-height: 340px;">
                                 <table class="tabla-vpro">
                                     <thead>
@@ -3861,10 +4471,11 @@
                                             <th>Evaluador / Institución</th>
                                             <th>Calificación</th>
                                             <th>Nivel de Desempeño</th>
+                                            <th style="text-align: center;">Constancia / Documento</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tabla-rh-evaluaciones-body">
-                                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Sin evaluaciones registradas.</td></tr>
+                                        <tr><td colspan="6" style="text-align: center; padding: 20px;">Sin evaluaciones registradas.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -3874,20 +4485,122 @@
                     <!-- SUB-PESTAÑA 6: DOCUMENTOS DIGITALES -->
                     <div id="subvista-rh-documentos" style="display: none;">
                         <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
-                            <h4 style="margin: 0 0 16px 0; color: #0f172a;">📁 Expediente Digital de Documentos</h4>
-                            <div class="tabla-container" style="max-height: 340px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                                <div>
+                                    <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                        <i class="ph ph-folder-open" style="color: var(--accent-color); font-size: 22px;"></i>
+                                        <span>Expediente Digital de Documentos y Acreditaciones</span>
+                                    </h4>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #64748b;">
+                                        Repositorio central de documentación oficial (INE, RFC, CURP, Comprobante de Domicilio, Licencias, Contratos y Certificados) conforme a la LFT.
+                                    </p>
+                                </div>
+                                <button type="button" onclick="toggleFormularioSubirDocumentoRH()" style="background: var(--accent-color); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <i class="ph ph-cloud-arrow-up" style="font-size: 18px;"></i>
+                                    <span>Subir Documento al Expediente</span>
+                                </button>
+                            </div>
+
+                            <!-- Barra de Filtros Rápidos por Categoría -->
+                            <div style="display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;">
+                                <span style="font-size: 12px; font-weight: 700; color: #475569; margin-right: 4px;"><i class="ph ph-funnel"></i> Filtrar:</span>
+                                <button type="button" class="btn-rh-filtro active" id="btn-filtro-doc-todos" onclick="filtrarDocumentosRHCategoria('TODOS')" style="background: #0f172a; color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                    Todos los Documentos
+                                </button>
+                                <button type="button" class="btn-rh-filtro" id="btn-filtro-doc-identidad" onclick="filtrarDocumentosRHCategoria('IDENTIDAD')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                    🪪 Identidad & Fiscales (INE/RFC/CURP/NSS)
+                                </button>
+                                <button type="button" class="btn-rh-filtro" id="btn-filtro-doc-laboral" onclick="filtrarDocumentosRHCategoria('LABORAL')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                    📝 Laborales & Contratos
+                                </button>
+                                <button type="button" class="btn-rh-filtro" id="btn-filtro-doc-salud" onclick="filtrarDocumentosRHCategoria('SALUD')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                    🩺 Salud & Médicos
+                                </button>
+                                <button type="button" class="btn-rh-filtro" id="btn-filtro-doc-academico" onclick="filtrarDocumentosRHCategoria('ACADEMICO')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                    🎓 Académicos & Certificaciones
+                                </button>
+                            </div>
+
+                            <!-- Formulario Desplegable: Cargar Nuevo Documento -->
+                            <div id="form-subir-documento-rh" style="display: none; background: #f8fafc; border: 1.5px dashed #94a3b8; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <h5 style="margin: 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="ph ph-file-plus" style="color: var(--accent-color);"></i>
+                                        <span>Registrar y Vincular Documento Digital</span>
+                                    </h5>
+                                    <button type="button" onclick="toggleFormularioSubirDocumentoRH()" style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">&times;</button>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Tipo de Documento Oficial / Laboral *:</label>
+                                        <select id="rh-doc-tipo" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                            <option value="INE / Identificación Oficial">🪪 INE / Identificación Oficial con Fotografía</option>
+                                            <option value="Constancia de Situación Fiscal (RFC)">📑 Constancia de Situación Fiscal (RFC SAT)</option>
+                                            <option value="CURP Certificada">🆔 CURP Certificada</option>
+                                            <option value="Número de Seguridad Social (NSS / IMSS)">🏥 Número de Seguridad Social (NSS / IMSS)</option>
+                                            <option value="Comprobante de Domicilio">🏠 Comprobante de Domicilio (Agua/Luz/Teléfono)</option>
+                                            <option value="Licencia de Conducir">🚗 Licencia de Conducir (Vigente)</option>
+                                            <option value="Contrato Laboral Firmado">📝 Contrato Laboral Firmado y Ratificado</option>
+                                            <option value="Acta de Nacimiento">📜 Acta de Nacimiento</option>
+                                            <option value="Comprobante de Estudios">🎓 Comprobante de Estudios (Título / Cédula / Certificado)</option>
+                                            <option value="Carta de Recomendación">🤝 Carta de Recomendación Laboral / Personal</option>
+                                            <option value="Certificado Médico">🩺 Certificado Médico / Cartilla de Salud</option>
+                                            <option value="Carta de No Antecedentes Penales">⚖️ Carta de No Antecedentes Penales</option>
+                                            <option value="Otro Documento Laboral">📎 Otro Documento Laboral</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Selecciona Archivo (PDF, JPG, PNG) *:</label>
+                                        <input type="file" id="rh-doc-archivo" accept=".pdf,.png,.jpg,.jpeg" style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 16px; margin-bottom: 16px;">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Fecha de Emisión (Opcional):</label>
+                                        <input type="date" id="rh-doc-emision" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                                            Vencimiento / Caducidad:
+                                            <span style="color: #0284c7; font-weight: normal;">(ej. INE/Licencia)</span>
+                                        </label>
+                                        <input type="date" id="rh-doc-vencimiento" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Notas u Observaciones:</label>
+                                        <input type="text" id="rh-doc-notas" placeholder="Ej. Documento original cotejado, domicilio vigente..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                    <button type="button" onclick="toggleFormularioSubirDocumentoRH()" style="background: #e2e8f0; color: #475569; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                                        Cancelar
+                                    </button>
+                                    <button type="button" id="btn-guardar-doc-rh" onclick="subirDocumentoRH()" style="background: #16a34a; color: white; border: none; padding: 9px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                                        <i class="ph ph-floppy-disk"></i>
+                                        <span>Guardar en Expediente Digital</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tabla de Documentos -->
+                            <div class="tabla-container" style="max-height: 420px;">
                                 <table class="tabla-vpro">
                                     <thead>
                                         <tr>
                                             <th>Tipo Documento</th>
                                             <th>Nombre Archivo</th>
-                                            <th>Fecha Emisión</th>
-                                            <th>Vigencia</th>
-                                            <th>Verificado RH</th>
+                                            <th>Emisión / Subida</th>
+                                            <th>Vigencia / Caducidad</th>
+                                            <th>Estatus RH</th>
+                                            <th>Observaciones</th>
+                                            <th style="text-align: center;">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tabla-rh-documentos-body">
-                                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Sin documentos cargados.</td></tr>
+                                        <tr><td colspan="7" style="text-align: center; padding: 20px;">Sin documentos cargados.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -3941,6 +4654,7 @@
                         <li><a href="#manual-fase-5" style="color: #0284c7; text-decoration: none; font-weight: 600;">🧾 FASE 5: Rendición de Cuentas (Módulo Reporte de Gastos)</a></li>
                         <li><a href="#manual-fase-6" style="color: #0284c7; text-decoration: none; font-weight: 600;">🔎 FASE 6: Auditoría y Cierre Financiero (Dirección / Ana Lilia)</a></li>
                         <li><a href="#manual-fase-danos" style="color: #0284c7; text-decoration: none; font-weight: 600;">🛠️ FASE ESPECIAL: Trazabilidad de Equipos Dañados (Check-in vs Instalaciones)</a></li>
+                        <li><a href="#manual-fase-rh" style="color: #0284c7; text-decoration: none; font-weight: 600;">💼 MÓDULO DE RECURSOS HUMANOS: Expediente Laboral Digital y Documentación Oficial</a></li>
                         <li><a href="#manual-anexo-checador" style="color: #0284c7; text-decoration: none; font-weight: 600;">⏱️ ANEXO: Políticas de Asistencia y Reloj Checador (Marcaje 4 Puntos)</a></li>
                         <li><a href="#manual-anexo-protocolo" style="color: #0284c7; text-decoration: none; font-weight: 600;">🚨 ANEXO: Protocolo de Corrección de Errores y Excepciones</a></li>
                     </ol>
@@ -4017,6 +4731,72 @@
                     </ul>
                 </div>
 
+                <div id="manual-fase-rh" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
+                    <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">💼 MÓDULO DE RECURSOS HUMANOS: Expediente Laboral Digital y Documentación Oficial</h4>
+                    <p><b>Actor responsable:</b> Recursos Humanos / Dirección / Colaborador.<br><b>Objetivo:</b> Centralizar el historial laboral, resguardar la documentación legal obligatoria conforme a la Ley Federal del Trabajo (LFT) y normar las relaciones laborales en VPRO.</p>
+                    
+                    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 16px;">
+                        <h5 style="margin: 0 0 4px 0; color: #1e40af; font-size: 14px;">🗂️ Arquitectura del Expediente del Empleado (6 Pestañas)</h5>
+                        <p style="margin: 0; font-size: 12.5px; color: #1e3a8a; line-height: 1.6;">
+                            Cada colaborador cuenta con una ficha técnica que integra: <b>1) Datos Generales</b> (contacto, RFC, CURP, NSS, contacto de emergencia), <b>2) Contratos</b> (historial laboral, salarios, firmas), <b>3) Vacaciones</b> (cálculo automático por reforma de Vacaciones Dignas LFT), <b>4) Permisos e Incapacidades</b> (validación IMSS y justificaciones médicas), <b>5) Desempeño y Capacitación</b> (evaluaciones y constancias DC-3), y <b>6) Documentos Digitales</b>.
+                        </p>
+                    </div>
+
+                    <h5 style="color: #0f172a; margin: 16px 0 8px 0; font-size: 14px;">🔍 1. Búsqueda y Selección Rápida del Colaborador a Auditar:</h5>
+                    <p style="font-size: 13px; color: #334155; margin-bottom: 8px;">
+                        Para no tener que desplazarse por listas extensas de personal, el sistema incluye un <b>Buscador Inteligente en Tiempo Real</b>:
+                    </p>
+                    <ul style="padding-left: 20px; font-size: 13px; line-height: 1.7; color: #475569;">
+                        <li>Teclea en el campo de búsqueda cualquier palabra clave: <b>Nombre</b> (ej. <i>Cuauhtemoc</i>), <b>Número de ID</b> (ej. <i>201</i>), o <b>Departamento</b> (ej. <i>SISTEMAS</i>).</li>
+                        <li>Aparecerá un menú desplegable interactivo con los colaboradores coincidentes.</li>
+                        <li>Haz clic en el empleado deseado o navega con las flechas del teclado <code>⬇ / ⬆</code> y pulsa <code>Enter</code> para cargar su expediente inmediatamente.</li>
+                    </ul>
+
+                    <h5 style="color: #0f172a; margin: 16px 0 8px 0; font-size: 14px;">📁 2. Integración y Acceso a los Demás Documentos Laborales:</h5>
+                    <p style="font-size: 13px; color: #334155; margin-bottom: 8px;">
+                        ¿Cómo se integran los documentos y cómo se consultan? El sistema ofrece una <b>doble vía de acceso integral</b>:
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px;">
+                            <b style="color: #0f172a; font-size: 13px; display: block; margin-bottom: 6px;">A) Repositorio Central ("Documentos Digitales"):</b>
+                            <p style="font-size: 12px; color: #475569; margin: 0; line-height: 1.5;">
+                                Concentra todos los documentos oficiales y personales. Incluye barra de filtros rápidos:
+                                <br>• 🪪 <b>Identidad & Fiscales:</b> INE, RFC SAT, CURP, NSS, Domicilio, Licencia.
+                                <br>• 📝 <b>Laborales & Contratos:</b> Contratos firmados, cartas de recomendación.
+                                <br>• 🩺 <b>Salud & Médicos:</b> Certificados médicos, salud e incapacidades.
+                                <br>• 🎓 <b>Académicos:</b> Títulos, cédulas, diplomas y certificados.
+                            </p>
+                        </div>
+                        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px;">
+                            <b style="color: #0f172a; font-size: 13px; display: block; margin-bottom: 6px;">B) Consulta Directa desde Cada Pestaña Operativa:</b>
+                            <p style="font-size: 12px; color: #475569; margin: 0; line-height: 1.5;">
+                                En cada pestaña especializada existe acceso al documento en su fila correspondiente:
+                                <br>• <b>Contratos:</b> Botón <code>📄 Ver Contrato</code> o <code>➕ Digitalizar</code>.
+                                <br>• <b>Permisos/Incapacidades:</b> Botón <code>📎 Ver Justificante</code> / <code>🏥 Hoja IMSS</code>.
+                                <br>• <b>Capacitación/Evaluaciones:</b> Botón <code>🎓 Ver Constancia / Formato</code>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <h5 style="color: #0f172a; margin: 16px 0 8px 0; font-size: 14px;">📋 3. Paso a Paso para Subir y Digitalizar Documentos:</h5>
+                    <ol style="padding-left: 20px; font-size: 13.5px; line-height: 1.8;">
+                        <li><b>1. Seleccionar o Buscar al Empleado:</b> Escribe su nombre o ID en el buscador superior.</li>
+                        <li><b>2. Acceder a la Pestaña "📁 Documentos Digitales":</b> O pulsa <i>"➕ Adjuntar / Digitalizar"</i> desde cualquier pestaña del expediente.</li>
+                        <li><b>3. Abrir Formulario:</b> Presiona <b>"➕ Subir Documento al Expediente"</b>.</li>
+                        <li><b>4. Seleccionar Tipo de Documento:</b> Escoge la categoría (INE, RFC, CURP, NSS, Domicilio, Licencia, Contrato, Certificado Médico, etc.).</li>
+                        <li><b>5. Adjuntar Archivo:</b> Selecciona el archivo (soporta <b>PDF, JPG y PNG</b> hasta 25 MB).</li>
+                        <li><b>6. Registrar Fechas de Emisión y Vencimiento:</b> Para documentos con caducidad (como el INE o la Licencia de Conducir), captura la vigencia para activar el <b>Semáforo Preventivo RH</b> (alertas automáticas 30 días antes de vencer).</li>
+                        <li><b>7. Guardar:</b> Presiona <b>"💾 Guardar en Expediente Digital"</b>. El archivo queda respaldado íntegramente en la base de datos de PostgreSQL.</li>
+                    </ol>
+
+                    <h5 style="color: #0f172a; margin: 16px 0 8px 0; font-size: 14px;">🔎 4. Visor Universal y Certificación RH:</h5>
+                    <ul style="padding-left: 20px; font-size: 13.5px; line-height: 1.7;">
+                        <li>👁️ <b>Visor Universal de Alta Resolución:</b> Al hacer clic en <i>"Ver"</i> o <i>"Ver Archivo"</i>, el sistema abre el visor digital integrado con opción de zoom, lectura completa de PDFs y descarga directa del archivo original.</li>
+                        <li>✅ <b>Cotejo y Certificación por RH:</b> Recursos Humanos puede validar la autenticidad del documento con el botón de cotejo para marcarlo formalmente como <code>🛡️ Verificado por RH</code>.</li>
+                        <li>🗑️ <b>Control de Versiones:</b> Si un documento es renovado (nuevo comprobante de domicilio o INE actualizada), se puede subir el nuevo y retirar el anterior de forma controlada.</li>
+                    </ul>
+                </div>
+
                 <div id="manual-anexo-checador" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-bottom: 24px;">
                     <h4 style="color: #0f172a; margin: 0 0 8px 0; font-size: 16px;">⏱️ ANEXO: Políticas de Asistencia y Reloj Checador (Marcaje 4 Puntos)</h4>
                     <p>Es una política corporativa estricta registrar <b>4 marcas diarias</b> en el checador institucional:</p>
@@ -4054,6 +4834,53 @@
             <div style="display: flex; gap: 12px;">
                 <button class="btn-cancelar" onclick="cerrarModalBaja()" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-weight: 600;">❌ Cancelar</button>
                 <button class="btn-confirmar" id="modal-baja-btn-eliminar" onclick="ejecutarBajaConfirmada()" style="flex: 1; background: #dc2626; margin: 0; padding: 10px;">🔥 Sí, Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EXPEDIENTE DIGITAL INTEGRAL COMPLETO (RECURSOS HUMANOS) -->
+    <div class="modal-overlay" id="modal-expediente-completo-rh" style="display: none; z-index: 1200;">
+        <div class="modal-box" style="max-width: 1050px; width: 95%; max-height: 92vh; text-align: left; display: flex; flex-direction: column; padding: 24px; border-radius: 16px; background: #ffffff;">
+            <!-- Cabecera del Modal -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+                        <i class="ph ph-folder-notch-open"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 19px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <span>EXPEDIENTE DIGITAL INTEGRAL DEL COLABORADOR</span>
+                            <span id="exp-completo-badge-estatus" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: #dcfce7; color: #166534; font-weight: 700;">ACTIVO</span>
+                        </h3>
+                        <p style="margin: 2px 0 0 0; font-size: 12.5px; color: #64748b;">
+                            Auditoría integral: Datos personales, contratos, vacaciones LFT, permisos, capacitaciones y documentos oficiales vinculados.
+                        </p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button type="button" onclick="imprimirExpedienteCompletoRH()" style="background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-printer"></i> 🖨️ Imprimir Expediente
+                    </button>
+                    <button type="button" onclick="cerrarExpedienteCompletoRH()" style="background: none; border: none; font-size: 26px; cursor: pointer; color: #94a3b8; line-height: 1;">&times;</button>
+                </div>
+            </div>
+
+            <!-- Cuerpo Scrolleable del Expediente -->
+            <div id="exp-completo-contenido" style="flex: 1; overflow-y: auto; padding-right: 8px;">
+                <div style="text-align: center; padding: 40px; color: #64748b;">
+                    <i class="ph ph-spinner ph-spin" style="font-size: 32px; color: #0284c7;"></i>
+                    <p style="margin-top: 12px;">Cargando expediente digital integral...</p>
+                </div>
+            </div>
+
+            <!-- Pie del Modal -->
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 12px; color: #64748b;">
+                    <i class="ph ph-shield-check" style="color: #16a34a;"></i> Expediente verificado y centralizado con la base de datos VPRO.
+                </span>
+                <button type="button" onclick="cerrarExpedienteCompletoRH()" style="background: #0f172a; color: white; border: none; padding: 9px 24px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                    Cerrar Visor
+                </button>
             </div>
         </div>
     </div>

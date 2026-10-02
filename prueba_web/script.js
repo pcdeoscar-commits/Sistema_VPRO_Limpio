@@ -318,10 +318,15 @@ async function cargarDatosInicio() {
                                         ⏱️ <i>Al descargarlo, permanecerá disponible 7 horas en el servidor antes de ser eliminado automáticamente.</i>
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 8px; align-items: center;">
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                     <button onclick="descargarArchivoTransferenciaDirecto(${t.id_transferencia}, '${(t.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.3);">
                                         <i class="ph ph-download-simple"></i> Descargar
                                     </button>
+                                    ${t.folio_paquete ? `
+                                    <button onclick="descargarPaqueteZip('${t.folio_paquete}')" style="background: #0284c7; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(2,132,199,0.3);" title="Descargar paquete completo en ZIP">
+                                        <i class="ph ph-file-zip"></i> Descargar ZIP
+                                    </button>
+                                    ` : ''}
                                     <button onclick="cambiarVista('vista-transferencias'); cambiarPestanaTransferencias('recibidos');" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12.5px;">
                                         Ver Todo
                                     </button>
@@ -10875,7 +10880,7 @@ function decirSaludoKiosco(idEmpleado = "", nombreCompleto = "") {
 // ==========================================
 // 📦 MÓDULO VPRO TRANSFER (COMPARTIR ARCHIVOS HASTA 5GB CON BORRADO EN 7H POST-DESCARGA)
 // ==========================================
-let archivoTransferenciaSeleccionado = null;
+let archivosTransferenciaSeleccionados = [];
 let peticionSubidaXHR = null;
 
 function cambiarPestanaTransferencias(pestana) {
@@ -10934,8 +10939,7 @@ async function cargarTransferenciasModulo() {
             dropzone.style.borderColor = "#94a3b8";
             dropzone.style.background = "#f8fafc";
             if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                const fakeInput = { files: e.dataTransfer.files };
-                alSeleccionarArchivoTransferencia(fakeInput);
+                procesarNuevosArchivosTransferencia(e.dataTransfer.files);
             }
         });
     }
@@ -10944,7 +10948,12 @@ async function cargarTransferenciasModulo() {
     const selectDestino = document.getElementById("transfer-select-destino");
     if (selectDestino) {
         try {
-            const res = await fetch(`${API_URL}/api/empleados/lista`);
+            // Intentar primero el endpoint directo de destinatarios para transferencias
+            let res = await fetch(`${API_URL}/api/transferencias/destinatarios`);
+            if (!res.ok) {
+                // Fallback al endpoint general de empleados
+                res = await fetch(`${API_URL}/api/empleados`);
+            }
             if (res.ok) {
                 const empleados = await res.json();
                 const actual = selectDestino.value;
@@ -10965,48 +10974,109 @@ async function cargarTransferenciasModulo() {
     cargarBadges();
 }
 
-function alSeleccionarArchivoTransferencia(input) {
+function formatearTamanoBytes(bytes) {
+    if (bytes < 1024 * 1024) {
+        return (bytes / 1024).toFixed(1) + " KB";
+    } else if (bytes < 1024 * 1024 * 1024) {
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    } else {
+        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+    }
+}
+
+function alSeleccionarArchivosTransferencia(input) {
     if (!input.files || input.files.length === 0) return;
-    const archivo = input.files[0];
-    
+    procesarNuevosArchivosTransferencia(input.files);
+    input.value = ""; // Permite seleccionar los mismos archivos o más después
+}
+
+function procesarNuevosArchivosTransferencia(fileList) {
     const LIMITE_5GB = 5 * 1024 * 1024 * 1024; // 5 GB
-    if (archivo.size > LIMITE_5GB) {
-        alert(`⚠️ El archivo seleccionado "${archivo.name}" pesa ${(archivo.size / (1024*1024*1024)).toFixed(2)} GB.\nEl límite máximo permitido para transferencias es de 5.0 GB.`);
-        input.value = "";
-        archivoTransferenciaSeleccionado = null;
-        quitarArchivoTransferencia();
+    let totalActual = archivosTransferenciaSeleccionados.reduce((acc, f) => acc + f.size, 0);
+
+    for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
+        if (totalActual + file.size > LIMITE_5GB) {
+            alert(`⚠️ No se pudo agregar "${file.name}".\nEl tamaño combinado superaría el límite de 5.0 GB.\nTamaño actual acumulado: ${formatearTamanoBytes(totalActual)}.`);
+            break;
+        }
+        // Evitar duplicados por nombre y tamaño exacto
+        const yaExiste = archivosTransferenciaSeleccionados.some(f => f.name === file.name && f.size === file.size);
+        if (!yaExiste) {
+            archivosTransferenciaSeleccionados.push(file);
+            totalActual += file.size;
+        }
+    }
+
+    renderizarListaArchivosSeleccionados();
+}
+
+function quitarArchivoDeTransferencia(indice) {
+    if (indice >= 0 && indice < archivosTransferenciaSeleccionados.length) {
+        archivosTransferenciaSeleccionados.splice(indice, 1);
+        renderizarListaArchivosSeleccionados();
+    }
+}
+
+function limpiarArchivosTransferencia() {
+    archivosTransferenciaSeleccionados = [];
+    const input = document.getElementById("transfer-input-file");
+    if (input) input.value = "";
+    renderizarListaArchivosSeleccionados();
+}
+
+function renderizarListaArchivosSeleccionados() {
+    const box = document.getElementById("transfer-archivos-seleccionados-box");
+    const container = document.getElementById("transfer-lista-archivos-items");
+    const lblTotal = document.getElementById("transfer-total-archivos-lbl");
+    const lblPeso = document.getElementById("transfer-total-peso-lbl");
+
+    if (!box || !container) return;
+
+    if (archivosTransferenciaSeleccionados.length === 0) {
+        box.style.display = "none";
+        container.innerHTML = "";
+        if (lblTotal) lblTotal.innerText = "0";
+        if (lblPeso) lblPeso.innerText = "0 MB";
         return;
     }
 
-    archivoTransferenciaSeleccionado = archivo;
-    const box = document.getElementById("transfer-archivo-seleccionado");
-    const lblNombre = document.getElementById("transfer-label-nombre");
-    const lblPeso = document.getElementById("transfer-label-peso");
+    const totalBytes = archivosTransferenciaSeleccionados.reduce((acc, f) => acc + f.size, 0);
+    if (lblTotal) lblTotal.innerText = archivosTransferenciaSeleccionados.length;
+    if (lblPeso) lblPeso.innerText = formatearTamanoBytes(totalBytes);
 
-    if (lblNombre) lblNombre.innerText = archivo.name;
-    if (lblPeso) {
-        let tamStr = "";
-        if (archivo.size < 1024 * 1024) {
-            tamStr = (archivo.size / 1024).toFixed(1) + " KB";
-        } else if (archivo.size < 1024 * 1024 * 1024) {
-            tamStr = (archivo.size / (1024 * 1024)).toFixed(1) + " MB";
-        } else {
-            tamStr = (archivo.size / (1024 * 1024 * 1024)).toFixed(2) + " GB";
-        }
-        lblPeso.innerText = tamStr;
-    }
-    if (box) box.style.display = "flex";
+    container.innerHTML = archivosTransferenciaSeleccionados.map((f, idx) => {
+        let icono = "ph-file";
+        const n = f.name.toLowerCase();
+        if (n.endsWith(".mp4") || n.endsWith(".mov") || n.endsWith(".mkv") || n.endsWith(".avi")) icono = "ph-video";
+        else if (n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".png") || n.endsWith(".webp")) icono = "ph-image";
+        else if (n.endsWith(".zip") || n.endsWith(".rar") || n.endsWith(".7z") || n.endsWith(".tar")) icono = "ph-archive";
+        else if (n.endsWith(".pdf")) icono = "ph-file-pdf";
+        else if (n.endsWith(".xlsx") || n.endsWith(".xls") || n.endsWith(".csv")) icono = "ph-file-xls";
+
+        return `
+            <div style="display: flex; align-items: center; justify-content: space-between; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; overflow: hidden; flex: 1;">
+                    <i class="ph ${icono}" style="font-size: 20px; color: var(--accent-color); flex-shrink: 0;"></i>
+                    <span style="font-weight: 600; font-size: 13px; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${f.name}">${f.name}</span>
+                    <span style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; flex-shrink: 0;">${formatearTamanoBytes(f.size)}</span>
+                </div>
+                <button type="button" onclick="quitarArchivoDeTransferencia(${idx})" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center;" title="Quitar archivo">
+                    <i class="ph ph-trash" style="font-size: 16px;"></i>
+                </button>
+            </div>
+        `;
+    }).join("");
+
+    box.style.display = "block";
 }
 
-function quitarArchivoTransferencia() {
-    archivoTransferenciaSeleccionado = null;
-    const input = document.getElementById("transfer-input-file");
-    if (input) input.value = "";
-    const box = document.getElementById("transfer-archivo-seleccionado");
-    if (box) box.style.display = "none";
-}
-
+// Compatibilidad con llamada singular y plural
 function enviarTransferenciaArchivo() {
+    enviarTransferenciaArchivos();
+}
+
+function enviarTransferenciaArchivos() {
     if (!usuarioLogueado) {
         alert("Debes iniciar sesión para transferir archivos.");
         return;
@@ -11018,8 +11088,8 @@ function enviarTransferenciaArchivo() {
         return;
     }
 
-    if (!archivoTransferenciaSeleccionado) {
-        alert("Por favor selecciona o arrastra el archivo que deseas transferir (máximo 5 GB).");
+    if (archivosTransferenciaSeleccionados.length === 0) {
+        alert("Por favor selecciona o arrastra al menos un archivo para transferir (máximo 5.0 GB).");
         return;
     }
 
@@ -11033,7 +11103,11 @@ function enviarTransferenciaArchivo() {
     formData.append("id_empleado_destino", selectDestino.value);
     formData.append("nombre_destino", nombreDestino);
     formData.append("mensaje", mensaje);
-    formData.append("file", archivoTransferenciaSeleccionado);
+
+    // Adjuntar todos los archivos
+    archivosTransferenciaSeleccionados.forEach(f => {
+        formData.append("files", f);
+    });
 
     const btnEnviar = document.getElementById("btn-enviar-transferencia");
     const progresoBox = document.getElementById("transfer-progreso-box");
@@ -11044,7 +11118,7 @@ function enviarTransferenciaArchivo() {
 
     if (btnEnviar) {
         btnEnviar.disabled = true;
-        btnEnviar.innerHTML = `<i class="ph ph-spinner ph-spin"></i> Subiendo archivo...`;
+        btnEnviar.innerHTML = `<i class="ph ph-spinner ph-spin"></i> Subiendo archivos...`;
     }
     if (progresoBox) progresoBox.style.display = "block";
     if (barraProgreso) barraProgreso.style.width = "0%";
@@ -11073,7 +11147,7 @@ function enviarTransferenciaArchivo() {
             if (textoProgreso) {
                 textoProgreso.innerText = (porcentaje >= 100) 
                     ? "Procesando y registrando en servidor..." 
-                    : `Subiendo archivo: ${porcentaje}%`;
+                    : `Subiendo archivo(s): ${porcentaje}%`;
             }
         }
     };
@@ -11081,15 +11155,16 @@ function enviarTransferenciaArchivo() {
     xhr.onload = function() {
         if (btnEnviar) {
             btnEnviar.disabled = false;
-            btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo`;
+            btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo(s)`;
         }
         if (xhr.status === 200) {
             try {
                 const res = JSON.parse(xhr.responseText);
-                alert(`✅ Archivo transferido con éxito!\n\nSe envió "${res.nombre_archivo}" (${res.tamano}) a ${res.destinatario}.\nEl destinatario ya puede ver la notificación para descargarlo.`);
+                const descArchivos = res.total_archivos > 1 ? `${res.total_archivos} archivos (${res.tamano_total})` : `"${res.nombre_archivo || 'archivo'}" (${res.tamano_total || res.tamano})`;
+                alert(`✅ Transferencia enviada con éxito!\n\nSe envió ${descArchivos} a ${res.destinatario}.\nEl destinatario ya puede ver la notificación para descargarlo.`);
                 
                 // Limpiar formulario
-                quitarArchivoTransferencia();
+                limpiarArchivosTransferencia();
                 if (document.getElementById("transfer-input-mensaje")) {
                     document.getElementById("transfer-input-mensaje").value = "";
                 }
@@ -11099,9 +11174,12 @@ function enviarTransferenciaArchivo() {
                 cambiarPestanaTransferencias("enviados");
             } catch (err) {
                 alert("Transferencia completada correctamente.");
+                limpiarArchivosTransferencia();
+                if (progresoBox) progresoBox.style.display = "none";
+                cambiarPestanaTransferencias("enviados");
             }
         } else {
-            let errorMsg = "Error al subir archivo.";
+            let errorMsg = "Error al subir archivos.";
             try {
                 const errObj = JSON.parse(xhr.responseText);
                 errorMsg = errObj.detail || errorMsg;
@@ -11114,10 +11192,10 @@ function enviarTransferenciaArchivo() {
     xhr.onerror = function() {
         if (btnEnviar) {
             btnEnviar.disabled = false;
-            btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo`;
+            btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo(s)`;
         }
         if (progresoBox) progresoBox.style.display = "none";
-        alert("❌ Error de conexión al intentar subir el archivo.");
+        alert("❌ Error de conexión al intentar subir los archivos.");
     };
 
     xhr.open("POST", `${API_URL}/api/transferencias/subir`, true);
@@ -11165,9 +11243,15 @@ async function cargarTransferenciasRecibidos() {
                     <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Se iniciará cuenta de 7h al descargar</div>
                 `;
                 btnDescarga = `
-                    <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
-                        <i class="ph ph-download-simple"></i> Descargar
-                    </button>
+                    <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                            <i class="ph ph-download-simple"></i> Descargar
+                        </button>
+                        ${item.folio_paquete ? `
+                        <button onclick="descargarPaqueteZip('${item.folio_paquete}')" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;" title="Descargar paquete completo en ZIP">
+                            <i class="ph ph-file-zip"></i> ZIP Paquete
+                        </button>` : ''}
+                    </div>
                 `;
             } else {
                 estatusBadge = `
@@ -11177,9 +11261,15 @@ async function cargarTransferenciasRecibidos() {
                     <div style="font-size: 11px; color: #d97706; margin-top: 3px;">Descargado ${item.veces_descargado || 1} vez(ces)</div>
                 `;
                 btnDescarga = `
-                    <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #0284c7; color: white; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px;">
-                        <i class="ph ph-arrow-counter-clockwise"></i> Re-descargar
-                    </button>
+                    <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #0284c7; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px;">
+                            <i class="ph ph-arrow-counter-clockwise"></i> Re-descargar
+                        </button>
+                        ${item.folio_paquete ? `
+                        <button onclick="descargarPaqueteZip('${item.folio_paquete}')" style="background: #475569; color: white; border: none; padding: 7px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px;" title="Descargar paquete completo en ZIP">
+                            <i class="ph ph-file-zip"></i> ZIP
+                        </button>` : ''}
+                    </div>
                 `;
             }
 
@@ -11199,6 +11289,7 @@ async function cargarTransferenciasRecibidos() {
                     <td style="font-weight: 600; color: #1e3a8a; max-width: 250px; word-break: break-all;">
                         <i class="ph ph-file-text" style="color: #3b82f6; margin-right: 4px;"></i>
                         ${item.nombre_archivo_original}
+                        ${item.folio_paquete ? `<div style="font-size: 10.5px; color: #6366f1; font-weight: 500;"><i class="ph ph-package"></i> Paquete: ${item.folio_paquete}</div>` : ''}
                     </td>
                     <td style="white-space: nowrap;"><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155;">${item.tamano_legible}</span></td>
                     <td style="font-size: 12.5px; color: #475569; white-space: nowrap;">${item.fecha_subida_str || ''}</td>
@@ -11256,6 +11347,7 @@ async function cargarTransferenciasEnviados() {
                     <td style="font-weight: 600; color: #1e3a8a; max-width: 250px; word-break: break-all;">
                         <i class="ph ph-file" style="color: #64748b; margin-right: 4px;"></i>
                         ${item.nombre_archivo_original}
+                        ${item.folio_paquete ? `<div style="font-size: 10.5px; color: #6366f1; font-weight: 500;"><i class="ph ph-package"></i> Paquete: ${item.folio_paquete}</div>` : ''}
                     </td>
                     <td style="white-space: nowrap;"><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155;">${item.tamano_legible}</span></td>
                     <td style="font-size: 12.5px; color: #475569; white-space: nowrap;">${item.fecha_subida_str || ''}</td>
@@ -11273,6 +11365,25 @@ async function cargarTransferenciasEnviados() {
     } catch (e) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Error al cargar archivos enviados.</td></tr>';
     }
+}
+
+function descargarPaqueteZip(folioPaquete) {
+    if (!folioPaquete) return;
+    const urlDescarga = `${API_URL}/api/transferencias/descargar_paquete/${folioPaquete}`;
+    
+    const a = document.createElement("a");
+    a.href = urlDescarga;
+    a.setAttribute("download", `paquete_${folioPaquete}.zip`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setTimeout(() => {
+        alert(`📥 Tu descarga del paquete ZIP ha comenzado.\n\n⚠️ RECUERDA: Todos los archivos de este paquete permanecerán disponibles en el servidor por 7 horas a partir de este momento. Después de ese lapso, el sistema los borrará automáticamente.`);
+        cargarTransferenciasRecibidos();
+        cargarDatosInicio();
+        cargarBadges();
+    }, 800);
 }
 
 function descargarArchivoTransferenciaDirecto(idTransferencia, nombreArchivo = "") {

@@ -3,11 +3,13 @@ import re
 import time
 import uuid
 import datetime
+import zipfile
+import io
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import text
 
 from core.database import engine_personal, engine_personal_vieja
@@ -18,7 +20,7 @@ router = APIRouter(prefix="/api/transferencias", tags=["📦 Transferencia de Ar
 CARPETA_TRANSFERENCIAS = BASE_DIR / "Archivos_Compartidos"
 CARPETA_TRANSFERENCIAS.mkdir(parents=True, exist_ok=True)
 
-LIMITE_MAX_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB (5,368,709,120 bytes)
+LIMITE_MAX_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB total (5,368,709,120 bytes)
 CHUNK_SIZE = 2 * 1024 * 1024  # 2 MB por bloque de streaming
 
 def _tamano_legible(num_bytes: int) -> str:
@@ -74,7 +76,6 @@ def ejecutar_limpieza_expirados():
                     WHERE id_transferencia = ANY(:ids)
                 """), {"ids": ids_a_marcar})
 
-            # Replicar actualización en base vieja si existe
             try:
                 with engine_personal_vieja.begin() as conn_v:
                     conn_v.execute(text("""
@@ -90,104 +91,172 @@ def ejecutar_limpieza_expirados():
         print(f"[VPRO Transfer] Error en ejecutar_limpieza_expirados: {e}")
         return 0
 
+@router.get("/destinatarios")
+def obtener_destinatarios_activos():
+    """
+    Retorna la lista de empleados activos ordenados alfabéticamente
+    para llenar el selector de destinatarios en VPRO Transfer.
+    """
+    try:
+        with engine_personal.connect() as conn:
+            query = text("""
+                SELECT 
+                    id_empleado, 
+                    nombre, 
+                    COALESCE(depto, 'General') as depto, 
+                    COALESCE(puesto, '') as puesto
+                FROM public.empleados
+                WHERE estatus_empleado IS NULL OR UPPER(TRIM(estatus_empleado)) != 'BAJA'
+                ORDER BY nombre ASC
+            """)
+            rows = conn.execute(query).mappings().all()
+            return [dict(r) for r in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener destinatarios: {str(e)}")
+
 @router.post("/subir")
-async def subir_archivo_compartido(
+async def subir_archivos_compartidos(
     id_empleado_origen: str = Form(...),
     nombre_origen: str = Form(...),
     id_empleado_destino: str = Form(...),
     nombre_destino: str = Form(...),
     mensaje: Optional[str] = Form(""),
-    file: UploadFile = File(...)
+    files: Optional[List[UploadFile]] = File(None),
+    file: Optional[UploadFile] = File(None)
 ):
     """
-    Recibe y almacena un archivo compartido de hasta 5 GB mediante streaming a disco.
-    Registra al empleado origen (usuario en sesión) y destino seleccionado.
+    Recibe y almacena 1 o más archivos compartidos (hasta 5 GB en total) mediante streaming a disco.
+    Agrupa los archivos en un mismo folio_paquete para facilitar la entrega al destinatario.
     """
-    nombre_original = os.path.basename(file.filename or "archivo_compartido")
-    nombre_limpio = re.sub(r'[^a-zA-Z0-9_.-]', '_', nombre_original)
-    timestamp = int(time.time())
-    token_unico = uuid.uuid4().hex[:8]
-    nombre_fisico = f"trans_{timestamp}_{token_unico}_{nombre_limpio}"
-    
-    destino_path = CARPETA_TRANSFERENCIAS / nombre_fisico
-    
-    total_leido = 0
-    try:
-        with open(destino_path, "wb") as buffer:
-            while True:
-                chunk = await file.read(CHUNK_SIZE)
-                if not chunk:
-                    break
-                total_leido += len(chunk)
-                if total_leido > LIMITE_MAX_BYTES:
-                    # Excedió 5 GB: abortar y borrar archivo parcial
-                    buffer.close()
-                    if destino_path.exists():
-                        destino_path.unlink()
-                    raise HTTPException(
-                        status_code=400,
-                        detail="El archivo excede el límite máximo permitido de 5 GB."
-                    )
-                buffer.write(chunk)
-                
-        if total_leido == 0:
-            if destino_path.exists():
-                destino_path.unlink()
-            raise HTTPException(status_code=400, detail="El archivo enviado está vacío.")
+    lista_archivos = []
+    if files:
+        lista_archivos.extend([f for f in files if f.filename])
+    if file and file.filename and file not in lista_archivos:
+        lista_archivos.append(file)
+        
+    if not lista_archivos:
+        raise HTTPException(status_code=400, detail="No se seleccionó ningún archivo para transferir.")
 
-        tamano_str = _tamano_legible(total_leido)
-        tipo_mime = file.content_type or "application/octet-stream"
+    folio_paquete = f"TRF-{int(time.time())}-{uuid.uuid4().hex[:6].upper()}"
+    archivos_guardados = []
+    total_leido_combinado = 0
+    archivos_fisicos_creados = []
+
+    try:
+        for f in lista_archivos:
+            nombre_original = os.path.basename(f.filename or "archivo_compartido")
+            nombre_limpio = re.sub(r'[^a-zA-Z0-9_.-]', '_', nombre_original)
+            timestamp = int(time.time())
+            token_unico = uuid.uuid4().hex[:8]
+            nombre_fisico = f"trans_{timestamp}_{token_unico}_{nombre_limpio}"
+            destino_path = CARPETA_TRANSFERENCIAS / nombre_fisico
+            
+            total_leido_archivo = 0
+            with open(destino_path, "wb") as buffer:
+                while True:
+                    chunk = await f.read(CHUNK_SIZE)
+                    if not chunk:
+                        break
+                    total_leido_archivo += len(chunk)
+                    total_leido_combinado += len(chunk)
+                    
+                    if total_leido_combinado > LIMITE_MAX_BYTES:
+                        buffer.close()
+                        destino_path.unlink(missing_ok=True)
+                        for af in archivos_fisicos_creados:
+                            try:
+                                af.unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                        raise HTTPException(
+                            status_code=400,
+                            detail="El peso combinado de los archivos excede el límite máximo permitido de 5.0 GB."
+                        )
+                    buffer.write(chunk)
+
+            if total_leido_archivo > 0:
+                archivos_fisicos_creados.append(destino_path)
+                archivos_guardados.append({
+                    "nombre_original": nombre_original,
+                    "nombre_fisico": nombre_fisico,
+                    "tamano_bytes": total_leido_archivo,
+                    "tamano_legible": _tamano_legible(total_leido_archivo),
+                    "tipo_mime": f.content_type or "application/octet-stream"
+                })
+
+        if not archivos_guardados:
+            raise HTTPException(status_code=400, detail="Los archivos enviados están vacíos.")
 
         query_insert = text("""
             INSERT INTO public.archivos_compartidos (
                 id_empleado_origen, nombre_origen, id_empleado_destino, nombre_destino,
                 nombre_archivo_original, nombre_archivo_fisico, tamano_bytes, tamano_legible,
-                tipo_mime, mensaje, fecha_subida, descargado, veces_descargado, estatus
+                tipo_mime, mensaje, folio_paquete, fecha_subida, descargado, veces_descargado, estatus
             ) VALUES (
                 :id_origen, :nom_origen, :id_destino, :nom_destino,
                 :nom_orig_file, :nom_fisico, :tam_bytes, :tam_leg,
-                :mime, :msg, CURRENT_TIMESTAMP, FALSE, 0, 'DISPONIBLE'
+                :mime, :msg, :folio_paq, CURRENT_TIMESTAMP, FALSE, 0, 'DISPONIBLE'
             ) RETURNING id_transferencia
         """)
-        
-        params = {
-            "id_origen": str(id_empleado_origen).strip(),
-            "nom_origen": str(nombre_origen).strip(),
-            "id_destino": str(id_empleado_destino).strip(),
-            "nom_destino": str(nombre_destino).strip(),
-            "nom_orig_file": nombre_original,
-            "nom_fisico": nombre_fisico,
-            "tam_bytes": total_leido,
-            "tam_leg": tamano_str,
-            "mime": tipo_mime,
-            "msg": str(mensaje or "").strip()
-        }
 
+        ids_generados = []
         with engine_personal.begin() as conn:
-            id_trans = conn.execute(query_insert, params).scalar()
+            for item in archivos_guardados:
+                params = {
+                    "id_origen": str(id_empleado_origen).strip(),
+                    "nom_origen": str(nombre_origen).strip(),
+                    "id_destino": str(id_empleado_destino).strip(),
+                    "nom_destino": str(nombre_destino).strip(),
+                    "nom_orig_file": item["nombre_original"],
+                    "nom_fisico": item["nombre_fisico"],
+                    "tam_bytes": item["tamano_bytes"],
+                    "tam_leg": item["tamano_legible"],
+                    "mime": item["tipo_mime"],
+                    "msg": str(mensaje or "").strip(),
+                    "folio_paq": folio_paquete
+                }
+                new_id = conn.execute(query_insert, params).scalar()
+                ids_generados.append(new_id)
 
-        # Replicar en base vieja si está disponible
         try:
             with engine_personal_vieja.begin() as conn_v:
-                conn_v.execute(query_insert, params)
+                for item in archivos_guardados:
+                    params = {
+                        "id_origen": str(id_empleado_origen).strip(),
+                        "nom_origen": str(nombre_origen).strip(),
+                        "id_destino": str(id_empleado_destino).strip(),
+                        "nom_destino": str(nombre_destino).strip(),
+                        "nom_orig_file": item["nombre_original"],
+                        "nom_fisico": item["nombre_fisico"],
+                        "tam_bytes": item["tamano_bytes"],
+                        "tam_leg": item["tamano_legible"],
+                        "mime": item["tipo_mime"],
+                        "msg": str(mensaje or "").strip(),
+                        "folio_paq": folio_paquete
+                    }
+                    conn_v.execute(query_insert, params)
         except Exception:
             pass
 
+        tamano_total_str = _tamano_legible(total_leido_combinado)
+        cant_archivos = len(archivos_guardados)
+        texto_archivos = f"{cant_archivos} archivo(s)" if cant_archivos > 1 else archivos_guardados[0]["nombre_original"]
+
         return {
             "status": "SUCCESS",
-            "id_transferencia": id_trans,
-            "nombre_archivo": nombre_original,
-            "tamano": tamano_str,
+            "folio_paquete": folio_paquete,
+            "total_archivos": cant_archivos,
+            "tamano_total": tamano_total_str,
             "destinatario": nombre_destino,
-            "mensaje": f"Archivo enviado exitosamente a {nombre_destino}."
+            "mensaje": f"Se envió exitosamente {texto_archivos} ({tamano_total_str}) a {nombre_destino}."
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        if destino_path.exists():
+        for af in archivos_fisicos_creados:
             try:
-                destino_path.unlink()
+                af.unlink(missing_ok=True)
             except Exception:
                 pass
         raise HTTPException(status_code=500, detail=f"Error al procesar la transferencia: {str(e)}")
@@ -198,7 +267,6 @@ def obtener_archivos_recibidos(id_empleado: str):
     Retorna la lista de archivos que han sido enviados al empleado especificado.
     Calcula el tiempo restante para los que ya fueron descargados (regla de 7 horas).
     """
-    # Ejecutar limpieza oportunista
     ejecutar_limpieza_expirados()
     
     try:
@@ -206,10 +274,10 @@ def obtener_archivos_recibidos(id_empleado: str):
             SELECT 
                 id_transferencia, id_empleado_origen, nombre_origen,
                 nombre_archivo_original, tamano_bytes, tamano_legible,
-                tipo_mime, mensaje, fecha_subida, descargado, veces_descargado,
+                tipo_mime, mensaje, folio_paquete, fecha_subida, descargado, veces_descargado,
                 fecha_primer_descarga, fecha_limite_borrado, estatus
             FROM public.archivos_compartidos
-            WHERE id_empleado_destino = :id_emp
+            WHERE (TRIM(id_empleado_destino) = TRIM(:id_emp) OR id_empleado_destino = :id_emp)
               AND estatus IN ('DISPONIBLE', 'DESCARGADO')
             ORDER BY fecha_subida DESC
         """)
@@ -221,13 +289,11 @@ def obtener_archivos_recibidos(id_empleado: str):
         resultado = []
         for r in rows:
             item = dict(r)
-            # Formatear fechas
             if item["fecha_subida"]:
                 item["fecha_subida_str"] = item["fecha_subida"].strftime("%d/%m/%Y %H:%M")
             if item["fecha_primer_descarga"]:
                 item["fecha_primer_descarga_str"] = item["fecha_primer_descarga"].strftime("%d/%m/%Y %H:%M")
             
-            # Cálculo de tiempo restante de las 7 horas si ya fue descargado
             if item["descargado"] and item["fecha_limite_borrado"]:
                 limite = item["fecha_limite_borrado"]
                 diff = limite - ahora
@@ -260,13 +326,13 @@ def obtener_archivos_enviados(id_empleado: str):
         query = text("""
             SELECT 
                 id_transferencia, id_empleado_destino, nombre_destino,
-                nombre_archivo_original, tamano_legible, mensaje,
+                nombre_archivo_original, tamano_legible, mensaje, folio_paquete,
                 fecha_subida, descargado, veces_descargado,
                 fecha_primer_descarga, fecha_limite_borrado, estatus
             FROM public.archivos_compartidos
-            WHERE id_empleado_origen = :id_emp
+            WHERE TRIM(id_empleado_origen) = TRIM(:id_emp) OR id_empleado_origen = :id_emp
             ORDER BY fecha_subida DESC
-            LIMIT 50
+            LIMIT 100
         """)
         with engine_personal.connect() as conn:
             rows = conn.execute(query, {"id_emp": str(id_empleado).strip()}).mappings().all()
@@ -308,16 +374,16 @@ def obtener_archivos_enviados(id_empleado: str):
 @router.get("/pendientes_notificacion/{id_empleado}")
 def obtener_pendientes_notificacion(id_empleado: str):
     """
-    Endpoint rápido para el panel de Inicio (similar a OPs pendientes):
-    Retorna la lista de archivos que el usuario tiene pendientes de descargar.
+    Endpoint para el Centro de Notificaciones en Inicio:
+    Retorna la lista de archivos pendientes de descargar enviados al empleado.
     """
     try:
         query = text("""
             SELECT 
                 id_transferencia, id_empleado_origen, nombre_origen,
-                nombre_archivo_original, tamano_legible, mensaje, fecha_subida
+                nombre_archivo_original, tamano_legible, mensaje, folio_paquete, fecha_subida
             FROM public.archivos_compartidos
-            WHERE id_empleado_destino = :id_emp
+            WHERE (TRIM(id_empleado_destino) = TRIM(:id_emp) OR id_empleado_destino = :id_emp)
               AND descargado = FALSE
               AND estatus = 'DISPONIBLE'
             ORDER BY fecha_subida DESC
@@ -342,18 +408,17 @@ def obtener_pendientes_notificacion(id_empleado: str):
 @router.get("/descargar/{id_transferencia}")
 def descargar_archivo_compartido(id_transferencia: int):
     """
-    Inicia la descarga directa del archivo compartido.
-    Al descargarse por primera vez:
+    Inicia la descarga de un archivo compartido individual.
+    Al descargarse:
     - Marca 'descargado = TRUE'.
     - Fija 'fecha_primer_descarga = NOW()'.
     - Fija 'fecha_limite_borrado = NOW() + 7 horas'.
-    - La cuenta regresiva de 7 horas comienza a correr inmediatamente.
     """
     try:
         with engine_personal.connect() as conn:
             reg = conn.execute(text("""
                 SELECT 
-                    id_transferencia, nombre_archivo_original, nombre_archivo_fisico,
+                    id_transferencia, nombre_archivo_original, nombre_archivo_fisico, folio_paquete,
                     descargado, veces_descargado, fecha_primer_descarga, fecha_limite_borrado,
                     estatus
                 FROM public.archivos_compartidos
@@ -376,7 +441,6 @@ def descargar_archivo_compartido(id_transferencia: int):
         if not archivo_path.exists():
             raise HTTPException(status_code=404, detail="El archivo físico ya no se encuentra en el servidor.")
 
-        # Actualizar estado de descarga y fijar límite de 7 horas si es la primera descarga
         with engine_personal.begin() as conn:
             if not reg["descargado"]:
                 conn.execute(text("""
@@ -395,7 +459,6 @@ def descargar_archivo_compartido(id_transferencia: int):
                     WHERE id_transferencia = :id_trans
                 """), {"id_trans": id_transferencia})
 
-        # Replicar en base vieja si aplica
         try:
             with engine_personal_vieja.begin() as conn_v:
                 conn_v.execute(text("""
@@ -421,11 +484,64 @@ def descargar_archivo_compartido(id_transferencia: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al descargar: {str(e)}")
 
+@router.get("/descargar_paquete/{folio_paquete}")
+def descargar_paquete_completo_zip(folio_paquete: str):
+    """
+    Descarga todos los archivos de un paquete en un archivo ZIP.
+    Activa la regla de 7 horas para todos los archivos del paquete.
+    """
+    try:
+        with engine_personal.connect() as conn:
+            archivos = conn.execute(text("""
+                SELECT 
+                    id_transferencia, nombre_archivo_original, nombre_archivo_fisico,
+                    descargado, estatus
+                FROM public.archivos_compartidos
+                WHERE folio_paquete = :folio AND estatus IN ('DISPONIBLE', 'DESCARGADO')
+            """), {"folio": folio_paquete}).mappings().all()
+
+        if not archivos:
+            raise HTTPException(status_code=404, detail="El paquete no contiene archivos disponibles.")
+
+        # Activar regla de 7 horas en todos los archivos del paquete
+        ids = [a["id_transferencia"] for a in archivos]
+        with engine_personal.begin() as conn:
+            conn.execute(text("""
+                UPDATE public.archivos_compartidos
+                SET descargado = TRUE,
+                    veces_descargado = COALESCE(veces_descargado, 0) + 1,
+                    fecha_primer_descarga = COALESCE(fecha_primer_descarga, CURRENT_TIMESTAMP),
+                    fecha_limite_borrado = COALESCE(fecha_limite_borrado, CURRENT_TIMESTAMP + INTERVAL '7 hours'),
+                    estatus = 'DESCARGADO'
+                WHERE id_transferencia = ANY(:ids)
+            """), {"ids": ids})
+
+        # Generar ZIP en memoria
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for a in archivos:
+                ruta = CARPETA_TRANSFERENCIAS / a["nombre_archivo_fisico"]
+                if ruta.exists():
+                    zip_file.write(str(ruta), arcname=a["nombre_archivo_original"])
+
+        zip_buffer.seek(0)
+        zip_filename = f"VPRO_Transfer_{folio_paquete}.zip"
+
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={zip_filename}"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al generar paquete ZIP: {str(e)}")
+
 @router.delete("/eliminar/{id_transferencia}")
 def cancelar_o_eliminar_transferencia(id_transferencia: int):
     """
-    Permite eliminar o cancelar un archivo compartido antes o después de la descarga.
-    Elimina físicamente el archivo del disco y marca el estatus en la BD.
+    Permite eliminar un archivo compartido individual.
     """
     try:
         with engine_personal.connect() as conn:
@@ -452,19 +568,41 @@ def cancelar_o_eliminar_transferencia(id_transferencia: int):
                 WHERE id_transferencia = :id_trans
             """), {"id_trans": id_transferencia})
 
-        try:
-            with engine_personal_vieja.begin() as conn_v:
-                conn_v.execute(text("""
-                    UPDATE public.archivos_compartidos
-                    SET estatus = 'CANCELADO'
-                    WHERE id_transferencia = :id_trans
-                """), {"id_trans": id_transferencia})
-        except Exception:
-            pass
-
         return {"status": "SUCCESS", "mensaje": "Transferencia eliminada y archivo borrado del disco."}
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/eliminar_paquete/{folio_paquete}")
+def cancelar_o_eliminar_paquete(folio_paquete: str):
+    """
+    Permite eliminar un paquete completo de archivos transferidos.
+    """
+    try:
+        with engine_personal.connect() as conn:
+            regs = conn.execute(text("""
+                SELECT id_transferencia, nombre_archivo_fisico 
+                FROM public.archivos_compartidos 
+                WHERE folio_paquete = :folio
+            """), {"folio": folio_paquete}).mappings().all()
+
+        for reg in regs:
+            archivo_path = CARPETA_TRANSFERENCIAS / reg["nombre_archivo_fisico"]
+            if archivo_path.exists():
+                try:
+                    archivo_path.unlink()
+                except Exception:
+                    pass
+
+        with engine_personal.begin() as conn:
+            conn.execute(text("""
+                UPDATE public.archivos_compartidos
+                SET estatus = 'CANCELADO'
+                WHERE folio_paquete = :folio
+            """), {"folio": folio_paquete})
+
+        return {"status": "SUCCESS", "mensaje": "Paquete eliminado exitosamente."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

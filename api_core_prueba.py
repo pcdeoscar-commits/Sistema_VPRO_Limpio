@@ -48,7 +48,8 @@ from routers import (
     reuniones,
     dashboard,
     rh,
-    cronogramas
+    cronogramas,
+    transferencias
 )
 
 # 🔄 CICLO DE VIDA DE LA APLICACIÓN (Lifespan Context Manager)
@@ -99,6 +100,7 @@ app.include_router(reuniones.router)
 app.include_router(dashboard.router)
 app.include_router(rh.router)
 app.include_router(cronogramas.router)
+app.include_router(transferencias.router)
 
 @app.get("/health", tags=["Sistema"])
 def health_check():

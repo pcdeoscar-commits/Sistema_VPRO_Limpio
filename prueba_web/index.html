@@ -1039,6 +1039,10 @@
             <div class="nav-item" data-roles="todos" onclick="cambiarVista('vista-checador')">
                 <div class="nav-label"><i class="ph ph-fingerprint"></i> <span class="nav-text">Checador</span></div>
             </div>
+            <div class="nav-item" data-roles="todos" onclick="cambiarVista('vista-transferencias')">
+                <div class="nav-label"><i class="ph ph-paper-plane-tilt"></i> <span class="nav-text">VPRO Transfer</span></div>
+                <span class="nav-badge alert" id="badge-transferencias" style="display: none; background: #2563eb; color: white;">0</span>
+            </div>
         </div>
 
         <div class="sidebar-footer">
@@ -4932,6 +4936,154 @@
                         </div>
                     </div>
 
+                </div>
+
+            </div>
+
+            <!-- 📦 VISTA TRANSFERENCIAS: VPRO TRANSFER (COMPARTIR ARCHIVOS HASTA 5GB) -->
+            <div id="vista-transferencias" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto; display: none;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                            <i class="ph ph-paper-plane-tilt" style="color: var(--accent-color);"></i> VPRO Transfer - Compartir Archivos
+                        </h2>
+                        <p style="margin: 6px 0 0 0; color: #64748b; font-size: 13.5px;">
+                            Comparte archivos seguros de hasta <b>5 GB</b> entre compañeros activos. El archivo se auto-eliminará del servidor en <b>7 horas</b> una vez que el destinatario lo descargue para optimizar el almacenamiento.
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" onclick="cargarTransferenciasModulo()" style="background: white; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px;">
+                            <i class="ph ph-arrows-clockwise"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PESTAÑAS DEL MÓDULO -->
+                <div style="display: flex; gap: 10px; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; padding-bottom: 4px;">
+                    <button type="button" id="tab-transfer-btn-enviar" onclick="cambiarPestanaTransferencias('enviar')" style="background: #0f172a; color: white; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13.5px;">
+                        <i class="ph ph-upload-simple"></i> Enviar Archivo
+                    </button>
+                    <button type="button" id="tab-transfer-btn-recibidos" onclick="cambiarPestanaTransferencias('recibidos')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13.5px;">
+                        <i class="ph ph-tray"></i> Archivos Recibidos <span id="badge-transfer-recibidos-count" style="display: none; background: #2563eb; color: white; padding: 2px 7px; border-radius: 12px; font-size: 11px; font-weight: 700;">0</span>
+                    </button>
+                    <button type="button" id="tab-transfer-btn-enviados" onclick="cambiarPestanaTransferencias('enviados')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13.5px;">
+                        <i class="ph ph-paper-plane-right"></i> Archivos Enviados
+                    </button>
+                </div>
+
+                <!-- SUBVISTA 1: ENVIAR ARCHIVO -->
+                <div id="subvista-transfer-enviar">
+                    <div style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 28px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); max-width: 850px; margin: 0 auto;">
+                        <h4 style="margin: 0 0 16px 0; color: #0f172a; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-cloud-arrow-up" style="color: var(--accent-color);"></i> Nueva Transferencia de Archivo
+                        </h4>
+
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+                                👤 Seleccionar Empleado Destino (Compañero que recibirá el archivo) *:
+                            </label>
+                            <select id="transfer-select-destino" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px; background: white; color: #0f172a;">
+                                <option value="">-- Selecciona un colaborador activo --</option>
+                            </select>
+                        </div>
+
+                        <!-- ZONA DRAG & DROP -->
+                        <div id="transfer-dropzone" style="border: 2px dashed #94a3b8; border-radius: 12px; padding: 36px 20px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; margin-bottom: 20px;" onclick="document.getElementById('transfer-input-file').click()">
+                            <i class="ph ph-file-arrow-up" style="font-size: 48px; color: var(--accent-color); margin-bottom: 12px;"></i>
+                            <h4 style="margin: 0 0 6px 0; color: #1e293b; font-size: 15px;">Arrastra tu archivo aquí o haz clic para explorar</h4>
+                            <p style="margin: 0; color: #64748b; font-size: 13px;">Soporta videos MP4, carpetas comprimidas ZIP/RAR, imágenes, documentos, etc.</p>
+                            <span style="display: inline-block; margin-top: 10px; background: #e0e7ff; color: #3730a3; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                ⚡ Límite máximo: 5.0 GB por transferencia
+                            </span>
+                            <input type="file" id="transfer-input-file" style="display: none;" onchange="alSeleccionarArchivoTransferencia(this)">
+                        </div>
+
+                        <!-- FICHA ARCHIVO SELECCIONADO -->
+                        <div id="transfer-archivo-seleccionado" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 8px; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                    <i class="ph ph-file"></i>
+                                </div>
+                                <div>
+                                    <div id="transfer-label-nombre" style="font-weight: 600; color: #1e3a8a; font-size: 14px;">archivo.ext</div>
+                                    <div id="transfer-label-peso" style="font-size: 12.5px; color: #3b82f6;">0 MB</div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="quitarArchivoTransferencia()" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 20px; padding: 4px;" title="Quitar archivo">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </div>
+
+                        <div style="margin-bottom: 24px;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+                                💬 Mensaje o Nota para el destinatario (Opcional):
+                            </label>
+                            <textarea id="transfer-input-mensaje" rows="2" placeholder="Ej. Te comparto el bruto del partido para la edición de resúmenes..." style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13.5px; resize: vertical;"></textarea>
+                        </div>
+
+                        <!-- BARRA DE PROGRESO DE SUBIDA -->
+                        <div id="transfer-progreso-box" style="display: none; margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 6px;">
+                                <span id="transfer-progreso-texto">Transfiriendo archivo al servidor...</span>
+                                <span id="transfer-progreso-porcentaje">0%</span>
+                            </div>
+                            <div style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden;">
+                                <div id="transfer-progreso-barra" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5, #06b6d4); transition: width 0.15s ease;"></div>
+                            </div>
+                            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 4px; text-align: right;" id="transfer-progreso-detalle">0 MB / 0 MB</div>
+                        </div>
+
+                        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                            <button type="button" id="btn-enviar-transferencia" onclick="enviarTransferenciaArchivo()" style="background: var(--accent-color); color: white; border: none; padding: 11px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);">
+                                <i class="ph ph-paper-plane-tilt"></i> Enviar Archivo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBVISTA 2: ARCHIVOS RECIBIDOS -->
+                <div id="subvista-transfer-recibidos" style="display: none;">
+                    <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <table class="tabla-vpro">
+                            <thead>
+                                <tr>
+                                    <th>Remitente</th>
+                                    <th>Archivo</th>
+                                    <th>Tamaño</th>
+                                    <th>Fecha de Envío</th>
+                                    <th>Mensaje / Nota</th>
+                                    <th>Estatus & Cuenta Regresiva</th>
+                                    <th style="text-align: center;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-transfer-recibidos-body">
+                                <tr><td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">Cargando archivos recibidos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SUBVISTA 3: ARCHIVOS ENVIADOS -->
+                <div id="subvista-transfer-enviados" style="display: none;">
+                    <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <table class="tabla-vpro">
+                            <thead>
+                                <tr>
+                                    <th>Destinatario</th>
+                                    <th>Archivo</th>
+                                    <th>Tamaño</th>
+                                    <th>Fecha de Envío</th>
+                                    <th>Mensaje</th>
+                                    <th>Estatus de Transferencia</th>
+                                    <th style="text-align: center;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-transfer-enviados-body">
+                                <tr><td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">Cargando archivos enviados...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>

@@ -214,6 +214,8 @@ function cambiarVista(idVista) {
             cargarModuloAnalitica();
         } else if (idVista === 'vista-rh') {
             cargarModuloRH();
+        } else if (idVista === 'vista-transferencias') {
+            cargarTransferenciasModulo();
         }
     } else {
         console.warn(`Vista no encontrada: ${idVista}`);
@@ -238,6 +240,21 @@ async function cargarBadges() {
             if (badgeGastos) badgeGastos.innerText = (typeof conteo === 'number') ? conteo : (conteo?.conteo || 0);
         }
     } catch (e) { console.error("Error al cargar badge gastos:", e); }
+
+    try {
+        if (usuarioLogueado && usuarioLogueado.id_empleado) {
+            const resTrans = await fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${usuarioLogueado.id_empleado}`);
+            if (resTrans.ok) {
+                const dataTrans = await resTrans.json();
+                const badgeTrans = document.getElementById("badge-transferencias");
+                if (badgeTrans) {
+                    const cant = dataTrans.total_pendientes || 0;
+                    badgeTrans.innerText = cant;
+                    badgeTrans.style.display = cant > 0 ? "inline-block" : "none";
+                }
+            }
+        }
+    } catch (e) { console.error("Error al cargar badge transferencias:", e); }
 }
 
 // ==========================================
@@ -273,31 +290,74 @@ function obtenerRangoSemanaActual() {
 async function cargarDatosInicio() {
     if (!usuarioLogueado) return;
 
-    // 1. Radar de Bodega (Checkouts)
+    // 1. Notificaciones: Radar de Bodega (Checkouts) y VPRO Transfer (Archivos Compartidos)
     const contenedorNotif = document.getElementById("inicio-notificaciones");
     if (contenedorNotif) {
+        let htmlCards = [];
+
+        // A. Archivos Compartidos Pendientes (VPRO Transfer)
+        try {
+            const resTrans = await fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${usuarioLogueado.id_empleado}`);
+            if (resTrans.ok) {
+                const dataTrans = await resTrans.json();
+                if (dataTrans && dataTrans.pendientes && dataTrans.pendientes.length > 0) {
+                    dataTrans.pendientes.forEach(t => {
+                        htmlCards.push(`
+                            <div class="alerta-card info" style="background: #eff6ff; border-left: 4px solid #3b82f6; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                                <div style="width: 42px; height: 42px; border-radius: 8px; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                                    <i class="ph ph-cloud-arrow-down"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 14px; color: #1e3a8a;">
+                                        <b>📦 Archivo compartido recibido:</b> <b>${t.nombre_archivo_original}</b> <span style="background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">${t.tamano_legible}</span>
+                                    </div>
+                                    <div style="font-size: 12.5px; color: #475569; margin-top: 2px;">
+                                        Enviado por: <b>${t.nombre_origen}</b> • ${t.fecha_subida_str || ''} ${t.mensaje ? `— <i>"${t.mensaje}"</i>` : ''}
+                                    </div>
+                                    <div style="font-size: 11.5px; color: #0284c7; margin-top: 3px;">
+                                        ⏱️ <i>Al descargarlo, permanecerá disponible 7 horas en el servidor antes de ser eliminado automáticamente.</i>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button onclick="descargarArchivoTransferenciaDirecto(${t.id_transferencia}, '${(t.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.3);">
+                                        <i class="ph ph-download-simple"></i> Descargar
+                                    </button>
+                                    <button onclick="cambiarVista('vista-transferencias'); cambiarPestanaTransferencias('recibidos');" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12.5px;">
+                                        Ver Todo
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    });
+                }
+            }
+        } catch (e) { console.error("Error al consultar transferencias en inicio:", e); }
+
+        // B. Radar de Bodega (Checkouts de OPs)
         try {
             const resCheck = await fetch(`${API_URL}/api/checkout/pendientes/${usuarioLogueado.id_empleado}/${encodeURIComponent(usuarioLogueado.nombre_completo)}`);
             if (resCheck.ok) {
                 const pendientes = await resCheck.json();
                 if (pendientes && pendientes.length > 0) {
-                    contenedorNotif.innerHTML = pendientes.map(op => `
-                        <div class="alerta-card warning">
-                            <i class="ph ph-warning-circle" style="font-size: 20px;"></i>
-                            <span style="flex: 1;">⚠️ <b>${op.label || op.folio || 'Orden pendiente'}</b> | Estatus actual: <code>${op.estado || 'PENDIENTE'}</code></span>
-                            <button onclick="abrirCheckoutConOP(${op.id_evento || 0}, '${(op.label || '').replace(/'/g, "\\'")}')" style="background: #b45309; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-                                <i class="ph ph-arrow-right"></i> Ver
-                            </button>
-                        </div>
-                    `).join("");
-                } else {
-                    contenedorNotif.innerHTML = `<div class="alerta-card success"><i class="ph ph-check-circle" style="font-size: 20px;"></i> Radar de Bodega: 100% de Checkouts al día (Operación Limpia)</div>`;
+                    pendientes.forEach(op => {
+                        htmlCards.push(`
+                            <div class="alerta-card warning" style="margin-bottom: 8px;">
+                                <i class="ph ph-warning-circle" style="font-size: 20px;"></i>
+                                <span style="flex: 1;">⚠️ <b>${op.label || op.folio || 'Orden pendiente'}</b> | Estatus actual: <code>${op.estado || 'PENDIENTE'}</code></span>
+                                <button onclick="abrirCheckoutConOP(${op.id_evento || 0}, '${(op.label || '').replace(/'/g, "\\'")}')" style="background: #b45309; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="ph ph-arrow-right"></i> Ver
+                                </button>
+                            </div>
+                        `);
+                    });
                 }
-            } else {
-                contenedorNotif.innerHTML = `<div class="alerta-card success"><i class="ph ph-check-circle" style="font-size: 20px;"></i> Radar de Bodega: 100% de Checkouts al día (Operación Limpia)</div>`;
             }
-        } catch (e) {
-            contenedorNotif.innerHTML = `<div class="alerta-card success"><i class="ph ph-check-circle" style="font-size: 20px;"></i> Radar de Bodega: 100% de Checkouts al día (Operación Limpia)</div>`;
+        } catch (e) { console.error("Error al consultar checkouts en inicio:", e); }
+
+        if (htmlCards.length > 0) {
+            contenedorNotif.innerHTML = htmlCards.join("");
+        } else {
+            contenedorNotif.innerHTML = `<div class="alerta-card success"><i class="ph ph-check-circle" style="font-size: 20px;"></i> Radar de Bodega: 100% de Checkouts al día y sin transferencias pendientes (Operación Limpia)</div>`;
         }
     }
 
@@ -10810,4 +10870,446 @@ function decirSaludoKiosco(idEmpleado = "", nombreCompleto = "") {
     // Evita encimar voces si pasan varios rápido
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(locucion);
+}
+
+// ==========================================
+// 📦 MÓDULO VPRO TRANSFER (COMPARTIR ARCHIVOS HASTA 5GB CON BORRADO EN 7H POST-DESCARGA)
+// ==========================================
+let archivoTransferenciaSeleccionado = null;
+let peticionSubidaXHR = null;
+
+function cambiarPestanaTransferencias(pestana) {
+    const subvistas = {
+        'enviar': document.getElementById('subvista-transfer-enviar'),
+        'recibidos': document.getElementById('subvista-transfer-recibidos'),
+        'enviados': document.getElementById('subvista-transfer-enviados')
+    };
+    const botones = {
+        'enviar': document.getElementById('tab-transfer-btn-enviar'),
+        'recibidos': document.getElementById('tab-transfer-btn-recibidos'),
+        'enviados': document.getElementById('tab-transfer-btn-enviados')
+    };
+
+    Object.keys(subvistas).forEach(k => {
+        if (subvistas[k]) subvistas[k].style.display = (k === pestana) ? 'block' : 'none';
+        if (botones[k]) {
+            if (k === pestana) {
+                botones[k].style.background = '#0f172a';
+                botones[k].style.color = '#ffffff';
+                botones[k].style.border = 'none';
+            } else {
+                botones[k].style.background = '#f1f5f9';
+                botones[k].style.color = '#475569';
+                botones[k].style.border = '1px solid #cbd5e1';
+            }
+        }
+    });
+
+    if (pestana === 'recibidos') {
+        cargarTransferenciasRecibidos();
+    } else if (pestana === 'enviados') {
+        cargarTransferenciasEnviados();
+    }
+}
+
+async function cargarTransferenciasModulo() {
+    if (!usuarioLogueado) return;
+    
+    // Configurar Dropzone Drag & Drop
+    const dropzone = document.getElementById("transfer-dropzone");
+    if (dropzone && !dropzone.dataset.dragInit) {
+        dropzone.dataset.dragInit = "true";
+        dropzone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = "var(--accent-color)";
+            dropzone.style.background = "#eef2ff";
+        });
+        dropzone.addEventListener("dragleave", (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = "#94a3b8";
+            dropzone.style.background = "#f8fafc";
+        });
+        dropzone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = "#94a3b8";
+            dropzone.style.background = "#f8fafc";
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const fakeInput = { files: e.dataTransfer.files };
+                alSeleccionarArchivoTransferencia(fakeInput);
+            }
+        });
+    }
+
+    // Cargar selector de empleados activos (excluyendo al usuario actual)
+    const selectDestino = document.getElementById("transfer-select-destino");
+    if (selectDestino) {
+        try {
+            const res = await fetch(`${API_URL}/api/empleados/lista`);
+            if (res.ok) {
+                const empleados = await res.json();
+                const actual = selectDestino.value;
+                selectDestino.innerHTML = '<option value="">-- Selecciona un colaborador activo --</option>' + 
+                    empleados
+                        .filter(e => String(e.id_empleado).trim() !== String(usuarioLogueado.id_empleado).trim())
+                        .map(e => `<option value="${e.id_empleado}" data-nombre="${e.nombre}">${e.nombre} (${e.depto || 'General'} - ID ${e.id_empleado})</option>`)
+                        .join("");
+                if (actual) selectDestino.value = actual;
+            }
+        } catch (e) {
+            console.error("Error al cargar empleados para transferencia:", e);
+        }
+    }
+
+    cargarTransferenciasRecibidos();
+    cargarTransferenciasEnviados();
+    cargarBadges();
+}
+
+function alSeleccionarArchivoTransferencia(input) {
+    if (!input.files || input.files.length === 0) return;
+    const archivo = input.files[0];
+    
+    const LIMITE_5GB = 5 * 1024 * 1024 * 1024; // 5 GB
+    if (archivo.size > LIMITE_5GB) {
+        alert(`⚠️ El archivo seleccionado "${archivo.name}" pesa ${(archivo.size / (1024*1024*1024)).toFixed(2)} GB.\nEl límite máximo permitido para transferencias es de 5.0 GB.`);
+        input.value = "";
+        archivoTransferenciaSeleccionado = null;
+        quitarArchivoTransferencia();
+        return;
+    }
+
+    archivoTransferenciaSeleccionado = archivo;
+    const box = document.getElementById("transfer-archivo-seleccionado");
+    const lblNombre = document.getElementById("transfer-label-nombre");
+    const lblPeso = document.getElementById("transfer-label-peso");
+
+    if (lblNombre) lblNombre.innerText = archivo.name;
+    if (lblPeso) {
+        let tamStr = "";
+        if (archivo.size < 1024 * 1024) {
+            tamStr = (archivo.size / 1024).toFixed(1) + " KB";
+        } else if (archivo.size < 1024 * 1024 * 1024) {
+            tamStr = (archivo.size / (1024 * 1024)).toFixed(1) + " MB";
+        } else {
+            tamStr = (archivo.size / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+        }
+        lblPeso.innerText = tamStr;
+    }
+    if (box) box.style.display = "flex";
+}
+
+function quitarArchivoTransferencia() {
+    archivoTransferenciaSeleccionado = null;
+    const input = document.getElementById("transfer-input-file");
+    if (input) input.value = "";
+    const box = document.getElementById("transfer-archivo-seleccionado");
+    if (box) box.style.display = "none";
+}
+
+function enviarTransferenciaArchivo() {
+    if (!usuarioLogueado) {
+        alert("Debes iniciar sesión para transferir archivos.");
+        return;
+    }
+
+    const selectDestino = document.getElementById("transfer-select-destino");
+    if (!selectDestino || !selectDestino.value) {
+        alert("Por favor selecciona al empleado destinatario que recibirá el archivo.");
+        return;
+    }
+
+    if (!archivoTransferenciaSeleccionado) {
+        alert("Por favor selecciona o arrastra el archivo que deseas transferir (máximo 5 GB).");
+        return;
+    }
+
+    const optionSel = selectDestino.options[selectDestino.selectedIndex];
+    const nombreDestino = optionSel ? (optionSel.getAttribute("data-nombre") || optionSel.text) : "Destinatario";
+    const mensaje = document.getElementById("transfer-input-mensaje")?.value || "";
+
+    const formData = new FormData();
+    formData.append("id_empleado_origen", usuarioLogueado.id_empleado);
+    formData.append("nombre_origen", usuarioLogueado.nombre_completo);
+    formData.append("id_empleado_destino", selectDestino.value);
+    formData.append("nombre_destino", nombreDestino);
+    formData.append("mensaje", mensaje);
+    formData.append("file", archivoTransferenciaSeleccionado);
+
+    const btnEnviar = document.getElementById("btn-enviar-transferencia");
+    const progresoBox = document.getElementById("transfer-progreso-box");
+    const barraProgreso = document.getElementById("transfer-progreso-barra");
+    const textoPorcentaje = document.getElementById("transfer-progreso-porcentaje");
+    const textoDetalle = document.getElementById("transfer-progreso-detalle");
+    const textoProgreso = document.getElementById("transfer-progreso-texto");
+
+    if (btnEnviar) {
+        btnEnviar.disabled = true;
+        btnEnviar.innerHTML = `<i class="ph ph-spinner ph-spin"></i> Subiendo archivo...`;
+    }
+    if (progresoBox) progresoBox.style.display = "block";
+    if (barraProgreso) barraProgreso.style.width = "0%";
+    if (textoPorcentaje) textoPorcentaje.innerText = "0%";
+
+    const xhr = new XMLHttpRequest();
+    peticionSubidaXHR = xhr;
+
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+            const porcentaje = Math.round((e.loaded / e.total) * 100);
+            if (barraProgreso) barraProgreso.style.width = porcentaje + "%";
+            if (textoPorcentaje) textoPorcentaje.innerText = porcentaje + "%";
+            
+            const subidoMB = (e.loaded / (1024 * 1024)).toFixed(1);
+            const totalMB = (e.total / (1024 * 1024)).toFixed(1);
+            if (textoDetalle) {
+                if (e.total >= 1024 * 1024 * 1024) {
+                    const subidoGB = (e.loaded / (1024 * 1024 * 1024)).toFixed(2);
+                    const totalGB = (e.total / (1024 * 1024 * 1024)).toFixed(2);
+                    textoDetalle.innerText = `${subidoGB} GB / ${totalGB} GB`;
+                } else {
+                    textoDetalle.innerText = `${subidoMB} MB / ${totalMB} MB`;
+                }
+            }
+            if (textoProgreso) {
+                textoProgreso.innerText = (porcentaje >= 100) 
+                    ? "Procesando y registrando en servidor..." 
+                    : `Subiendo archivo: ${porcentaje}%`;
+            }
+        }
+    };
+
+    xhr.onload = function() {
+        if (btnEnviar) {
+            btnEnviar.disabled = false;
+            btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo`;
+        }
+        if (xhr.status === 200) {
+            try {
+                const res = JSON.parse(xhr.responseText);
+                alert(`✅ Archivo transferido con éxito!\n\nSe envió "${res.nombre_archivo}" (${res.tamano}) a ${res.destinatario}.\nEl destinatario ya puede ver la notificación para descargarlo.`);
+                
+                // Limpiar formulario
+                quitarArchivoTransferencia();
+                if (document.getElementById("transfer-input-mensaje")) {
+                    document.getElementById("transfer-input-mensaje").value = "";
+                }
+                if (progresoBox) progresoBox.style.display = "none";
+
+                // Cambiar a pestaña de Enviados
+                cambiarPestanaTransferencias("enviados");
+            } catch (err) {
+                alert("Transferencia completada correctamente.");
+            }
+        } else {
+            let errorMsg = "Error al subir archivo.";
+            try {
+                const errObj = JSON.parse(xhr.responseText);
+                errorMsg = errObj.detail || errorMsg;
+            } catch (_) {}
+            alert("❌ " + errorMsg);
+            if (progresoBox) progresoBox.style.display = "none";
+        }
+    };
+
+    xhr.onerror = function() {
+        if (btnEnviar) {
+            btnEnviar.disabled = false;
+            btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo`;
+        }
+        if (progresoBox) progresoBox.style.display = "none";
+        alert("❌ Error de conexión al intentar subir el archivo.");
+    };
+
+    xhr.open("POST", `${API_URL}/api/transferencias/subir`, true);
+    xhr.send(formData);
+}
+
+async function cargarTransferenciasRecibidos() {
+    if (!usuarioLogueado) return;
+    const tbody = document.getElementById("tabla-transfer-recibidos-body");
+    if (!tbody) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/transferencias/recibidos/${usuarioLogueado.id_empleado}`);
+        if (!res.ok) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Error al consultar archivos recibidos.</td></tr>';
+            return;
+        }
+
+        const recibidos = await res.json();
+        const badgeCount = document.getElementById("badge-transfer-recibidos-count");
+        const noDescargados = recibidos.filter(r => !r.descargado);
+        if (badgeCount) {
+            if (noDescargados.length > 0) {
+                badgeCount.innerText = noDescargados.length;
+                badgeCount.style.display = "inline-block";
+            } else {
+                badgeCount.style.display = "none";
+            }
+        }
+
+        if (!recibidos || recibidos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 32px;">📭 No tienes archivos compartidos recibidos por el momento.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = recibidos.map(item => {
+            let estatusBadge = "";
+            let btnDescarga = "";
+
+            if (!item.descargado) {
+                estatusBadge = `
+                    <span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="ph ph-sparkle"></i> Nuevo (Sin descargar)
+                    </span>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Se iniciará cuenta de 7h al descargar</div>
+                `;
+                btnDescarga = `
+                    <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                        <i class="ph ph-download-simple"></i> Descargar
+                    </button>
+                `;
+            } else {
+                estatusBadge = `
+                    <span style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="ph ph-clock-countdown"></i> ${item.tiempo_restante_texto}
+                    </span>
+                    <div style="font-size: 11px; color: #d97706; margin-top: 3px;">Descargado ${item.veces_descargado || 1} vez(ces)</div>
+                `;
+                btnDescarga = `
+                    <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #0284c7; color: white; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px;">
+                        <i class="ph ph-arrow-counter-clockwise"></i> Re-descargar
+                    </button>
+                `;
+            }
+
+            return `
+                <tr>
+                    <td style="font-weight: 600; color: #0f172a;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+                                ${(item.nombre_origen || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div>${item.nombre_origen}</div>
+                                <span style="font-size: 11px; color: #64748b;">ID: ${item.id_empleado_origen}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-weight: 600; color: #1e3a8a; max-width: 250px; word-break: break-all;">
+                        <i class="ph ph-file-text" style="color: #3b82f6; margin-right: 4px;"></i>
+                        ${item.nombre_archivo_original}
+                    </td>
+                    <td style="white-space: nowrap;"><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155;">${item.tamano_legible}</span></td>
+                    <td style="font-size: 12.5px; color: #475569; white-space: nowrap;">${item.fecha_subida_str || ''}</td>
+                    <td style="font-size: 12.5px; color: #475569; max-width: 220px;">${item.mensaje ? `"${item.mensaje}"` : '<span style="color:#cbd5e1;">Sin notas</span>'}</td>
+                    <td>${estatusBadge}</td>
+                    <td style="text-align: center; white-space: nowrap;">${btnDescarga}</td>
+                </tr>
+            `;
+        }).join("");
+
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Error al cargar archivos recibidos.</td></tr>';
+    }
+}
+
+async function cargarTransferenciasEnviados() {
+    if (!usuarioLogueado) return;
+    const tbody = document.getElementById("tabla-transfer-enviados-body");
+    if (!tbody) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/transferencias/enviados/${usuarioLogueado.id_empleado}`);
+        if (!res.ok) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Error al consultar archivos enviados.</td></tr>';
+            return;
+        }
+
+        const enviados = await res.json();
+        if (!enviados || enviados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 32px;">No has enviado archivos recientemente.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = enviados.map(item => {
+            const puedeEliminar = item.estatus !== 'EXPIRADO_BORRADO' && item.estatus !== 'CANCELADO';
+            const btnAccion = puedeEliminar ? `
+                <button onclick="eliminarTransferencia(${item.id_transferencia})" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 5px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;" title="Eliminar archivo del servidor">
+                    <i class="ph ph-trash"></i> Cancelar / Borrar
+                </button>
+            ` : `<span style="font-size: 12px; color: #94a3b8;">Finalizado</span>`;
+
+            return `
+                <tr>
+                    <td style="font-weight: 600; color: #0f172a;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+                                ${(item.nombre_destino || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div>${item.nombre_destino}</div>
+                                <span style="font-size: 11px; color: #64748b;">ID: ${item.id_empleado_destino}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-weight: 600; color: #1e3a8a; max-width: 250px; word-break: break-all;">
+                        <i class="ph ph-file" style="color: #64748b; margin-right: 4px;"></i>
+                        ${item.nombre_archivo_original}
+                    </td>
+                    <td style="white-space: nowrap;"><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155;">${item.tamano_legible}</span></td>
+                    <td style="font-size: 12.5px; color: #475569; white-space: nowrap;">${item.fecha_subida_str || ''}</td>
+                    <td style="font-size: 12.5px; color: #475569; max-width: 220px;">${item.mensaje ? `"${item.mensaje}"` : '<span style="color:#cbd5e1;">Sin notas</span>'}</td>
+                    <td>
+                        <span style="font-size: 12.5px; font-weight: 600; color: #334155;">
+                            ${item.estado_display}
+                        </span>
+                    </td>
+                    <td style="text-align: center; white-space: nowrap;">${btnAccion}</td>
+                </tr>
+            `;
+        }).join("");
+
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Error al cargar archivos enviados.</td></tr>';
+    }
+}
+
+function descargarArchivoTransferenciaDirecto(idTransferencia, nombreArchivo = "") {
+    const urlDescarga = `${API_URL}/api/transferencias/descargar/${idTransferencia}`;
+    
+    const a = document.createElement("a");
+    a.href = urlDescarga;
+    a.setAttribute("download", nombreArchivo || "archivo");
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setTimeout(() => {
+        alert(`📥 Tu descarga ha comenzado.\n\n⚠️ RECUERDA: Este archivo permanecerá disponible en el servidor por 7 horas a partir de este momento. Después de ese lapso, el sistema lo borrará automáticamente para mantener limpio el almacenamiento.`);
+        cargarTransferenciasRecibidos();
+        cargarDatosInicio();
+        cargarBadges();
+    }, 800);
+}
+
+async function eliminarTransferencia(idTransferencia) {
+    if (!confirm("¿Deseas cancelar esta transferencia y borrar el archivo físico del servidor ahora mismo?")) {
+        return;
+    }
+    try {
+        const res = await fetch(`${API_URL}/api/transferencias/eliminar/${idTransferencia}`, {
+            method: 'DELETE'
+        });
+        if (res.ok) {
+            cargarTransferenciasEnviados();
+            cargarTransferenciasRecibidos();
+            cargarDatosInicio();
+            cargarBadges();
+        } else {
+            alert("No se pudo eliminar la transferencia.");
+        }
+    } catch (e) {
+        alert("Error de conexión al eliminar transferencia.");
+    }
 }

@@ -39,6 +39,16 @@ def piloto_automatico_asistencias():
     except Exception as e:
         print(f"[PILOTO AUTOMATICO ERROR]: {e}")
 
+def tarea_limpiar_archivos_compartidos():
+    """Limpia archivos compartidos que excedieron las 7 horas de su descarga o 72h sin descargar."""
+    try:
+        from routers.transferencias import ejecutar_limpieza_expirados
+        eliminados = ejecutar_limpieza_expirados()
+        if eliminados > 0:
+            print(f"[SCHEDULER] Se limpiaron {eliminados} archivos compartidos expirados (regla 7h).")
+    except Exception as e:
+        print(f"[SCHEDULER ERROR] Error al limpiar archivos compartidos: {e}")
+
 def init_scheduler():
     """Registra las tareas cron e inicia el scheduler si no está corriendo."""
     if not scheduler.running:
@@ -46,6 +56,7 @@ def init_scheduler():
         scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=14, minute=0), id="asistencia_1400", replace_existing=True)
         scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=16, minute=0), id="asistencia_1600", replace_existing=True)
         scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=19, minute=0), id="asistencia_1900", replace_existing=True)
+        scheduler.add_job(tarea_limpiar_archivos_compartidos, 'interval', minutes=15, id="limpiar_transferencias_15m", replace_existing=True)
         scheduler.start()
         print("[SCHEDULER] Planificador de tareas en segundo plano iniciado correctamente.")
 

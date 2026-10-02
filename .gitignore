@@ -1,0 +1,9 @@
+# Backups locales de videos pesados (>100MB no permitidos por GitHub)
+prueba_web/vpro_fondo_local_147mb.mp4
+prueba_web/vpro_fondo_otro.mp4
+prueba_web/vpro_fondo_respaldo.mp4
+prueba_web/nuve_dumy.txt
+
+# Scratch y temporales
+scratch/
+*.tmp

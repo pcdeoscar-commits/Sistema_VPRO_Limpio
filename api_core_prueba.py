@@ -11,7 +11,8 @@ from fastapi.staticfiles import StaticFiles
 from core.config import (
     CORS_ORIGINS, 
     FOTOS_EQUIPOS_DIR, 
-    DIR_EVIDENCIAS_REAL
+    DIR_EVIDENCIAS_REAL,
+    FOTOS_EVENTOS_DIR
 )
 
 # 3️⃣ SERVIR ARCHIVOS ESTÁTICOS (FOTOGRAFÍAS)
@@ -46,7 +47,8 @@ from routers import (
     incidencias,
     reuniones,
     dashboard,
-    rh
+    rh,
+    cronogramas
 )
 
 # 🔄 CICLO DE VIDA DE LA APLICACIÓN (Lifespan Context Manager)
@@ -78,6 +80,7 @@ app.add_middleware(
 # 3️⃣ MONTAJE DE DIRECTORIOS ESTÁTICOS
 app.mount("/fotos", StaticFiles(directory="Fotos_de_personal"), name="fotos")
 app.mount("/Fotos_de_equipos", StaticFiles(directory=str(FOTOS_EQUIPOS_DIR)), name="fotos_equipos")
+app.mount("/Fotos_de_eventos", StaticFiles(directory=str(FOTOS_EVENTOS_DIR)), name="fotos_eventos")
 app.mount("/evidencias_web", StaticFiles(directory=str(DIR_EVIDENCIAS_REAL)), name="evidencias")
 
 # 4️⃣ REGISTRO DE ROUTERS MODULARES
@@ -95,6 +98,7 @@ app.include_router(incidencias.router)
 app.include_router(reuniones.router)
 app.include_router(dashboard.router)
 app.include_router(rh.router)
+app.include_router(cronogramas.router)
 
 @app.get("/health", tags=["Sistema"])
 def health_check():

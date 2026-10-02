@@ -33,18 +33,35 @@ def contar_gastos_pendientes_api():
 
 @router.get("/folios-pendientes")
 def listar_folios_pendientes_gastos():
-    """Lista las OPs que tienen checkout recibido pero no tienen informe de gastos."""
+    """Lista las OPs activas y pendientes que no tienen informe de gastos registrado.
+    Permite a los productores asignados en la OP rendir sus cuentas sin bloqueos.
+    """
     query = text("""
-        SELECT e.id_evento, encode(e.para_q_cliente::bytea, 'hex'), encode(e.nombre_evento::bytea, 'hex')
+        SELECT e.id_evento, 
+               encode(e.para_q_cliente::bytea, 'hex'), 
+               encode(e.nombre_evento::bytea, 'hex'),
+               encode(e.resp_de_produccion::bytea, 'hex'),
+               e.fec_del_evento,
+               e.fec_de_instalacion
         FROM public.eventos e
-        WHERE NOT EXISTS (SELECT 1 FROM public.informes_gastos_maestro m WHERE m.folio_vpro = e.id_evento)
-        AND EXISTS (SELECT 1 FROM public.checkouts_maestro cm WHERE cm.folio_op = e.id_evento AND cm.estado_bodega = 'RECIBIDO')
+        WHERE NOT EXISTS (
+            SELECT 1 FROM public.informes_gastos_maestro m 
+            WHERE m.folio_vpro = e.id_evento
+        )
         ORDER BY e.id_evento DESC
     """)
     try:
         with engine_eventos.connect() as conn: 
             rows = conn.execute(query).fetchall()
-            return [{"id_evento": r[0], "cliente": safe_decode_hex(r[1]), "nombre_evento": safe_decode_hex(r[2])} for r in rows]
+            return [
+                {
+                    "id_evento": r[0], 
+                    "cliente": safe_decode_hex(r[1]), 
+                    "nombre_evento": safe_decode_hex(r[2]),
+                    "productor": safe_decode_hex(r[3]),
+                    "fec_evento": str(r[4]) if r[4] else (str(r[5]) if r[5] else "")
+                } for r in rows
+            ]
     except Exception as e: 
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -52,19 +69,45 @@ def listar_folios_pendientes_gastos():
 def obtener_datos_evento_gasto(id_evento: int):
     """Obtiene los datos base del evento para la rendición de gastos."""
     query = text("""
-        SELECT encode(resp_de_produccion::bytea, 'hex'), fec_de_instalacion, 
-               encode(carros_usados_op::text::bytea, 'hex'), encode(personal_convocado_op::text::bytea, 'hex')
+        SELECT encode(resp_de_produccion::bytea, 'hex'), 
+               fec_de_instalacion, 
+               carros_usados_op, 
+               personal_convocado_op,
+               encode(nombre_evento::bytea, 'hex'),
+               encode(para_q_cliente::bytea, 'hex')
         FROM public.eventos WHERE id_evento = :id
     """)
     try:
         with engine_eventos.connect() as conn: 
             res = conn.execute(query, {"id": id_evento}).first()
             if res:
+                # Autos parse
+                raw_autos = res[2]
+                autos_list = []
+                if isinstance(raw_autos, list):
+                    autos_list = [str(x) for x in raw_autos if x]
+                elif isinstance(raw_autos, str):
+                    clean_str = raw_autos.strip("{}")
+                    if clean_str:
+                        autos_list = [x.strip(' "\'') for x in clean_str.split(",") if x.strip(' "\'')]
+
+                # Personal convocado parse
+                raw_personal = res[3]
+                personal_list = []
+                if isinstance(raw_personal, list):
+                    personal_list = [str(x) for x in raw_personal if x]
+                elif isinstance(raw_personal, str):
+                    clean_str = raw_personal.strip("{}")
+                    if clean_str:
+                        personal_list = [x.strip(' "\'') for x in clean_str.split(",") if x.strip(' "\'')]
+
                 return {
                     "productor_responsable": safe_decode_hex(res[0]), 
                     "fec_de_instalacion": str(res[1]) if res[1] else None, 
-                    "carros_usados_op": safe_decode_hex(res[2]), 
-                    "personal_convocado_op": safe_decode_hex(res[3])
+                    "carros_usados_op": autos_list, 
+                    "personal_convocado_op": personal_list,
+                    "nombre_evento": safe_decode_hex(res[4]),
+                    "cliente": safe_decode_hex(res[5])
                 }
             raise HTTPException(status_code=404, detail="Evento no mapeado")
     except Exception as e: 
@@ -76,6 +119,32 @@ def guardar_informe_gastos_completo(payload: dict):
     try:
         maestro = payload.get("maestro", {})
         detalles = payload.get("detalles", [])
+        
+        folio_vpro = int(maestro.get("folio_vpro", 0))
+        emp_id = str(maestro.get("id_empleado", "")).strip()[:3]
+
+        # Si no se pasó id_empleado o viene por defecto "000", resolverlo mediante el productor responsable
+        if not emp_id or emp_id == "000":
+            try:
+                with engine_eventos.connect() as ev_conn:
+                    row_ev = ev_conn.execute(
+                        text("SELECT encode(resp_de_produccion::bytea, 'hex') FROM public.eventos WHERE id_evento = :id"),
+                        {"id": folio_vpro}
+                    ).first()
+                    if row_ev:
+                        prod_nom = safe_decode_hex(row_ev[0]).strip().lower()
+                        with engine_personal.connect() as p_conn:
+                            emp_rows = p_conn.execute(text("SELECT id_empleado, encode(nombre::bytea, 'hex') FROM public.empleados")).fetchall()
+                            for er in emp_rows:
+                                if prod_nom and safe_decode_hex(er[1]).strip().lower() == prod_nom:
+                                    emp_id = str(er[0])[:3]
+                                    break
+            except Exception:
+                pass
+        
+        if not emp_id:
+            emp_id = "000"
+
         with engine_eventos.begin() as conn:
             sql_m = text("""
                 INSERT INTO public.informes_gastos_maestro (
@@ -88,8 +157,8 @@ def guardar_informe_gastos_completo(payload: dict):
                 ) RETURNING id_informe
             """)
             id_informe = conn.execute(sql_m, {
-                "folio_vpro": int(maestro.get("folio_vpro")), 
-                "id_empleado": str(maestro.get("id_empleado", ""))[:3], 
+                "folio_vpro": folio_vpro, 
+                "id_empleado": emp_id, 
                 "periodo_desde": maestro.get("periodo_desde"),
                 "periodo_hasta": maestro.get("periodo_hasta"), 
                 "vehiculo": str(maestro.get("vehiculo", ""))[:100], 

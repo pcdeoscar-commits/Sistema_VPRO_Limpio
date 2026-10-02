@@ -412,6 +412,7 @@ function iniciarRelojKiosco() {
         const ahora = new Date();
         reloj.innerText = ahora.toLocaleTimeString('es-MX', { hour12: false });
         fecha.innerText = ahora.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        verificarHorariosCampana();
     };
     
     actualizar();
@@ -673,6 +674,11 @@ function inicializarLectorKiosco() {
                     body: JSON.stringify({ id_empleado: qrCode, tipo_movimiento: "CHEQUEO", estatus: "ASISTENCIA", observaciones: "Kiosco HTML" })
                 });
                 const resultado = await respuesta.json();
+
+                if (respuesta.ok && resultado.status !== "WARNING") {
+                    // 🗣️ Le pasamos el ID escaneado (qrCode) y el nombre de respaldo
+                    decirSaludoKiosco(qrCode, resultado.nombre_empleado || "");
+                }
                 
                 try {
                     const resEmps = await fetch(`${API_URL}/api/empleados`);
@@ -776,15 +782,17 @@ async function inicializarModuloOP() {
     if (!selectFolios) return;
 
     try {
-        const [resFolios, resCats, resReus] = await Promise.all([
+        const [resFolios, resCats, resReus, resCron] = await Promise.all([
             fetch(`${API_URL}/api/eventos/folios`),
             fetch(`${API_URL}/api/eventos/catalogos`),
-            fetch(`${API_URL}/api/reuniones/catalogo`).catch(() => ({ ok: false }))
+            fetch(`${API_URL}/api/reuniones/catalogo`).catch(() => ({ ok: false })),
+            fetch(`${API_URL}/api/cronogramas/catalogo/op`).catch(() => ({ ok: false }))
         ]);
 
         const dataFolios = await resFolios.json();
         const dataCats = await resCats.json();
         const dataReus = resReus.ok ? await resReus.json() : [];
+        const dataCron = (resCron && resCron.ok) ? await resCron.json() : [];
 
         window.vproFoliosActivos = dataFolios.folios || [];
         window.vproFoliosHistoricos = dataFolios.folios_historicos || [];
@@ -793,7 +801,8 @@ async function inicializarModuloOP() {
         // Combinar catálogos
         window.vproCatalogosOP = {
             ...dataCats,
-            reuniones: dataReus || []
+            reuniones: dataReus || [],
+            cronogramas: dataCron || []
         };
 
         // 1. Poblar folios activos
@@ -1046,6 +1055,43 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     <div id="ms-reuniones-${isReadOnly ? 'hist' : 'act'}"></div>
                 </div>
 
+                <!-- Fila 5.1: Vincular Cronograma(s) de Actividades -->
+                <div style="margin-bottom: 16px;">
+                    <label class="op-form-label">📅 VINCULAR CRONOGRAMA(S) DE ACTIVIDADES:</label>
+                    <div id="ms-cronogramas-${isReadOnly ? 'hist' : 'act'}"></div>
+                </div>
+
+                <!-- Fila 5.2: Evidencias Multimedia del Evento (Fotos y Videos MP4) -->
+                <div style="margin-bottom: 20px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                        <label class="op-form-label" style="margin: 0; font-size: 13.5px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                            <i class="ph ph-film-slate" style="color: #0284c7; font-size: 18px;"></i>
+                            <span>📸 / 🎥 EVIDENCIAS MULTIMEDIA (FOTOS Y VIDEOS MP4):</span>
+                        </label>
+                        <span id="op-fotos-badge-${isReadOnly ? 'hist' : 'act'}" style="font-size: 12px; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 3px 10px; border-radius: 20px; border: 1px solid #bae6fd;">
+                            ${formatearTextoBadgeEvidencias(data.fotos_evidencia || [])}
+                        </span>
+                    </div>
+
+                    ${!isReadOnly ? `
+                        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;">
+                            <label style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; border-radius: 6px; padding: 9px 18px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; box-shadow: 0 2px 4px rgba(2,132,199,0.25); transition: opacity 0.2s;">
+                                <i class="ph ph-plus-circle" style="font-size: 17px;"></i>
+                                <span>➕ Subir Fotos o Videos MP4</span>
+                                <input type="file" id="input-fotos-evidencia-${data.id_evento}" multiple accept="image/jpeg,image/png,image/webp,video/mp4" style="display: none;" onchange="alSubirFotosEvidenciaOP(this, ${data.id_evento})">
+                            </label>
+                            <span style="font-size: 12px; color: #64748b; line-height: 1.4;">
+                                <i class="ph ph-shield-check" style="color: #0284c7;"></i> Límite estricto: <strong>Fotos máx. 1 MB</strong> (JPG, PNG, WebP) | <strong>Videos máx. 5 MB</strong> (MP4) para evitar saturación de disco.
+                            </span>
+                        </div>
+                    ` : ''}
+
+                    <!-- Cuadrícula / Galería de Evidencias Multimedia -->
+                    <div id="galeria-fotos-evidencia-${isReadOnly ? 'hist' : 'act'}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; min-height: 80px; align-items: start;">
+                        ${generarHtmlGaleriaFotosEvidencia(data.fotos_evidencia || [], isReadOnly, data.id_evento)}
+                    </div>
+                </div>
+
                 <!-- Fila 6: Tipo de Servicio -->
                 <div>
                     <label class="op-form-label">🛠️ TIPO DE SERVICIO:</label>
@@ -1151,6 +1197,59 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 </div>
             </div>
 
+            <!-- 📅 DETALLE DE CRONOGRAMAS VINCULADOS -->
+            ${(data.detalle_cronogramas && data.detalle_cronogramas.length > 0) ? `
+                <div class="op-section-card" style="border-left: 4px solid #0284c7;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h3 class="op-section-title" style="margin: 0; color: #0369a1;">
+                            <i class="ph ph-calendar-check"></i> 📅 Cronograma(s) de Actividades Vinculado(s) a esta OP
+                        </h3>
+                    </div>
+                    ${data.detalle_cronogramas.map(cron => `
+                        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <span style="font-weight: 800; font-size: 15px; color: #0f172a;">FOLIO: ${cron.folio || cron.id_cronograma}</span>
+                                    <span style="margin-left: 12px; font-weight: 600; color: #0284c7;">📅 FECHA: ${cron.fecha || '--'}</span>
+                                    <span style="margin-left: 12px; color: #475569;">📍 ${cron.ubicacion_general || '--'}</span>
+                                </div>
+                                <button type="button" onclick="imprimirCronogramaDirecto(${cron.id_cronograma})" style="background: #0284c7; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                    <i class="ph ph-printer"></i> 🖨️ Imprimir Hoja Oficial
+                                </button>
+                            </div>
+                            <div class="cat-table-wrap" style="max-height: 280px; overflow-y: auto;">
+                                <table class="tabla-vpro" style="font-size: 11.5px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Horario</th>
+                                            <th>Actividad</th>
+                                            <th>Ubicación</th>
+                                            <th>Evento</th>
+                                            <th>Personal Convocado</th>
+                                            <th>Vehículo</th>
+                                            <th>Observaciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${(Array.isArray(cron.actividades) && cron.actividades.length > 0) ? cron.actividades.map(act => `
+                                            <tr>
+                                                <td style="font-weight: 600;">${act.horario || ''}</td>
+                                                <td>${act.actividad || ''}</td>
+                                                <td>${act.ubicacion || ''}</td>
+                                                <td>${act.evento || ''}</td>
+                                                <td>${act.personal_convocado || ''}</td>
+                                                <td>${act.vehiculo || ''}</td>
+                                                <td>${act.observaciones || ''}</td>
+                                            </tr>
+                                        `).join('') : '<tr><td colspan="7" style="text-align: center;">Sin actividades desglosadas.</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
+
             <!-- 🖊️ 4. AUTORIZACIONES -->
             <div class="op-section-card">
                 <h3 class="op-section-title">🖊️ Autorizaciones</h3>
@@ -1211,14 +1310,17 @@ async function cargarDetalleOP(folioId) {
             vehiculos: [],
             personal_externo: [],
             proveedores: [],
-            reuniones: []
+            reuniones: [],
+            cronogramas: []
         };
+        window.opFotosEvidenciaActuales = [];
 
         const proximoFolio = window.vproProximoId || 1;
         container.innerHTML = generarHtmlFormularioOP({ id_evento: proximoFolio, folio: String(proximoFolio) }, false);
 
         // Renderizar multi-selects en blanco
         renderMultiSelectComponent('ms-reuniones-act', 'reuniones', cats.reuniones, "Despliega y selecciona una o varias reuniones...");
+        renderMultiSelectComponent('ms-cronogramas-act', 'cronogramas', cats.cronogramas, "Despliega y selecciona cronograma(s) de actividades...");
         renderMultiSelectComponent('ms-personal_vpro-act', 'personal_vpro', cats.staff_vpro, "Choose options");
         renderMultiSelectComponent('ms-personal_externo-act', 'personal_externo', cats.apoyos_externos, "Choose options");
         renderMultiSelectComponent('ms-vehiculos-act', 'vehiculos', cats.autos, "Choose options");
@@ -1241,13 +1343,16 @@ async function cargarDetalleOP(folioId) {
             vehiculos: Array.isArray(data.carros_usados_op) ? data.carros_usados_op : [],
             personal_externo: Array.isArray(data.externos_op) ? data.externos_op : [],
             proveedores: Array.isArray(data.proveedor_op) ? data.proveedor_op : [],
-            reuniones: Array.isArray(data.reuniones_vinculadas) ? data.reuniones_vinculadas : []
+            reuniones: Array.isArray(data.reuniones_vinculadas) ? data.reuniones_vinculadas : [],
+            cronogramas: Array.isArray(data.cronogramas_vinculados) ? data.cronogramas_vinculados : []
         };
+        window.opFotosEvidenciaActuales = Array.isArray(data.fotos_evidencia) ? data.fotos_evidencia : [];
 
         container.innerHTML = generarHtmlFormularioOP(data, false);
 
         // Renderizar los componentes multiselect poblados
         renderMultiSelectComponent('ms-reuniones-act', 'reuniones', cats.reuniones, "Despliega y selecciona una o varias reuniones...");
+        renderMultiSelectComponent('ms-cronogramas-act', 'cronogramas', cats.cronogramas, "Despliega y selecciona cronograma(s) de actividades...");
         renderMultiSelectComponent('ms-personal_vpro-act', 'personal_vpro', cats.staff_vpro, "Choose options");
         renderMultiSelectComponent('ms-personal_externo-act', 'personal_externo', cats.apoyos_externos, "Choose options");
         renderMultiSelectComponent('ms-vehiculos-act', 'vehiculos', cats.autos, "Choose options");
@@ -1287,13 +1392,16 @@ async function cargarDetalleOPHistorico(folioId) {
             vehiculos: Array.isArray(data.carros_usados_op) ? data.carros_usados_op : [],
             personal_externo: Array.isArray(data.externos_op) ? data.externos_op : [],
             proveedores: Array.isArray(data.proveedor_op) ? data.proveedor_op : [],
-            reuniones: Array.isArray(data.reuniones_vinculadas) ? data.reuniones_vinculadas : []
+            reuniones: Array.isArray(data.reuniones_vinculadas) ? data.reuniones_vinculadas : [],
+            cronogramas: Array.isArray(data.cronogramas_vinculados) ? data.cronogramas_vinculados : []
         };
+        window.opFotosEvidenciaActuales = Array.isArray(data.fotos_evidencia) ? data.fotos_evidencia : [];
 
         const cats = window.vproCatalogosOP || {};
         container.innerHTML = generarHtmlFormularioOP(data, true);
 
         renderMultiSelectComponent('ms-reuniones-hist', 'reuniones', cats.reuniones, "Sin reuniones", true);
+        renderMultiSelectComponent('ms-cronogramas-hist', 'cronogramas', cats.cronogramas, "Sin cronogramas", true);
         renderMultiSelectComponent('ms-personal_vpro-hist', 'personal_vpro', cats.staff_vpro, "Sin personal", true);
         renderMultiSelectComponent('ms-personal_externo-hist', 'personal_externo', cats.apoyos_externos, "Sin externos", true);
         renderMultiSelectComponent('ms-vehiculos-hist', 'vehiculos', cats.autos, "Sin vehículos", true);
@@ -1564,6 +1672,8 @@ async function guardarOrdenOP(event) {
         externos_op: window.opMultiSelects.personal_externo || [],
         proveedor_op: window.opMultiSelects.proveedores || [],
         reuniones_vinculadas: window.opMultiSelects.reuniones || [],
+        cronogramas_vinculados: window.opMultiSelects.cronogramas || [],
+        fotos_evidencia: window.opFotosEvidenciaActuales || [],
         empleado_que_creo_la_op: usuarioLogueado ? usuarioLogueado.nombre_completo : ""
     };
 
@@ -2396,8 +2506,41 @@ async function cargarModuloGastos() {
             foliosPendientesGastosCache = await resFolios.json();
             const selFolio = document.getElementById("sel-gastos-folio-op");
             if (selFolio) {
-                selFolio.innerHTML = '<option value="">--- Seleccionar Folio Pendiente ---</option>' +
-                    foliosPendientesGastosCache.map(f => `<option value="${f.id_evento}">${f.id_evento} - ${f.cliente} | ${f.nombre_evento}</option>`).join("");
+                const miNombre = (usuarioLogueado?.nombre_completo || "").trim().toLowerCase();
+                
+                // Dividir OPs: Mis OPs asignadas (donde soy el productor) vs Otras OPs
+                const misOps = [];
+                const otrasOps = [];
+
+                foliosPendientesGastosCache.forEach(f => {
+                    const prod = (f.productor || "").trim().toLowerCase();
+                    if (miNombre && prod && (prod.includes(miNombre) || miNombre.includes(prod))) {
+                        misOps.push(f);
+                    } else {
+                        otrasOps.push(f);
+                    }
+                });
+
+                let optionsHtml = '<option value="">--- Seleccionar Folio Pendiente ---</option>';
+                
+                if (misOps.length > 0) {
+                    optionsHtml += `<optgroup label="⭐ MIS ÓRDENES DE PRODUCCIÓN ASIGNADAS (${misOps.length})">`;
+                    misOps.forEach(f => {
+                        optionsHtml += `<option value="${f.id_evento}">OP-${f.id_evento} | ${f.nombre_evento} (${f.cliente}) - Productor: ${f.productor}</option>`;
+                    });
+                    optionsHtml += `</optgroup>`;
+                }
+
+                if (otrasOps.length > 0) {
+                    const labelGrupo = misOps.length > 0 ? "OTRAS ÓRDENES PENDIENTES DE GASTOS" : "ÓRDENES DE PRODUCCIÓN PENDIENTES";
+                    optionsHtml += `<optgroup label="📋 ${labelGrupo} (${otrasOps.length})">`;
+                    otrasOps.forEach(f => {
+                        optionsHtml += `<option value="${f.id_evento}">OP-${f.id_evento} | ${f.nombre_evento} (${f.cliente}) - Productor: ${f.productor || 'No asignado'}</option>`;
+                    });
+                    optionsHtml += `</optgroup>`;
+                }
+
+                selFolio.innerHTML = optionsHtml;
             }
         }
 
@@ -2432,6 +2575,8 @@ async function seleccionarFolioParaGastos(folioId) {
         eventoSeleccionadoGasto = { id_evento: folioId, ...evData };
 
         const elFolio = document.getElementById("gastos-info-folio");
+        const elCliente = document.getElementById("gastos-info-cliente");
+        const elEvento = document.getElementById("gastos-info-evento");
         const elProductor = document.getElementById("gastos-info-productor");
         const elEmpRinde = document.getElementById("gastos-input-empleado");
         const elDepto = document.getElementById("gastos-input-depto");
@@ -2439,8 +2584,10 @@ async function seleccionarFolioParaGastos(folioId) {
         const elHasta = document.getElementById("gastos-input-hasta");
 
         if (elFolio) elFolio.innerText = `OP-${folioId}`;
+        if (elCliente) elCliente.innerText = evData.cliente || "--";
+        if (elEvento) elEvento.innerText = evData.nombre_evento || "--";
         if (elProductor) elProductor.innerText = evData.productor_responsable || "No asignado";
-        if (elEmpRinde) elEmpRinde.value = usuarioLogueado?.nombre_completo || "Productor VPRO";
+        if (elEmpRinde) elEmpRinde.value = evData.productor_responsable || usuarioLogueado?.nombre_completo || "Productor VPRO";
         if (elDepto) elDepto.value = usuarioLogueado?.depto || "PRODUCCION";
 
         const hoy = new Date().toISOString().substring(0, 10);
@@ -2450,15 +2597,15 @@ async function seleccionarFolioParaGastos(folioId) {
 
         // Cargar autos y sus últimos odómetros
         let autos = [];
-        try {
-            if (evData.carros_usados_op) {
-                if (Array.isArray(evData.carros_usados_op)) autos = evData.carros_usados_op;
-                else if (typeof evData.carros_usados_op === 'string') {
-                    autos = JSON.parse(evData.carros_usados_op.replace(/'/g, '"'));
-                }
+        if (Array.isArray(evData.carros_usados_op)) {
+            autos = evData.carros_usados_op;
+        } else if (typeof evData.carros_usados_op === 'string') {
+            try {
+                autos = JSON.parse(evData.carros_usados_op.replace(/'/g, '"'));
+            } catch (e) {
+                const limpio = evData.carros_usados_op.replace(/[{}\"\']/g, '').trim();
+                autos = limpio ? limpio.split(',').map(s => s.trim()) : [];
             }
-        } catch (e) {
-            autos = [evData.carros_usados_op];
         }
         autos = autos.filter(Boolean);
         if (autos.length === 0) autos = ["Unidad General"];
@@ -3105,7 +3252,7 @@ function abrirSubcatalogo(subId) {
         if (hub) hub.style.display = 'block';
 
         // Ocultar todos los sub-contenedores
-        const contenedores = ['clientes', 'autos', 'proveedores', 'inventario', 'empleados', 'reuniones'];
+        const contenedores = ['clientes', 'autos', 'proveedores', 'inventario', 'empleados', 'reuniones', 'cronogramas'];
         contenedores.forEach(c => {
             const el = document.getElementById(`subcat-${c}`);
             if (el) el.style.display = 'none';
@@ -3126,7 +3273,7 @@ function abrirSubcatalogo(subId) {
     if (btnActivo) btnActivo.classList.add('active');
 
     // Ocultar todos los sub-contenedores excepto el activo
-    const contenedores = ['clientes', 'autos', 'proveedores', 'inventario', 'empleados', 'reuniones'];
+    const contenedores = ['clientes', 'autos', 'proveedores', 'inventario', 'empleados', 'reuniones', 'cronogramas'];
     contenedores.forEach(c => {
         const el = document.getElementById(`subcat-${c}`);
         if (el) el.style.display = (c === subId) ? 'block' : 'none';
@@ -3145,6 +3292,8 @@ function abrirSubcatalogo(subId) {
         cargarCatalogoEmpleados();
     } else if (subId === 'reuniones') {
         cargarCatalogoReuniones();
+    } else if (subId === 'cronogramas') {
+        cargarCatalogoCronogramas();
     }
 
     // Actualizar conteos generales en las pestañas
@@ -5090,18 +5239,816 @@ function confirmarEliminarReunion() {
     );
 }
 
+// ==========================================================================
+// 📸 / 🎥 GESTIÓN DE EVIDENCIAS MULTIMEDIA (FOTOS MÁX 1MB Y VIDEOS MP4 MÁX 5MB)
+// ==========================================================================
+window.opFotosEvidenciaActuales = [];
+
+function formatearTextoBadgeEvidencias(fotos) {
+    if (!fotos || !Array.isArray(fotos) || fotos.length === 0) {
+        return '0 evidencias registradas';
+    }
+    const videos = fotos.filter(u => String(u).toLowerCase().endsWith('.mp4')).length;
+    const fotoss = fotos.length - videos;
+    let partes = [];
+    if (fotoss > 0) partes.push(`${fotoss} foto(s)`);
+    if (videos > 0) partes.push(`${videos} video(s) MP4`);
+    return `${fotos.length} evidencia(s) [${partes.join(', ')}]`;
+}
+
+function generarHtmlGaleriaFotosEvidencia(fotos, isReadOnly = false, idEvento = null) {
+    if (!fotos || !Array.isArray(fotos) || fotos.length === 0) {
+        return `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 22px; color: #94a3b8; font-size: 13px; font-style: italic; background: #ffffff; border-radius: 8px; border: 1.5px dashed #cbd5e1;">
+                <i class="ph ph-film-slate" style="font-size: 26px; color: #94a3b8; display: block; margin-bottom: 4px;"></i>
+                No hay fotografías o videos de evidencia integrados para este evento.
+            </div>
+        `;
+    }
+
+    return fotos.map((url, idx) => {
+        const urlLimpia = String(url).trim();
+        const nombreArchivo = urlLimpia.split('/').pop() || `Evidencia ${idx + 1}`;
+        let nombreLegible = nombreArchivo;
+        if (nombreArchivo.includes('_')) {
+            const parts = nombreArchivo.split('_');
+            nombreLegible = parts.slice(4).join('_') || parts.slice(3).join('_') || parts.slice(2).join('_') || nombreArchivo;
+        }
+
+        const esVideo = urlLimpia.toLowerCase().endsWith('.mp4');
+
+        if (esVideo) {
+            return `
+                <div class="foto-evidencia-card" style="position: relative; border-radius: 8px; overflow: hidden; background: #020617; box-shadow: 0 3px 8px rgba(0,0,0,0.18); aspect-ratio: 4/3; cursor: pointer; border: 1.5px solid #0284c7;" onclick="abrirVisorEvidencia('${urlLimpia}', '${nombreLegible}', 'video')">
+                    <video src="${urlLimpia}#t=0.5" preload="metadata" muted style="width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none;"></video>
+                    <!-- Overlay de Reproducción -->
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.35); transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.35)'">
+                        <i class="ph-fill ph-play-circle" style="font-size: 38px; color: #38bdf8; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8));"></i>
+                    </div>
+                    <!-- Badge MP4 -->
+                    <span style="position: absolute; top: 5px; left: 5px; background: rgba(2, 132, 199, 0.92); color: white; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; backdrop-filter: blur(2px);">
+                        <i class="ph ph-video-camera"></i> MP4
+                    </span>
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(15, 23, 42, 0.9)); padding: 4px 6px; color: white; font-size: 10px; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                        ${nombreLegible}
+                    </div>
+                    ${!isReadOnly ? `
+                        <button type="button" onclick="event.stopPropagation(); confirmarEliminarFotoEvidencia(${idEvento}, '${urlLimpia}')" style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.92); color: white; border: none; border-radius: 4px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.25);" title="Eliminar video">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="foto-evidencia-card" style="position: relative; border-radius: 8px; overflow: hidden; background: #0f172a; box-shadow: 0 3px 8px rgba(0,0,0,0.12); aspect-ratio: 4/3; cursor: pointer; border: 1px solid #cbd5e1;" onclick="abrirVisorEvidencia('${urlLimpia}', '${nombreLegible}', 'foto')">
+                <img src="${urlLimpia}" alt="Evidencia" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.25s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(15, 23, 42, 0.85)); padding: 4px 6px; color: white; font-size: 10px; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                    ${nombreLegible}
+                </div>
+                ${!isReadOnly ? `
+                    <button type="button" onclick="event.stopPropagation(); confirmarEliminarFotoEvidencia(${idEvento}, '${urlLimpia}')" style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.92); color: white; border: none; border-radius: 4px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.25);" title="Eliminar fotografía">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+async function alSubirFotosEvidenciaOP(input, idEvento) {
+    if (!input || !input.files || input.files.length === 0) return;
+    if (!idEvento) {
+        alert("⚠️ Guarda primero la Orden de Producción antes de adjuntar fotografías o videos de evidencia.");
+        input.value = '';
+        return;
+    }
+
+    const MAX_FOTO_BYTES = 1 * 1024 * 1024;    // 1 MB
+    const MAX_VIDEO_BYTES = 5 * 1024 * 1024;   // 5 MB
+
+    const archivos = Array.from(input.files);
+    let subidos = 0;
+    let omitidos = [];
+
+    for (const archivo of archivos) {
+        const nombre = archivo.name || 'archivo';
+        const ext = nombre.slice((nombre.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
+
+        const esFoto = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
+        const esVideo = ext === 'mp4';
+
+        if (!esFoto && !esVideo) {
+            omitidos.push(`❌ "${nombre}": Formato no permitido. Solo se aceptan fotos (.jpg, .png, .webp) y videos (.mp4).`);
+            continue;
+        }
+
+        if (esFoto && archivo.size > MAX_FOTO_BYTES) {
+            const tamanoMb = (archivo.size / (1024 * 1024)).toFixed(2);
+            omitidos.push(`⚠️ "${nombre}": Pesa ${tamanoMb} MB. Excede el límite de 1.0 MB para fotos.`);
+            continue;
+        }
+
+        if (esVideo && archivo.size > MAX_VIDEO_BYTES) {
+            const tamanoMb = (archivo.size / (1024 * 1024)).toFixed(2);
+            omitidos.push(`⚠️ "${nombre}": Pesa ${tamanoMb} MB. Excede el límite de 5.0 MB para videos MP4.`);
+            continue;
+        }
+
+        const formData = new FormData();
+        formData.append("file", archivo);
+
+        try {
+            const res = await fetch(`${API_URL}/api/eventos/subir_foto_evidencia/${idEvento}`, {
+                method: "POST",
+                body: formData
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.url) {
+                    if (!window.opFotosEvidenciaActuales) window.opFotosEvidenciaActuales = [];
+                    if (!window.opFotosEvidenciaActuales.includes(data.url)) {
+                        window.opFotosEvidenciaActuales.push(data.url);
+                    }
+                    subidos++;
+                }
+            } else {
+                const errData = await res.json().catch(() => ({ detail: res.statusText }));
+                omitidos.push(`❌ "${nombre}": ${errData.detail || 'Error al procesar en servidor'}`);
+            }
+        } catch (e) {
+            console.error("Error de conexión al subir evidencia:", e);
+            omitidos.push(`❌ "${nombre}": Error de red o servidor.`);
+        }
+    }
+
+    // Refrescar cuadrícula en tiempo real
+    const galeria = document.getElementById('galeria-fotos-evidencia-act');
+    if (galeria) {
+        galeria.innerHTML = generarHtmlGaleriaFotosEvidencia(window.opFotosEvidenciaActuales, false, idEvento);
+    }
+    const badge = document.getElementById('op-fotos-badge-act');
+    if (badge) {
+        badge.innerText = formatearTextoBadgeEvidencias(window.opFotosEvidenciaActuales || []);
+    }
+
+    input.value = '';
+
+    let mensaje = "";
+    if (subidos > 0) {
+        mensaje += `✅ ${subidos} archivo(s) de evidencia integrado(s) con éxito.\n`;
+    }
+    if (omitidos.length > 0) {
+        mensaje += `\nNo se cargaron los siguientes archivos por restricciones de tamaño/formato:\n` + omitidos.join('\n');
+    }
+    if (mensaje) {
+        alert(mensaje);
+    }
+}
+
+async function confirmarEliminarFotoEvidencia(idEvento, url) {
+    const esVideo = String(url).toLowerCase().endsWith('.mp4');
+    const tipoTxt = esVideo ? "video MP4" : "fotografía";
+    if (!confirm(`¿Deseas eliminar este ${tipoTxt} de evidencia del evento?`)) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/eventos/eliminar_foto_evidencia/${idEvento}?url=${encodeURIComponent(url)}`, {
+            method: "DELETE"
+        });
+        if (res.ok) {
+            if (window.opFotosEvidenciaActuales) {
+                window.opFotosEvidenciaActuales = window.opFotosEvidenciaActuales.filter(u => u !== url);
+            }
+            const galeria = document.getElementById('galeria-fotos-evidencia-act');
+            if (galeria) {
+                galeria.innerHTML = generarHtmlGaleriaFotosEvidencia(window.opFotosEvidenciaActuales, false, idEvento);
+            }
+            const badge = document.getElementById('op-fotos-badge-act');
+            if (badge) {
+                badge.innerText = formatearTextoBadgeEvidencias(window.opFotosEvidenciaActuales || []);
+            }
+        } else {
+            alert("No se pudo eliminar el archivo del servidor.");
+        }
+    } catch (e) {
+        alert("Error de conexión al eliminar archivo: " + e.message);
+    }
+}
+
+function abrirVisorEvidencia(url, titulo, tipo) {
+    const modal = document.getElementById('modal-visor-foto-evidencia');
+    const img = document.getElementById('visor-foto-img');
+    const video = document.getElementById('visor-video-player');
+    const tit = document.getElementById('visor-foto-titulo');
+    const btn = document.getElementById('visor-foto-btn-abrir');
+    if (!modal) return;
+
+    const esVideo = tipo === 'video' || String(url).toLowerCase().endsWith('.mp4');
+
+    if (esVideo) {
+        if (img) img.style.display = 'none';
+        if (video) {
+            video.src = url;
+            video.style.display = 'block';
+            video.currentTime = 0;
+            video.play().catch(() => {});
+        }
+        if (tit) tit.innerHTML = `<i class="ph ph-video-camera" style="color: #38bdf8;"></i> Evidencia Video: ${titulo || 'Video MP4'}`;
+    } else {
+        if (video) {
+            video.pause();
+            video.src = '';
+            video.style.display = 'none';
+        }
+        if (img) {
+            img.src = url;
+            img.style.display = 'block';
+        }
+        if (tit) tit.innerHTML = `<i class="ph ph-camera" style="color: #38bdf8;"></i> Evidencia Fotográfica: ${titulo || 'Fotografía'}`;
+    }
+
+    if (btn) btn.href = url;
+    modal.style.display = 'flex';
+}
+
+function abrirVisorFotoEvidencia(url, titulo) {
+    abrirVisorEvidencia(url, titulo, 'foto');
+}
+
+function cerrarVisorFotoEvidencia() {
+    const modal = document.getElementById('modal-visor-foto-evidencia');
+    const video = document.getElementById('visor-video-player');
+    if (video) {
+        video.pause();
+        video.src = '';
+    }
+    if (modal) modal.style.display = 'none';
+}
+
+// ==========================================================================
+// 📅 12.7 SUB-CATÁLOGO DE CRONOGRAMAS DE EVENTOS (7 COLUMNAS OFICIALES)
+// ==========================================================================
+let memoriaCronogramas = [];
+let cronogramaEditandoId = null;
+
+async function cargarCatalogoCronogramas() {
+    const tbody = document.getElementById('tabla-cronogramas-body');
+    const badge = document.getElementById('badge-count-cronogramas');
+    const tabBadge = document.getElementById('tab-count-cron');
+    const hubBadge = document.getElementById('hub-count-cron');
+
+    try {
+        const res = await fetch(`${API_URL}/api/cronogramas`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        memoriaCronogramas = Array.isArray(data) ? data : [];
+
+        const total = memoriaCronogramas.length;
+        if (badge) badge.innerText = total;
+        if (tabBadge) tabBadge.innerText = total;
+        if (hubBadge) hubBadge.innerText = `${total} cronogramas`;
+
+        poblarSelectorCronogramas();
+        renderTablaCronogramas(memoriaCronogramas);
+
+        const tbodyEditor = document.getElementById('tbody-actividades-cronograma');
+        if (tbodyEditor && tbodyEditor.children.length === 0) {
+            agregarFilaActividadCronograma();
+        }
+    } catch (e) {
+        console.error("Error al cargar cronogramas:", e);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 20px;">
+                <i class="ph ph-warning-circle"></i> Error al conectar con el servidor: ${e.message}
+            </td></tr>`;
+        }
+    }
+}
+
+function renderTablaCronogramas(lista) {
+    const tbody = document.getElementById('tabla-cronogramas-body');
+    if (!tbody) return;
+
+    if (!lista || lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">
+            No hay cronogramas registrados en el catálogo. Usa el formulario inferior para registrar uno nuevo.
+        </td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = lista.map(c => {
+        const cantAct = Array.isArray(c.actividades) ? c.actividades.length : 0;
+        const opStr = c.folio_op ? `<span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">OP: ${c.folio_op}</span>` : '<span style="color: #94a3b8; font-size: 11px;">Sin asignar</span>';
+        
+        return `
+            <tr>
+                <td style="font-weight: 800; color: #0284c7; white-space: nowrap;">FOLIO: ${c.folio || c.id_cronograma}</td>
+                <td style="white-space: nowrap; font-weight: 600;">${c.fecha || '--'}</td>
+                <td><strong>${c.nombre_evento || 'Sin título'}</strong></td>
+                <td>${c.ubicacion_general || '--'}</td>
+                <td style="text-align: center;"><span style="background: #f1f5f9; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 12px;">${cantAct} actividades</span></td>
+                <td>${opStr}</td>
+                <td style="white-space: nowrap;">
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" class="btn-cat-new" style="padding: 4px 10px; font-size: 11.5px;" onclick="seleccionarCronogramaParaEditar(${c.id_cronograma})" title="Cargar en el editor">
+                            <i class="ph ph-pencil"></i> Editar
+                        </button>
+                        <button type="button" class="btn-cat-new" style="padding: 4px 10px; font-size: 11.5px; background: #0284c7; color: white; border-color: #0284c7;" onclick="imprimirCronogramaDirecto(${c.id_cronograma})" title="Imprimir Formato Oficial">
+                            <i class="ph ph-printer"></i> Imprimir
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function filtrarTablaCronogramas() {
+    const q = (document.getElementById('filtro-cronogramas')?.value || '').toLowerCase().trim();
+    if (!q) {
+        renderTablaCronogramas(memoriaCronogramas);
+        return;
+    }
+
+    const filtrados = memoriaCronogramas.filter(c => {
+        const fol = String(c.folio || '').toLowerCase();
+        const ev = String(c.nombre_evento || '').toLowerCase();
+        const ub = String(c.ubicacion_general || '').toLowerCase();
+        const f = String(c.fecha || '').toLowerCase();
+        const op = String(c.folio_op || '').toLowerCase();
+        return fol.includes(q) || ev.includes(q) || ub.includes(q) || f.includes(q) || op.includes(q);
+    });
+
+    renderTablaCronogramas(filtrados);
+}
+
+function poblarSelectorCronogramas() {
+    const sel = document.getElementById('selector-cron-editor');
+    if (!sel) return;
+    const valActual = sel.value;
+
+    sel.innerHTML = '<option value="nuevo">✨ --- REGISTRAR NUEVO CRONOGRAMA ---</option>';
+    memoriaCronogramas.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id_cronograma;
+        opt.textContent = `FOLIO: ${c.folio || c.id_cronograma} | ${c.fecha || ''} - ${c.nombre_evento || 'Sin título'} (${(c.actividades || []).length} acts)`;
+        sel.appendChild(opt);
+    });
+
+    if (valActual && Array.from(sel.options).some(o => o.value === valActual)) {
+        sel.value = valActual;
+    }
+}
+
+function alCambiarSelectorCronograma() {
+    const sel = document.getElementById('selector-cron-editor');
+    if (!sel) return;
+
+    if (sel.value === 'nuevo') {
+        limpiarFormCronograma();
+    } else {
+        seleccionarCronogramaParaEditar(parseInt(sel.value));
+    }
+}
+
+async function seleccionarCronogramaParaEditar(id) {
+    cronogramaEditandoId = id;
+
+    let c = memoriaCronogramas.find(x => x.id_cronograma === id);
+    if (!c) {
+        try {
+            const res = await fetch(`${API_URL}/api/cronogramas/${id}`);
+            if (res.ok) c = await res.json();
+        } catch (e) {
+            console.error("Error al obtener detalle de cronograma:", e);
+        }
+    }
+    if (!c) return;
+
+    const inpId = document.getElementById('cron-id');
+    if (inpId) inpId.value = c.id_cronograma || '';
+
+    const inpFolio = document.getElementById('cron-folio');
+    if (inpFolio) inpFolio.value = c.folio || '';
+
+    const inpFecha = document.getElementById('cron-fecha');
+    if (inpFecha) inpFecha.value = aFechaInput(c.fecha);
+
+    const inpEvento = document.getElementById('cron-evento');
+    if (inpEvento) inpEvento.value = c.nombre_evento || '';
+
+    const inpUbicacion = document.getElementById('cron-ubicacion');
+    if (inpUbicacion) inpUbicacion.value = c.ubicacion_general || '';
+
+    const inpFolioOp = document.getElementById('cron-folio-op');
+    if (inpFolioOp) inpFolioOp.value = c.folio_op || '';
+
+    const inpObs = document.getElementById('cron-observaciones-gen');
+    if (inpObs) inpObs.value = c.observaciones_generales || '';
+
+    const sel = document.getElementById('selector-cron-editor');
+    if (sel) sel.value = String(c.id_cronograma);
+
+    const tbody = document.getElementById('tbody-actividades-cronograma');
+    if (tbody) {
+        tbody.innerHTML = '';
+        const acts = Array.isArray(c.actividades) && c.actividades.length > 0 ? c.actividades : [{}];
+        acts.forEach(act => agregarFilaActividadCronograma(act));
+    }
+
+    const lblBtn = document.getElementById('lbl-btn-guardar-cron');
+    if (lblBtn) lblBtn.innerText = '💾 Actualizar Cronograma';
+
+    const btnDel = document.getElementById('btn-eliminar-cron');
+    if (btnDel) btnDel.style.display = 'inline-flex';
+
+    const btnPrint = document.getElementById('btn-imprimir-cron');
+    if (btnPrint) btnPrint.style.display = 'inline-flex';
+
+    document.getElementById('selector-cron-editor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function limpiarFormCronograma() {
+    cronogramaEditandoId = null;
+
+    const inpId = document.getElementById('cron-id');
+    if (inpId) inpId.value = '';
+
+    const inpFolio = document.getElementById('cron-folio');
+    if (inpFolio) inpFolio.value = '';
+
+    const inpFecha = document.getElementById('cron-fecha');
+    if (inpFecha) inpFecha.value = new Date().toISOString().split('T')[0];
+
+    const inpEvento = document.getElementById('cron-evento');
+    if (inpEvento) inpEvento.value = '';
+
+    const inpUbicacion = document.getElementById('cron-ubicacion');
+    if (inpUbicacion) inpUbicacion.value = '';
+
+    const inpFolioOp = document.getElementById('cron-folio-op');
+    if (inpFolioOp) inpFolioOp.value = '';
+
+    const inpObs = document.getElementById('cron-observaciones-gen');
+    if (inpObs) inpObs.value = '';
+
+    const sel = document.getElementById('selector-cron-editor');
+    if (sel) sel.value = 'nuevo';
+
+    const tbody = document.getElementById('tbody-actividades-cronograma');
+    if (tbody) {
+        tbody.innerHTML = '';
+        agregarFilaActividadCronograma();
+    }
+
+    const lblBtn = document.getElementById('lbl-btn-guardar-cron');
+    if (lblBtn) lblBtn.innerText = '💾 Guardar Nuevo Cronograma';
+
+    const btnDel = document.getElementById('btn-eliminar-cron');
+    if (btnDel) btnDel.style.display = 'none';
+
+    const btnPrint = document.getElementById('btn-imprimir-cron');
+    if (btnPrint) btnPrint.style.display = 'none';
+}
+
+function agregarFilaActividadCronograma(datos = {}) {
+    const tbody = document.getElementById('tbody-actividades-cronograma');
+    if (!tbody) return;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td>
+            <input type="text" class="form-input row-horario" value="${datos.horario || ''}" placeholder="Ej. 09:00 a. m. o De 9:00 a 11:00" style="padding: 6px 8px; font-size: 12px; font-weight: 600;">
+        </td>
+        <td>
+            <input type="text" class="form-input row-actividad" value="${datos.actividad || ''}" placeholder="Ej. Entrada a oficina, Check out, Instalación..." style="padding: 6px 8px; font-size: 12px;">
+        </td>
+        <td>
+            <input type="text" class="form-input row-ubicacion" value="${datos.ubicacion || ''}" placeholder="Ej. Oficina Vpro, Palacio..." style="padding: 6px 8px; font-size: 12px;">
+        </td>
+        <td>
+            <input type="text" class="form-input row-evento" value="${datos.evento || ''}" placeholder="Ej. Llamado, Ensayos, Descanso..." style="padding: 6px 8px; font-size: 12px;">
+        </td>
+        <td>
+            <input type="text" class="form-input row-personal" value="${datos.personal_convocado || ''}" placeholder="Personal convocado..." style="padding: 6px 8px; font-size: 12px;">
+        </td>
+        <td>
+            <input type="text" class="form-input row-vehiculo" value="${datos.vehiculo || ''}" placeholder="Ej. TIIDA #2, HILUX, SPRINTER..." style="padding: 6px 8px; font-size: 12px;">
+        </td>
+        <td>
+            <input type="text" class="form-input row-observaciones" value="${datos.observaciones || ''}" placeholder="Observaciones o notas..." style="padding: 6px 8px; font-size: 12px;">
+        </td>
+        <td style="text-align: center;">
+            <button type="button" onclick="removerFilaActividadCronograma(this)" style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer; padding: 4px;" title="Eliminar renglón">
+                <i class="ph ph-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+}
+
+function removerFilaActividadCronograma(btn) {
+    const tr = btn.closest('tr');
+    const tbody = document.getElementById('tbody-actividades-cronograma');
+    if (tr) tr.remove();
+    if (tbody && tbody.children.length === 0) {
+        agregarFilaActividadCronograma();
+    }
+}
+
+function obtenerActividadesDeTabla() {
+    const tbody = document.getElementById('tbody-actividades-cronograma');
+    if (!tbody) return [];
+
+    const acts = [];
+    Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
+        const horario = tr.querySelector('.row-horario')?.value?.trim() || '';
+        const actividad = tr.querySelector('.row-actividad')?.value?.trim() || '';
+        const ubicacion = tr.querySelector('.row-ubicacion')?.value?.trim() || '';
+        const evento = tr.querySelector('.row-evento')?.value?.trim() || '';
+        const personal = tr.querySelector('.row-personal')?.value?.trim() || '';
+        const vehiculo = tr.querySelector('.row-vehiculo')?.value?.trim() || '';
+        const observaciones = tr.querySelector('.row-observaciones')?.value?.trim() || '';
+
+        if (horario || actividad || ubicacion || evento || personal || vehiculo || observaciones) {
+            acts.push({
+                horario,
+                actividad,
+                ubicacion,
+                evento,
+                personal_convocado: personal,
+                vehiculo,
+                observaciones
+            });
+        }
+    });
+
+    return acts;
+}
+
+function cargarPlantillaEjemploCronograma(num) {
+    const tbody = document.getElementById('tbody-actividades-cronograma');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (num === 1) {
+        document.getElementById('cron-folio').value = '01';
+        document.getElementById('cron-fecha').value = '2026-09-14';
+        document.getElementById('cron-evento').value = 'Grito de Independencia 2026 - Montaje y Ensayos';
+        document.getElementById('cron-ubicacion').value = 'Palacio de gobierno';
+        document.getElementById('cron-observaciones-gen').value = 'Jornada previa: Carga de equipo, traslado, instalación y ensayos de protocolo.';
+
+        const plantilla1 = [
+            { horario: "09:00 a. m.", actividad: "Entrada a oficina", ubicacion: "Oficina Vpro", evento: "Llamado", personal_convocado: "Martin Estrada, Osiel Hernandez, Edgar Amarillas, Cuauhtémoc Rivera, Manuel Madrid, Carlos Quezada, Francisco Torres y Daniel Torres", vehiculo: "TIIDA #2, HILUX, SPRINTER Y FORD", observaciones: "SPRINTER y FORD se quedaran en locación para almacenar y proteger equipos." },
+            { horario: "De 9:00 a 11:00", actividad: "Check out", ubicacion: "Oficina Vpro", evento: "Registrar equipo y cargar", personal_convocado: "", vehiculo: "", observaciones: "" },
+            { horario: "De 11:30 a 12:00", actividad: "Traslado a evento", ubicacion: "Palacio de gobierno", evento: "Traslado", personal_convocado: "", vehiculo: "", observaciones: "" },
+            { horario: "De 12:00 a 14:00", actividad: "Instalación", ubicacion: "Palacio de gobierno", evento: "Instalación ensayo Protocolo", personal_convocado: "", vehiculo: "", observaciones: "" },
+            { horario: "De 14:00 a 16:00", actividad: "Descanso", ubicacion: "Descanso", evento: "Corte a comer", personal_convocado: "Descanso", vehiculo: "Descanso", observaciones: "" },
+            { horario: "De 16:00 a 18:30", actividad: "Reanudación de instalación", ubicacion: "Palacio de gobierno", evento: "Seguimiento de actividades", personal_convocado: "Martin Estrada, Osiel Hernandez, Edgar Amarillas, Cuauhtémoc Rivera, Manuel Madrid, Carlos Quezada, Francisco Torres y Daniel Torres", vehiculo: "TIIDA #2 Y HILUX", observaciones: "" },
+            { horario: "De 18:30 a 19:00", actividad: "Retorno a oficina", ubicacion: "Oficina Vpro", evento: "Retorno", personal_convocado: "", vehiculo: "", observaciones: "" },
+            { horario: "07:00 p. m.", actividad: "Salida de oficina", ubicacion: "Oficina Vpro", evento: "Termino de actividades", personal_convocado: "", vehiculo: "", observaciones: "" }
+        ];
+
+        plantilla1.forEach(act => agregarFilaActividadCronograma(act));
+        alert("✅ Plantilla Folio 01 (14/Sep) cargada correctamente en el editor.");
+    } else if (num === 2) {
+        document.getElementById('cron-folio').value = '02';
+        document.getElementById('cron-fecha').value = '2026-09-15';
+        document.getElementById('cron-evento').value = 'Grito de Independencia 2026 - Transmisión en Vivo';
+        document.getElementById('cron-ubicacion').value = 'Palacio de gobierno';
+        document.getElementById('cron-observaciones-gen').value = 'Jornada estelar: Pruebas de velocidad, streaming live transmisión del Grito y desmonte nocturno.';
+
+        const plantilla2 = [
+            { horario: "09:00 a. m.", actividad: "Entrada a oficina", ubicacion: "Oficina Vpro", evento: "Llamado", personal_convocado: "Martin Estrada, Gerardo Viillarreal Osiel Hernandez, Edgar Amarillas, Cuauhtémoc Rivera, Manuel Madrid, Carlos Quezada, Francisco Torres y Daniel Torres", vehiculo: "TIIDA #2 Y HILUX", observaciones: "Se trasladaron en los 2 vehiculos disponibles" },
+            { horario: "De 9:40 a 10:00", actividad: "Traslado a evento", ubicacion: "Palacio de gobierno", evento: "Traslado", personal_convocado: "", vehiculo: "", observaciones: "" },
+            { horario: "De 10:00 a 14:30", actividad: "Pruebas", ubicacion: "Palacio de gobierno", evento: "Pruebas de velocidad", personal_convocado: "", vehiculo: "", observaciones: "" },
+            { horario: "De 14:30 a 15:00", actividad: "Descanso", ubicacion: "Descanso", evento: "Corte a comer", personal_convocado: "Descanso", vehiculo: "Descanso", observaciones: "Descanso" },
+            { horario: "De 15:00 a 22:00", actividad: "Reanudación de pruebas", ubicacion: "Palacio de gobierno", evento: "Seguimiento de actividades", personal_convocado: "Martin Estrada, Osiel Hernandez, Edgar Amarillas, Cuauhtémoc Rivera, Manuel Madrid, Carlos Quezada, Francisco Torres y Daniel Torres", vehiculo: "TIIDA #2, HILUX, SPRINTER Y FORD", observaciones: "Se retornaran con todos los vehiculos a oficina." },
+            { horario: "De 22:45 a 24:00", actividad: "Transmisión grito de independencia", ubicacion: "Palacio de gobierno", evento: "Transmisión Live streaming", personal_convocado: "", vehiculo: "", observaciones: "" },
+            { horario: "De 24:00 a 01:30", actividad: "Levantamiento de equipo", ubicacion: "Palacio de gobierno", evento: "Guardar equipo", personal_convocado: "", vehiculo: "", observaciones: "" },
+            { horario: "De 01:30 a 02:00", actividad: "Retorno oficina", ubicacion: "Oficina Vpro", evento: "Retorno", personal_convocado: "", vehiculo: "", observaciones: "" },
+            { horario: "02:15 a. m.", actividad: "Salida de oficina", ubicacion: "Oficina Vpro", evento: "Termino de actividades", personal_convocado: "", vehiculo: "", observaciones: "" }
+        ];
+
+        plantilla2.forEach(act => agregarFilaActividadCronograma(act));
+        alert("✅ Plantilla Folio 02 (15/Sep) cargada correctamente en el editor.");
+    }
+}
+
+async function guardarCronogramaForm() {
+    const id = document.getElementById('cron-id')?.value;
+    const folio = document.getElementById('cron-folio')?.value?.trim();
+    const fecha = document.getElementById('cron-fecha')?.value;
+    const evento = document.getElementById('cron-evento')?.value?.trim();
+    const ubicacion = document.getElementById('cron-ubicacion')?.value?.trim();
+    const folio_op = document.getElementById('cron-folio-op')?.value?.trim() || null;
+    const observaciones_generales = document.getElementById('cron-observaciones-gen')?.value?.trim() || "";
+
+    const actividades = obtenerActividadesDeTabla();
+
+    if (!folio || !fecha || !evento || !ubicacion) {
+        alert("⚠️ Por favor completa los campos obligatorios (*):\n- Folio del Cronograma\n- Fecha de Ejecución\n- Nombre del Evento / Proyecto\n- Ubicación General");
+        return;
+    }
+
+    if (actividades.length === 0) {
+        alert("⚠️ Agrega al menos un renglón de actividad con horario o descripción en la tabla de cronograma.");
+        return;
+    }
+
+    const payload = {
+        id_cronograma: id ? parseInt(id) : null,
+        folio: folio,
+        fecha: fecha,
+        nombre_evento: evento,
+        ubicacion_general: ubicacion,
+        folio_op: folio_op,
+        observaciones_generales: observaciones_generales,
+        actividades: actividades
+    };
+
+    const btn = document.getElementById('btn-guardar-cron');
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/api/cronogramas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ detail: res.statusText }));
+            throw new Error(err.detail || "Error al guardar");
+        }
+        const dataRes = await res.json();
+        alert(id ? `✅ Cronograma "${folio}" actualizado con éxito.` : `✅ Cronograma "${folio}" registrado exitosamente.`);
+        
+        await cargarCatalogoCronogramas();
+        if (dataRes && dataRes.id_cronograma) {
+            seleccionarCronogramaParaEditar(dataRes.id_cronograma);
+        } else {
+            limpiarFormCronograma();
+        }
+    } catch (e) {
+        alert(`❌ Error al guardar cronograma: ${e.message}`);
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+function confirmarEliminarCronograma() {
+    const id = document.getElementById('cron-id')?.value;
+    if (!id) return;
+
+    const c = memoriaCronogramas.find(item => String(item.id_cronograma) === String(id));
+    const titulo = c ? `Folio: ${c.folio} - ${c.nombre_evento}` : `Cronograma #${id}`;
+
+    abrirModalBaja(
+        "🚨 Confirmación de Eliminación de Cronograma",
+        `¿Está seguro de que desea eliminar el cronograma de <strong>${titulo}</strong>?<br><br><span style="color: #991b1b; font-size: 12px;">⚠️ Esta acción eliminará permanentemente las actividades registradas.</span>`,
+        async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/cronogramas/${id}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({ detail: res.statusText }));
+                    throw new Error(err.detail || "Error al eliminar");
+                }
+                alert(`💥 Cronograma eliminado correctamente.`);
+                limpiarFormCronograma();
+                await cargarCatalogoCronogramas();
+            } catch (e) {
+                alert(`❌ No se pudo eliminar el cronograma: ${e.message}`);
+            }
+        }
+    );
+}
+
+function imprimirCronogramaDirecto(id) {
+    imprimirCronogramaOficial(id);
+}
+
+async function imprimirCronogramaOficial(id) {
+    let cron = null;
+    if (id) {
+        cron = memoriaCronogramas.find(c => c.id_cronograma === id);
+        if (!cron) {
+            try {
+                const res = await fetch(`${API_URL}/api/cronogramas/${id}`);
+                if (res.ok) cron = await res.json();
+            } catch (e) {
+                console.error("Error al obtener cronograma para imprimir:", e);
+            }
+        }
+    } else {
+        cron = {
+            id_cronograma: document.getElementById('cron-id')?.value || '',
+            folio: document.getElementById('cron-folio')?.value || 'S/F',
+            fecha: document.getElementById('cron-fecha')?.value || '',
+            nombre_evento: document.getElementById('cron-evento')?.value || 'Sin título',
+            ubicacion_general: document.getElementById('cron-ubicacion')?.value || 'No especificada',
+            observaciones_generales: document.getElementById('cron-observaciones-gen')?.value || '',
+            actividades: obtenerActividadesDeTabla()
+        };
+    }
+
+    if (!cron) {
+        alert("No se pudo cargar la información del cronograma para impresión.");
+        return;
+    }
+
+    let fechaFmt = cron.fecha || '';
+    if (fechaFmt && fechaFmt.includes('-')) {
+        const parts = fechaFmt.split('-');
+        if (parts.length === 3) fechaFmt = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    const modal = document.getElementById('modal-cronograma-impresion');
+    const hoja = document.getElementById('cronograma-hoja-oficial');
+    if (!modal || !hoja) return;
+
+    const acts = Array.isArray(cron.actividades) ? cron.actividades : [];
+
+    const rowsHtml = acts.map(a => `
+        <tr style="border-bottom: 1px solid #cbd5e1;">
+            <td style="border: 1px solid #94a3b8; padding: 7px 9px; font-weight: 700; white-space: nowrap;">${a.horario || ''}</td>
+            <td style="border: 1px solid #94a3b8; padding: 7px 9px; font-weight: 600;">${a.actividad || ''}</td>
+            <td style="border: 1px solid #94a3b8; padding: 7px 9px;">${a.ubicacion || ''}</td>
+            <td style="border: 1px solid #94a3b8; padding: 7px 9px;">${a.evento || ''}</td>
+            <td style="border: 1px solid #94a3b8; padding: 7px 9px; font-size: 11px; line-height: 1.35;">${a.personal_convocado || ''}</td>
+            <td style="border: 1px solid #94a3b8; padding: 7px 9px; font-size: 11px;">${a.vehiculo || ''}</td>
+            <td style="border: 1px solid #94a3b8; padding: 7px 9px; font-size: 11px; font-style: italic;">${a.observaciones || ''}</td>
+        </tr>
+    `).join('');
+
+    hoja.innerHTML = `
+        <div style="max-width: 1000px; margin: 0 auto; color: #0f172a; font-family: Arial, Helvetica, sans-serif;">
+            <div style="border: 2px solid #0f172a; padding: 14px 18px; margin-bottom: 14px; background: #f8fafc;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 10px;">
+                    <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.5px;">FECHA: ${fechaFmt}</div>
+                    <div style="font-size: 18px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;">CRONOGRAMA DE EVENTO</div>
+                    <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.5px;">FOLIO: ${cron.folio || '01'}</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; font-size: 12.5px;">
+                    <div><strong>EVENTO:</strong> ${cron.nombre_evento || '---'}</div>
+                    <div><strong>UBICACIÓN GENERAL:</strong> ${cron.ubicacion_general || '---'}</div>
+                </div>
+                ${cron.observaciones_generales ? `
+                    <div style="margin-top: 6px; font-size: 11.5px; color: #475569; border-top: 1px dashed #cbd5e1; padding-top: 4px;">
+                        <strong>Directrices / Observaciones Generales:</strong> ${cron.observaciones_generales}
+                    </div>
+                ` : ''}
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; border: 1.5px solid #0f172a;">
+                <thead>
+                    <tr style="background: #0f172a; color: white;">
+                        <th style="border: 1px solid #475569; padding: 7px 8px; text-align: left; width: 120px;">Horario</th>
+                        <th style="border: 1px solid #475569; padding: 7px 8px; text-align: left; width: 140px;">Actividad</th>
+                        <th style="border: 1px solid #475569; padding: 7px 8px; text-align: left; width: 130px;">Ubicación</th>
+                        <th style="border: 1px solid #475569; padding: 7px 8px; text-align: left; width: 140px;">Evento</th>
+                        <th style="border: 1px solid #475569; padding: 7px 8px; text-align: left;">Personal convocado</th>
+                        <th style="border: 1px solid #475569; padding: 7px 8px; text-align: left; width: 140px;">Vehículo</th>
+                        <th style="border: 1px solid #475569; padding: 7px 8px; text-align: left; width: 180px;">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+
+            <div style="margin-top: 14px; display: flex; justify-content: space-between; font-size: 10.5px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+                <span>VPRO Producciones · Logística y Operación Técnica</span>
+                <span>Generado desde VPRO Dashboard V2</span>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+}
+
+function cerrarModalCronogramaImpresion() {
+    const modal = document.getElementById('modal-cronograma-impresion');
+    if (modal) modal.style.display = 'none';
+}
+
+function ejecutarImpresionCronograma() {
+    window.print();
+}
+
 // --------------------------------------------------------------------------
 // 🌐 CARGA INTEGRAL DE CATÁLOGOS (PARA CONTADORES DEL HUB Y TABS)
 // --------------------------------------------------------------------------
 async function cargarTodosLosCatalogos() {
     try {
-        const [resCli, resAutos, resProv, resInv, resEmp, resReu] = await Promise.allSettled([
+        const [resCli, resAutos, resProv, resInv, resEmp, resReu, resCron] = await Promise.allSettled([
             fetch(`${API_URL}/api/clientes`).then(r => r.json()),
             fetch(`${API_URL}/api/autos`).then(r => r.json()),
             fetch(`${API_URL}/api/proveedores`).then(r => r.json()),
             fetch(`${API_URL}/api/inventario`).then(r => r.json()),
             fetch(`${API_URL}/api/empleados`).then(r => r.json()),
-            fetch(`${API_URL}/api/reuniones/historial`).then(r => r.json())
+            fetch(`${API_URL}/api/reuniones/historial`).then(r => r.json()),
+            fetch(`${API_URL}/api/cronogramas`).then(r => r.json())
         ]);
 
         if (resCli.status === 'fulfilled' && Array.isArray(resCli.value)) {
@@ -6093,8 +7040,14 @@ async function finalizarCheckinCheckout() {
 
 let rawEvaluacionesIncidencias = [];
 let evaluacionesFiltradasIncidencias = [];
+let evaluacionesComparativasIncidencias = [];
+let modoComparativoIncidencias = false;
+let modoPeriodoB = 'inmediato_anterior';
+let tabBitacoraActual = 'A';
+
 let chartIncBalanceInstance = null;
 let chartIncEventosInstance = null;
+let chartIncComparativaInstance = null;
 
 async function cargarModuloIncidencias() {
     try {
@@ -6107,7 +7060,7 @@ async function cargarModuloIncidencias() {
         if (!res.ok) throw new Error("Error al obtener reporte de incidencias");
         const dataJson = await res.json();
 
-        // Procesar cerebro separador de evaluaciones (idéntico a mod_incidencias.py)
+        // Procesar evaluaciones
         rawEvaluacionesIncidencias = [];
         dataJson.forEach(row => {
             const textoRaw = (row.incidencias_generales || "").trim();
@@ -6146,7 +7099,7 @@ async function cargarModuloIncidencias() {
                 return "⚠️ Con Incidencias";
             }
 
-            // 1. Calificamos al empleado
+            // 1. Empleado
             rawEvaluacionesIncidencias.push({
                 Fecha: fecha,
                 Evento: evento,
@@ -6157,7 +7110,7 @@ async function cargarModuloIncidencias() {
                 Nota: empText.trim() ? empText.trim() : "Operación Limpia"
             });
 
-            // 2. Calificamos al proveedor si fue reportado
+            // 2. Proveedor si fue reportado
             if (provNombre && !provNombre.toUpperCase().includes("--- NINGUNO ---")) {
                 rawEvaluacionesIncidencias.push({
                     Fecha: fecha,
@@ -6171,22 +7124,30 @@ async function cargarModuloIncidencias() {
             }
         });
 
-        // Configurar rango de fechas inicial
+        // Configurar rango de fechas inicial: por defecto el mes más reciente con registros o rango completo
         const fechas = rawEvaluacionesIncidencias.map(e => e.Fecha).filter(Boolean).sort();
         if (fechas.length > 0) {
-            const fMin = fechas[0];
-            const fMax = fechas[fechas.length - 1];
+            const fMax = fechas[fechas.length - 1]; // ej. 2026-09-30
+            const mesMax = fMax.substring(0, 7);    // ej. 2026-09
             const inputDesde = document.getElementById('filtro-inc-desde');
             const inputHasta = document.getElementById('filtro-inc-hasta');
-            if (inputDesde && !inputDesde.value) inputDesde.value = fMin;
+            
+            // Establecer el mes más reciente como periodo inicial
+            if (inputDesde && !inputDesde.value) inputDesde.value = `${mesMax}-01`;
             if (inputHasta && !inputHasta.value) inputHasta.value = fMax;
         }
 
-        // Poblar departamentos
-        poblarFiltroDepartamentosIncidencias();
+        // Poblar selectores de Periodos (Meses y Años)
+        poblarSelectoresPeriodoIncidencias();
 
-        // Poblar actores
+        // Poblar departamentos y actores
+        poblarFiltroDepartamentosIncidencias();
         poblarFiltroActoresIncidencias();
+
+        // Si el modo comparativo estaba activo, calcular periodo B
+        if (modoComparativoIncidencias) {
+            calcularFechasPeriodoB();
+        }
 
         // Aplicar filtros y renderizar
         aplicarFiltrosIncidencias();
@@ -6196,6 +7157,332 @@ async function cargarModuloIncidencias() {
         const tbody = document.getElementById('tbody-incidencias-detallada');
         if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar las incidencias: ${e.message}</td></tr>`;
     }
+}
+
+// -------------------------------------------------------------
+// SELECTORES DE PERIODO: MESES, AÑOS Y PREAJUSTES RÁPIDOS
+// -------------------------------------------------------------
+function poblarSelectoresPeriodoIncidencias() {
+    const selMes = document.getElementById('sel-inc-mes');
+    const selAno = document.getElementById('sel-inc-ano');
+    if (!selMes || !selAno) return;
+
+    const mesesNombres = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+
+    const mesesSet = new Set();
+    const anosSet = new Set();
+
+    rawEvaluacionesIncidencias.forEach(e => {
+        if (e.Fecha && e.Fecha.length >= 7) {
+            mesesSet.add(e.Fecha.substring(0, 7)); // YYYY-MM
+            anosSet.add(e.Fecha.substring(0, 4));  // YYYY
+        }
+    });
+
+    // Ordenar de más reciente a más antiguo
+    const mesesOrdenados = Array.from(mesesSet).sort().reverse();
+    const anosOrdenados = Array.from(anosSet).sort().reverse();
+
+    // Poblar Meses
+    selMes.innerHTML = '<option value="">-- Por Mes --</option>' + mesesOrdenados.map(m => {
+        const [ano, mesNum] = m.split('-');
+        const idx = parseInt(mesNum, 10) - 1;
+        const nombre = (idx >= 0 && idx < 12) ? mesesNombres[idx] : mesNum;
+        return `<option value="${m}">${nombre} ${ano}</option>`;
+    }).join('');
+
+    // Poblar Años
+    selAno.innerHTML = '<option value="">-- Por Año --</option>' + anosOrdenados.map(a => {
+        return `<option value="${a}">Año ${a}</option>`;
+    }).join('');
+
+    // Si las fechas actuales coinciden con algún mes exacto, seleccionarlo
+    const fDesde = document.getElementById('filtro-inc-desde')?.value || "";
+    const fHasta = document.getElementById('filtro-inc-hasta')?.value || "";
+    if (fDesde && fHasta && fDesde.substring(0, 7) === fHasta.substring(0, 7)) {
+        selMes.value = fDesde.substring(0, 7);
+    }
+}
+
+function seleccionarMesIncidencias(mesStr) {
+    if (!mesStr) return;
+    const [anoStr, mesStrNum] = mesStr.split('-');
+    const ano = parseInt(anoStr, 10);
+    const mes = parseInt(mesStrNum, 10);
+    const ultimoDia = new Date(ano, mes, 0).getDate();
+
+    const fDesde = `${mesStr}-01`;
+    const fHasta = `${mesStr}-${String(ultimoDia).padStart(2, '0')}`;
+
+    const inputDesde = document.getElementById('filtro-inc-desde');
+    const inputHasta = document.getElementById('filtro-inc-hasta');
+    if (inputDesde) inputDesde.value = fDesde;
+    if (inputHasta) inputHasta.value = fHasta;
+
+    const selAno = document.getElementById('sel-inc-ano');
+    if (selAno) selAno.value = "";
+
+    actualizarEstiloChipsPeriodo(null);
+
+    if (modoComparativoIncidencias) {
+        calcularFechasPeriodoB();
+    }
+    aplicarFiltrosIncidencias();
+}
+
+function seleccionarAnoIncidencias(anoStr) {
+    if (!anoStr) return;
+    const fDesde = `${anoStr}-01-01`;
+    const fHasta = `${anoStr}-12-31`;
+
+    const inputDesde = document.getElementById('filtro-inc-desde');
+    const inputHasta = document.getElementById('filtro-inc-hasta');
+    if (inputDesde) inputDesde.value = fDesde;
+    if (inputHasta) inputHasta.value = fHasta;
+
+    const selMes = document.getElementById('sel-inc-mes');
+    if (selMes) selMes.value = "";
+
+    actualizarEstiloChipsPeriodo(null);
+
+    if (modoComparativoIncidencias) {
+        calcularFechasPeriodoB();
+    }
+    aplicarFiltrosIncidencias();
+}
+
+function alCambiarRangoManualIncidencias() {
+    const selMes = document.getElementById('sel-inc-mes');
+    const selAno = document.getElementById('sel-inc-ano');
+    if (selMes) selMes.value = "";
+    if (selAno) selAno.value = "";
+
+    actualizarEstiloChipsPeriodo(null);
+
+    if (modoComparativoIncidencias) {
+        calcularFechasPeriodoB();
+    }
+    aplicarFiltrosIncidencias();
+}
+
+function establecerPreajustePeriodo(preset) {
+    const inputDesde = document.getElementById('filtro-inc-desde');
+    const inputHasta = document.getElementById('filtro-inc-hasta');
+    if (!inputDesde || !inputHasta) return;
+
+    // Obtener fecha de hoy o fecha máxima de la base de datos
+    const fechas = rawEvaluacionesIncidencias.map(e => e.Fecha).filter(Boolean).sort();
+    const hoyStr = fechas.length > 0 ? fechas[fechas.length - 1] : new Date().toISOString().substring(0, 10);
+    const dtHoy = new Date(hoyStr + 'T12:00:00');
+
+    let fDesde = "";
+    let fHasta = hoyStr;
+
+    function formatoYMD(dt) {
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, '0');
+        const d = String(dt.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    if (preset === 'hoy') {
+        fDesde = hoyStr;
+        fHasta = hoyStr;
+    } else if (preset === '7dias') {
+        const dt7 = new Date(dtHoy.getTime() - 6 * 86400000);
+        fDesde = formatoYMD(dt7);
+        fHasta = hoyStr;
+    } else if (preset === '30dias') {
+        const dt30 = new Date(dtHoy.getTime() - 29 * 86400000);
+        fDesde = formatoYMD(dt30);
+        fHasta = hoyStr;
+    } else if (preset === 'este_mes') {
+        const ano = dtHoy.getFullYear();
+        const mes = dtHoy.getMonth() + 1;
+        const ultimoDia = new Date(ano, mes, 0).getDate();
+        fDesde = `${ano}-${String(mes).padStart(2, '0')}-01`;
+        fHasta = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+    } else if (preset === 'mes_anterior') {
+        let ano = dtHoy.getFullYear();
+        let mes = dtHoy.getMonth(); // mes anterior (0-indexed es mes anterior directo)
+        if (mes === 0) {
+            mes = 12;
+            ano -= 1;
+        }
+        const ultimoDia = new Date(ano, mes, 0).getDate();
+        fDesde = `${ano}-${String(mes).padStart(2, '0')}-01`;
+        fHasta = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+    } else if (preset === 'este_ano') {
+        const ano = dtHoy.getFullYear();
+        fDesde = `${ano}-01-01`;
+        fHasta = `${ano}-12-31`;
+    } else if (preset === 'todo') {
+        if (fechas.length > 0) {
+            fDesde = fechas[0];
+            fHasta = fechas[fechas.length - 1];
+        }
+    }
+
+    inputDesde.value = fDesde;
+    inputHasta.value = fHasta;
+
+    // Sincronizar selectores si aplica
+    const selMes = document.getElementById('sel-inc-mes');
+    const selAno = document.getElementById('sel-inc-ano');
+    if (preset === 'este_mes' || preset === 'mes_anterior') {
+        if (selMes) selMes.value = fDesde.substring(0, 7);
+        if (selAno) selAno.value = "";
+    } else if (preset === 'este_ano') {
+        if (selMes) selMes.value = "";
+        if (selAno) selAno.value = String(dtHoy.getFullYear());
+    } else {
+        if (selMes) selMes.value = "";
+        if (selAno) selAno.value = "";
+    }
+
+    actualizarEstiloChipsPeriodo(preset);
+
+    if (modoComparativoIncidencias) {
+        calcularFechasPeriodoB();
+    }
+    aplicarFiltrosIncidencias();
+}
+
+function actualizarEstiloChipsPeriodo(presetActivo) {
+    const chips = document.querySelectorAll('.btn-filtro-chip');
+    chips.forEach(c => {
+        const onclickTxt = c.getAttribute('onclick') || '';
+        if (presetActivo && onclickTxt.includes(`'${presetActivo}'`)) {
+            c.classList.add('active');
+        } else {
+            c.classList.remove('active');
+        }
+    });
+}
+
+// -------------------------------------------------------------
+// ⚖️ MODO COMPARATIVO DE PERIODOS (EVALUACIÓN DE DESEMPEÑO)
+// -------------------------------------------------------------
+function toggleModoComparativoIncidencias() {
+    modoComparativoIncidencias = !modoComparativoIncidencias;
+
+    const panelComp = document.getElementById('panel-periodo-comparativo');
+    const badgeStatus = document.getElementById('badge-comp-status');
+    const btnToggle = document.getElementById('btn-toggle-comp-inc');
+    const bannerDesemp = document.getElementById('banner-inc-desempeno');
+    const cardComp = document.getElementById('card-grafica-comparativa');
+    const tabsBit = document.getElementById('tabs-bitacora-comparativa');
+    const lblModo = document.getElementById('lbl-graficas-modo');
+
+    if (modoComparativoIncidencias) {
+        if (panelComp) panelComp.style.display = 'block';
+        if (badgeStatus) {
+            badgeStatus.innerText = 'ACTIVO';
+            badgeStatus.style.background = '#4338ca';
+            badgeStatus.style.color = '#ffffff';
+        }
+        if (btnToggle) {
+            btnToggle.style.background = '#eef2ff';
+            btnToggle.style.borderColor = '#4338ca';
+            btnToggle.style.color = '#312e81';
+        }
+        if (bannerDesemp) bannerDesemp.style.display = 'block';
+        if (cardComp) cardComp.style.display = 'block';
+        if (tabsBit) tabsBit.style.display = 'inline-flex';
+        if (lblModo) {
+            lblModo.innerText = 'Modo: Evaluación Comparativa de Desempeño (Periodo A vs Periodo B)';
+            lblModo.style.background = '#c7d2fe';
+            lblModo.style.color = '#312e81';
+        }
+        calcularFechasPeriodoB();
+    } else {
+        if (panelComp) panelComp.style.display = 'none';
+        if (badgeStatus) {
+            badgeStatus.innerText = 'OFF';
+            badgeStatus.style.background = '#e0e7ff';
+            badgeStatus.style.color = '#4338ca';
+        }
+        if (btnToggle) {
+            btnToggle.style.background = 'white';
+            btnToggle.style.borderColor = '#6366f1';
+            btnToggle.style.color = '#4338ca';
+        }
+        if (bannerDesemp) bannerDesemp.style.display = 'none';
+        if (cardComp) cardComp.style.display = 'none';
+        if (tabsBit) tabsBit.style.display = 'none';
+        if (lblModo) {
+            lblModo.innerText = 'Modo: Vista Estándar';
+            lblModo.style.background = '#e0e7ff';
+            lblModo.style.color = '#6366f1';
+        }
+        tabBitacoraActual = 'A';
+    }
+
+    aplicarFiltrosIncidencias();
+}
+
+function calcularFechasPeriodoB() {
+    const fDesdeA = document.getElementById('filtro-inc-desde')?.value || "";
+    const fHastaA = document.getElementById('filtro-inc-hasta')?.value || "";
+    const inputDesdeB = document.getElementById('filtro-inc-comp-desde');
+    const inputHastaB = document.getElementById('filtro-inc-comp-hasta');
+    const lblResumenA = document.getElementById('lbl-resumen-periodo-a');
+
+    if (lblResumenA) {
+        lblResumenA.innerText = `Periodo A (${fDesdeA || 'Inicio'} al ${fHastaA || 'Fin'})`;
+    }
+
+    if (!fDesdeA || !fHastaA || !inputDesdeB || !inputHastaB) return;
+    if (modoPeriodoB === 'personalizado') return;
+
+    function formatoYMD(dt) {
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, '0');
+        const d = String(dt.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    const dtDesdeA = new Date(fDesdeA + 'T12:00:00');
+    const dtHastaA = new Date(fHastaA + 'T12:00:00');
+
+    if (modoPeriodoB === 'inmediato_anterior') {
+        // Duración en días de Periodo A
+        const duracionDias = Math.max(1, Math.round((dtHastaA - dtDesdeA) / 86400000) + 1);
+        const dtHastaB = new Date(dtDesdeA.getTime() - 86400000); // 1 día antes del inicio de A
+        const dtDesdeB = new Date(dtHastaB.getTime() - (duracionDias - 1) * 86400000);
+        inputDesdeB.value = formatoYMD(dtDesdeB);
+        inputHastaB.value = formatoYMD(dtHastaB);
+    } else if (modoPeriodoB === 'mes_anterior') {
+        const dtDesdeB = new Date(dtDesdeA);
+        dtDesdeB.setMonth(dtDesdeB.getMonth() - 1);
+        const dtHastaB = new Date(dtHastaA);
+        dtHastaB.setMonth(dtHastaB.getMonth() - 1);
+        inputDesdeB.value = formatoYMD(dtDesdeB);
+        inputHastaB.value = formatoYMD(dtHastaB);
+    } else if (modoPeriodoB === 'ano_anterior') {
+        const dtDesdeB = new Date(dtDesdeA);
+        dtDesdeB.setFullYear(dtDesdeB.getFullYear() - 1);
+        const dtHastaB = new Date(dtHastaA);
+        dtHastaB.setFullYear(dtHastaB.getFullYear() - 1);
+        inputDesdeB.value = formatoYMD(dtDesdeB);
+        inputHastaB.value = formatoYMD(dtHastaB);
+    }
+}
+
+function alCambiarModoComparativoB(modo) {
+    modoPeriodoB = modo;
+    calcularFechasPeriodoB();
+    aplicarFiltrosIncidencias();
+}
+
+function alCambiarFechasComparativoB() {
+    modoPeriodoB = 'personalizado';
+    const selModoB = document.getElementById('sel-modo-comparativo-b');
+    if (selModoB) selModoB.value = 'personalizado';
+    aplicarFiltrosIncidencias();
 }
 
 function poblarFiltroDepartamentosIncidencias() {
@@ -6271,6 +7558,11 @@ function poblarFiltroActoresIncidencias() {
 }
 
 function resetearFiltrosIncidencias() {
+    const selMes = document.getElementById('sel-inc-mes');
+    const selAno = document.getElementById('sel-inc-ano');
+    if (selMes) selMes.value = "";
+    if (selAno) selAno.value = "";
+
     const fechas = rawEvaluacionesIncidencias.map(e => e.Fecha).filter(Boolean).sort();
     if (fechas.length > 0) {
         const inputDesde = document.getElementById('filtro-inc-desde');
@@ -6285,26 +7577,33 @@ function resetearFiltrosIncidencias() {
     if (selActor) selActor.selectedIndex = 0;
     const buscar = document.getElementById('inc-buscar-tabla');
     if (buscar) buscar.value = "";
+
+    actualizarEstiloChipsPeriodo(null);
+
+    if (modoComparativoIncidencias) {
+        calcularFechasPeriodoB();
+    }
     aplicarFiltrosIncidencias();
 }
 
+// -------------------------------------------------------------
+// FILTRADO Y MOTOR DE CÁLCULO
+// -------------------------------------------------------------
 function aplicarFiltrosIncidencias() {
-    const fDesde = document.getElementById('filtro-inc-desde')?.value || "";
-    const fHasta = document.getElementById('filtro-inc-hasta')?.value || "";
+    const fDesdeA = document.getElementById('filtro-inc-desde')?.value || "";
+    const fHastaA = document.getElementById('filtro-inc-hasta')?.value || "";
     const depto = document.getElementById('filtro-inc-depto')?.value || "Todos";
     const actor = document.getElementById('filtro-inc-actor')?.value || "🌟 TODOS (Empleados y Proveedores)";
 
+    // Filtrar Periodo A (Principal)
     evaluacionesFiltradasIncidencias = rawEvaluacionesIncidencias.filter(item => {
-        // Filtro de fecha
-        if (fDesde && item.Fecha && item.Fecha < fDesde) return false;
-        if (fHasta && item.Fecha && item.Fecha > fHasta) return false;
+        if (fDesdeA && item.Fecha && item.Fecha < fDesdeA) return false;
+        if (fHastaA && item.Fecha && item.Fecha > fHastaA) return false;
 
-        // Filtro de depto
         if (depto !== "Todos") {
             if (item.Tipo === 'Empleado' && item.Departamento !== depto) return false;
         }
 
-        // Filtro de actor
         if (actor === "👥 TODOS LOS EMPLEADOS") {
             if (item.Tipo !== 'Empleado') return false;
         } else if (actor === "🚚 TODOS LOS PROVEEDORES") {
@@ -6316,91 +7615,410 @@ function aplicarFiltrosIncidencias() {
         return true;
     });
 
+    // Filtrar Periodo B (Comparativo) si está activo
+    if (modoComparativoIncidencias) {
+        const fDesdeB = document.getElementById('filtro-inc-comp-desde')?.value || "";
+        const fHastaB = document.getElementById('filtro-inc-comp-hasta')?.value || "";
+
+        evaluacionesComparativasIncidencias = rawEvaluacionesIncidencias.filter(item => {
+            if (fDesdeB && item.Fecha && item.Fecha < fDesdeB) return false;
+            if (fHastaB && item.Fecha && item.Fecha > fHastaB) return false;
+
+            if (depto !== "Todos") {
+                if (item.Tipo === 'Empleado' && item.Departamento !== depto) return false;
+            }
+
+            if (actor === "👥 TODOS LOS EMPLEADOS") {
+                if (item.Tipo !== 'Empleado') return false;
+            } else if (actor === "🚚 TODOS LOS PROVEEDORES") {
+                if (item.Tipo !== 'Proveedor') return false;
+            } else if (actor !== "🌟 TODOS (Empleados y Proveedores)") {
+                if (item.Actor !== actor) return false;
+            }
+
+            return true;
+        });
+    } else {
+        evaluacionesComparativasIncidencias = [];
+    }
+
     actualizarKPIsIncidencias();
+    renderizarBannerDesempeno();
     renderizarGraficasIncidencias();
-    renderizarTablaIncidencias(evaluacionesFiltradasIncidencias);
+    renderizarTablaIncidenciasSegunTab();
 }
 
 function actualizarKPIsIncidencias() {
-    const total = evaluacionesFiltradasIncidencias.length;
-    const limpias = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
-    const fallas = total - limpias;
-    const eventosUnicos = new Set(evaluacionesFiltradasIncidencias.map(e => e.Evento)).size;
+    const totalA = evaluacionesFiltradasIncidencias.length;
+    const limpiasA = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+    const fallasA = totalA - limpiasA;
+    const eventosA = new Set(evaluacionesFiltradasIncidencias.map(e => e.Evento)).size;
 
-    const pctLimpias = total > 0 ? ((limpias / total) * 100).toFixed(1) : "0.0";
-    const pctFallas = total > 0 ? ((fallas / total) * 100).toFixed(1) : "0.0";
+    const pctLimpiasA = totalA > 0 ? ((limpiasA / totalA) * 100) : 0;
+    const pctFallasA = totalA > 0 ? ((fallasA / totalA) * 100) : 0;
 
     const elTotal = document.getElementById('kpi-inc-total');
-    if (elTotal) elTotal.innerText = total;
-
+    const elSubTotal = document.getElementById('kpi-inc-sub-total');
     const elLimpias = document.getElementById('kpi-inc-limpias');
-    if (elLimpias) elLimpias.innerText = limpias;
     const elPctLimpias = document.getElementById('kpi-inc-pct-limpias');
-    if (elPctLimpias) elPctLimpias.innerText = `+${pctLimpias}%`;
-
+    const elSubLimpias = document.getElementById('kpi-inc-sub-limpias');
     const elFallas = document.getElementById('kpi-inc-fallas');
-    if (elFallas) elFallas.innerText = fallas;
     const elPctFallas = document.getElementById('kpi-inc-pct-fallas');
-    if (elPctFallas) elPctFallas.innerText = `-${pctFallas}%`;
-
+    const elSubFallas = document.getElementById('kpi-inc-sub-fallas');
     const elEventos = document.getElementById('kpi-inc-eventos');
-    if (elEventos) elEventos.innerText = eventosUnicos;
+    const elSubEventos = document.getElementById('kpi-inc-sub-eventos');
+
+    if (!modoComparativoIncidencias) {
+        // MODO ESTÁNDAR
+        if (elTotal) elTotal.innerText = totalA;
+        if (elSubTotal) elSubTotal.innerText = "Total registros auditados";
+
+        if (elLimpias) elLimpias.innerText = limpiasA;
+        if (elPctLimpias) {
+            elPctLimpias.innerText = `+${pctLimpiasA.toFixed(1)}%`;
+            elPctLimpias.style.background = "#dcfce7";
+            elPctLimpias.style.color = "#15803d";
+        }
+        if (elSubLimpias) elSubLimpias.innerText = "Operación sin contratiempos";
+
+        if (elFallas) elFallas.innerText = fallasA;
+        if (elPctFallas) {
+            elPctFallas.innerText = `-${pctFallasA.toFixed(1)}%`;
+            elPctFallas.style.background = "#fee2e2";
+            elPctFallas.style.color = "#b91c1c";
+        }
+        if (elSubFallas) elSubFallas.innerText = "Reportes de fallas o daños";
+
+        if (elEventos) elEventos.innerText = eventosA;
+        if (elSubEventos) elSubEventos.innerText = "Órdenes de Producción con registro";
+    } else {
+        // MODO COMPARATIVO (Periodo A vs Periodo B)
+        const totalB = evaluacionesComparativasIncidencias.length;
+        const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+        const fallasB = totalB - limpiasB;
+        const eventosB = new Set(evaluacionesComparativasIncidencias.map(e => e.Evento)).size;
+
+        const pctLimpiasB = totalB > 0 ? ((limpiasB / totalB) * 100) : 0;
+        const pctFallasB = totalB > 0 ? ((fallasB / totalB) * 100) : 0;
+
+        // Deltas
+        const deltaCalidad = pctLimpiasA - pctLimpiasB; // Variación en % de calidad limpia
+        const deltaTotal = totalA - totalB;
+        const deltaEventos = eventosA - eventosB;
+
+        // KPI 1: Evaluaciones
+        if (elTotal) {
+            elTotal.innerHTML = `
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                    <span>${totalA}</span>
+                    <span style="font-size: 15px; font-weight: 600; color: #64748b;">vs ${totalB} (B)</span>
+                </div>
+            `;
+        }
+        if (elSubTotal) {
+            const signo = deltaTotal >= 0 ? '+' : '';
+            elSubTotal.innerHTML = `Variación: <strong>${signo}${deltaTotal} eval(s)</strong> respecto a Periodo B`;
+        }
+
+        // KPI 2: Evaluaciones Limpias
+        if (elLimpias) elLimpias.innerText = `${limpiasA} (${pctLimpiasA.toFixed(1)}%)`;
+        if (elPctLimpias) {
+            const signoCal = deltaCalidad >= 0 ? '+' : '';
+            const esMejora = deltaCalidad >= 0;
+            elPctLimpias.innerText = `${signoCal}${deltaCalidad.toFixed(1)}% vs B`;
+            elPctLimpias.style.background = esMejora ? "#dcfce7" : "#fee2e2";
+            elPctLimpias.style.color = esMejora ? "#15803d" : "#b91c1c";
+        }
+        if (elSubLimpias) {
+            elSubLimpias.innerHTML = `Periodo B: <strong>${limpiasB} limpias (${pctLimpiasB.toFixed(1)}%)</strong>`;
+        }
+
+        // KPI 3: Evaluaciones con Incidencias
+        if (elFallas) elFallas.innerText = `${fallasA} (${pctFallasA.toFixed(1)}%)`;
+        if (elPctFallas) {
+            const deltaFallas = pctFallasA - pctFallasB;
+            const signoFallas = deltaFallas >= 0 ? '+' : '';
+            const esFallaMenor = deltaFallas <= 0;
+            elPctFallas.innerText = `${signoFallas}${deltaFallas.toFixed(1)}% vs B`;
+            elPctFallas.style.background = esFallaMenor ? "#dcfce7" : "#fee2e2";
+            elPctFallas.style.color = esFallaMenor ? "#15803d" : "#b91c1c";
+        }
+        if (elSubFallas) {
+            elSubFallas.innerHTML = `Periodo B: <strong>${fallasB} fallas (${pctFallasB.toFixed(1)}%)</strong>`;
+        }
+
+        // KPI 4: Eventos
+        if (elEventos) {
+            elEventos.innerHTML = `
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                    <span>${eventosA}</span>
+                    <span style="font-size: 15px; font-weight: 600; color: #64748b;">vs ${eventosB} (B)</span>
+                </div>
+            `;
+        }
+        if (elSubEventos) {
+            const signoEv = deltaEventos >= 0 ? '+' : '';
+            elSubEventos.innerHTML = `Variación: <strong>${signoEv}${deltaEventos} evento(s)</strong> OPs auditadas`;
+        }
+    }
 }
 
+function renderizarBannerDesempeno() {
+    const banner = document.getElementById('banner-inc-desempeno');
+    if (!banner) return;
+
+    if (!modoComparativoIncidencias) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    const totalA = evaluacionesFiltradasIncidencias.length;
+    const totalB = evaluacionesComparativasIncidencias.length;
+    const limpiasA = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+    const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+
+    const pctLimpiasA = totalA > 0 ? (limpiasA / totalA) * 100 : 0;
+    const pctLimpiasB = totalB > 0 ? (limpiasB / totalB) * 100 : 0;
+    const deltaCalidad = pctLimpiasA - pctLimpiasB;
+
+    const fDesdeA = document.getElementById('filtro-inc-desde')?.value || "";
+    const fHastaA = document.getElementById('filtro-inc-hasta')?.value || "";
+    const fDesdeB = document.getElementById('filtro-inc-comp-desde')?.value || "";
+    const fHastaB = document.getElementById('filtro-inc-comp-hasta')?.value || "";
+
+    banner.style.display = 'block';
+
+    let config = {
+        icono: 'ph-chart-line-up',
+        colorIcono: '#16a34a',
+        bg: '#f0fdf4',
+        border: '1.5px solid #86efac',
+        tituloColor: '#166534',
+        titulo: `📈 ¡MEJORA EN EL DESEMPEÑO OPERATIVO! (+${deltaCalidad.toFixed(1)}% Calidad Limpia)`,
+        detalle: `En el <strong>Periodo A (${fDesdeA} al ${fHastaA})</strong> la tasa de operaciones sin contratiempos alcanzó <strong>${pctLimpiasA.toFixed(1)}%</strong>, superando el <strong>${pctLimpiasB.toFixed(1)}%</strong> registrado en el <strong>Periodo B (${fDesdeB} al ${fHastaB})</strong>. La tasa de incidencias disminuyó <strong>${Math.abs(deltaCalidad).toFixed(1)} puntos porcentuales</strong>.`
+    };
+
+    if (deltaCalidad < -0.1) {
+        config = {
+            icono: 'ph-warning',
+            colorIcono: '#dc2626',
+            bg: '#fef2f2',
+            border: '1.5px solid #fca5a5',
+            tituloColor: '#991b1b',
+            titulo: `⚠️ ALERTA DE DESEMPEÑO: Incremento en Tasa de Incidencias (${deltaCalidad.toFixed(1)}% Calidad)`,
+            detalle: `En el <strong>Periodo A (${fDesdeA} al ${fHastaA})</strong> la proporción de fallas aumentó, registrándose <strong>${(100 - pctLimpiasA).toFixed(1)}%</strong> de incidencias contra <strong>${(100 - pctLimpiasB).toFixed(1)}%</strong> del <strong>Periodo B (${fDesdeB} al ${fHastaB})</strong>. Se recomienda auditar las órdenes de producción de este ciclo.`
+        };
+    } else if (Math.abs(deltaCalidad) <= 0.1) {
+        config = {
+            icono: 'ph-scales',
+            colorIcono: '#2563eb',
+            bg: '#eff6ff',
+            border: '1.5px solid #93c5fd',
+            tituloColor: '#1e40af',
+            titulo: `⚖️ DESEMPEÑO CONSISTENTE: Calidad Estable entre Periodos (0.0% variación)`,
+            detalle: `El desempeño operativo se mantuvo equilibrado entre el <strong>Periodo A</strong> (${pctLimpiasA.toFixed(1)}% limpias) y el <strong>Periodo B</strong> (${pctLimpiasB.toFixed(1)}% limpias).`
+        };
+    }
+
+    banner.style.background = config.bg;
+    banner.style.border = config.border;
+    banner.innerHTML = `
+        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.08); flex-shrink: 0;">
+                <i class="ph ${config.icono}" style="font-size: 28px; color: ${config.colorIcono};"></i>
+            </div>
+            <div style="flex: 1; min-width: 250px;">
+                <div style="font-size: 15px; font-weight: 800; color: ${config.tituloColor}; margin-bottom: 4px;">
+                    ${config.titulo}
+                </div>
+                <div style="font-size: 13px; color: #334155; line-height: 1.45;">
+                    ${config.detalle}
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="background: white; padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); text-align: center;">
+                    <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Periodo A</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #4338ca;">${pctLimpiasA.toFixed(1)}% OK</div>
+                </div>
+                <div style="background: white; padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); text-align: center;">
+                    <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Periodo B</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #ea580c;">${pctLimpiasB.toFixed(1)}% OK</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// -------------------------------------------------------------
+// RENDERIZADO DE GRÁFICAS DE CALIDAD Y DESEMPEÑO
+// -------------------------------------------------------------
 function renderizarGraficasIncidencias() {
     if (typeof Chart === 'undefined') return;
 
-    const total = evaluacionesFiltradasIncidencias.length;
-    const limpias = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
-    const fallas = total - limpias;
+    const totalA = evaluacionesFiltradasIncidencias.length;
+    const limpiasA = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+    const fallasA = totalA - limpiasA;
+    const pctLimpiasA = totalA > 0 ? ((limpiasA / totalA) * 100) : 0;
+    const pctFallasA = totalA > 0 ? ((fallasA / totalA) * 100) : 0;
 
-    const pctLimpias = total > 0 ? ((limpias / total) * 100) : 0;
-    const pctFallas = total > 0 ? ((fallas / total) * 100) : 0;
-
-    // 1️⃣ Gráfica 1: Balance General (Barra 100% Horizontal Apilada)
     const ctxBalance = document.getElementById('chart-inc-balance')?.getContext('2d');
+    const contBalance = document.getElementById('contenedor-canvas-balance');
+    const titBalance = document.getElementById('titulo-grafica-balance');
+
+    // 1️⃣ Gráfica 1: Balance General (Apilada 100%) - Si comparativo: 2 barras apiladas
     if (ctxBalance) {
         if (chartIncBalanceInstance) chartIncBalanceInstance.destroy();
 
-        chartIncBalanceInstance = new Chart(ctxBalance, {
+        if (!modoComparativoIncidencias) {
+            if (contBalance) contBalance.style.height = "60px";
+            if (titBalance) titBalance.innerText = "Balance General de Calidad (%)";
+
+            chartIncBalanceInstance = new Chart(ctxBalance, {
+                type: 'bar',
+                data: {
+                    labels: ['Balance General'],
+                    datasets: [
+                        {
+                            label: 'Sin Incidencias',
+                            data: [pctLimpiasA],
+                            backgroundColor: '#16a34a',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Con Incidencias',
+                            data: [pctFallasA],
+                            backgroundColor: '#ef4444',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            max: 100,
+                            ticks: { callback: v => `${v}%` }
+                        },
+                        y: { stacked: true, display: false }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            // MODO COMPARATIVO: 2 Barras Horizontales Apiladas (A vs B)
+            if (contBalance) contBalance.style.height = "105px";
+            if (titBalance) titBalance.innerText = "⚖️ Balance Comparativo de Calidad (%) - Periodo A vs Periodo B";
+
+            const totalB = evaluacionesComparativasIncidencias.length;
+            const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+            const fallasB = totalB - limpiasB;
+            const pctLimpiasB = totalB > 0 ? ((limpiasB / totalB) * 100) : 0;
+            const pctFallasB = totalB > 0 ? ((fallasB / totalB) * 100) : 0;
+
+            chartIncBalanceInstance = new Chart(ctxBalance, {
+                type: 'bar',
+                data: {
+                    labels: ['Periodo A (Actual)', 'Periodo B (Comparativo)'],
+                    datasets: [
+                        {
+                            label: 'Sin Incidencias',
+                            data: [pctLimpiasA, pctLimpiasB],
+                            backgroundColor: '#16a34a',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Con Incidencias',
+                            data: [pctFallasA, pctFallasB],
+                            backgroundColor: '#ef4444',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            max: 100,
+                            ticks: { callback: v => `${v}%` }
+                        },
+                        y: {
+                            stacked: true,
+                            ticks: { font: { weight: 'bold', size: 11.5 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // 2️⃣ Gráfica 2: Comparativa de Desempeño Operativo (Solo en Modo Comparativo)
+    const ctxComp = document.getElementById('chart-inc-comparativa')?.getContext('2d');
+    if (ctxComp && modoComparativoIncidencias) {
+        if (chartIncComparativaInstance) chartIncComparativaInstance.destroy();
+
+        const totalB = evaluacionesComparativasIncidencias.length;
+        const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+        const fallasB = totalB - limpiasB;
+        const eventosA = new Set(evaluacionesFiltradasIncidencias.map(e => e.Evento)).size;
+        const eventosB = new Set(evaluacionesComparativasIncidencias.map(e => e.Evento)).size;
+
+        chartIncComparativaInstance = new Chart(ctxComp, {
             type: 'bar',
             data: {
-                labels: ['Balance General'],
+                labels: ['Total Evaluaciones', 'Operación Limpia', 'Con Incidencias', 'Eventos Auditados'],
                 datasets: [
                     {
-                        label: 'Sin Incidencias',
-                        data: [pctLimpias],
-                        backgroundColor: '#16a34a',
+                        label: 'Periodo A (Actual)',
+                        data: [totalA, limpiasA, fallasA, eventosA],
+                        backgroundColor: '#4f46e5',
                         borderRadius: 6
                     },
                     {
-                        label: 'Con Incidencias',
-                        data: [pctFallas],
-                        backgroundColor: '#ef4444',
+                        label: 'Periodo B (Comparativo)',
+                        data: [totalB, limpiasB, fallasB, eventosB],
+                        backgroundColor: '#f97316',
                         borderRadius: 6
                     }
                 ]
             },
             options: {
-                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        stacked: true,
-                        max: 100,
-                        ticks: { callback: v => `${v}%` }
+                        ticks: { font: { weight: 'bold', size: 11.5 } }
                     },
                     y: {
-                        stacked: true,
-                        display: false
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
                     }
                 },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`
+                            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} registros`
                         }
                     }
                 }
@@ -6408,12 +8026,11 @@ function renderizarGraficasIncidencias() {
         });
     }
 
-    // 2️⃣ Gráfica 2: Detalle por Evento (Barras comparativas Verde vs Roja)
+    // 3️⃣ Gráfica 3: Detalle por Evento (Periodo A)
     const ctxEventos = document.getElementById('chart-inc-eventos')?.getContext('2d');
     if (ctxEventos) {
         if (chartIncEventosInstance) chartIncEventosInstance.destroy();
 
-        // Agrupar por Evento
         const eventosMap = {};
         evaluacionesFiltradasIncidencias.forEach(e => {
             const ev = e.Evento || 'Sin Nombre';
@@ -6422,7 +8039,6 @@ function renderizarGraficasIncidencias() {
             else eventosMap[ev].fallas++;
         });
 
-        // Ordenar por volumen total o alfabético
         const labels = Object.keys(eventosMap);
         const dataLimpias = labels.map(k => eventosMap[k].limpias);
         const dataFallas = labels.map(k => eventosMap[k].fallas);
@@ -6476,6 +8092,38 @@ function renderizarGraficasIncidencias() {
     }
 }
 
+// -------------------------------------------------------------
+// BITÁCORA Y TABS DE PERIODOS
+// -------------------------------------------------------------
+function cambiarTabBitacora(tab) {
+    tabBitacoraActual = tab;
+    const tabA = document.getElementById('tab-bit-a');
+    const tabB = document.getElementById('tab-bit-b');
+    const tabAmbos = document.getElementById('tab-bit-ambos');
+
+    [tabA, tabB, tabAmbos].forEach(t => t?.classList.remove('active'));
+    if (tab === 'A') tabA?.classList.add('active');
+    else if (tab === 'B') tabB?.classList.add('active');
+    else if (tab === 'AMBOS') tabAmbos?.classList.add('active');
+
+    renderizarTablaIncidenciasSegunTab();
+}
+
+function renderizarTablaIncidenciasSegunTab() {
+    let lista = [];
+    if (!modoComparativoIncidencias || tabBitacoraActual === 'A') {
+        lista = evaluacionesFiltradasIncidencias.map(item => ({ ...item, _periodo: 'A' }));
+    } else if (tabBitacoraActual === 'B') {
+        lista = evaluacionesComparativasIncidencias.map(item => ({ ...item, _periodo: 'B' }));
+    } else if (tabBitacoraActual === 'AMBOS') {
+        const itemsA = evaluacionesFiltradasIncidencias.map(item => ({ ...item, _periodo: 'A' }));
+        const itemsB = evaluacionesComparativasIncidencias.map(item => ({ ...item, _periodo: 'B' }));
+        lista = [...itemsA, ...itemsB].sort((a, b) => (b.Fecha || '').localeCompare(a.Fecha || ''));
+    }
+
+    renderizarTablaIncidencias(lista);
+}
+
 function renderizarTablaIncidencias(lista) {
     const tbody = document.getElementById('tbody-incidencias-detallada');
     const badgeConteo = document.getElementById('inc-tabla-conteo');
@@ -6497,9 +8145,15 @@ function renderizarTablaIncidencias(lista) {
             ? `<span style="background: #eff6ff; color: #2563eb; font-weight: 600; font-size: 11.5px; padding: 2px 8px; border-radius: 6px;">👤 Empleado</span>`
             : `<span style="background: #fef3c7; color: #d97706; font-weight: 600; font-size: 11.5px; padding: 2px 8px; border-radius: 6px;">🚚 Proveedor</span>`;
 
+        const badgePeriodo = (modoComparativoIncidencias && tabBitacoraActual === 'AMBOS')
+            ? (item._periodo === 'A'
+                ? `<span style="background: #e0e7ff; color: #4338ca; font-weight: 800; font-size: 10px; padding: 1px 5px; border-radius: 4px; margin-right: 4px;">P-A</span>`
+                : `<span style="background: #ffedd5; color: #c2410c; font-weight: 800; font-size: 10px; padding: 1px 5px; border-radius: 4px; margin-right: 4px;">P-B</span>`)
+            : '';
+
         return `
             <tr>
-                <td style="font-family: monospace; font-size: 12px; color: #64748b;">${item.Fecha || '--'}</td>
+                <td style="font-family: monospace; font-size: 12px; color: #64748b;">${badgePeriodo}${item.Fecha || '--'}</td>
                 <td style="font-weight: 600; color: #0f172a; font-size: 13px;">${item.Evento}</td>
                 <td style="text-align: center;">${badgeTipo}</td>
                 <td style="font-weight: 500; font-size: 13px;">${item.Actor}</td>
@@ -9009,4 +10663,151 @@ function imprimirExpedienteCompletoRH() {
         </html>
     `);
     win.document.close();
+}
+// ==========================================
+// 8. SISTEMA DE AUDIO PROGRAMADO (AUDÍFONOS AMIGABLES)
+// ==========================================
+let audioCtx = null;
+let ultimoAlarmaDisparada = "";
+
+// Inicializa o reanuda el contexto de audio tras interacción
+function obtenerAudioContext() {
+    if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+// Genera una nota senoidal suave con ataque y decaimiento
+function tocarNota(frecuencia, tiempoInicio, duracion, volumenMax = 0.25) {
+    const ctx = obtenerAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine'; // Onda senoidal: la más pura y suave al oído
+    osc.frequency.setValueAtTime(frecuencia, tiempoInicio);
+
+    // Curva de volumen: Fade-in suave (anti-pop) y Fade-out gradual
+    gain.gain.setValueAtTime(0.0001, tiempoInicio);
+    gain.gain.exponentialRampToValueAtTime(volumenMax, tiempoInicio + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, tiempoInicio + duracion);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(tiempoInicio);
+    osc.stop(tiempoInicio + duracion);
+}
+
+// 🟢 SONIDO DE ENTRADA (09:00 y 16:00) - Arpegio ascendente limpio
+function sonarEntrada() {
+    const ctx = obtenerAudioContext();
+    const ahora = ctx.currentTime;
+    // Notas: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
+    tocarNota(523.25, ahora + 0.00, 0.35, 0.22);
+    tocarNota(659.25, ahora + 0.12, 0.35, 0.22);
+    tocarNota(783.99, ahora + 0.24, 0.35, 0.22);
+    tocarNota(1046.50, ahora + 0.36, 0.70, 0.25);
+}
+
+// 🔴 SONIDO DE SALIDA (14:00 y 19:00) - Acorde relajante de descanso
+function sonarSalida() {
+    const ctx = obtenerAudioContext();
+    const ahora = ctx.currentTime;
+    // Notas: G5 (784Hz), E5 (659Hz), C5 (523Hz) con cola larga
+    tocarNota(783.99, ahora + 0.00, 0.50, 0.20);
+    tocarNota(659.25, ahora + 0.18, 0.60, 0.22);
+    tocarNota(523.25, ahora + 0.36, 1.20, 0.25);
+    // Nota grave de apoyo cálido (C4)
+    tocarNota(261.63, ahora + 0.36, 1.40, 0.15);
+}
+
+// ⏱️ VIGILANTE DE HORARIOS (Checa cada segundo)
+function verificarHorariosCampana() {
+    const ahora = new Date();
+    // Formato 'HH:MM' (ejemplo: '09:00', '14:00')
+    const horaActual = ahora.toLocaleTimeString('es-MX', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+    });
+
+    // Si cambió el minuto y es una de las 4 horas clave
+    if (horaActual !== ultimoAlarmaDisparada) {
+        if (horaActual === "09:00" || horaActual === "16:00") {
+            ultimoAlarmaDisparada = horaActual;
+            sonarEntrada();
+            console.log(`🔔 Sonido de ENTRADA ejecutado a las ${horaActual}`);
+        } else if (horaActual === "14:00" || horaActual === "19:00") {
+            ultimoAlarmaDisparada = horaActual;
+            sonarSalida();
+            console.log(`🔔 Sonido de SALIDA ejecutado a las ${horaActual}`);
+        }
+    }
+}
+// ==========================================
+// 🔊 DICCIONARIO DE NOMBRES CORTOS Y SALUDO POR VOZ
+// ==========================================
+const NOMBRES_CORTOS = {
+    "101": "Señora Ana Lilia",
+    "102": "Gerardo",
+    "104": "Paco",
+    "105": "Dany",
+    "107": "Geo",
+    "109": "Osiel",
+    "113": "Carlos",
+    "115": "Ibón",
+    "119": "Manny",
+    "121": "Sofía",
+    "122": "Andrea",
+    "124": "Manuel",                // Manuel Eduardo (Coordinador)
+    "125": "Diego",
+    "200": "Licenciada Andrea",
+    "201": "Cuauhtémoc",
+    "202": "Amarillas",
+    "203": "Señor Pedro Villarreal"
+};
+
+function decirSaludoKiosco(idEmpleado = "", nombreCompleto = "") {
+    if (!('speechSynthesis' in window)) return;
+
+    const idLimpio = String(idEmpleado).trim();
+    let sujeto = "";
+
+    // 1. Prioridad: Nombre corto / preferido de la lista
+    if (NOMBRES_CORTOS[idLimpio]) {
+        sujeto = NOMBRES_CORTOS[idLimpio];
+    } 
+    // 2. Si es alguien nuevo que no está en la lista, toma su primer nombre
+    else if (nombreCompleto) {
+        sujeto = nombreCompleto.trim().split(' ')[0];
+    }
+
+    // 3. Saludo cordial según la hora del día
+    const hora = new Date().getHours();
+    let saludo = "Hola";
+    if (hora >= 5 && hora < 12) {
+        saludo = "Buenos días";
+    } else if (hora >= 12 && hora < 19) {
+        saludo = "Buenas tardes";
+    } else {
+        saludo = "Buenas noches";
+    }
+
+    // Armamos la frase completa
+    const mensajeVoz = sujeto ? `${saludo}, ${sujeto}.` : `${saludo}.`;
+
+    const locucion = new SpeechSynthesisUtterance(mensajeVoz);
+    locucion.lang = 'es-MX';  // Voz en español latino / México
+    locucion.rate = 0.95;     // Ritmo natural pausado
+    locucion.pitch = 1.0;     // Tono medio cálido
+    locucion.volume = 0.80;   // Nivel cómodo para audífonos
+
+    // Evita encimar voces si pasan varios rápido
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(locucion);
 }

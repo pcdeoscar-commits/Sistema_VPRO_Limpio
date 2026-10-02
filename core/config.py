@@ -25,11 +25,13 @@ API_URL = os.getenv("API_URL", "http://localhost:8521")
 # Carpetas de Recursos y Evidencias
 FOTOS_EQUIPOS_DIR = BASE_DIR / "Fotos_de_equipos"
 FOTOS_PERSONAL_DIR = BASE_DIR / "Fotos_de_personal"
+FOTOS_EVENTOS_DIR = BASE_DIR / "Fotos_de_eventos"
 DIR_EVIDENCIAS_REAL = str(FOTOS_EQUIPOS_DIR)
 
 # Asegurar que existan los directorios clave
 FOTOS_EQUIPOS_DIR.mkdir(parents=True, exist_ok=True)
 FOTOS_PERSONAL_DIR.mkdir(parents=True, exist_ok=True)
+FOTOS_EVENTOS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Orígenes Permitidos para CORS
 CORS_ORIGINS = [

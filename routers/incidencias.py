@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import text
 
-from core.database import engine_eventos, engine_eventos_vieja, engine_personal
+from core.database import engine_eventos, engine_personal
 from core.utils import safe_decode_hex, reparar_mojibake
 
 router = APIRouter(prefix="/api/incidencias", tags=["📊 Incidencias"])
@@ -36,25 +36,13 @@ def obtener_balance_ejecutivo_incidencias(
               {filtro_fecha}
         """)
 
-        rows_nuevos = []
-        rows_viejos = []
-
-        try:
-            with engine_eventos.connect() as conn_ev:
-                rows_nuevos = conn_ev.execute(query_maestro, params).fetchall()
-        except Exception as e:
-            print(f"⚠️ SILENCED ERROR in incidencias.py: {e}")
-
-        try:
-            with engine_eventos_vieja.connect() as conn_ev_v:
-                rows_viejos = conn_ev_v.execute(query_maestro, params).fetchall()
-        except Exception as e:
-            print(f"⚠️ SILENCED ERROR in incidencias.py: {e}")
+        with engine_eventos.connect() as conn_ev:
+            rows = conn_ev.execute(query_maestro, params).fetchall()
 
         registros_unicos = []
         firmas_vistas = set()
         
-        for r in rows_nuevos + rows_viejos:
+        for r in rows:
             firma_unica = f"{str(r[1])}_{str(r[2])}_{str(r[4])}"
             if firma_unica not in firmas_vistas:
                 firmas_vistas.add(firma_unica)
@@ -168,23 +156,11 @@ def obtener_reporte_incidencias_global():
             LEFT JOIN public.eventos ev ON cm.folio_op = ev.id_evento
         """)
         
-        rows_nuevos = []
-        rows_viejos = []
-
-        try:
-            with engine_eventos.connect() as conn_ev:
-                rows_nuevos = conn_ev.execute(query).fetchall()
-        except Exception as e:
-            print(f"⚠️ SILENCED ERROR in incidencias.py: {e}")
-
-        try:
-            with engine_eventos_vieja.connect() as conn_ev_v:
-                rows_viejos = conn_ev_v.execute(query).fetchall()
-        except Exception as e:
-            print(f"⚠️ SILENCED ERROR in incidencias.py: {e}")
+        with engine_eventos.connect() as conn_ev:
+            rows = conn_ev.execute(query).fetchall()
 
         mejores_registros = {}
-        for r in rows_nuevos + rows_viejos:
+        for r in rows:
             firma_unica = f"{str(r[1])}_{str(r[3])}_{str(r[4])}"
             nota_actual = str(r[2]) if r[2] else ""
             

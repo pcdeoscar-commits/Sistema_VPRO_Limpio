@@ -10,8 +10,7 @@ from sqlalchemy import text
 
 from core.config import DIR_EVIDENCIAS_REAL
 from core.database import (
-    engine_inventario, engine_inventario_vieja, 
-    engine_personal, get_db_cursor
+    engine_inventario, engine_personal, get_db_cursor
 )
 from core.utils import safe_decode_hex, reparar_mojibake
 
@@ -21,7 +20,7 @@ router = APIRouter(tags=["🛠️ Inventario General"])
 def obtener_inventario():
     """Consulta todo el catálogo de inventario maestro ordenado por código."""
     try:
-        with get_db_cursor("db_inventario_prueba", cursor_factory=RealDictCursor) as cursor:
+        with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cursor:
             cursor.execute("SELECT * FROM inventario ORDER BY codigo ASC;")
             inventario = cursor.fetchall()
         return inventario
@@ -32,7 +31,7 @@ def obtener_inventario():
 def guardar_inventario(payload: dict):
     """Inserta o actualiza un equipo en inventario."""
     try:
-        with get_db_cursor("db_inventario_prueba", commit=True) as cursor:
+        with get_db_cursor("db_inventario", commit=True) as cursor:
             cursor.execute(
                 "SELECT codigo FROM inventario WHERE codigo = %s;", (payload["codigo"],)
             )
@@ -66,7 +65,7 @@ def guardar_inventario(payload: dict):
 def eliminar_inventario(codigo: str):
     """Elimina un equipo del inventario por código."""
     try:
-        with get_db_cursor("db_inventario_prueba", commit=True) as cursor:
+        with get_db_cursor("db_inventario", commit=True) as cursor:
             cursor.execute("DELETE FROM inventario WHERE codigo = %s;", (codigo,))
         return {"status": "ok", "mensaje": f"Equipo {codigo} eliminado"}
     except Exception as e:
@@ -76,7 +75,7 @@ def eliminar_inventario(codigo: str):
 def obtener_inventario_kits():
     """Consulta todos los kits de inventario alterno."""
     try:
-        with get_db_cursor("db_inventario_prueba", cursor_factory=RealDictCursor) as cursor:
+        with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cursor:
             cursor.execute("""
                 SELECT 
                     codigo_inv_kits AS codigo,
@@ -96,13 +95,13 @@ def obtener_inventario_kits():
 def obtener_radar_danos():
     """Consulta la tabla reparaciones y la cruza con los nombres de personal."""
     try:
-        with get_db_cursor("db_personal_prueba", cursor_factory=RealDictCursor) as cursor_emp:
+        with get_db_cursor("db_personal", cursor_factory=RealDictCursor) as cursor_emp:
             cursor_emp.execute("SELECT id_empleado, nombre FROM public.empleados;")
             empleados_db = cursor_emp.fetchall()
 
         mapa_empleados = {str(emp["id_empleado"]).strip(): emp["nombre"] for emp in empleados_db}
 
-        with get_db_cursor("db_inventario_prueba", cursor_factory=RealDictCursor) as cursor_inv:
+        with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cursor_inv:
             cursor_inv.execute("""
                 SELECT 
                     r.num_d_servicio AS "NUM_SERVICIO",
@@ -175,7 +174,7 @@ def registrar_receta_tratamiento_medico(log: dict):
         costo = float(log.get("costo_asociado", 0.0))
         emp_id = str(log.get("id_empleado", "000")).strip()
 
-        with get_db_cursor("db_inventario_prueba", commit=True) as cursor:
+        with get_db_cursor("db_inventario", commit=True) as cursor:
             cursor.execute("""
                 INSERT INTO public.historial_equipo 
                     (codigo_equipo, fecha, folio_vpro, id_empleado, tipo_evento, descripcion, costo_asociado, estado_final, departamento)
@@ -214,7 +213,7 @@ def cerrar_ticket_reparacion(num_servicio: str, payload: dict):
     """Permite dar de alta o reparar un equipo desde la interfaz del Radar."""
     try:
         nuevo_estatus = str(payload.get("estado_actual", "RESUELTO")).strip().upper()
-        with get_db_cursor("db_inventario_prueba", commit=True) as cursor:
+        with get_db_cursor("db_inventario", commit=True) as cursor:
             cursor.execute("SELECT equipo_n_reparacion FROM public.reparaciones WHERE num_d_servicio = %s;", (num_servicio,))
             row = cursor.fetchone()
             
@@ -347,7 +346,7 @@ def obtener_evidencia_falla(folio_vpro: str, codigo_equipo: str):
 def consultar_expediente_equipo(codigo_equipo: str, request: Request):
     """Consulta el expediente completo de un equipo (historial y fotografías)."""
     try:
-        with get_db_cursor("db_inventario_prueba", cursor_factory=RealDictCursor) as cursor:
+        with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cursor:
             cursor.execute("""
                 SELECT 
                     to_char(fecha, 'YYYY-MM-DD') as "FECHA",
@@ -379,7 +378,7 @@ def consultar_expediente_equipo(codigo_equipo: str, request: Request):
             terminos_busqueda = [codigo_limpio]
             
             # Agregar descripciones asociadas a los términos de búsqueda de fotos
-            with get_db_cursor("db_inventario_prueba", cursor_factory=RealDictCursor) as cursor_alias:
+            with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cursor_alias:
                 cursor_alias.execute("""
                     SELECT descripcion FROM public.inventario WHERE LOWER(TRIM(codigo)) = LOWER(TRIM(%s))
                     UNION
@@ -412,7 +411,7 @@ def obtener_mis_reportes_dano(id_empleado: str):
     import datetime
     ESTADOS_ACTIVOS = ("DAÑADO", "⚙️ DAÑADO", "EN REPARACION", "EN REVISIÓN", "PENDIENTE")
     try:
-        with get_db_cursor("db_inventario_prueba", cursor_factory=RealDictCursor) as cursor:
+        with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cursor:
             cursor.execute("""
                 SELECT 
                     num_d_servicio,

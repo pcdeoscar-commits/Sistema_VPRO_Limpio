@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import text
 
-from core.database import engine_personal, engine_personal_vieja
+from core.database import engine_personal
 from core.config import BASE_DIR
 
 router = APIRouter(prefix="/api/transferencias", tags=["📦 Transferencia de Archivos (VPRO Transfer)"])
@@ -75,16 +75,6 @@ def ejecutar_limpieza_expirados():
                     SET estatus = 'EXPIRADO_BORRADO'
                     WHERE id_transferencia = ANY(:ids)
                 """), {"ids": ids_a_marcar})
-
-            try:
-                with engine_personal_vieja.begin() as conn_v:
-                    conn_v.execute(text("""
-                        UPDATE public.archivos_compartidos
-                        SET estatus = 'EXPIRADO_BORRADO'
-                        WHERE id_transferencia = ANY(:ids)
-                    """), {"ids": ids_a_marcar})
-            except Exception:
-                pass
 
         return len(ids_a_marcar)
     except Exception as e:
@@ -217,26 +207,6 @@ async def subir_archivos_compartidos(
                 }
                 new_id = conn.execute(query_insert, params).scalar()
                 ids_generados.append(new_id)
-
-        try:
-            with engine_personal_vieja.begin() as conn_v:
-                for item in archivos_guardados:
-                    params = {
-                        "id_origen": str(id_empleado_origen).strip(),
-                        "nom_origen": str(nombre_origen).strip(),
-                        "id_destino": str(id_empleado_destino).strip(),
-                        "nom_destino": str(nombre_destino).strip(),
-                        "nom_orig_file": item["nombre_original"],
-                        "nom_fisico": item["nombre_fisico"],
-                        "tam_bytes": item["tamano_bytes"],
-                        "tam_leg": item["tamano_legible"],
-                        "mime": item["tipo_mime"],
-                        "msg": str(mensaje or "").strip(),
-                        "folio_paq": folio_paquete
-                    }
-                    conn_v.execute(query_insert, params)
-        except Exception:
-            pass
 
         tamano_total_str = _tamano_legible(total_leido_combinado)
         cant_archivos = len(archivos_guardados)
@@ -458,20 +428,6 @@ def descargar_archivo_compartido(id_transferencia: int):
                     SET veces_descargado = COALESCE(veces_descargado, 0) + 1
                     WHERE id_transferencia = :id_trans
                 """), {"id_trans": id_transferencia})
-
-        try:
-            with engine_personal_vieja.begin() as conn_v:
-                conn_v.execute(text("""
-                    UPDATE public.archivos_compartidos
-                    SET descargado = TRUE,
-                        veces_descargado = COALESCE(veces_descargado, 0) + 1,
-                        fecha_primer_descarga = COALESCE(fecha_primer_descarga, CURRENT_TIMESTAMP),
-                        fecha_limite_borrado = COALESCE(fecha_limite_borrado, CURRENT_TIMESTAMP + INTERVAL '7 hours'),
-                        estatus = 'DESCARGADO'
-                    WHERE id_transferencia = :id_trans
-                """), {"id_trans": id_transferencia})
-        except Exception:
-            pass
 
         return FileResponse(
             path=str(archivo_path),

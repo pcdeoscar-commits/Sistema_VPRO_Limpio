@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/clientes", tags=["🏢 Gestión Clientes"])
 def obtener_clientes():
     """Consulta el directorio general de clientes corporativos."""
     try:
-        with get_db_cursor("db_clientes_prueba", cursor_factory=RealDictCursor) as cursor:
+        with get_db_cursor("db_clientes", cursor_factory=RealDictCursor) as cursor:
             cursor.execute("SELECT * FROM clientes ORDER BY id_cliente ASC;")
             clientes = cursor.fetchall()
         return clientes
@@ -22,7 +22,7 @@ def obtener_clientes():
 def guardar_cliente(payload: dict):
     """Crea o actualiza los datos corporativos de un cliente."""
     try:
-        with get_db_cursor("db_clientes_prueba", commit=True) as cursor:
+        with get_db_cursor("db_clientes", commit=True) as cursor:
             cursor.execute(
                 "SELECT id_cliente FROM clientes WHERE id_cliente = %s;",
                 (payload["id_cliente"],),
@@ -60,7 +60,7 @@ def guardar_cliente(payload: dict):
 def eliminar_cliente(id_cliente: int):
     """Elimina permanentemente un cliente del catálogo maestro."""
     try:
-        with get_db_cursor("db_clientes_prueba", commit=True) as cursor:
+        with get_db_cursor("db_clientes", commit=True) as cursor:
             cursor.execute("DELETE FROM clientes WHERE id_cliente = %s;", (id_cliente,))
         return {"status": "ok", "mensaje": f"Cliente {id_cliente} eliminado"}
     except Exception as e:

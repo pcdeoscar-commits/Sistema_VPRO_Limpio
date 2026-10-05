@@ -28,11 +28,11 @@ def obtener_analitica_panel_ceo(
 def obtener_filtros_disponibles():
     """Retorna los departamentos y empleados disponibles para filtrar el dashboard."""
     try:
-        with get_db_cursor("db_inventario_prueba") as cur_inv:
+        with get_db_cursor("db_inventario") as cur_inv:
             cur_inv.execute("SELECT DISTINCT departamento FROM public.historial_equipo WHERE departamento IS NOT NULL;")
             deptos = [row[0] for row in cur_inv.fetchall()]
 
-        with get_db_cursor("db_eventos_prueba") as cur_ev:
+        with get_db_cursor("db_eventos") as cur_ev:
             cur_ev.execute("SELECT DISTINCT id_empleado FROM public.checkouts_maestro WHERE id_empleado IS NOT NULL;")
             empleados = [row[0] for row in cur_ev.fetchall()]
 
@@ -50,7 +50,7 @@ def obtener_resumen_dashboard(
     """Calcula todas las métricas ejecutivas de finanzas, comercial y operaciones."""
     try:
         # 1️⃣ LLAVE 1: INVENTARIO (Daños y Gastos)
-        with get_db_cursor("db_inventario_prueba", cursor_factory=RealDictCursor) as cursor_inv:
+        with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cursor_inv:
             query_gastos = "SELECT COALESCE(SUM(costo_asociado), 0) as total_gastado FROM public.historial_equipo WHERE 1=1"
             params_inv = []
             if departamento and departamento != "Todos":
@@ -64,7 +64,7 @@ def obtener_resumen_dashboard(
             deptos_danos = cursor_inv.fetchall()
 
         # 2️⃣ LLAVE 2: EVENTOS (Operaciones y Comercial)
-        with get_db_cursor("db_eventos_prueba", cursor_factory=RealDictCursor) as cursor_ev:
+        with get_db_cursor("db_eventos", cursor_factory=RealDictCursor) as cursor_ev:
             query_ops = "SELECT COUNT(*) as total FROM public.eventos WHERE 1=1"
             params_ops = []
             if fecha_inicio and fecha_fin:
@@ -125,7 +125,7 @@ def obtener_resumen_dashboard(
         empleado_top = "Sin datos"
         
         if top_empleados_raw:
-            with get_db_cursor("db_personal_prueba", cursor_factory=RealDictCursor) as cursor_pers:
+            with get_db_cursor("db_personal", cursor_factory=RealDictCursor) as cursor_pers:
                 cursor_pers.execute("SELECT TRIM(id_empleado) as id_emp, encode(nombre::bytea, 'hex') as nombre_hex FROM public.empleados")
                 emps = cursor_pers.fetchall()
                 
@@ -145,7 +145,7 @@ def obtener_resumen_dashboard(
             empleado_top = top_empleados[0]["empleado"]
 
         # 4️⃣ LLAVE 3: AUTOS (Flota y Seguros)
-        with get_db_cursor("db_autos_prueba", cursor_factory=RealDictCursor) as cursor_autos:
+        with get_db_cursor("db_autos", cursor_factory=RealDictCursor) as cursor_autos:
             cursor_autos.execute("SELECT num_control, marca, estado_actual as estado FROM public.autos WHERE estado_actual IS NOT NULL;")
             estado_flota = cursor_autos.fetchall()
             

@@ -11,19 +11,23 @@ from fastapi.staticfiles import StaticFiles
 from core.config import (
     CORS_ORIGINS, 
     FOTOS_EQUIPOS_DIR, 
-    DIR_EVIDENCIAS_REAL
+    DIR_EVIDENCIAS_REAL,
+    FOTOS_EVENTOS_DIR
 )
+
+# 3️⃣ SERVIR ARCHIVOS ESTÁTICOS (FOTOGRAFÍAS)
+
 from core.scheduler import init_scheduler, shutdown_scheduler
 
 # Exportaciones para compatibilidad retroactiva
 from core.database import (
     get_db_connection, get_db_cursor,
-    engine_autos, engine_autos,
-    engine_eventos, engine_eventos,
-    engine_personal, engine_personal,
-    engine_clientes, engine_clientes,
-    engine_inventario, engine_inventario,
-    engine_proveedores, engine_proveedores
+    engine_autos,
+    engine_eventos,
+    engine_personal,
+    engine_clientes,
+    engine_inventario,
+    engine_proveedores
 )
 from core.security import verificar_password, encriptar_password
 from core.utils import safe_decode_hex, reparar_mojibake
@@ -75,8 +79,9 @@ app.add_middleware(
 )
 
 # 3️⃣ MONTAJE DE DIRECTORIOS ESTÁTICOS
-app.mount("/fotos", StaticFiles(directory="Fotos_de_personal"), name="fotos_personal")
+app.mount("/fotos", StaticFiles(directory="Fotos_de_personal"), name="fotos")
 app.mount("/Fotos_de_equipos", StaticFiles(directory=str(FOTOS_EQUIPOS_DIR)), name="fotos_equipos")
+app.mount("/Fotos_de_eventos", StaticFiles(directory=str(FOTOS_EVENTOS_DIR)), name="fotos_eventos")
 app.mount("/evidencias_web", StaticFiles(directory=str(DIR_EVIDENCIAS_REAL)), name="evidencias")
 
 # 4️⃣ REGISTRO DE ROUTERS MODULARES

@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/proveedores", tags=["🚚 Gestión Proveedores"]
 def obtener_proveedores():
     """Consulta el directorio maestro de proveedores comerciales."""
     try:
-        with get_db_cursor("db_proveedores_prueba", cursor_factory=RealDictCursor) as cursor:
+        with get_db_cursor("db_proveedores", cursor_factory=RealDictCursor) as cursor:
             cursor.execute("SELECT * FROM proveedores ORDER BY nombre_del_proveedor ASC;")
             proveedores = cursor.fetchall()
         return proveedores
@@ -21,7 +21,7 @@ def obtener_proveedores():
 def guardar_proveedor(payload: dict):
     """Crea o actualiza el registro de un proveedor."""
     try:
-        with get_db_cursor("db_proveedores_prueba", commit=True) as cursor:
+        with get_db_cursor("db_proveedores", commit=True) as cursor:
             cursor.execute(
                 "SELECT nombre_del_proveedor FROM proveedores WHERE UPPER(nombre_del_proveedor) = UPPER(%s);",
                 (payload["nombre_del_proveedor"],),
@@ -58,7 +58,7 @@ def guardar_proveedor(payload: dict):
 def eliminar_proveedor(nombre_proveedor: str):
     """Elimina permanentemente un proveedor por su nombre."""
     try:
-        with get_db_cursor("db_proveedores_prueba", commit=True) as cursor:
+        with get_db_cursor("db_proveedores", commit=True) as cursor:
             cursor.execute(
                 "DELETE FROM proveedores WHERE UPPER(nombre_del_proveedor) = UPPER(%s);", 
                 (nombre_proveedor,)

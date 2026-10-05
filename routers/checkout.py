@@ -6,8 +6,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 
 from core.database import (
-    engine_eventos, engine_personal, 
-    engine_inventario, engine_inventario_vieja
+    engine_eventos, engine_personal, engine_inventario
 )
 from core.utils import safe_decode_hex, reparar_mojibake
 
@@ -177,7 +176,6 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str):
                         except Exception as e:
                             print(f"⚠️ Aviso cargando inventario: {e}")
 
-                    cargar_catalogo(engine_inventario_vieja)
                     cargar_catalogo(engine_inventario)
 
                     for d in df_detalle: 

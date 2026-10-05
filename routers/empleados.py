@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/empleados", tags=["🦺 Gestión Personal"])
 def obtener_empleados():
     """Consulta la plantilla completa de empleados activos e inactivos."""
     try:
-        with get_db_cursor("db_personal_prueba", cursor_factory=RealDictCursor) as cursor:
+        with get_db_cursor("db_personal", cursor_factory=RealDictCursor) as cursor:
             query = """
                 SELECT id_empleado, nombre, depto, email, cel, 
                        fecha_nac, fecha_ing, licencia_vence, password, rol 
@@ -30,7 +30,7 @@ def obtener_empleados():
 def guardar_empleado(payload: dict):
     """Crea o actualiza el registro de un empleado."""
     try:
-        with get_db_cursor("db_personal_prueba", commit=True) as cursor:
+        with get_db_cursor("db_personal", commit=True) as cursor:
             cursor.execute(
                 "SELECT id_empleado FROM empleados WHERE id_empleado = %s;",
                 (payload["id_empleado"],),
@@ -64,7 +64,7 @@ def guardar_empleado(payload: dict):
 def eliminar_empleado(id_empleado: str):
     """Elimina permanentemente a un empleado por su ID."""
     try:
-        with get_db_cursor("db_personal_prueba", commit=True) as cursor:
+        with get_db_cursor("db_personal", commit=True) as cursor:
             cursor.execute("DELETE FROM empleados WHERE id_empleado = %s;", (id_empleado,))
         return {"status": "ok", "mensaje": f"Empleado {id_empleado} eliminado"}
     except Exception as e:
@@ -74,7 +74,7 @@ def eliminar_empleado(id_empleado: str):
 def generar_qr_empleado(id_empleado: str):
     """Genera el código QR en base64 de la credencial del empleado."""
     try:
-        with get_db_cursor("db_personal_prueba") as cursor:
+        with get_db_cursor("db_personal") as cursor:
             cursor.execute("SELECT id_empleado FROM empleados WHERE TRIM(id_empleado) = %s;", (id_empleado.strip(),))
             existe = cursor.fetchone()
 

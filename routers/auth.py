@@ -20,7 +20,7 @@ class CambioPasswordPayload(BaseModel):
 def obtener_lista_nombres_login():
     """Retorna la lista de empleados activos para el selector de login."""
     try:
-        with get_db_cursor("db_personal_prueba") as cursor:
+        with get_db_cursor("db_personal") as cursor:
             cursor.execute(
                 "SELECT encode(nombre::bytea, 'hex'), encode(rol::bytea, 'hex'), encode(depto::bytea, 'hex') "
                 "FROM public.empleados WHERE nombre IS NOT NULL"
@@ -43,7 +43,7 @@ def obtener_lista_nombres_login():
 def autenticar_usuario(datos: LoginRequest):
     """Autentica un usuario verificando contraseña en texto plano o hash bcrypt."""
     try:
-        with get_db_cursor("db_personal_prueba") as cursor:
+        with get_db_cursor("db_personal") as cursor:
             cursor.execute("""
                 SELECT encode(nombre::bytea, 'hex'), encode(depto::bytea, 'hex'), encode(password::bytea, 'hex'), 
                        encode(rol::bytea, 'hex'), encode(id_empleado::bytea, 'hex'), encode(email::bytea, 'hex')
@@ -93,7 +93,7 @@ def cambiar_password(payload: dict):
             
         pass_encriptada = encriptar_password(nueva_pass)
         
-        with get_db_cursor("db_personal_prueba", commit=True) as cursor:
+        with get_db_cursor("db_personal", commit=True) as cursor:
             cursor.execute(
                 "UPDATE public.empleados SET password = %s WHERE TRIM(id_empleado) = %s;",
                 (pass_encriptada, id_emp)

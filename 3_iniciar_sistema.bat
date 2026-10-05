@@ -15,7 +15,7 @@ if exist "venv\Scripts\activate.bat" (
 )
 
 echo [1/1] Iniciando Servidor Unificado VPRO ERP (Backend + Frontend Web) en el puerto 8521...
-start "VPRO Workspace ERP (Puerto 8521)" cmd /k "%ACTIVATE% python -m uvicorn api_core_prueba:app --host 0.0.0.0 --port 8521 --reload"
+start "VPRO Workspace ERP (Puerto 8521)" cmd /k "%ACTIVATE% python -m uvicorn api_core:app --host 0.0.0.0 --port 8521 --reload"
 
 echo.
 echo Esperando 3 segundos a que el servidor inicialice...

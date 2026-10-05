@@ -6,7 +6,7 @@ from typing import Dict, Any, List
 
 from core.database import (
     engine_autos, engine_clientes, engine_proveedores, 
-    engine_personal, engine_eventos, engine_eventos_vieja
+    engine_personal, engine_eventos
 )
 from core.utils import safe_decode_hex, serialize_row_dates
 
@@ -79,8 +79,6 @@ def obtener_folios_activos_e_historicos():
         """)
         query_max_id = text("SELECT COALESCE(MAX(id_evento), 0) + 1 AS proximo_id FROM public.eventos")
 
-        query_vieja = text("SELECT folio, nombre_evento FROM public.eventos ORDER BY id_evento DESC")
-
         folios_activos = []
         folios_historicos = []
         max_id_nuevo = 1
@@ -91,15 +89,7 @@ def obtener_folios_activos_e_historicos():
             max_id_nuevo = conn.execute(query_max_id).scalar()
             
             folios_activos.extend([f"{r['folio']} - {r['nombre_evento']}" for r in activos_nuevos])
-            folios_historicos.extend([f"{r['folio']} - {r['nombre_evento']} [NUEVA]" for r in historicos_nuevos])
-
-        with engine_eventos_vieja.connect() as conn:
-            todos_viejos = conn.execute(query_vieja).mappings().fetchall()
-            
-            for r in todos_viejos:
-                folio_str = f"{r['folio']} - {r['nombre_evento']}"
-                if folio_str not in folios_activos and folio_str not in [f.replace(' [NUEVA]', '') for f in folios_historicos]:
-                    folios_activos.append(folio_str)
+            folios_historicos.extend([f"{r['folio']} - {r['nombre_evento']}" for r in historicos_nuevos])
 
         return {
             "folios": folios_activos,
@@ -113,17 +103,13 @@ def obtener_folios_activos_e_historicos():
 @router.get("/buscar/{folio}")
 @router.get("/folio/{folio}")
 def buscar_op_por_folio(folio: str):
-    """Busca una orden de producción por folio en la base nueva o en la histórica,
+    """Busca una orden de producción por folio en la base de datos de producción,
     e integra el detalle completo de las reuniones previas vinculadas."""
     try:
         query = text("SELECT * FROM public.eventos WHERE folio = :folio")
         
         with engine_eventos.connect() as conn:
             resultado = conn.execute(query, {"folio": folio}).mappings().first()
-            
-        if not resultado:
-            with engine_eventos_vieja.connect() as conn:
-                resultado = conn.execute(query, {"folio": folio}).mappings().first()
 
         if resultado:
             data = serialize_row_dates(dict(resultado))

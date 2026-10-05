@@ -3469,7 +3469,7 @@
 
             </div>
 
-            <div id="vista-incidencias" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
+                                    <div id="vista-incidencias" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
                 
                 <!-- Encabezado -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
@@ -3488,130 +3488,44 @@
                     </div>
                 </div>
 
-                <!-- Barra de Filtros de Auditoría y Selección de Periodos -->
-                <div class="op-section-card" style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #cbd5e1;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-                        <h4 class="op-section-title" style="font-size: 14px; margin: 0;">
-                            <i class="ph ph-sliders" style="color: #4f46e5;"></i> 🎯 Filtros de Auditoría y Periodos
-                        </h4>
-                        <!-- Botón Toggle de Modo Comparativo -->
-                        <button type="button" id="btn-toggle-comp-inc" onclick="toggleModoComparativoIncidencias()" style="background: white; border: 1.5px solid #6366f1; color: #4338ca; padding: 6px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(99,102,241,0.15);">
-                            <i class="ph ph-scales" style="font-size: 16px;"></i>
-                            <span>Comparar con Otro Periodo</span>
-                            <span id="badge-comp-status" style="background: #e0e7ff; color: #4338ca; font-size: 11px; padding: 2px 7px; border-radius: 12px; font-weight: 800;">OFF</span>
-                        </button>
-                    </div>
-
-                    <!-- Fila 1: Selectores Principales -->
-                    <div style="display: grid; grid-template-columns: 1.6fr 0.9fr 0.8fr 1fr 1.3fr auto; gap: 12px; align-items: flex-end; margin-bottom: 12px;">
+                <!-- Barra de Filtros de Auditoría -->
+                <div class="op-section-card" style="margin-bottom: 24px; background: #f8fafc;">
+                    <h4 class="op-section-title" style="font-size: 14px; margin-bottom: 14px;">
+                        <i class="ph ph-sliders" style="color: #4f46e5;"></i> 🎯 Filtros de Auditoría
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1.5fr 1fr 1.5fr auto; gap: 16px; align-items: flex-end;">
                         <div>
-                            <label class="op-form-label" style="font-size: 11.5px;"><i class="ph ph-calendar"></i> 📅 Rango Exacto (Días):</label>
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                <input type="date" id="filtro-inc-desde" class="op-input" style="font-size: 12px; padding: 6px 8px;" onchange="alCambiarRangoManualIncidencias()">
-                                <span style="color: #94a3b8; font-size: 12px;">a</span>
-                                <input type="date" id="filtro-inc-hasta" class="op-input" style="font-size: 12px; padding: 6px 8px;" onchange="alCambiarRangoManualIncidencias()">
+                            <label class="op-form-label"><i class="ph ph-calendar"></i> 📅 Periodo de Análisis:</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="date" id="filtro-inc-desde" class="op-input" style="font-size: 12.5px; padding: 8px 10px;" onchange="aplicarFiltrosIncidencias()">
+                                <span style="color: #94a3b8; font-size: 13px;">a</span>
+                                <input type="date" id="filtro-inc-hasta" class="op-input" style="font-size: 12.5px; padding: 8px 10px;" onchange="aplicarFiltrosIncidencias()">
                             </div>
                         </div>
-
                         <div>
-                            <label class="op-form-label" style="font-size: 11.5px;"><i class="ph ph-calendar-blank"></i> 🗓️ Por Mes:</label>
-                            <select id="sel-inc-mes" class="op-select" style="font-size: 12px; padding: 6px 8px;" onchange="seleccionarMesIncidencias(this.value)">
-                                <option value="">-- Mes --</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="op-form-label" style="font-size: 11.5px;"><i class="ph ph-calendar-check"></i> 📆 Por Año:</label>
-                            <select id="sel-inc-ano" class="op-select" style="font-size: 12px; padding: 6px 8px;" onchange="seleccionarAnoIncidencias(this.value)">
-                                <option value="">-- Año --</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="op-form-label" style="font-size: 11.5px;"><i class="ph ph-buildings"></i> 🏢 Departamento:</label>
-                            <select id="filtro-inc-depto" class="op-select" style="font-size: 12px; padding: 6px 8px;" onchange="alCambiarDeptoIncidencias()">
+                            <label class="op-form-label"><i class="ph ph-buildings"></i> 🏢 Departamento:</label>
+                            <select id="filtro-inc-depto" class="op-select" onchange="alCambiarDeptoIncidencias()">
                                 <option value="Todos">Todos</option>
                             </select>
                         </div>
-
                         <div>
-                            <label class="op-form-label" style="font-size: 11.5px;"><i class="ph ph-users"></i> 👤/🚚 Evaluar a:</label>
-                            <select id="filtro-inc-actor" class="op-select" style="font-size: 12px; padding: 6px 8px;" onchange="aplicarFiltrosIncidencias()">
+                            <label class="op-form-label"><i class="ph ph-users"></i> 👤/🚚 Evaluar a:</label>
+                            <select id="filtro-inc-actor" class="op-select" onchange="aplicarFiltrosIncidencias()">
                                 <option value="🌟 TODOS (Empleados y Proveedores)">🌟 TODOS (Empleados y Proveedores)</option>
                                 <option value="👥 TODOS LOS EMPLEADOS">👥 TODOS LOS EMPLEADOS</option>
                                 <option value="🚚 TODOS LOS PROVEEDORES">🚚 TODOS LOS PROVEEDORES</option>
                             </select>
                         </div>
-
                         <div>
-                            <button type="button" class="btn-cat-save" onclick="resetearFiltrosIncidencias()" style="background-color: #64748b; height: 35px; margin: 0; padding: 0 12px; font-size: 12px;" title="Restablecer filtros">
+                            <button type="button" class="btn-cat-save" onclick="resetearFiltrosIncidencias()" style="background-color: #64748b; height: 42px; margin: 0; padding: 0 16px; font-size: 13px;">
                                 <i class="ph ph-arrow-counter-clockwise"></i> Resetear
                             </button>
                         </div>
                     </div>
-
-                    <!-- Fila 2: Accesos Directos de Periodo (Chips/Pills) -->
-                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-top: 8px; border-top: 1px dashed #e2e8f0;">
-                        <span style="font-size: 11.5px; font-weight: 700; color: #64748b; display: inline-flex; align-items: center; gap: 4px;">
-                            <i class="ph ph-lightning"></i> Preajustes:
-                        </span>
-                        <button type="button" class="btn-filtro-chip" onclick="establecerPreajustePeriodo('hoy')">Hoy</button>
-                        <button type="button" class="btn-filtro-chip" onclick="establecerPreajustePeriodo('7dias')">Últimos 7 Días</button>
-                        <button type="button" class="btn-filtro-chip" onclick="establecerPreajustePeriodo('30dias')">Últimos 30 Días</button>
-                        <button type="button" class="btn-filtro-chip" onclick="establecerPreajustePeriodo('este_mes')">Este Mes</button>
-                        <button type="button" class="btn-filtro-chip" onclick="establecerPreajustePeriodo('mes_anterior')">Mes Anterior</button>
-                        <button type="button" class="btn-filtro-chip" onclick="establecerPreajustePeriodo('este_ano')">Año 2026</button>
-                        <button type="button" class="btn-filtro-chip" onclick="establecerPreajustePeriodo('todo')">Todo el Historial</button>
-                    </div>
-
-                    <!-- Panel Desplegable: Periodo Comparativo (Periodo B) -->
-                    <div id="panel-periodo-comparativo" style="display: none; margin-top: 14px; padding: 16px; background: #eef2ff; border: 1.5px solid #c7d2fe; border-radius: 10px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="background: #4338ca; color: white; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 4px;">PERIODO B</span>
-                                <strong style="color: #312e81; font-size: 13px;">Definición del Periodo de Comparación</strong>
-                            </div>
-                            <div style="font-size: 12px; color: #4338ca;">
-                                Comparando contra: <strong id="lbl-resumen-periodo-a" style="color: #1e1b4b;">Periodo A</strong>
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1.5fr 2fr auto; gap: 14px; align-items: flex-end;">
-                            <div>
-                                <label class="op-form-label" style="font-size: 11.5px; color: #3730a3;"><i class="ph ph-magic-wand"></i> Método de Comparación:</label>
-                                <select id="sel-modo-comparativo-b" class="op-select" style="font-size: 12px; padding: 7px 10px; background: white;" onchange="alCambiarModoComparativoB(this.value)">
-                                    <option value="inmediato_anterior">⏪ Mismo rango inmediatamente anterior</option>
-                                    <option value="mes_anterior">🗓️ Mes anterior completo</option>
-                                    <option value="ano_anterior">📆 Mismo periodo del año anterior (-1 año)</option>
-                                    <option value="personalizado">✏️ Rango personalizado manual...</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="op-form-label" style="font-size: 11.5px; color: #3730a3;"><i class="ph ph-calendar"></i> Fechas Periodo B (Comparativo):</label>
-                                <div style="display: flex; gap: 6px; align-items: center;">
-                                    <input type="date" id="filtro-inc-comp-desde" class="op-input" style="font-size: 12px; padding: 6px 8px; background: white;" onchange="alCambiarFechasComparativoB()">
-                                    <span style="color: #6366f1; font-size: 12px; font-weight: 700;">a</span>
-                                    <input type="date" id="filtro-inc-comp-hasta" class="op-input" style="font-size: 12px; padding: 6px 8px; background: white;" onchange="alCambiarFechasComparativoB()">
-                                </div>
-                            </div>
-
-                            <div>
-                                <button type="button" onclick="aplicarFiltrosIncidencias()" style="background: #4338ca; color: white; border: none; height: 35px; padding: 0 16px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                    <i class="ph ph-arrows-clockwise"></i> Recalcular Comparativa
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- BANNER EJECUTIVO DE DESEMPEÑO COMPARATIVO (Se activa al comparar) -->
-                <div id="banner-inc-desempeno" style="display: none; margin-bottom: 24px; padding: 18px 22px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); transition: all 0.3s;">
-                    <!-- Se llena dinámicamente con generarBannerDesempeno() -->
-                </div>
-
-                <!-- Tarjetas de Métricas KPI (Modo Normal o Comparativo Side-by-Side) -->
-                <div id="contenedor-kpis-incidencias" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+                <!-- Tarjetas de Métricas KPI -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
                     <div class="op-section-card" style="margin-bottom: 0; padding: 20px; border-left: 4px solid #3b82f6;">
                         <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
                             Evaluaciones Realizadas
@@ -3619,7 +3533,7 @@
                         <div id="kpi-inc-total" style="font-size: 32px; font-weight: 800; color: #0f172a; line-height: 1;">
                             0
                         </div>
-                        <div id="kpi-inc-sub-total" style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Total registros auditados</div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Total registros auditados</div>
                     </div>
 
                     <div class="op-section-card" style="margin-bottom: 0; padding: 20px; border-left: 4px solid #16a34a;">
@@ -3630,7 +3544,7 @@
                             <span id="kpi-inc-limpias" style="font-size: 32px; font-weight: 800; color: #16a34a; line-height: 1;">0</span>
                             <span id="kpi-inc-pct-limpias" style="font-size: 12.5px; font-weight: 700; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 12px;">+0.0%</span>
                         </div>
-                        <div id="kpi-inc-sub-limpias" style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Operación sin contratiempos</div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Operación sin contratiempos</div>
                     </div>
 
                     <div class="op-section-card" style="margin-bottom: 0; padding: 20px; border-left: 4px solid #ef4444;">
@@ -3641,7 +3555,7 @@
                             <span id="kpi-inc-fallas" style="font-size: 32px; font-weight: 800; color: #ef4444; line-height: 1;">0</span>
                             <span id="kpi-inc-pct-fallas" style="font-size: 12.5px; font-weight: 700; color: #b91c1c; background: #fee2e2; padding: 2px 8px; border-radius: 12px;">-0.0%</span>
                         </div>
-                        <div id="kpi-inc-sub-fallas" style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Reportes de fallas o daños</div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Reportes de fallas o daños</div>
                     </div>
 
                     <div class="op-section-card" style="margin-bottom: 0; padding: 20px; border-left: 4px solid #8b5cf6;">
@@ -3651,53 +3565,34 @@
                         <div id="kpi-inc-eventos" style="font-size: 32px; font-weight: 800; color: #6b21a8; line-height: 1;">
                             0
                         </div>
-                        <div id="kpi-inc-sub-eventos" style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Órdenes de Producción con registro</div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">Órdenes de Producción con registro</div>
                     </div>
                 </div>
 
                 <!-- Gráficas de Análisis -->
                 <div class="op-section-card" style="margin-bottom: 24px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                        <h4 class="op-section-title" style="margin: 0;">
-                            <i class="ph ph-chart-pie" style="color: #4f46e5;"></i> 📊 Análisis Gráfico de Calidad Operativa y Desempeño
-                        </h4>
-                        <span id="lbl-graficas-modo" style="font-size: 12px; font-weight: 700; color: #6366f1; background: #e0e7ff; padding: 3px 10px; border-radius: 12px;">
-                            Modo: Vista Estándar
-                        </span>
-                    </div>
+                    <h4 class="op-section-title" style="margin-bottom: 16px;">
+                        <i class="ph ph-chart-pie" style="color: #4f46e5;"></i> 📊 Análisis Gráfico de Calidad Operativa
+                    </h4>
 
                     <!-- Gráfica 1: Balance General (Barra 100% Apilada Horizontal) -->
                     <div style="margin-bottom: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
-                        <div style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 10px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
-                            <span id="titulo-grafica-balance">Balance General (%)</span>
+                        <div style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                            <span>Balance General (%)</span>
                             <span id="inc-legend-balance" style="font-size: 12px; font-weight: 600; display: flex; gap: 14px;">
                                 <span style="color: #16a34a;"><i class="ph ph-circle-fill"></i> Sin Incidencias</span>
                                 <span style="color: #ef4444;"><i class="ph ph-circle-fill"></i> Con Incidencias</span>
                             </span>
                         </div>
-                        <div id="contenedor-canvas-balance" style="height: 60px; width: 100%; position: relative;">
+                        <div style="height: 55px; width: 100%; position: relative;">
                             <canvas id="chart-inc-balance"></canvas>
                         </div>
                     </div>
 
-                    <!-- Gráfica 2: Comparativa de Desempeño entre Periodos (Visible al comparar) -->
-                    <div id="card-grafica-comparativa" style="display: none; margin-bottom: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
-                        <div style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 12px; display: flex; justify-content: space-between;">
-                            <span>⚖️ Comparativa de Desempeño: Periodo A vs Periodo B</span>
-                            <span style="font-size: 12px; font-weight: 600; display: flex; gap: 14px;">
-                                <span style="color: #4f46e5;"><i class="ph ph-circle-fill"></i> Periodo A (Actual)</span>
-                                <span style="color: #f97316;"><i class="ph ph-circle-fill"></i> Periodo B (Comparativo)</span>
-                            </span>
-                        </div>
-                        <div style="height: 280px; width: 100%; position: relative;">
-                            <canvas id="chart-inc-comparativa"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Gráfica 3: Detalle por Evento (Barras comparativas Verde vs Roja) -->
+                    <!-- Gráfica 2: Detalle por Evento (Barras comparativas Verde vs Roja) -->
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px;">
-                        <div style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
-                            <span id="titulo-grafica-eventos">Detalle por Evento (Orden de Producción)</span>
+                        <div style="font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 12px; display: flex; justify-content: space-between;">
+                            <span>Detalle por Evento (Orden de Producción)</span>
                             <span style="font-size: 12px; font-weight: 600; display: flex; gap: 14px;">
                                 <span style="color: #16a34a;"><i class="ph ph-circle-fill"></i> Sin Incidencias</span>
                                 <span style="color: #ef4444;"><i class="ph ph-circle-fill"></i> Con Incidencias</span>
@@ -3712,16 +3607,9 @@
                 <!-- Bitácora Detallada de Observaciones -->
                 <div class="op-section-card" style="margin-bottom: 0;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <h4 class="op-section-title" style="margin: 0;">
-                                <i class="ph ph-notepad" style="color: #4f46e5;"></i> 📋 Bitácora Detallada de Observaciones (<span id="inc-tabla-conteo">0</span> registros)
-                            </h4>
-                            <div id="tabs-bitacora-comparativa" style="display: none; gap: 6px;">
-                                <button type="button" class="btn-bitacora-tab active" id="tab-bit-a" onclick="cambiarTabBitacora('A')">Periodo A</button>
-                                <button type="button" class="btn-bitacora-tab" id="tab-bit-b" onclick="cambiarTabBitacora('B')">Periodo B</button>
-                                <button type="button" class="btn-bitacora-tab" id="tab-bit-ambos" onclick="cambiarTabBitacora('AMBOS')">Todos</button>
-                            </div>
-                        </div>
+                        <h4 class="op-section-title" style="margin: 0;">
+                            <i class="ph ph-notepad" style="color: #4f46e5;"></i> 📋 Bitácora Detallada de Observaciones (<span id="inc-tabla-conteo">0</span> registros)
+                        </h4>
                         <div style="max-width: 300px; width: 100%;">
                             <input type="text" id="inc-buscar-tabla" class="op-input" placeholder="🔍 Buscar en bitácora..." oninput="filtrarTablaIncidenciasEnVivo(this.value)" style="padding: 6px 12px; font-size: 13px;">
                         </div>

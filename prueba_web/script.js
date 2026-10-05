@@ -7105,14 +7105,8 @@ async function finalizarCheckinCheckout() {
 
 let rawEvaluacionesIncidencias = [];
 let evaluacionesFiltradasIncidencias = [];
-let evaluacionesComparativasIncidencias = [];
-let modoComparativoIncidencias = false;
-let modoPeriodoB = 'inmediato_anterior';
-let tabBitacoraActual = 'A';
-
 let chartIncBalanceInstance = null;
 let chartIncEventosInstance = null;
-let chartIncComparativaInstance = null;
 
 async function cargarModuloIncidencias() {
     try {
@@ -7125,7 +7119,7 @@ async function cargarModuloIncidencias() {
         if (!res.ok) throw new Error("Error al obtener reporte de incidencias");
         const dataJson = await res.json();
 
-        // Procesar evaluaciones
+        // Procesar cerebro separador de evaluaciones (idéntico a mod_incidencias.py)
         rawEvaluacionesIncidencias = [];
         dataJson.forEach(row => {
             const textoRaw = (row.incidencias_generales || "").trim();
@@ -7164,7 +7158,7 @@ async function cargarModuloIncidencias() {
                 return "⚠️ Con Incidencias";
             }
 
-            // 1. Empleado
+            // 1. Calificamos al empleado
             rawEvaluacionesIncidencias.push({
                 Fecha: fecha,
                 Evento: evento,
@@ -7175,7 +7169,7 @@ async function cargarModuloIncidencias() {
                 Nota: empText.trim() ? empText.trim() : "Operación Limpia"
             });
 
-            // 2. Proveedor si fue reportado
+            // 2. Calificamos al proveedor si fue reportado
             if (provNombre && !provNombre.toUpperCase().includes("--- NINGUNO ---")) {
                 rawEvaluacionesIncidencias.push({
                     Fecha: fecha,
@@ -7189,30 +7183,22 @@ async function cargarModuloIncidencias() {
             }
         });
 
-        // Configurar rango de fechas inicial: por defecto el mes más reciente con registros o rango completo
+        // Configurar rango de fechas inicial
         const fechas = rawEvaluacionesIncidencias.map(e => e.Fecha).filter(Boolean).sort();
         if (fechas.length > 0) {
-            const fMax = fechas[fechas.length - 1]; // ej. 2026-09-30
-            const mesMax = fMax.substring(0, 7);    // ej. 2026-09
+            const fMin = fechas[0];
+            const fMax = fechas[fechas.length - 1];
             const inputDesde = document.getElementById('filtro-inc-desde');
             const inputHasta = document.getElementById('filtro-inc-hasta');
-            
-            // Establecer el mes más reciente como periodo inicial
-            if (inputDesde && !inputDesde.value) inputDesde.value = `${mesMax}-01`;
+            if (inputDesde && !inputDesde.value) inputDesde.value = fMin;
             if (inputHasta && !inputHasta.value) inputHasta.value = fMax;
         }
 
-        // Poblar selectores de Periodos (Meses y Años)
-        poblarSelectoresPeriodoIncidencias();
-
-        // Poblar departamentos y actores
+        // Poblar departamentos
         poblarFiltroDepartamentosIncidencias();
-        poblarFiltroActoresIncidencias();
 
-        // Si el modo comparativo estaba activo, calcular periodo B
-        if (modoComparativoIncidencias) {
-            calcularFechasPeriodoB();
-        }
+        // Poblar actores
+        poblarFiltroActoresIncidencias();
 
         // Aplicar filtros y renderizar
         aplicarFiltrosIncidencias();
@@ -7222,332 +7208,6 @@ async function cargarModuloIncidencias() {
         const tbody = document.getElementById('tbody-incidencias-detallada');
         if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 20px;">Error al cargar las incidencias: ${e.message}</td></tr>`;
     }
-}
-
-// -------------------------------------------------------------
-// SELECTORES DE PERIODO: MESES, AÑOS Y PREAJUSTES RÁPIDOS
-// -------------------------------------------------------------
-function poblarSelectoresPeriodoIncidencias() {
-    const selMes = document.getElementById('sel-inc-mes');
-    const selAno = document.getElementById('sel-inc-ano');
-    if (!selMes || !selAno) return;
-
-    const mesesNombres = [
-        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-    ];
-
-    const mesesSet = new Set();
-    const anosSet = new Set();
-
-    rawEvaluacionesIncidencias.forEach(e => {
-        if (e.Fecha && e.Fecha.length >= 7) {
-            mesesSet.add(e.Fecha.substring(0, 7)); // YYYY-MM
-            anosSet.add(e.Fecha.substring(0, 4));  // YYYY
-        }
-    });
-
-    // Ordenar de más reciente a más antiguo
-    const mesesOrdenados = Array.from(mesesSet).sort().reverse();
-    const anosOrdenados = Array.from(anosSet).sort().reverse();
-
-    // Poblar Meses
-    selMes.innerHTML = '<option value="">-- Por Mes --</option>' + mesesOrdenados.map(m => {
-        const [ano, mesNum] = m.split('-');
-        const idx = parseInt(mesNum, 10) - 1;
-        const nombre = (idx >= 0 && idx < 12) ? mesesNombres[idx] : mesNum;
-        return `<option value="${m}">${nombre} ${ano}</option>`;
-    }).join('');
-
-    // Poblar Años
-    selAno.innerHTML = '<option value="">-- Por Año --</option>' + anosOrdenados.map(a => {
-        return `<option value="${a}">Año ${a}</option>`;
-    }).join('');
-
-    // Si las fechas actuales coinciden con algún mes exacto, seleccionarlo
-    const fDesde = document.getElementById('filtro-inc-desde')?.value || "";
-    const fHasta = document.getElementById('filtro-inc-hasta')?.value || "";
-    if (fDesde && fHasta && fDesde.substring(0, 7) === fHasta.substring(0, 7)) {
-        selMes.value = fDesde.substring(0, 7);
-    }
-}
-
-function seleccionarMesIncidencias(mesStr) {
-    if (!mesStr) return;
-    const [anoStr, mesStrNum] = mesStr.split('-');
-    const ano = parseInt(anoStr, 10);
-    const mes = parseInt(mesStrNum, 10);
-    const ultimoDia = new Date(ano, mes, 0).getDate();
-
-    const fDesde = `${mesStr}-01`;
-    const fHasta = `${mesStr}-${String(ultimoDia).padStart(2, '0')}`;
-
-    const inputDesde = document.getElementById('filtro-inc-desde');
-    const inputHasta = document.getElementById('filtro-inc-hasta');
-    if (inputDesde) inputDesde.value = fDesde;
-    if (inputHasta) inputHasta.value = fHasta;
-
-    const selAno = document.getElementById('sel-inc-ano');
-    if (selAno) selAno.value = "";
-
-    actualizarEstiloChipsPeriodo(null);
-
-    if (modoComparativoIncidencias) {
-        calcularFechasPeriodoB();
-    }
-    aplicarFiltrosIncidencias();
-}
-
-function seleccionarAnoIncidencias(anoStr) {
-    if (!anoStr) return;
-    const fDesde = `${anoStr}-01-01`;
-    const fHasta = `${anoStr}-12-31`;
-
-    const inputDesde = document.getElementById('filtro-inc-desde');
-    const inputHasta = document.getElementById('filtro-inc-hasta');
-    if (inputDesde) inputDesde.value = fDesde;
-    if (inputHasta) inputHasta.value = fHasta;
-
-    const selMes = document.getElementById('sel-inc-mes');
-    if (selMes) selMes.value = "";
-
-    actualizarEstiloChipsPeriodo(null);
-
-    if (modoComparativoIncidencias) {
-        calcularFechasPeriodoB();
-    }
-    aplicarFiltrosIncidencias();
-}
-
-function alCambiarRangoManualIncidencias() {
-    const selMes = document.getElementById('sel-inc-mes');
-    const selAno = document.getElementById('sel-inc-ano');
-    if (selMes) selMes.value = "";
-    if (selAno) selAno.value = "";
-
-    actualizarEstiloChipsPeriodo(null);
-
-    if (modoComparativoIncidencias) {
-        calcularFechasPeriodoB();
-    }
-    aplicarFiltrosIncidencias();
-}
-
-function establecerPreajustePeriodo(preset) {
-    const inputDesde = document.getElementById('filtro-inc-desde');
-    const inputHasta = document.getElementById('filtro-inc-hasta');
-    if (!inputDesde || !inputHasta) return;
-
-    // Obtener fecha de hoy o fecha máxima de la base de datos
-    const fechas = rawEvaluacionesIncidencias.map(e => e.Fecha).filter(Boolean).sort();
-    const hoyStr = fechas.length > 0 ? fechas[fechas.length - 1] : new Date().toISOString().substring(0, 10);
-    const dtHoy = new Date(hoyStr + 'T12:00:00');
-
-    let fDesde = "";
-    let fHasta = hoyStr;
-
-    function formatoYMD(dt) {
-        const y = dt.getFullYear();
-        const m = String(dt.getMonth() + 1).padStart(2, '0');
-        const d = String(dt.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-
-    if (preset === 'hoy') {
-        fDesde = hoyStr;
-        fHasta = hoyStr;
-    } else if (preset === '7dias') {
-        const dt7 = new Date(dtHoy.getTime() - 6 * 86400000);
-        fDesde = formatoYMD(dt7);
-        fHasta = hoyStr;
-    } else if (preset === '30dias') {
-        const dt30 = new Date(dtHoy.getTime() - 29 * 86400000);
-        fDesde = formatoYMD(dt30);
-        fHasta = hoyStr;
-    } else if (preset === 'este_mes') {
-        const ano = dtHoy.getFullYear();
-        const mes = dtHoy.getMonth() + 1;
-        const ultimoDia = new Date(ano, mes, 0).getDate();
-        fDesde = `${ano}-${String(mes).padStart(2, '0')}-01`;
-        fHasta = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
-    } else if (preset === 'mes_anterior') {
-        let ano = dtHoy.getFullYear();
-        let mes = dtHoy.getMonth(); // mes anterior (0-indexed es mes anterior directo)
-        if (mes === 0) {
-            mes = 12;
-            ano -= 1;
-        }
-        const ultimoDia = new Date(ano, mes, 0).getDate();
-        fDesde = `${ano}-${String(mes).padStart(2, '0')}-01`;
-        fHasta = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
-    } else if (preset === 'este_ano') {
-        const ano = dtHoy.getFullYear();
-        fDesde = `${ano}-01-01`;
-        fHasta = `${ano}-12-31`;
-    } else if (preset === 'todo') {
-        if (fechas.length > 0) {
-            fDesde = fechas[0];
-            fHasta = fechas[fechas.length - 1];
-        }
-    }
-
-    inputDesde.value = fDesde;
-    inputHasta.value = fHasta;
-
-    // Sincronizar selectores si aplica
-    const selMes = document.getElementById('sel-inc-mes');
-    const selAno = document.getElementById('sel-inc-ano');
-    if (preset === 'este_mes' || preset === 'mes_anterior') {
-        if (selMes) selMes.value = fDesde.substring(0, 7);
-        if (selAno) selAno.value = "";
-    } else if (preset === 'este_ano') {
-        if (selMes) selMes.value = "";
-        if (selAno) selAno.value = String(dtHoy.getFullYear());
-    } else {
-        if (selMes) selMes.value = "";
-        if (selAno) selAno.value = "";
-    }
-
-    actualizarEstiloChipsPeriodo(preset);
-
-    if (modoComparativoIncidencias) {
-        calcularFechasPeriodoB();
-    }
-    aplicarFiltrosIncidencias();
-}
-
-function actualizarEstiloChipsPeriodo(presetActivo) {
-    const chips = document.querySelectorAll('.btn-filtro-chip');
-    chips.forEach(c => {
-        const onclickTxt = c.getAttribute('onclick') || '';
-        if (presetActivo && onclickTxt.includes(`'${presetActivo}'`)) {
-            c.classList.add('active');
-        } else {
-            c.classList.remove('active');
-        }
-    });
-}
-
-// -------------------------------------------------------------
-// ⚖️ MODO COMPARATIVO DE PERIODOS (EVALUACIÓN DE DESEMPEÑO)
-// -------------------------------------------------------------
-function toggleModoComparativoIncidencias() {
-    modoComparativoIncidencias = !modoComparativoIncidencias;
-
-    const panelComp = document.getElementById('panel-periodo-comparativo');
-    const badgeStatus = document.getElementById('badge-comp-status');
-    const btnToggle = document.getElementById('btn-toggle-comp-inc');
-    const bannerDesemp = document.getElementById('banner-inc-desempeno');
-    const cardComp = document.getElementById('card-grafica-comparativa');
-    const tabsBit = document.getElementById('tabs-bitacora-comparativa');
-    const lblModo = document.getElementById('lbl-graficas-modo');
-
-    if (modoComparativoIncidencias) {
-        if (panelComp) panelComp.style.display = 'block';
-        if (badgeStatus) {
-            badgeStatus.innerText = 'ACTIVO';
-            badgeStatus.style.background = '#4338ca';
-            badgeStatus.style.color = '#ffffff';
-        }
-        if (btnToggle) {
-            btnToggle.style.background = '#eef2ff';
-            btnToggle.style.borderColor = '#4338ca';
-            btnToggle.style.color = '#312e81';
-        }
-        if (bannerDesemp) bannerDesemp.style.display = 'block';
-        if (cardComp) cardComp.style.display = 'block';
-        if (tabsBit) tabsBit.style.display = 'inline-flex';
-        if (lblModo) {
-            lblModo.innerText = 'Modo: Evaluación Comparativa de Desempeño (Periodo A vs Periodo B)';
-            lblModo.style.background = '#c7d2fe';
-            lblModo.style.color = '#312e81';
-        }
-        calcularFechasPeriodoB();
-    } else {
-        if (panelComp) panelComp.style.display = 'none';
-        if (badgeStatus) {
-            badgeStatus.innerText = 'OFF';
-            badgeStatus.style.background = '#e0e7ff';
-            badgeStatus.style.color = '#4338ca';
-        }
-        if (btnToggle) {
-            btnToggle.style.background = 'white';
-            btnToggle.style.borderColor = '#6366f1';
-            btnToggle.style.color = '#4338ca';
-        }
-        if (bannerDesemp) bannerDesemp.style.display = 'none';
-        if (cardComp) cardComp.style.display = 'none';
-        if (tabsBit) tabsBit.style.display = 'none';
-        if (lblModo) {
-            lblModo.innerText = 'Modo: Vista Estándar';
-            lblModo.style.background = '#e0e7ff';
-            lblModo.style.color = '#6366f1';
-        }
-        tabBitacoraActual = 'A';
-    }
-
-    aplicarFiltrosIncidencias();
-}
-
-function calcularFechasPeriodoB() {
-    const fDesdeA = document.getElementById('filtro-inc-desde')?.value || "";
-    const fHastaA = document.getElementById('filtro-inc-hasta')?.value || "";
-    const inputDesdeB = document.getElementById('filtro-inc-comp-desde');
-    const inputHastaB = document.getElementById('filtro-inc-comp-hasta');
-    const lblResumenA = document.getElementById('lbl-resumen-periodo-a');
-
-    if (lblResumenA) {
-        lblResumenA.innerText = `Periodo A (${fDesdeA || 'Inicio'} al ${fHastaA || 'Fin'})`;
-    }
-
-    if (!fDesdeA || !fHastaA || !inputDesdeB || !inputHastaB) return;
-    if (modoPeriodoB === 'personalizado') return;
-
-    function formatoYMD(dt) {
-        const y = dt.getFullYear();
-        const m = String(dt.getMonth() + 1).padStart(2, '0');
-        const d = String(dt.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-
-    const dtDesdeA = new Date(fDesdeA + 'T12:00:00');
-    const dtHastaA = new Date(fHastaA + 'T12:00:00');
-
-    if (modoPeriodoB === 'inmediato_anterior') {
-        // Duración en días de Periodo A
-        const duracionDias = Math.max(1, Math.round((dtHastaA - dtDesdeA) / 86400000) + 1);
-        const dtHastaB = new Date(dtDesdeA.getTime() - 86400000); // 1 día antes del inicio de A
-        const dtDesdeB = new Date(dtHastaB.getTime() - (duracionDias - 1) * 86400000);
-        inputDesdeB.value = formatoYMD(dtDesdeB);
-        inputHastaB.value = formatoYMD(dtHastaB);
-    } else if (modoPeriodoB === 'mes_anterior') {
-        const dtDesdeB = new Date(dtDesdeA);
-        dtDesdeB.setMonth(dtDesdeB.getMonth() - 1);
-        const dtHastaB = new Date(dtHastaA);
-        dtHastaB.setMonth(dtHastaB.getMonth() - 1);
-        inputDesdeB.value = formatoYMD(dtDesdeB);
-        inputHastaB.value = formatoYMD(dtHastaB);
-    } else if (modoPeriodoB === 'ano_anterior') {
-        const dtDesdeB = new Date(dtDesdeA);
-        dtDesdeB.setFullYear(dtDesdeB.getFullYear() - 1);
-        const dtHastaB = new Date(dtHastaA);
-        dtHastaB.setFullYear(dtHastaB.getFullYear() - 1);
-        inputDesdeB.value = formatoYMD(dtDesdeB);
-        inputHastaB.value = formatoYMD(dtHastaB);
-    }
-}
-
-function alCambiarModoComparativoB(modo) {
-    modoPeriodoB = modo;
-    calcularFechasPeriodoB();
-    aplicarFiltrosIncidencias();
-}
-
-function alCambiarFechasComparativoB() {
-    modoPeriodoB = 'personalizado';
-    const selModoB = document.getElementById('sel-modo-comparativo-b');
-    if (selModoB) selModoB.value = 'personalizado';
-    aplicarFiltrosIncidencias();
 }
 
 function poblarFiltroDepartamentosIncidencias() {
@@ -7623,11 +7283,6 @@ function poblarFiltroActoresIncidencias() {
 }
 
 function resetearFiltrosIncidencias() {
-    const selMes = document.getElementById('sel-inc-mes');
-    const selAno = document.getElementById('sel-inc-ano');
-    if (selMes) selMes.value = "";
-    if (selAno) selAno.value = "";
-
     const fechas = rawEvaluacionesIncidencias.map(e => e.Fecha).filter(Boolean).sort();
     if (fechas.length > 0) {
         const inputDesde = document.getElementById('filtro-inc-desde');
@@ -7642,33 +7297,26 @@ function resetearFiltrosIncidencias() {
     if (selActor) selActor.selectedIndex = 0;
     const buscar = document.getElementById('inc-buscar-tabla');
     if (buscar) buscar.value = "";
-
-    actualizarEstiloChipsPeriodo(null);
-
-    if (modoComparativoIncidencias) {
-        calcularFechasPeriodoB();
-    }
     aplicarFiltrosIncidencias();
 }
 
-// -------------------------------------------------------------
-// FILTRADO Y MOTOR DE CÁLCULO
-// -------------------------------------------------------------
 function aplicarFiltrosIncidencias() {
-    const fDesdeA = document.getElementById('filtro-inc-desde')?.value || "";
-    const fHastaA = document.getElementById('filtro-inc-hasta')?.value || "";
+    const fDesde = document.getElementById('filtro-inc-desde')?.value || "";
+    const fHasta = document.getElementById('filtro-inc-hasta')?.value || "";
     const depto = document.getElementById('filtro-inc-depto')?.value || "Todos";
     const actor = document.getElementById('filtro-inc-actor')?.value || "🌟 TODOS (Empleados y Proveedores)";
 
-    // Filtrar Periodo A (Principal)
     evaluacionesFiltradasIncidencias = rawEvaluacionesIncidencias.filter(item => {
-        if (fDesdeA && item.Fecha && item.Fecha < fDesdeA) return false;
-        if (fHastaA && item.Fecha && item.Fecha > fHastaA) return false;
+        // Filtro de fecha
+        if (fDesde && item.Fecha && item.Fecha < fDesde) return false;
+        if (fHasta && item.Fecha && item.Fecha > fHasta) return false;
 
+        // Filtro de depto
         if (depto !== "Todos") {
             if (item.Tipo === 'Empleado' && item.Departamento !== depto) return false;
         }
 
+        // Filtro de actor
         if (actor === "👥 TODOS LOS EMPLEADOS") {
             if (item.Tipo !== 'Empleado') return false;
         } else if (actor === "🚚 TODOS LOS PROVEEDORES") {
@@ -7680,410 +7328,91 @@ function aplicarFiltrosIncidencias() {
         return true;
     });
 
-    // Filtrar Periodo B (Comparativo) si está activo
-    if (modoComparativoIncidencias) {
-        const fDesdeB = document.getElementById('filtro-inc-comp-desde')?.value || "";
-        const fHastaB = document.getElementById('filtro-inc-comp-hasta')?.value || "";
-
-        evaluacionesComparativasIncidencias = rawEvaluacionesIncidencias.filter(item => {
-            if (fDesdeB && item.Fecha && item.Fecha < fDesdeB) return false;
-            if (fHastaB && item.Fecha && item.Fecha > fHastaB) return false;
-
-            if (depto !== "Todos") {
-                if (item.Tipo === 'Empleado' && item.Departamento !== depto) return false;
-            }
-
-            if (actor === "👥 TODOS LOS EMPLEADOS") {
-                if (item.Tipo !== 'Empleado') return false;
-            } else if (actor === "🚚 TODOS LOS PROVEEDORES") {
-                if (item.Tipo !== 'Proveedor') return false;
-            } else if (actor !== "🌟 TODOS (Empleados y Proveedores)") {
-                if (item.Actor !== actor) return false;
-            }
-
-            return true;
-        });
-    } else {
-        evaluacionesComparativasIncidencias = [];
-    }
-
     actualizarKPIsIncidencias();
-    renderizarBannerDesempeno();
     renderizarGraficasIncidencias();
-    renderizarTablaIncidenciasSegunTab();
+    renderizarTablaIncidencias(evaluacionesFiltradasIncidencias);
 }
 
 function actualizarKPIsIncidencias() {
-    const totalA = evaluacionesFiltradasIncidencias.length;
-    const limpiasA = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
-    const fallasA = totalA - limpiasA;
-    const eventosA = new Set(evaluacionesFiltradasIncidencias.map(e => e.Evento)).size;
+    const total = evaluacionesFiltradasIncidencias.length;
+    const limpias = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+    const fallas = total - limpias;
+    const eventosUnicos = new Set(evaluacionesFiltradasIncidencias.map(e => e.Evento)).size;
 
-    const pctLimpiasA = totalA > 0 ? ((limpiasA / totalA) * 100) : 0;
-    const pctFallasA = totalA > 0 ? ((fallasA / totalA) * 100) : 0;
+    const pctLimpias = total > 0 ? ((limpias / total) * 100).toFixed(1) : "0.0";
+    const pctFallas = total > 0 ? ((fallas / total) * 100).toFixed(1) : "0.0";
 
     const elTotal = document.getElementById('kpi-inc-total');
-    const elSubTotal = document.getElementById('kpi-inc-sub-total');
+    if (elTotal) elTotal.innerText = total;
+
     const elLimpias = document.getElementById('kpi-inc-limpias');
+    if (elLimpias) elLimpias.innerText = limpias;
     const elPctLimpias = document.getElementById('kpi-inc-pct-limpias');
-    const elSubLimpias = document.getElementById('kpi-inc-sub-limpias');
+    if (elPctLimpias) elPctLimpias.innerText = `+${pctLimpias}%`;
+
     const elFallas = document.getElementById('kpi-inc-fallas');
+    if (elFallas) elFallas.innerText = fallas;
     const elPctFallas = document.getElementById('kpi-inc-pct-fallas');
-    const elSubFallas = document.getElementById('kpi-inc-sub-fallas');
+    if (elPctFallas) elPctFallas.innerText = `-${pctFallas}%`;
+
     const elEventos = document.getElementById('kpi-inc-eventos');
-    const elSubEventos = document.getElementById('kpi-inc-sub-eventos');
-
-    if (!modoComparativoIncidencias) {
-        // MODO ESTÁNDAR
-        if (elTotal) elTotal.innerText = totalA;
-        if (elSubTotal) elSubTotal.innerText = "Total registros auditados";
-
-        if (elLimpias) elLimpias.innerText = limpiasA;
-        if (elPctLimpias) {
-            elPctLimpias.innerText = `+${pctLimpiasA.toFixed(1)}%`;
-            elPctLimpias.style.background = "#dcfce7";
-            elPctLimpias.style.color = "#15803d";
-        }
-        if (elSubLimpias) elSubLimpias.innerText = "Operación sin contratiempos";
-
-        if (elFallas) elFallas.innerText = fallasA;
-        if (elPctFallas) {
-            elPctFallas.innerText = `-${pctFallasA.toFixed(1)}%`;
-            elPctFallas.style.background = "#fee2e2";
-            elPctFallas.style.color = "#b91c1c";
-        }
-        if (elSubFallas) elSubFallas.innerText = "Reportes de fallas o daños";
-
-        if (elEventos) elEventos.innerText = eventosA;
-        if (elSubEventos) elSubEventos.innerText = "Órdenes de Producción con registro";
-    } else {
-        // MODO COMPARATIVO (Periodo A vs Periodo B)
-        const totalB = evaluacionesComparativasIncidencias.length;
-        const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
-        const fallasB = totalB - limpiasB;
-        const eventosB = new Set(evaluacionesComparativasIncidencias.map(e => e.Evento)).size;
-
-        const pctLimpiasB = totalB > 0 ? ((limpiasB / totalB) * 100) : 0;
-        const pctFallasB = totalB > 0 ? ((fallasB / totalB) * 100) : 0;
-
-        // Deltas
-        const deltaCalidad = pctLimpiasA - pctLimpiasB; // Variación en % de calidad limpia
-        const deltaTotal = totalA - totalB;
-        const deltaEventos = eventosA - eventosB;
-
-        // KPI 1: Evaluaciones
-        if (elTotal) {
-            elTotal.innerHTML = `
-                <div style="display: flex; align-items: baseline; gap: 8px;">
-                    <span>${totalA}</span>
-                    <span style="font-size: 15px; font-weight: 600; color: #64748b;">vs ${totalB} (B)</span>
-                </div>
-            `;
-        }
-        if (elSubTotal) {
-            const signo = deltaTotal >= 0 ? '+' : '';
-            elSubTotal.innerHTML = `Variación: <strong>${signo}${deltaTotal} eval(s)</strong> respecto a Periodo B`;
-        }
-
-        // KPI 2: Evaluaciones Limpias
-        if (elLimpias) elLimpias.innerText = `${limpiasA} (${pctLimpiasA.toFixed(1)}%)`;
-        if (elPctLimpias) {
-            const signoCal = deltaCalidad >= 0 ? '+' : '';
-            const esMejora = deltaCalidad >= 0;
-            elPctLimpias.innerText = `${signoCal}${deltaCalidad.toFixed(1)}% vs B`;
-            elPctLimpias.style.background = esMejora ? "#dcfce7" : "#fee2e2";
-            elPctLimpias.style.color = esMejora ? "#15803d" : "#b91c1c";
-        }
-        if (elSubLimpias) {
-            elSubLimpias.innerHTML = `Periodo B: <strong>${limpiasB} limpias (${pctLimpiasB.toFixed(1)}%)</strong>`;
-        }
-
-        // KPI 3: Evaluaciones con Incidencias
-        if (elFallas) elFallas.innerText = `${fallasA} (${pctFallasA.toFixed(1)}%)`;
-        if (elPctFallas) {
-            const deltaFallas = pctFallasA - pctFallasB;
-            const signoFallas = deltaFallas >= 0 ? '+' : '';
-            const esFallaMenor = deltaFallas <= 0;
-            elPctFallas.innerText = `${signoFallas}${deltaFallas.toFixed(1)}% vs B`;
-            elPctFallas.style.background = esFallaMenor ? "#dcfce7" : "#fee2e2";
-            elPctFallas.style.color = esFallaMenor ? "#15803d" : "#b91c1c";
-        }
-        if (elSubFallas) {
-            elSubFallas.innerHTML = `Periodo B: <strong>${fallasB} fallas (${pctFallasB.toFixed(1)}%)</strong>`;
-        }
-
-        // KPI 4: Eventos
-        if (elEventos) {
-            elEventos.innerHTML = `
-                <div style="display: flex; align-items: baseline; gap: 8px;">
-                    <span>${eventosA}</span>
-                    <span style="font-size: 15px; font-weight: 600; color: #64748b;">vs ${eventosB} (B)</span>
-                </div>
-            `;
-        }
-        if (elSubEventos) {
-            const signoEv = deltaEventos >= 0 ? '+' : '';
-            elSubEventos.innerHTML = `Variación: <strong>${signoEv}${deltaEventos} evento(s)</strong> OPs auditadas`;
-        }
-    }
+    if (elEventos) elEventos.innerText = eventosUnicos;
 }
 
-function renderizarBannerDesempeno() {
-    const banner = document.getElementById('banner-inc-desempeno');
-    if (!banner) return;
-
-    if (!modoComparativoIncidencias) {
-        banner.style.display = 'none';
-        return;
-    }
-
-    const totalA = evaluacionesFiltradasIncidencias.length;
-    const totalB = evaluacionesComparativasIncidencias.length;
-    const limpiasA = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
-    const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
-
-    const pctLimpiasA = totalA > 0 ? (limpiasA / totalA) * 100 : 0;
-    const pctLimpiasB = totalB > 0 ? (limpiasB / totalB) * 100 : 0;
-    const deltaCalidad = pctLimpiasA - pctLimpiasB;
-
-    const fDesdeA = document.getElementById('filtro-inc-desde')?.value || "";
-    const fHastaA = document.getElementById('filtro-inc-hasta')?.value || "";
-    const fDesdeB = document.getElementById('filtro-inc-comp-desde')?.value || "";
-    const fHastaB = document.getElementById('filtro-inc-comp-hasta')?.value || "";
-
-    banner.style.display = 'block';
-
-    let config = {
-        icono: 'ph-chart-line-up',
-        colorIcono: '#16a34a',
-        bg: '#f0fdf4',
-        border: '1.5px solid #86efac',
-        tituloColor: '#166534',
-        titulo: `📈 ¡MEJORA EN EL DESEMPEÑO OPERATIVO! (+${deltaCalidad.toFixed(1)}% Calidad Limpia)`,
-        detalle: `En el <strong>Periodo A (${fDesdeA} al ${fHastaA})</strong> la tasa de operaciones sin contratiempos alcanzó <strong>${pctLimpiasA.toFixed(1)}%</strong>, superando el <strong>${pctLimpiasB.toFixed(1)}%</strong> registrado en el <strong>Periodo B (${fDesdeB} al ${fHastaB})</strong>. La tasa de incidencias disminuyó <strong>${Math.abs(deltaCalidad).toFixed(1)} puntos porcentuales</strong>.`
-    };
-
-    if (deltaCalidad < -0.1) {
-        config = {
-            icono: 'ph-warning',
-            colorIcono: '#dc2626',
-            bg: '#fef2f2',
-            border: '1.5px solid #fca5a5',
-            tituloColor: '#991b1b',
-            titulo: `⚠️ ALERTA DE DESEMPEÑO: Incremento en Tasa de Incidencias (${deltaCalidad.toFixed(1)}% Calidad)`,
-            detalle: `En el <strong>Periodo A (${fDesdeA} al ${fHastaA})</strong> la proporción de fallas aumentó, registrándose <strong>${(100 - pctLimpiasA).toFixed(1)}%</strong> de incidencias contra <strong>${(100 - pctLimpiasB).toFixed(1)}%</strong> del <strong>Periodo B (${fDesdeB} al ${fHastaB})</strong>. Se recomienda auditar las órdenes de producción de este ciclo.`
-        };
-    } else if (Math.abs(deltaCalidad) <= 0.1) {
-        config = {
-            icono: 'ph-scales',
-            colorIcono: '#2563eb',
-            bg: '#eff6ff',
-            border: '1.5px solid #93c5fd',
-            tituloColor: '#1e40af',
-            titulo: `⚖️ DESEMPEÑO CONSISTENTE: Calidad Estable entre Periodos (0.0% variación)`,
-            detalle: `El desempeño operativo se mantuvo equilibrado entre el <strong>Periodo A</strong> (${pctLimpiasA.toFixed(1)}% limpias) y el <strong>Periodo B</strong> (${pctLimpiasB.toFixed(1)}% limpias).`
-        };
-    }
-
-    banner.style.background = config.bg;
-    banner.style.border = config.border;
-    banner.innerHTML = `
-        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.08); flex-shrink: 0;">
-                <i class="ph ${config.icono}" style="font-size: 28px; color: ${config.colorIcono};"></i>
-            </div>
-            <div style="flex: 1; min-width: 250px;">
-                <div style="font-size: 15px; font-weight: 800; color: ${config.tituloColor}; margin-bottom: 4px;">
-                    ${config.titulo}
-                </div>
-                <div style="font-size: 13px; color: #334155; line-height: 1.45;">
-                    ${config.detalle}
-                </div>
-            </div>
-            <div style="display: flex; gap: 12px; align-items: center;">
-                <div style="background: white; padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); text-align: center;">
-                    <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Periodo A</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #4338ca;">${pctLimpiasA.toFixed(1)}% OK</div>
-                </div>
-                <div style="background: white; padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); text-align: center;">
-                    <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Periodo B</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #ea580c;">${pctLimpiasB.toFixed(1)}% OK</div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// -------------------------------------------------------------
-// RENDERIZADO DE GRÁFICAS DE CALIDAD Y DESEMPEÑO
-// -------------------------------------------------------------
 function renderizarGraficasIncidencias() {
     if (typeof Chart === 'undefined') return;
 
-    const totalA = evaluacionesFiltradasIncidencias.length;
-    const limpiasA = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
-    const fallasA = totalA - limpiasA;
-    const pctLimpiasA = totalA > 0 ? ((limpiasA / totalA) * 100) : 0;
-    const pctFallasA = totalA > 0 ? ((fallasA / totalA) * 100) : 0;
+    const total = evaluacionesFiltradasIncidencias.length;
+    const limpias = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+    const fallas = total - limpias;
 
+    const pctLimpias = total > 0 ? ((limpias / total) * 100) : 0;
+    const pctFallas = total > 0 ? ((fallas / total) * 100) : 0;
+
+    // 1️⃣ Gráfica 1: Balance General (Barra 100% Horizontal Apilada)
     const ctxBalance = document.getElementById('chart-inc-balance')?.getContext('2d');
-    const contBalance = document.getElementById('contenedor-canvas-balance');
-    const titBalance = document.getElementById('titulo-grafica-balance');
-
-    // 1️⃣ Gráfica 1: Balance General (Apilada 100%) - Si comparativo: 2 barras apiladas
     if (ctxBalance) {
         if (chartIncBalanceInstance) chartIncBalanceInstance.destroy();
 
-        if (!modoComparativoIncidencias) {
-            if (contBalance) contBalance.style.height = "60px";
-            if (titBalance) titBalance.innerText = "Balance General de Calidad (%)";
-
-            chartIncBalanceInstance = new Chart(ctxBalance, {
-                type: 'bar',
-                data: {
-                    labels: ['Balance General'],
-                    datasets: [
-                        {
-                            label: 'Sin Incidencias',
-                            data: [pctLimpiasA],
-                            backgroundColor: '#16a34a',
-                            borderRadius: 6
-                        },
-                        {
-                            label: 'Con Incidencias',
-                            data: [pctFallasA],
-                            backgroundColor: '#ef4444',
-                            borderRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            stacked: true,
-                            max: 100,
-                            ticks: { callback: v => `${v}%` }
-                        },
-                        y: { stacked: true, display: false }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            // MODO COMPARATIVO: 2 Barras Horizontales Apiladas (A vs B)
-            if (contBalance) contBalance.style.height = "105px";
-            if (titBalance) titBalance.innerText = "⚖️ Balance Comparativo de Calidad (%) - Periodo A vs Periodo B";
-
-            const totalB = evaluacionesComparativasIncidencias.length;
-            const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
-            const fallasB = totalB - limpiasB;
-            const pctLimpiasB = totalB > 0 ? ((limpiasB / totalB) * 100) : 0;
-            const pctFallasB = totalB > 0 ? ((fallasB / totalB) * 100) : 0;
-
-            chartIncBalanceInstance = new Chart(ctxBalance, {
-                type: 'bar',
-                data: {
-                    labels: ['Periodo A (Actual)', 'Periodo B (Comparativo)'],
-                    datasets: [
-                        {
-                            label: 'Sin Incidencias',
-                            data: [pctLimpiasA, pctLimpiasB],
-                            backgroundColor: '#16a34a',
-                            borderRadius: 6
-                        },
-                        {
-                            label: 'Con Incidencias',
-                            data: [pctFallasA, pctFallasB],
-                            backgroundColor: '#ef4444',
-                            borderRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            stacked: true,
-                            max: 100,
-                            ticks: { callback: v => `${v}%` }
-                        },
-                        y: {
-                            stacked: true,
-                            ticks: { font: { weight: 'bold', size: 11.5 } }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    // 2️⃣ Gráfica 2: Comparativa de Desempeño Operativo (Solo en Modo Comparativo)
-    const ctxComp = document.getElementById('chart-inc-comparativa')?.getContext('2d');
-    if (ctxComp && modoComparativoIncidencias) {
-        if (chartIncComparativaInstance) chartIncComparativaInstance.destroy();
-
-        const totalB = evaluacionesComparativasIncidencias.length;
-        const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
-        const fallasB = totalB - limpiasB;
-        const eventosA = new Set(evaluacionesFiltradasIncidencias.map(e => e.Evento)).size;
-        const eventosB = new Set(evaluacionesComparativasIncidencias.map(e => e.Evento)).size;
-
-        chartIncComparativaInstance = new Chart(ctxComp, {
+        chartIncBalanceInstance = new Chart(ctxBalance, {
             type: 'bar',
             data: {
-                labels: ['Total Evaluaciones', 'Operación Limpia', 'Con Incidencias', 'Eventos Auditados'],
+                labels: ['Balance General'],
                 datasets: [
                     {
-                        label: 'Periodo A (Actual)',
-                        data: [totalA, limpiasA, fallasA, eventosA],
-                        backgroundColor: '#4f46e5',
+                        label: 'Sin Incidencias',
+                        data: [pctLimpias],
+                        backgroundColor: '#16a34a',
                         borderRadius: 6
                     },
                     {
-                        label: 'Periodo B (Comparativo)',
-                        data: [totalB, limpiasB, fallasB, eventosB],
-                        backgroundColor: '#f97316',
+                        label: 'Con Incidencias',
+                        data: [pctFallas],
+                        backgroundColor: '#ef4444',
                         borderRadius: 6
                     }
                 ]
             },
             options: {
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        ticks: { font: { weight: 'bold', size: 11.5 } }
+                        stacked: true,
+                        max: 100,
+                        ticks: { callback: v => `${v}%` }
                     },
                     y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
+                        stacked: true,
+                        display: false
                     }
                 },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} registros`
+                            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%`
                         }
                     }
                 }
@@ -8091,11 +7420,12 @@ function renderizarGraficasIncidencias() {
         });
     }
 
-    // 3️⃣ Gráfica 3: Detalle por Evento (Periodo A)
+    // 2️⃣ Gráfica 2: Detalle por Evento (Barras comparativas Verde vs Roja)
     const ctxEventos = document.getElementById('chart-inc-eventos')?.getContext('2d');
     if (ctxEventos) {
         if (chartIncEventosInstance) chartIncEventosInstance.destroy();
 
+        // Agrupar por Evento
         const eventosMap = {};
         evaluacionesFiltradasIncidencias.forEach(e => {
             const ev = e.Evento || 'Sin Nombre';
@@ -8104,6 +7434,7 @@ function renderizarGraficasIncidencias() {
             else eventosMap[ev].fallas++;
         });
 
+        // Ordenar por volumen total o alfabético
         const labels = Object.keys(eventosMap);
         const dataLimpias = labels.map(k => eventosMap[k].limpias);
         const dataFallas = labels.map(k => eventosMap[k].fallas);
@@ -8157,38 +7488,6 @@ function renderizarGraficasIncidencias() {
     }
 }
 
-// -------------------------------------------------------------
-// BITÁCORA Y TABS DE PERIODOS
-// -------------------------------------------------------------
-function cambiarTabBitacora(tab) {
-    tabBitacoraActual = tab;
-    const tabA = document.getElementById('tab-bit-a');
-    const tabB = document.getElementById('tab-bit-b');
-    const tabAmbos = document.getElementById('tab-bit-ambos');
-
-    [tabA, tabB, tabAmbos].forEach(t => t?.classList.remove('active'));
-    if (tab === 'A') tabA?.classList.add('active');
-    else if (tab === 'B') tabB?.classList.add('active');
-    else if (tab === 'AMBOS') tabAmbos?.classList.add('active');
-
-    renderizarTablaIncidenciasSegunTab();
-}
-
-function renderizarTablaIncidenciasSegunTab() {
-    let lista = [];
-    if (!modoComparativoIncidencias || tabBitacoraActual === 'A') {
-        lista = evaluacionesFiltradasIncidencias.map(item => ({ ...item, _periodo: 'A' }));
-    } else if (tabBitacoraActual === 'B') {
-        lista = evaluacionesComparativasIncidencias.map(item => ({ ...item, _periodo: 'B' }));
-    } else if (tabBitacoraActual === 'AMBOS') {
-        const itemsA = evaluacionesFiltradasIncidencias.map(item => ({ ...item, _periodo: 'A' }));
-        const itemsB = evaluacionesComparativasIncidencias.map(item => ({ ...item, _periodo: 'B' }));
-        lista = [...itemsA, ...itemsB].sort((a, b) => (b.Fecha || '').localeCompare(a.Fecha || ''));
-    }
-
-    renderizarTablaIncidencias(lista);
-}
-
 function renderizarTablaIncidencias(lista) {
     const tbody = document.getElementById('tbody-incidencias-detallada');
     const badgeConteo = document.getElementById('inc-tabla-conteo');
@@ -8210,15 +7509,9 @@ function renderizarTablaIncidencias(lista) {
             ? `<span style="background: #eff6ff; color: #2563eb; font-weight: 600; font-size: 11.5px; padding: 2px 8px; border-radius: 6px;">👤 Empleado</span>`
             : `<span style="background: #fef3c7; color: #d97706; font-weight: 600; font-size: 11.5px; padding: 2px 8px; border-radius: 6px;">🚚 Proveedor</span>`;
 
-        const badgePeriodo = (modoComparativoIncidencias && tabBitacoraActual === 'AMBOS')
-            ? (item._periodo === 'A'
-                ? `<span style="background: #e0e7ff; color: #4338ca; font-weight: 800; font-size: 10px; padding: 1px 5px; border-radius: 4px; margin-right: 4px;">P-A</span>`
-                : `<span style="background: #ffedd5; color: #c2410c; font-weight: 800; font-size: 10px; padding: 1px 5px; border-radius: 4px; margin-right: 4px;">P-B</span>`)
-            : '';
-
         return `
             <tr>
-                <td style="font-family: monospace; font-size: 12px; color: #64748b;">${badgePeriodo}${item.Fecha || '--'}</td>
+                <td style="font-family: monospace; font-size: 12px; color: #64748b;">${item.Fecha || '--'}</td>
                 <td style="font-weight: 600; color: #0f172a; font-size: 13px;">${item.Evento}</td>
                 <td style="text-align: center;">${badgeTipo}</td>
                 <td style="font-weight: 500; font-size: 13px;">${item.Actor}</td>
@@ -8246,6 +7539,7 @@ function filtrarTablaIncidenciasEnVivo(termino) {
 }
 
 // ==========================================
+
 // 16. MÓDULO ANALÍTICA Y KPIS
 // ==========================================
 let chartAnDeptosInstance = null;

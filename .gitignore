@@ -9,3 +9,5 @@ scratch/
 *.tmp
 *.zip
 Archivos_Compartidos/
+__pycache__/
+*.pyc

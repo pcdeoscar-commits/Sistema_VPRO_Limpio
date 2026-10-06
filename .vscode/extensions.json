@@ -1,0 +1,25 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "ms-python.vscode-python-envs",
+    "github.vscode-pull-request-github",
+    "google.google-antigravity",
+    "mtxr.sqltools",
+    "ms-azuretools.vscode-containers",
+    "ms-edgedevtools.vscode-edge-devtools",
+    "litchi.matplotlib-pilot",
+    "076923.python-image-preview",
+    "kevinrose.vsc-python-indent",
+    "davidanson.vscode-markdownlint",
+    "esbenp.prettier-vscode",
+    "tomoki1207.pdf",
+    "ms-mssql.mssql",
+    "ms-mssql.data-workspace-vscode",
+    "ms-mssql.sql-bindings-vscode",
+    "ms-mssql.sql-database-projects-vscode",
+    "ms-dotnettools.vscode-dotnet-runtime"
+  ]
+}
+

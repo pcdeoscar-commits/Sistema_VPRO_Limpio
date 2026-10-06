@@ -15,12 +15,6 @@ BASE_DIR = Path(__file__).resolve().parent
 DUMPS_DIR = BASE_DIR / "database_dumps"
 
 DATABASES = [
-    "db_autos_prueba",
-    "db_clientes_prueba",
-    "db_eventos_prueba",
-    "db_inventario_prueba",
-    "db_personal_prueba",
-    "db_proveedores_prueba",
     "db_autos",
     "db_clientes",
     "db_eventos",

@@ -23,6 +23,41 @@ CARPETA_TRANSFERENCIAS.mkdir(parents=True, exist_ok=True)
 LIMITE_MAX_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB total (5,368,709,120 bytes)
 CHUNK_SIZE = 2 * 1024 * 1024  # 2 MB por bloque de streaming
 
+def _asegurar_tabla_transferencias():
+    """Garantiza automáticamente la existencia de la tabla en db_personal."""
+    try:
+        with engine_personal.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS public.archivos_compartidos (
+                    id_transferencia SERIAL PRIMARY KEY,
+                    id_empleado_origen VARCHAR(50) NOT NULL,
+                    nombre_origen VARCHAR(255) NOT NULL,
+                    id_empleado_destino VARCHAR(50) NOT NULL,
+                    nombre_destino VARCHAR(255) NOT NULL,
+                    nombre_archivo_original VARCHAR(255) NOT NULL,
+                    nombre_archivo_fisico VARCHAR(255) NOT NULL,
+                    tamano_bytes BIGINT NOT NULL,
+                    tamano_legible VARCHAR(50),
+                    tipo_mime VARCHAR(100),
+                    mensaje TEXT,
+                    folio_paquete VARCHAR(100),
+                    fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    descargado BOOLEAN DEFAULT FALSE,
+                    veces_descargado INTEGER DEFAULT 0,
+                    fecha_primer_descarga TIMESTAMP,
+                    fecha_limite_borrado TIMESTAMP,
+                    estatus VARCHAR(50) DEFAULT 'DISPONIBLE'
+                );
+                CREATE INDEX IF NOT EXISTS idx_archivos_destino ON public.archivos_compartidos (id_empleado_destino);
+                CREATE INDEX IF NOT EXISTS idx_archivos_origen ON public.archivos_compartidos (id_empleado_origen);
+                CREATE INDEX IF NOT EXISTS idx_archivos_paquete ON public.archivos_compartidos (folio_paquete);
+                CREATE INDEX IF NOT EXISTS idx_archivos_estatus ON public.archivos_compartidos (estatus);
+            """))
+    except Exception as e:
+        print(f"[VPRO Transfer] Aviso al verificar tabla archivos_compartidos: {e}")
+
+_asegurar_tabla_transferencias()
+
 def _tamano_legible(num_bytes: int) -> str:
     """Convierte bytes a formato legible (KB, MB, GB)."""
     if num_bytes < 1024:

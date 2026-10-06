@@ -9,6 +9,29 @@ from core.utils import serialize_row_dates
 
 router = APIRouter(prefix="/api/cronogramas", tags=["📅 Cronogramas de Eventos"])
 
+def _asegurar_tabla_cronogramas():
+    """Garantiza automáticamente la existencia de la tabla en db_eventos."""
+    try:
+        with engine_eventos.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS public.cronogramas_eventos (
+                    id_cronograma SERIAL PRIMARY KEY,
+                    folio VARCHAR(50),
+                    fecha DATE,
+                    nombre_evento VARCHAR(255),
+                    ubicacion_general VARCHAR(255),
+                    folio_op VARCHAR(50),
+                    actividades JSONB DEFAULT '[]'::jsonb,
+                    observaciones_generales TEXT,
+                    creado_por VARCHAR(150),
+                    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+    except Exception as e:
+        print(f"[Cronogramas] Aviso al verificar tabla cronogramas_eventos: {e}")
+
+_asegurar_tabla_cronogramas()
+
 class ActividadCronograma(BaseModel):
     horario: Optional[str] = ""
     actividad: Optional[str] = ""

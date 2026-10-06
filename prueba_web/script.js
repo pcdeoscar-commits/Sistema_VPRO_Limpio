@@ -5622,7 +5622,7 @@ async function alSubirFotosEvidenciaOP(input, idEvento) {
         mensaje += `✅ ${subidos} archivo(s) de evidencia integrado(s) con éxito.\n`;
     }
     if (omitidos.length > 0) {
-        mensaje += `\nNo se cargaron los siguientes archivos por restricciones de tamaño/formato:\n` + omitidos.join('\n');
+        mensaje += `\n⚠️ Observaciones al cargar archivos:\n` + omitidos.join('\n');
     }
     if (mensaje) {
         alert(mensaje);

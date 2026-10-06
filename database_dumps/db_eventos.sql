@@ -2026,9 +2026,9 @@ ALTER TABLE ONLY public.informes_gastos_detalle
     ADD CONSTRAINT informes_gastos_detalle_id_informe_fkey FOREIGN KEY (id_informe) REFERENCES public.informes_gastos_maestro(id_informe) ON DELETE CASCADE;
 
 
---
--- PostgreSQL database dump complete
---
-
 \unrestrict AHowjUXweCWGOqP4NfgrnBaDmeFRgQqdLS6BOMlVtMTgyGK87wNFaafpRvoOHZs
 
+-- Ajustes y extensiones de columnas para eventos
+ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS habilitada_para_edicion boolean DEFAULT false;
+ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS fotos_evidencia text[] DEFAULT '{}'::text[];
+ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS cronogramas_vinculados text[] DEFAULT '{}'::text[];

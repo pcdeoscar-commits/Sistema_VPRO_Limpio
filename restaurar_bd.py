@@ -121,9 +121,13 @@ def main():
     try:
         subprocess.run([
             psql_cmd, "-U", db_user, "-h", db_host, "-p", db_port, "-d", "db_eventos",
-            "-c", "ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS habilitada_para_edicion BOOLEAN DEFAULT FALSE;"
+            "-c", """
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS habilitada_para_edicion BOOLEAN DEFAULT FALSE;
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS fotos_evidencia text[] DEFAULT '{}'::text[];
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS cronogramas_vinculados text[] DEFAULT '{}'::text[];
+            """
         ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        print("✔ Columna 'habilitada_para_edicion' verificada en public.eventos (db_eventos).")
+        print("✔ Columnas 'habilitada_para_edicion', 'fotos_evidencia' y 'cronogramas_vinculados' verificadas en public.eventos (db_eventos).")
     except Exception:
         pass
 

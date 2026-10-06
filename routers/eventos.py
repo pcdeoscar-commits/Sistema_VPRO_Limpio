@@ -56,25 +56,32 @@ def obtener_folios_activos_e_historicos():
     Excluye las OPs que ya tienen un informe de gastos registrado.
     """
     try:
-        # Solo OPs activas que NO tienen aún informe de gastos registrado
+        # Solo OPs activas (o habilitadas explícitamente para edición)
         query_activos_nueva = text("""
-            SELECT folio, nombre_evento 
+            SELECT folio, nombre_evento, COALESCE(habilitada_para_edicion, FALSE) AS habilitada_para_edicion
             FROM public.eventos 
-            WHERE UPPER(estatus) != 'CERRADA (HISTÓRICO)'
-              AND NOT EXISTS (
-                  SELECT 1 FROM public.informes_gastos_maestro m 
-                  WHERE m.folio_vpro = id_evento
-              )
+            WHERE habilitada_para_edicion = TRUE
+               OR (
+                   UPPER(COALESCE(estatus, '')) != 'CERRADA (HISTÓRICO)'
+                   AND NOT EXISTS (
+                       SELECT 1 FROM public.informes_gastos_maestro m 
+                       WHERE m.folio_vpro = id_evento
+                   )
+               )
             ORDER BY id_evento DESC
         """)
+        # OPs en archivo histórico (solo si no están habilitadas para edición)
         query_historicos_nueva = text("""
             SELECT folio, nombre_evento 
             FROM public.eventos 
-            WHERE UPPER(estatus) = 'CERRADA (HISTÓRICO)'
-               OR EXISTS (
-                   SELECT 1 FROM public.informes_gastos_maestro m 
-                   WHERE m.folio_vpro = id_evento
-               )
+            WHERE (habilitada_para_edicion IS NOT TRUE)
+              AND (
+                  UPPER(COALESCE(estatus, '')) = 'CERRADA (HISTÓRICO)'
+                  OR EXISTS (
+                      SELECT 1 FROM public.informes_gastos_maestro m 
+                      WHERE m.folio_vpro = id_evento
+                  )
+              )
             ORDER BY id_evento DESC
         """)
         query_max_id = text("SELECT COALESCE(MAX(id_evento), 0) + 1 AS proximo_id FROM public.eventos")
@@ -88,7 +95,10 @@ def obtener_folios_activos_e_historicos():
             historicos_nuevos = conn.execute(query_historicos_nueva).mappings().fetchall()
             max_id_nuevo = conn.execute(query_max_id).scalar()
             
-            folios_activos.extend([f"{r['folio']} - {r['nombre_evento']}" for r in activos_nuevos])
+            folios_activos.extend([
+                f"{r['folio']} - {r['nombre_evento']}" + (" 🔓 [EN EDICIÓN]" if r.get('habilitada_para_edicion') else "")
+                for r in activos_nuevos
+            ])
             folios_historicos.extend([f"{r['folio']} - {r['nombre_evento']}" for r in historicos_nuevos])
 
         return {
@@ -432,3 +442,97 @@ def eliminar_foto_evidencia(id_evento: int, url: str):
         return {"status": "SUCCESS"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/habilitar-edicion")
+def habilitar_edicion_op(payload: dict):
+    """Permite al Coordinador o Admin habilitar una OP histórica para
+    subir evidencias (fotos/videos) o editar información faltante."""
+    folio = str(payload.get("folio", "")).strip()
+    usuario = payload.get("usuario", "COORDINADOR")
+    rol = str(payload.get("rol", "")).upper()
+    
+    # Validar permisos
+    roles_permitidos = ["ADMIN", "COORDINADOR", "COORDINACION", "PRODUCCION"]
+    if not any(r in rol for r in roles_permitidos):
+        raise HTTPException(
+            status_code=403, 
+            detail="Solo personal con rol de Coordinador o Administrador puede habilitar OPs del histórico."
+        )
+    
+    if not folio:
+        raise HTTPException(status_code=400, detail="Debe especificar el folio de la OP.")
+        
+    try:
+        with engine_eventos.begin() as conn:
+            # Buscar por folio o id_evento
+            res = conn.execute(
+                text("""
+                    UPDATE public.eventos
+                    SET habilitada_para_edicion = TRUE,
+                        estatus = 'HABILITADA (EDICIÓN)'
+                    WHERE folio = :folio 
+                       OR CAST(id_evento AS text) = :folio
+                    RETURNING folio, nombre_evento, id_evento;
+                """),
+                {"folio": folio}
+            ).mappings().first()
+            
+            if not res:
+                raise HTTPException(status_code=404, detail=f"No se encontró la OP con folio '{folio}'.")
+                
+            return {
+                "ok": True,
+                "mensaje": f"La OP {res['folio']} - {res['nombre_evento']} ha sido habilitada para edición y evidencias.",
+                "folio": res["folio"],
+                "id_evento": res["id_evento"]
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/mandar-al-historial")
+def mandar_al_historial_op(payload: dict):
+    """Permite regresar una OP al archivo histórico (solo lectura)."""
+    folio = str(payload.get("folio", "")).strip()
+    usuario = payload.get("usuario", "COORDINADOR")
+    rol = str(payload.get("rol", "")).upper()
+    
+    # Validar permisos
+    roles_permitidos = ["ADMIN", "COORDINADOR", "COORDINACION", "PRODUCCION"]
+    if not any(r in rol for r in roles_permitidos):
+        raise HTTPException(
+            status_code=403, 
+            detail="Solo personal con rol de Coordinador o Administrador puede archivar OPs en el histórico."
+        )
+        
+    if not folio:
+        raise HTTPException(status_code=400, detail="Debe especificar el folio de la OP.")
+        
+    try:
+        with engine_eventos.begin() as conn:
+            res = conn.execute(
+                text("""
+                    UPDATE public.eventos
+                    SET habilitada_para_edicion = FALSE,
+                        estatus = 'CERRADA (HISTÓRICO)'
+                    WHERE folio = :folio 
+                       OR CAST(id_evento AS text) = :folio
+                    RETURNING folio, nombre_evento, id_evento;
+                """),
+                {"folio": folio}
+            ).mappings().first()
+            
+            if not res:
+                raise HTTPException(status_code=404, detail=f"No se encontró la OP con folio '{folio}'.")
+                
+            return {
+                "ok": True,
+                "mensaje": f"La OP {res['folio']} - {res['nombre_evento']} ha sido enviada al archivo histórico.",
+                "folio": res["folio"],
+                "id_evento": res["id_evento"]
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1036,10 +1036,50 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     };
 
     const dis = isReadOnly ? 'disabled' : '';
+    const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase();
+    const esCoordinadorOAdmin = rolUsuario.includes('ADMIN') || rolUsuario.includes('PRODUCCION') || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION');
 
     return `
         <form id="form-orden-produccion-${isReadOnly ? 'hist' : 'act'}" onsubmit="guardarOrdenOP(event)">
             <input type="hidden" id="op_id_evento" value="${idEvento}">
+
+            ${isReadOnly && data.folio && esCoordinadorOAdmin ? `
+                <!-- 🔓 BANNER DE HABILITACIÓN PARA EDICIÓN / EVIDENCIAS DESDE EL HISTÓRICO -->
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #16a34a; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                    <div>
+                        <div style="font-weight: 700; color: #166534; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-archive-box" style="font-size: 20px;"></i>
+                            <span>OP EN ARCHIVO HISTÓRICO (MODO CONSULTA / SOLO LECTURA)</span>
+                        </div>
+                        <div style="font-size: 13px; color: #15803d; margin-top: 4px; line-height: 1.4;">
+                            ¿Faltó adjuntar evidencias multimedia (fotos o videos) o requieres agregar/corregir información?
+                        </div>
+                    </div>
+                    <button type="button" onclick="habilitarOPParaEdicion('${folioVal}')" style="background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3); transition: all 0.2s;">
+                        <i class="ph ph-lock-key-open"></i> 🔓 Habilitar OP para Agregar Evidencias / Edición
+                    </button>
+                </div>
+            ` : ''}
+
+            ${!isReadOnly && data.habilitada_para_edicion ? `
+                <!-- 🟡 BANNER DE OP HABILITADA TEMPORALMENTE -->
+                <div style="background: #fefce8; border: 1px solid #fef08a; border-left: 5px solid #eab308; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                    <div>
+                        <div style="font-weight: 700; color: #854d0e; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-warning-circle" style="font-size: 20px;"></i>
+                            <span>OP HABILITADA TEMPORALMENTE DESDE EL HISTÓRICO</span>
+                        </div>
+                        <div style="font-size: 13px; color: #713f12; margin-top: 4px; line-height: 1.4;">
+                            Esta orden ya cuenta con cierre financiero/gastos. Agrega las evidencias (fotos/videos) o información pendiente. Al concluir, regrésala al archivo histórico.
+                        </div>
+                    </div>
+                    ${esCoordinadorOAdmin ? `
+                        <button type="button" onclick="mandarOPAlHistorial('${folioVal}')" style="background: #475569; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: all 0.2s;">
+                            <i class="ph ph-archive-box"></i> 📦 Mandar de Nuevo al Historial
+                        </button>
+                    ` : ''}
+                </div>
+            ` : ''}
 
             <!-- 📝 1. DATOS DE LA ORDEN -->
             <div class="op-section-card">
@@ -1345,12 +1385,17 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 </div>
             </div>
 
-            <!-- 💾 BOTÓN GUARDAR MAESTRO -->
+            <!-- 💾 BOTÓN GUARDAR MAESTRO Y ACCIÓN DE HISTORIAL -->
             ${!isReadOnly ? `
-                <div style="margin-top: 10px; margin-bottom: 20px;">
-                    <button type="submit" style="width: 100%; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.25); transition: background 0.2s;">
+                <div style="margin-top: 14px; margin-bottom: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
+                    <button type="submit" style="flex: 2; min-width: 220px; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.25); transition: background 0.2s;">
                         💾 GUARDAR CAMBIOS ORDEN
                     </button>
+                    ${esCoordinadorOAdmin && data.folio ? `
+                        <button type="button" onclick="mandarOPAlHistorial('${folioVal}')" style="flex: 1; min-width: 200px; background: #334155; color: white; border: none; padding: 16px 20px; border-radius: 8px; font-weight: 700; font-size: 14.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(51, 65, 85, 0.25); transition: background 0.2s;">
+                            <i class="ph ph-archive-box"></i> 📦 Mandar al Historial
+                        </button>
+                    ` : ''}
                 </div>
             ` : ''}
         </form>
@@ -1410,6 +1455,7 @@ async function cargarDetalleOP(folioId) {
             cronogramas: Array.isArray(data.cronogramas_vinculados) ? data.cronogramas_vinculados : []
         };
         window.opFotosEvidenciaActuales = Array.isArray(data.fotos_evidencia) ? data.fotos_evidencia : [];
+        window.opHabilitadaTemporalmenteFolio = data.habilitada_para_edicion ? data.folio : null;
 
         container.innerHTML = generarHtmlFormularioOP(data, false);
 
@@ -1478,6 +1524,109 @@ async function cargarDetalleOPHistorico(folioId) {
         container.innerHTML = `<p style="color: #ef4444; text-align: center; padding: 20px;">Error al obtener los datos de la orden histórica: ${error.message}</p>`;
     }
 }
+
+// -------------------------------------------------------------
+// Habilitar OP del Histórico para Edición / Evidencias
+// -------------------------------------------------------------
+async function habilitarOPParaEdicion(folio) {
+    if (!folio) {
+        alert("⚠️ No se ha seleccionado una OP válida.");
+        return;
+    }
+    const rol = (usuarioLogueado?.rol || '').toUpperCase();
+    const esPermitido = rol.includes('ADMIN') || rol.includes('COORDINADOR') || rol.includes('COORDINACION') || rol.includes('PRODUCCION');
+    if (!esPermitido) {
+        alert("⛔ Solo el personal con rol de Coordinador o Administrador puede habilitar OPs del histórico.");
+        return;
+    }
+
+    const confirmar = confirm(`¿Estás seguro de habilitar la OP "${folio}" para agregar evidencias (fotos/videos) o editar información?\n\nLa orden pasará al Panel de OPs Activas.`);
+    if (!confirmar) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/eventos/habilitar-edicion`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                folio: folio,
+                usuario: usuarioLogueado?.nombre_completo || "COORDINADOR",
+                rol: rol
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+            alert(`✅ ${data.mensaje}`);
+            // Recargar catálogo de folios
+            await inicializarModuloOP();
+            // Cambiar a la pestaña de OPs Activas
+            cambiarPestanaOP('activas');
+            // Seleccionar y cargar la orden habilitada en el panel activo
+            const selActivas = document.getElementById('select-folios-op');
+            if (selActivas) {
+                selActivas.value = folio;
+                await cargarDetalleOP(folio);
+            }
+        } else {
+            alert(`❌ Error al habilitar OP: ${data.detail || data.mensaje || 'Error en el servidor'}`);
+        }
+    } catch (err) {
+        console.error("Error al habilitar OP:", err);
+        alert(`❌ Error de conexión al habilitar la OP: ${err.message}`);
+    }
+}
+
+// -------------------------------------------------------------
+// Mandar OP al Histórico (Archivar / Modo Solo Lectura)
+// -------------------------------------------------------------
+async function mandarOPAlHistorial(folio, mostrarConfirmacion = true) {
+    if (!folio) {
+        alert("⚠️ No se ha especificado el folio de la OP.");
+        return;
+    }
+    const rol = (usuarioLogueado?.rol || '').toUpperCase();
+    const esPermitido = rol.includes('ADMIN') || rol.includes('COORDINADOR') || rol.includes('COORDINACION') || rol.includes('PRODUCCION');
+    if (!esPermitido) {
+        alert("⛔ Solo el personal con rol de Coordinador o Administrador puede archivar OPs en el histórico.");
+        return;
+    }
+
+    if (mostrarConfirmacion) {
+        const confirmar = confirm(`¿Estás seguro de enviar la OP "${folio}" al Archivo Histórico?\n\nLa orden quedará en la Bóveda Histórica en modo de solo lectura.`);
+        if (!confirmar) return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/eventos/mandar-al-historial`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                folio: folio,
+                usuario: usuarioLogueado?.nombre_completo || "COORDINADOR",
+                rol: rol
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+            alert(`📦 ${data.mensaje}`);
+            window.opHabilitadaTemporalmenteFolio = null;
+            // Recargar catálogo de folios
+            await inicializarModuloOP();
+            // Cambiar a la pestaña de Bóveda Histórica
+            cambiarPestanaOP('historico');
+            const selHist = document.getElementById('select-folios-historicos');
+            if (selHist) {
+                selHist.value = folio;
+                await cargarDetalleOPHistorico(folio);
+            }
+        } else {
+            alert(`❌ Error al archivar OP: ${data.detail || data.mensaje || 'Error en el servidor'}`);
+        }
+    } catch (err) {
+        console.error("Error al archivar OP:", err);
+        alert(`❌ Error de conexión al archivar la OP: ${err.message}`);
+    }
+}
+
 
 // -------------------------------------------------------------
 // Bitácora de Gira y Horas de Locación
@@ -1751,6 +1900,16 @@ async function guardarOrdenOP(event) {
 
         if (respuesta.ok && resultado.status === "SUCCESS") {
             alert(`✅ ¡Orden de Producción "${folio || nombre_evento}" guardada exitosamente!`);
+
+            // Si la OP fue habilitada temporalmente desde el histórico, sugerir regresarla al archivo histórico
+            if (window.opHabilitadaTemporalmenteFolio && window.opHabilitadaTemporalmenteFolio === folio) {
+                const regresar = confirm(`¿Deseas mandar la OP "${folio}" de nuevo al Archivo Histórico ahora que guardaste los cambios/evidencias?`);
+                if (regresar) {
+                    await mandarOPAlHistorial(folio, false);
+                    return;
+                }
+            }
+
             // Recargar folios y seleccionar el folio guardado
             await inicializarModuloOP();
             const selectFolios = document.getElementById('select-folios-op');

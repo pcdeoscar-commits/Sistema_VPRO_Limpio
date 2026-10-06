@@ -117,6 +117,16 @@ def main():
             print(" [OK con advertencias]")
             exitos += 1
 
+    print("\n--- 3. Verificando migraciones y ajustes automáticos ---")
+    try:
+        subprocess.run([
+            psql_cmd, "-U", db_user, "-h", db_host, "-p", db_port, "-d", "db_eventos",
+            "-c", "ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS habilitada_para_edicion BOOLEAN DEFAULT FALSE;"
+        ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        print("✔ Columna 'habilitada_para_edicion' verificada en public.eventos (db_eventos).")
+    except Exception:
+        pass
+
     print("\n" + "=" * 70)
     print(f"🎉 RESTAURACIÓN COMPLETADA: {exitos}/{len(DATABASES)} bases de datos listas.")
     print("El sistema VPRO ya puede conectarse con todos sus módulos operativos.")

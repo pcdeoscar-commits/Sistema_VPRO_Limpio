@@ -55,20 +55,79 @@
             box-shadow: 4px 0 24px rgba(0,0,0,0.5); /* Sombra elegante */
         }
 
-        .brand {
-            display: flex; align-items: center; gap: 16px;
-            color: white; font-size: 18px; font-weight: 700;
-            margin-bottom: 40px; padding-left: 8px;
+        /* --- BRAND / BANNER INSTITUCIONAL CON SELLO ISO --- */
+        .brand-container {
+            margin-bottom: 24px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* En modo colapsado (78px): Sello ISO estilizado institucional */
+        .brand-collapsed {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .brand-collapsed:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.05);
+        }
+        .brand-iso-mini {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+        }
+
+        /* En modo expandido (270px): Banner institucional tricolor con ISO */
+        .brand-expanded {
+            display: none;
+            opacity: 0;
+            width: 100%;
+            transition: opacity 0.25s ease-in-out;
+        }
+        .brand-banner-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .brand-banner-img:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
         }
 
         /* Oculta los textos suavemente */
-        .brand-text, .nav-text, .nav-badge { 
+        .nav-text, .nav-badge { 
             opacity: 0; 
             transition: opacity 0.2s; 
         }
         
-        /* Muestra los textos cuando la barra se expande */
-        .sidebar:hover .brand-text, 
+        /* Muestra los textos y el banner cuando la barra se expande */
+        .sidebar:hover .brand-collapsed {
+            display: none;
+            opacity: 0;
+        }
+        .sidebar:hover .brand-expanded {
+            display: block;
+            opacity: 1;
+        }
         .sidebar:hover .nav-text, 
         .sidebar:hover .nav-badge { 
             opacity: 1; 
@@ -163,17 +222,6 @@
 
         .navbar-actions { display: flex; gap: 8px; align-items: center; }
 
-        .brand {
-            color: white;
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 40px;
-            padding-left: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
         .sidebar-menu {
             flex: 1; 
             overflow-y: auto; 
@@ -992,10 +1040,16 @@
 
     <!-- SIDEBAR RETRÁCTIL INTELIGENTE -->
     <div class="sidebar" id="sidebar" style="display: none;">
-        <div class="brand">
-            <span style="background: var(--accent-color); padding: 4px 8px; border-radius: 6px; font-size: 14px; min-width: 28px; text-align: center;">V</span>
-            <span class="brand-text">VPRO Workspace</span>
+        <!-- BANNER INSTITUCIONAL VPRO + CERTIFICACIÓN ISO 9001:2015 -->
+        <div class="brand-container" onclick="cambiarVista('vista-inicio')" title="VPRO Workspace - Empresa Certificada ISO 9001:2015">
+            <div class="brand-collapsed">
+                <img src="vendor/img/vpro_iso_badge.png" alt="ISO 9001:2015" class="brand-iso-mini">
+            </div>
+            <div class="brand-expanded">
+                <img src="vendor/img/vpro_banner_institucional.png" alt="VPRO Workspace Institucional" class="brand-banner-img">
+            </div>
         </div>
+
         
         <div class="sidebar-menu">
             <div class="nav-item active" data-roles="todos" onclick="cambiarVista('vista-inicio')">

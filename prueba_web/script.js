@@ -4,11 +4,9 @@
 // ==============================================================================
 
 // 1. CONFIGURACIÓN Y VARIABLES GLOBALES
-const API_URL = localStorage.getItem("vpro_api_url") || (
-    (!window.location.origin || window.location.origin === "null" || window.location.port === "5500")
-        ? `${window.location.protocol === "https:" ? "https:" : "http:"}//${window.location.hostname || "localhost"}:8521`
-        : window.location.origin
-); 
+const API_URL = (window.location.origin && window.location.origin !== "null" && window.location.port !== "5500")
+    ? window.location.origin
+    : (localStorage.getItem("vpro_api_url") || `${window.location.protocol === "https:" ? "https:" : "http:"}//${window.location.hostname || "localhost"}:8521`); 
 
 let usuarioLogueado = null;
 let empleadoSeleccionado = null;
@@ -45,7 +43,7 @@ async function cargarEmpleados() {
             const nombreFormateado = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
 
             tarjeta.innerHTML = `
-                <img src="${urlFoto}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'" alt="Foto">
+                <img src="${urlFoto}" onerror="this.src='vendor/img/avatar_default.png'" alt="Foto">
                 <div class="card-info">
                     <h3>${nombreFormateado}</h3>
                     <p>${emp.depto || 'SISTEMAS'}</p>
@@ -10386,7 +10384,7 @@ function renderizarExpedienteCompletoModal(datos) {
     let html = `
         <!-- FICHA PRINCIPAL -->
         <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; padding: 20px 24px; color: white; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.1);">
-            <img src="${foto}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'" style="width: 86px; height: 86px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8;">
+            <img src="${foto}" onerror="this.src='vendor/img/avatar_default.png'" style="width: 86px; height: 86px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8;">
             <div style="flex: 1; min-width: 250px;">
                 <h2 style="margin: 0 0 4px 0; font-size: 22px; color: #ffffff;">${emp.nombre || '--'}</h2>
                 <div style="font-size: 13.5px; color: #94a3b8; display: flex; flex-wrap: wrap; gap: 14px; margin-top: 4px;">

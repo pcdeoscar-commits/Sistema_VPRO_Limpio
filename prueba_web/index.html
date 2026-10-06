@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VPRO Workspace</title>
-    <!-- Tipografía moderna Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Íconos modernos Phosphor -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <!-- Librería Chart.js para Analítica y Gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tipografía moderna Inter (100% Local Offline) -->
+    <link rel="stylesheet" href="vendor/fonts/inter.css">
+    <!-- Íconos modernos Phosphor (100% Local Offline) -->
+    <link rel="stylesheet" href="vendor/phosphor/phosphor.css">
+    <!-- Librería Chart.js para Analítica y Gráficos (100% Local Offline) -->
+    <script src="vendor/chartjs/chart.umd.min.js"></script>
     <style>
         /* Variables de color estilo SaaS (Minimalismo y Acento) */
         :root {
@@ -1152,7 +1152,7 @@
                         <div class="kiosco-body">
                             <!-- Columna Izquierda: Perfil Escaneado -->
                             <div class="kiosco-perfil" id="kiosco-perfil-scan">
-                                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="scan-foto" alt="Foto">
+                                <img src="vendor/img/avatar_default.png" id="scan-foto" alt="Foto">
                                 <h3 id="scan-nombre" style="margin: 10px 0 0 0; color: #0f172a; font-size: 16px;">Esperando lectura...</h3>
                                 <p id="scan-id" style="color: var(--text-muted); font-size: 12px; margin: 4px 0 16px 0;">--</p>
                                 <div id="scan-badge" style="background: #e5e7eb; color: #374151; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 13px;">--</div>
@@ -1209,7 +1209,7 @@
                         <!-- Card de Gafete / Credencial -->
                         <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 14px; padding: 24px; color: white; display: flex; flex-wrap: wrap; gap: 24px; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.15); margin-bottom: 28px;">
                             <div style="text-align: center; min-width: 140px;">
-                                <img id="credencial-foto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Foto Colaborador" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                                <img id="credencial-foto" src="vendor/img/avatar_default.png" alt="Foto Colaborador" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
                                 <div id="credencial-badge-rol" style="background: #0284c7; color: white; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; margin-top: 10px; text-transform: uppercase;">COLABORADOR</div>
                             </div>
                             <div style="flex: 2; min-width: 250px;">
@@ -3984,7 +3984,7 @@
                     
                     <!-- Ficha Resumen de Cabecera -->
                     <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 14px; padding: 20px 24px; color: white; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.12); margin-bottom: 24px;">
-                        <img id="rh-ficha-foto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Foto Empleado" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8;">
+                        <img id="rh-ficha-foto" src="vendor/img/avatar_default.png" alt="Foto Empleado" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8;">
                         <div style="flex: 1; min-width: 240px;">
                             <h3 id="rh-ficha-nombre" style="margin: 0 0 4px 0; font-size: 20px; color: #ffffff;">Nombre del Empleado</h3>
                             <div style="font-size: 13px; color: #94a3b8;">

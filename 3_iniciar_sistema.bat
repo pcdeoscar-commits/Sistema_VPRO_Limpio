@@ -24,12 +24,17 @@ timeout /t 3 > nul
 echo Abriendo navegador en http://localhost:8521 ...
 start http://localhost:8521
 
+set LAN_IP=172.16.0.20
+for /f %%i in ('python -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(('10.255.255.255',1)); print(s.getsockname()[0]); s.close()" 2^>nul') do (
+    set LAN_IP=%%i
+)
+
 echo.
 echo =====================================================================
-echo 🚀 VPRO WORKSPACE ESTÁ EN LÍNEA EN EL PUERTO 8521:
+echo 🚀 VPRO WORKSPACE ESTÁ EN LÍNEA EN EL PUERTO 8521 (100%% OFFLINE / INTRANET):
 echo ---------------------------------------------------------------------
 echo • Frontend Web (Dashboard):  http://localhost:8521
-echo • Acceso en Red Local (LAN): http://172.16.0.20:8521
+echo • Acceso en Red Local (LAN): http://%LAN_IP%:8521
 echo • Backend API (Swagger UI):  http://localhost:8521/docs
 echo • Salud del Servidor:        http://localhost:8521/health
 echo =====================================================================

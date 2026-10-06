@@ -252,37 +252,47 @@ def renderizar_modulo(API_URL, FOTOS_PERSONAL_DIR):
                         except: return "🏠 Descansa"
 
                     records = []
-                    empleados_ordenados = sorted(empleados_data, key=lambda x: x['nombre'])
+                    # Mapear empleados activos válidos
+                    map_emps = {str(emp.get('id_empleado', '')).strip(): emp for emp in empleados_data}
                     
-                    for emp in empleados_ordenados:
-                        id_emp = str(emp['id_empleado']).strip()
-                        nom = emp['nombre']
-                        m_in, m_out, v_in, v_out = "--:--:--", "--:--:--", "--:--:--", "--:--:--"
-                        m_in_est, v_in_est, v_out_est = "", "", ""
+                    if not df_asist.empty:
+                        # Ordenar por id_registro ascendente para mostrar en orden de llegada
+                        df_asist_sorted = df_asist.copy()
+                        if 'id_registro' in df_asist_sorted.columns:
+                            df_asist_sorted = df_asist_sorted.sort_values(by='id_registro', ascending=True)
                         
-                        if not df_asist.empty:
-                            emp_records = df_asist[df_asist['id_empleado'].astype(str).str.strip() == id_emp]
-                            if not emp_records.empty:
-                                row = emp_records.iloc[0] 
-                                m_in = clean_time_full(row.get('hora_entrada'))
-                                m_out = clean_time_full(row.get('hora_salida'))
-                                v_in = clean_time_full(row.get('hora_entrada_v'))
-                                v_out = clean_time_full(row.get('hora_salida_v'))
-                                m_in_est = calc_estatus_entrada(m_in, "Matutino") if m_in != "--:--:--" else ""
-                                v_in_est = calc_estatus_entrada(v_in, "Vespertino") if v_in != "--:--:--" else ""
-                                v_out_est = calc_estatus_salida_vesp(v_out) if v_out != "--:--:--" else ""
-                        
-                        records.append({
-                            ("", "ID"): id_emp,
-                            ("", "Empleado"): nom,
-                            ("TURNO MATUTINO", "Entrada"): m_in,
-                            ("TURNO MATUTINO", "Estatus"): m_in_est,
-                            ("TURNO MATUTINO", "Salida"): m_out,
-                            ("TURNO VESPERTINO", "Entrada"): v_in,
-                            ("TURNO VESPERTINO", "Estatus"): v_in_est,
-                            ("TURNO VESPERTINO", "Salida"): v_out,
-                            ("TURNO VESPERTINO", "Estatus "): v_out_est
-                        })
+                        for _, row in df_asist_sorted.iterrows():
+                            id_emp = str(row.get('id_empleado', '')).strip()
+                            if id_emp not in map_emps:
+                                continue
+                            emp = map_emps[id_emp]
+                            nom = emp['nombre']
+                            
+                            m_in = clean_time_full(row.get('hora_entrada'))
+                            m_out = clean_time_full(row.get('hora_salida'))
+                            v_in = clean_time_full(row.get('hora_entrada_v'))
+                            v_out = clean_time_full(row.get('hora_salida_v'))
+                            estatus_incidencia = str(row.get('estatus', '')).strip().upper()
+                            
+                            # Solo mostrar si tiene al menos una checada registrada o incidencia RH autorizada
+                            if all(h == "--:--:--" for h in [m_in, m_out, v_in, v_out]) and estatus_incidencia not in ['VACACIONES', 'PERMISO', 'INCAPACIDAD']:
+                                continue
+                                
+                            m_in_est = calc_estatus_entrada(m_in, "Matutino") if m_in != "--:--:--" else ""
+                            v_in_est = calc_estatus_entrada(v_in, "Vespertino") if v_in != "--:--:--" else ""
+                            v_out_est = calc_estatus_salida_vesp(v_out) if v_out != "--:--:--" else ""
+                            
+                            records.append({
+                                ("", "ID"): id_emp,
+                                ("", "Empleado"): nom,
+                                ("TURNO MATUTINO", "Entrada"): m_in,
+                                ("TURNO MATUTINO", "Estatus"): m_in_est,
+                                ("TURNO MATUTINO", "Salida"): m_out,
+                                ("TURNO VESPERTINO", "Entrada"): v_in,
+                                ("TURNO VESPERTINO", "Estatus"): v_in_est,
+                                ("TURNO VESPERTINO", "Salida"): v_out,
+                                ("TURNO VESPERTINO", "Estatus "): v_out_est
+                            })
                         
                     df_final_turnos = pd.DataFrame(records)
                     
@@ -298,6 +308,8 @@ def renderizar_modulo(API_URL, FOTOS_PERSONAL_DIR):
                             return ''
                             
                         st.dataframe(df_final_turnos.style.map(resaltar_sabana_kiosko), use_container_width=True, height=600, hide_index=True)
+                    else:
+                        st.info("🕒 Esperando checadas del día de hoy. La lista se irá formando conforme el personal registre su asistencia.")
                 else:
                     st.error("Error al cargar datos del servidor.")
             except Exception as e:

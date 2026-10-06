@@ -483,7 +483,7 @@ function iniciarRelojKiosco() {
     intervaloReloj = setInterval(actualizar, 1000);
 }
 
-async function cargarMatrizKiosco() {
+async function cargarMatrizKiosco(idRecienRegistrado = null) {
     const tbody = document.getElementById("tabla-asistencia-body");
     if (!tbody) return;
 
@@ -500,17 +500,73 @@ async function cargarMatrizKiosco() {
         const registrosHoy = asistencia.filter(r => r.fecha && r.fecha.startsWith(hoyStr));
         tbody.innerHTML = ""; 
 
-        const empleadosValidos = empleados.filter(e => 
-            String(e.id_empleado).trim() !== "529" && 
-            e.email && e.email.includes("@") && 
-            !String(e.estatus || '').toUpperCase().includes("BAJA")
-        ).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+        // 1. Filtrar empleados activos (excluyendo bajas, inactivos, proveedores, externos)
+        const esValidoActivo = (e) => {
+            if (!e) return false;
+            const idE = String(e.id_empleado || '').trim();
+            if (idE === "529" || !idE) return false;
+            const email = String(e.email || '').trim();
+            if (!email.includes("@")) return false;
+            const todoTexto = `${e.estatus || ''} ${e.estatus_empleado || ''} ${e.rol || ''} ${e.depto || ''}`.toUpperCase();
+            if (todoTexto.includes("BAJA") || todoTexto.includes("INACT") || todoTexto.includes("PROV") || todoTexto.includes("EXTERN")) return false;
+            return true;
+        };
 
-        empleadosValidos.forEach(emp => {
-            const reg = registrosHoy.find(r => String(r.id_empleado).trim() === String(emp.id_empleado).trim());
-            
+        const mapEmpleados = new Map();
+        empleados.forEach(e => {
+            if (esValidoActivo(e)) {
+                mapEmpleados.set(String(e.id_empleado).trim(), e);
+            }
+        });
+
+        // 2. Determinar si un registro tiene checada real o incidencia RH
+        const esHoraValida = (h) => (h && h !== "None" && h !== "null" && h !== "--:--" && String(h).trim() !== "");
+        const tieneRegistroActivoHoy = (r) => {
+            if (!r) return false;
+            const est = String(r.estatus || '').toUpperCase();
+            if (['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(est)) return true;
+            return esHoraValida(r.hora_entrada) || esHoraValida(r.hora_salida) || esHoraValida(r.hora_entrada_v) || esHoraValida(r.hora_salida_v);
+        };
+
+        // 3. Filtrar registros de hoy: SOLO empleados activos que ya registraron asistencia o incidencia
+        const registrosFiltrados = registrosHoy.filter(r => {
+            const idE = String(r.id_empleado || '').trim();
+            return mapEmpleados.has(idE) && tieneRegistroActivoHoy(r);
+        });
+
+        // 4. Si aún no hay registros hoy, mostrar estado esperando checadas
+        if (registrosFiltrados.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 13.5px;">
+                        <i class="ph ph-clock-countdown" style="font-size: 28px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
+                        <span>Esperando checadas del día de hoy. La lista se irá formando conforme el personal registre su asistencia.</span>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // 5. Ordenar cronológicamente conforme se van registrando (por id_registro ASC o primera hora)
+        registrosFiltrados.sort((a, b) => {
+            const idA = Number(a.id_registro) || 0;
+            const idB = Number(b.id_registro) || 0;
+            if (idA > 0 && idB > 0 && idA !== idB) return idA - idB;
+            const horaA = String(a.hora_entrada || a.hora_entrada_v || '99:99');
+            const horaB = String(b.hora_entrada || b.hora_entrada_v || '99:99');
+            return horaA.localeCompare(horaB);
+        });
+
+        // 6. Renderizar únicamente a quienes ya checaron hoy
+        registrosFiltrados.forEach(reg => {
+            const emp = mapEmpleados.get(String(reg.id_empleado).trim());
+            if (!emp) return;
+
+            const esReciente = (idRecienRegistrado && String(emp.id_empleado).trim() === String(idRecienRegistrado).trim());
+            const estiloFila = esReciente ? 'style="background: #f0fdf4; border-left: 4px solid #10b981; transition: background 0.6s ease;"' : '';
+
             // 🌴 Si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad
-            if (reg && ['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(String(reg.estatus || '').toUpperCase())) {
+            if (['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(String(reg.estatus || '').toUpperCase())) {
                 const est = String(reg.estatus).toUpperCase();
                 let badgeTxt = '🌴 EN VACACIONES AUTORIZADAS';
                 let bgStyle = 'background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;';
@@ -523,7 +579,7 @@ async function cargarMatrizKiosco() {
                 }
 
                 tbody.innerHTML += `
-                    <tr>
+                    <tr ${estiloFila}>
                         <td style="font-weight: 600; color: var(--text-main);">${emp.nombre}</td>
                         <td colspan="4" style="text-align: center; font-weight: 700; font-size: 12px; padding: 6px; ${bgStyle} border-radius: 6px;">
                             ${badgeTxt}
@@ -533,21 +589,17 @@ async function cargarMatrizKiosco() {
                 return;
             }
 
-            let inMat = "--:--", outMat = "--:--", inVesp = "--:--", outVesp = "--:--";
-            
-            if (reg) {
-                const limpiaHora = (h) => (h && h !== "None" && h !== "null" && h !== "--:--") ? String(h).substring(0, 5) : "--:--";
-                inMat = limpiaHora(reg.hora_entrada);
-                outMat = limpiaHora(reg.hora_salida);
-                inVesp = limpiaHora(reg.hora_entrada_v);
-                outVesp = limpiaHora(reg.hora_salida_v);
-            }
+            const limpiaHora = (h) => esHoraValida(h) ? String(h).substring(0, 5) : "--:--";
+            const inMat = limpiaHora(reg.hora_entrada);
+            const outMat = limpiaHora(reg.hora_salida);
+            const inVesp = limpiaHora(reg.hora_entrada_v);
+            const outVesp = limpiaHora(reg.hora_salida_v);
 
             const stError = "color: #9f1239; background: #ffe4e6; font-weight: bold;";
             const tdOutMat = (outMat === "--:--" && inMat !== "--:--") ? `<td style="${stError}">--:--</td>` : `<td>${outMat}</td>`;
 
             tbody.innerHTML += `
-                <tr>
+                <tr ${estiloFila}>
                     <td style="font-weight: 600; color: var(--text-main);">${emp.nombre}</td>
                     <td>${inMat}</td>
                     ${tdOutMat}
@@ -772,7 +824,7 @@ function inicializarLectorKiosco() {
                     mostrarAlerta(`❌ ${resultado.detail || "Error al registrar."}`, "#fee2e2", "#991b1b", "#ef4444");
                 }
 
-                cargarMatrizKiosco();
+                cargarMatrizKiosco(qrCode);
             } catch (error) { 
                 reproducirBeepKiosco('warn');
                 mostrarAlerta("📡 Error de conexión con el servidor.", "#fee2e2", "#991b1b", "#ef4444"); 

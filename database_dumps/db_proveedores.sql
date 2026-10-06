@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 0QiP4gZgfE2a6IELRd2HLcTRGAwyL0diQNIlYBtngpPbXggvrWfrGu4ggmvTvdu
+\restrict 9vPmS7VLXVCasvBKcNjiGCo9a0WC1v3Z7fdzGbj6nyAMdUOxf7qWoKR9VP7a5ag
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -26,7 +26,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: proveedores; Type: TABLE; Schema: public; Owner: postgres
+-- Name: proveedores; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.proveedores (
@@ -43,23 +43,21 @@ CREATE TABLE public.proveedores (
 );
 
 
-ALTER TABLE public.proveedores OWNER TO postgres;
-
 --
--- Data for Name: proveedores; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: proveedores; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.proveedores (nombre_del_proveedor, gte_gral, estado, ciudad, tel_de_ofna, email_de_empresa, nombre_contacto_princ, cel_contact_princ, nombre_contacto_a, cel_contact_a) FROM stdin;
-ELEVOX	Eleazar	Sinaloa	Culiacan	6671234567	elevox@elevox.com	Minion	66723467890	Juanito	6673456789
 EVENMEX	EvenMex	Sinaloa	Culiacan	6674567890	EVENM@evemex.com	EVENMExP	66756789012	EVENMEXA	6676789012
 METRO	M	ME	MEt	4444123456	METRO@metro.com	METR_P	5555756670	ME_Al	6666789012
 SERVIPLUS-KUWA	Ponchote	Sinaloa	Culiacan	6677890123	SERVIP@servip.com	SERVIPL_P	6678901234	SERVIPLUS	6679012345
 VIEWHAUS SISTEMAS  - XXX	VIEWHAUS SISTEMA	VIEWHAUS SISTEM	VIEWHAUS SISTE	8899012345	VIEWHAUS SIS	VIEWHAUS SI	8890123456	VIEWHAUS	7788990011
+ELEVOX	Eleazar	Sinaloa	Culiacan	6671234567	elevox@elevox.com	Minion	66723467890	Juanito	6673456789
 \.
 
 
 --
--- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.proveedores
@@ -70,5 +68,5 @@ ALTER TABLE ONLY public.proveedores
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 0QiP4gZgfE2a6IELRd2HLcTRGAwyL0diQNIlYBtngpPbXggvrWfrGu4ggmvTvdu
+\unrestrict 9vPmS7VLXVCasvBKcNjiGCo9a0WC1v3Z7fdzGbj6nyAMdUOxf7qWoKR9VP7a5ag
 

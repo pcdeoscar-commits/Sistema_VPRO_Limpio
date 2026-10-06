@@ -1,0 +1,16 @@
+[Unit]
+Description=VPRO Workspace ERP - Servidor Unificado (Backend API + Frontend Web)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vpro
+EnvironmentFile=/opt/vpro/.env
+ExecStart=/opt/vpro/venv/bin/python -m uvicorn api_core:app --host 0.0.0.0 --port 8521 --workers 4
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

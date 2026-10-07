@@ -10497,6 +10497,12 @@ async function subirNuevaEvaluacionRH() {
 // ==============================================================================
 let datosExpedienteCompletoActual = null;
 
+async function verMiExpedientePropio() {
+    if (!usuarioLogueado) return;
+    idEmpleadoRHActual = usuarioLogueado.id_empleado;
+    await abrirExpedienteCompletoRH();
+}
+
 async function abrirExpedienteCompletoRH() {
     if (!idEmpleadoRHActual) {
         alert("⚠️ Por favor primero busca o selecciona a un colaborador para abrir su expediente integral.");
@@ -10841,9 +10847,11 @@ function renderizarExpedienteCompletoModal(datos) {
                     <i class="ph ph-folder-open" style="color: var(--accent-color);"></i>
                     <span>6. Bóveda Integral de Documentos Digitales Oficiales (${docs.length} archivos)</span>
                 </h4>
+                ${['ADMIN', 'COORDINADOR', 'RH'].includes(usuarioLogueado.rol) ? `
                 <button type="button" onclick="cerrarExpedienteCompletoRH(); cambiarPestanaRH('documentos');" style="background: #e2e8f0; color: #1e293b; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
                     ➕ Subir Más Documentos
                 </button>
+                ` : ''}
             </div>
             ${docs.length === 0 ? `
                 <div style="text-align: center; padding: 30px; color: #94a3b8; font-size: 13px;">

@@ -11104,12 +11104,14 @@ function cambiarPestanaTransferencias(pestana) {
     const subvistas = {
         'enviar': document.getElementById('subvista-transfer-enviar'),
         'recibidos': document.getElementById('subvista-transfer-recibidos'),
-        'enviados': document.getElementById('subvista-transfer-enviados')
+        'enviados': document.getElementById('subvista-transfer-enviados'),
+        'historial': document.getElementById('subvista-transfer-historial')
     };
     const botones = {
         'enviar': document.getElementById('tab-transfer-btn-enviar'),
         'recibidos': document.getElementById('tab-transfer-btn-recibidos'),
-        'enviados': document.getElementById('tab-transfer-btn-enviados')
+        'enviados': document.getElementById('tab-transfer-btn-enviados'),
+        'historial': document.getElementById('tab-transfer-btn-historial')
     };
 
     Object.keys(subvistas).forEach(k => {
@@ -11131,6 +11133,8 @@ function cambiarPestanaTransferencias(pestana) {
         cargarTransferenciasRecibidos();
     } else if (pestana === 'enviados') {
         cargarTransferenciasEnviados();
+    } else if (pestana === 'historial') {
+        cargarHistorialTransferencias();
     }
 }
 
@@ -11642,5 +11646,54 @@ async function eliminarTransferencia(idTransferencia) {
         }
     } catch (e) {
         alert("Error de conexión al eliminar transferencia.");
+    }
+}
+
+async function cargarHistorialTransferencias() {
+    if (!usuarioLogueado) return;
+    const tbody = document.getElementById("tabla-transfer-historial-body");
+    if (!tbody) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/transferencias/historial/${usuarioLogueado.id_empleado}`);
+        if (!res.ok) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 24px;">Error al consultar el historial.</td></tr>';
+            return;
+        }
+
+        const historial = await res.json();
+        if (!historial || historial.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 32px;">No hay historial de transferencias.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = historial.map(item => {
+            const esEnvio = item.tipo === 'ENVIADO';
+            const iconoTipo = esEnvio ? '<i class="ph ph-arrow-up-right" style="color: #10b981;"></i>' : '<i class="ph ph-arrow-down-left" style="color: #3b82f6;"></i>';
+            const colorTipo = esEnvio ? '#10b981' : '#3b82f6';
+            const dePara = esEnvio ? `Para: ${item.nombre_destino}` : `De: ${item.nombre_origen}`;
+            const infoRed = item.red_info === 'LAN' ? '<span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">LAN</span>' : '<span style="background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">EXTERNO</span>';
+
+            return `
+                <tr>
+                    <td style="font-weight: 600; color: ${colorTipo}; font-size: 13px;">
+                        ${iconoTipo} ${item.tipo}
+                    </td>
+                    <td style="font-weight: 600; color: #0f172a; font-size: 13px;">
+                        ${dePara}
+                    </td>
+                    <td style="font-weight: 600; color: #1e3a8a; max-width: 250px; word-break: break-all; font-size: 13px;">
+                        <i class="ph ph-file" style="color: #64748b; margin-right: 4px;"></i>
+                        ${item.nombre_archivo_original}
+                    </td>
+                    <td style="white-space: nowrap;"><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155;">${item.tamano_legible}</span></td>
+                    <td style="font-size: 12.5px; color: #475569; white-space: nowrap;">${item.fecha_subida_str || ''}</td>
+                    <td style="text-align: center;">${infoRed}</td>
+                </tr>
+            `;
+        }).join("");
+
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 24px;">Error al cargar el historial.</td></tr>';
     }
 }

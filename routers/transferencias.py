@@ -1,5 +1,14 @@
 import os
 import re
+import ipaddress
+
+def is_lan(ip_str: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return ip.is_private or ip.is_loopback
+    except Exception:
+        return False
+
 import time
 import uuid
 import datetime
@@ -46,13 +55,27 @@ def _asegurar_tabla_transferencias():
                     veces_descargado INTEGER DEFAULT 0,
                     fecha_primer_descarga TIMESTAMP,
                     fecha_limite_borrado TIMESTAMP,
-                    estatus VARCHAR(50) DEFAULT 'DISPONIBLE'
+                    estatus VARCHAR(50) DEFAULT 'DISPONIBLE',
+                    ip_origen VARCHAR(50),
+                    es_lan_origen BOOLEAN,
+                    ip_descarga VARCHAR(50),
+                    es_lan_descarga BOOLEAN
                 );
                 CREATE INDEX IF NOT EXISTS idx_archivos_destino ON public.archivos_compartidos (id_empleado_destino);
                 CREATE INDEX IF NOT EXISTS idx_archivos_origen ON public.archivos_compartidos (id_empleado_origen);
                 CREATE INDEX IF NOT EXISTS idx_archivos_paquete ON public.archivos_compartidos (folio_paquete);
                 CREATE INDEX IF NOT EXISTS idx_archivos_estatus ON public.archivos_compartidos (estatus);
             """))
+            
+            # Migración: Agregar nuevas columnas si la tabla ya existía
+            try:
+                conn.execute(text("ALTER TABLE public.archivos_compartidos ADD COLUMN ip_origen VARCHAR(50);"))
+                conn.execute(text("ALTER TABLE public.archivos_compartidos ADD COLUMN es_lan_origen BOOLEAN;"))
+                conn.execute(text("ALTER TABLE public.archivos_compartidos ADD COLUMN ip_descarga VARCHAR(50);"))
+                conn.execute(text("ALTER TABLE public.archivos_compartidos ADD COLUMN es_lan_descarga BOOLEAN;"))
+            except Exception:
+                pass # Las columnas ya existen
+                
     except Exception as e:
         print(f"[VPRO Transfer] Aviso al verificar tabla archivos_compartidos: {e}")
 
@@ -141,6 +164,7 @@ def obtener_destinatarios_activos():
 
 @router.post("/subir")
 async def subir_archivos_compartidos(
+    request: Request,
     id_empleado_origen: str = Form(...),
     nombre_origen: str = Form(...),
     id_empleado_destino: str = Form(...),
@@ -212,15 +236,20 @@ async def subir_archivos_compartidos(
         if not archivos_guardados:
             raise HTTPException(status_code=400, detail="Los archivos enviados están vacíos.")
 
+        ip_cliente = request.client.host if request and request.client else "unknown"
+        es_lan = is_lan(ip_cliente)
+
         query_insert = text("""
             INSERT INTO public.archivos_compartidos (
                 id_empleado_origen, nombre_origen, id_empleado_destino, nombre_destino,
                 nombre_archivo_original, nombre_archivo_fisico, tamano_bytes, tamano_legible,
-                tipo_mime, mensaje, folio_paquete, fecha_subida, descargado, veces_descargado, estatus
+                tipo_mime, mensaje, folio_paquete, fecha_subida, descargado, veces_descargado, estatus,
+                ip_origen, es_lan_origen
             ) VALUES (
                 :id_origen, :nom_origen, :id_destino, :nom_destino,
                 :nom_orig_file, :nom_fisico, :tam_bytes, :tam_leg,
-                :mime, :msg, :folio_paq, CURRENT_TIMESTAMP, FALSE, 0, 'DISPONIBLE'
+                :mime, :msg, :folio_paq, CURRENT_TIMESTAMP, FALSE, 0, 'DISPONIBLE',
+                :ip_origen, :es_lan_origen
             ) RETURNING id_transferencia
         """)
 
@@ -238,7 +267,9 @@ async def subir_archivos_compartidos(
                     "tam_leg": item["tamano_legible"],
                     "mime": item["tipo_mime"],
                     "msg": str(mensaje or "").strip(),
-                    "folio_paq": folio_paquete
+                    "folio_paq": folio_paquete,
+                    "ip_origen": ip_cliente,
+                    "es_lan_origen": es_lan
                 }
                 new_id = conn.execute(query_insert, params).scalar()
                 ids_generados.append(new_id)
@@ -411,7 +442,7 @@ def obtener_pendientes_notificacion(id_empleado: str):
         return {"total_pendientes": 0, "pendientes": [], "error": str(e)}
 
 @router.get("/descargar/{id_transferencia}")
-def descargar_archivo_compartido(id_transferencia: int):
+def descargar_archivo_compartido(id_transferencia: int, request: Request):
     """
     Inicia la descarga de un archivo compartido individual.
     Al descargarse:
@@ -419,6 +450,9 @@ def descargar_archivo_compartido(id_transferencia: int):
     - Fija 'fecha_primer_descarga = NOW()'.
     - Fija 'fecha_limite_borrado = NOW() + 7 horas'.
     """
+    ip_cliente = request.client.host if request and request.client else "unknown"
+    es_lan = is_lan(ip_cliente)
+
     try:
         with engine_personal.connect() as conn:
             reg = conn.execute(text("""
@@ -454,15 +488,27 @@ def descargar_archivo_compartido(id_transferencia: int):
                         veces_descargado = COALESCE(veces_descargado, 0) + 1,
                         fecha_primer_descarga = CURRENT_TIMESTAMP,
                         fecha_limite_borrado = CURRENT_TIMESTAMP + INTERVAL '7 hours',
-                        estatus = 'DESCARGADO'
+                        estatus = 'DESCARGADO',
+                        ip_descarga = :ip_descarga,
+                        es_lan_descarga = :es_lan_descarga
                     WHERE id_transferencia = :id_trans
-                """), {"id_trans": id_transferencia})
+                """), {
+                    "id_trans": id_transferencia,
+                    "ip_descarga": ip_cliente,
+                    "es_lan_descarga": es_lan
+                })
             else:
                 conn.execute(text("""
                     UPDATE public.archivos_compartidos
-                    SET veces_descargado = COALESCE(veces_descargado, 0) + 1
+                    SET veces_descargado = COALESCE(veces_descargado, 0) + 1,
+                        ip_descarga = :ip_descarga,
+                        es_lan_descarga = :es_lan_descarga
                     WHERE id_transferencia = :id_trans
-                """), {"id_trans": id_transferencia})
+                """), {
+                    "id_trans": id_transferencia,
+                    "ip_descarga": ip_cliente,
+                    "es_lan_descarga": es_lan
+                })
 
         return FileResponse(
             path=str(archivo_path),
@@ -602,3 +648,41 @@ def ejecutar_limpieza_manual():
     """Ejecuta de forma manual o bajo demanda la limpieza de archivos vencidos (>7 horas post descarga)."""
     eliminados = ejecutar_limpieza_expirados()
     return {"status": "SUCCESS", "archivos_eliminados": eliminados}
+
+@router.get("/historial/{id_empleado}")
+def obtener_historial_transferencias(id_empleado: str):
+    """Obtiene el historial de archivos enviados y recibidos por el empleado."""
+    try:
+        with engine_personal.connect() as conn:
+            registros = conn.execute(text("""
+                SELECT 
+                    id_transferencia, id_empleado_origen, nombre_origen, id_empleado_destino, nombre_destino,
+                    nombre_archivo_original, tamano_legible, fecha_subida, estatus,
+                    es_lan_origen, es_lan_descarga,
+                    CASE WHEN id_empleado_origen = :id_emp THEN 'ENVIADO' ELSE 'RECIBIDO' END as tipo
+                FROM public.archivos_compartidos
+                WHERE id_empleado_origen = :id_emp OR id_empleado_destino = :id_emp
+                ORDER BY fecha_subida DESC
+                LIMIT 100
+            """), {"id_emp": id_empleado}).mappings().all()
+
+        lista = []
+        for r in registros:
+            item = dict(r)
+            if item["fecha_subida"]:
+                item["fecha_subida_str"] = item["fecha_subida"].strftime("%d/%m/%Y %H:%M")
+            else:
+                item["fecha_subida_str"] = ""
+            
+            red_info = "WAN"
+            if item["tipo"] == "ENVIADO":
+                red_info = "LAN" if item["es_lan_origen"] else "WAN"
+            else:
+                red_info = "LAN" if item["es_lan_descarga"] else "WAN"
+            item["red_info"] = red_info
+                
+            lista.append(item)
+            
+        return lista
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

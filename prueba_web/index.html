@@ -1255,9 +1255,14 @@
                                 </h2>
                                 <p style="color: var(--text-muted); font-size: 13.5px; margin: 4px 0 0 0;">Presenta este código QR en la terminal física para registrar tus marcas diarias de asistencia.</p>
                             </div>
-                            <button onclick="cargarCredencialPersonal()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
-                                <i class="ph ph-arrows-clockwise"></i> Recargar
-                            </button>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="verMiExpedientePropio()" style="background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500; box-shadow: 0 2px 4px rgba(37,99,235,0.2);" title="Ver mi expediente laboral personal">
+                                    <i class="ph ph-folder-user"></i> Mi Expediente
+                                </button>
+                                <button onclick="cargarCredencialPersonal()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                                    <i class="ph ph-arrows-clockwise"></i> Recargar
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Card de Gafete / Credencial -->
@@ -5024,6 +5029,9 @@
                     <button type="button" id="tab-transfer-btn-enviados" onclick="cambiarPestanaTransferencias('enviados')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13.5px;">
                         <i class="ph ph-paper-plane-right"></i> Archivos Enviados
                     </button>
+                    <button type="button" id="tab-transfer-btn-historial" onclick="cambiarPestanaTransferencias('historial')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13.5px;">
+                        <i class="ph ph-clock-counter-clockwise"></i> Historial de Transferencias
+                    </button>
                 </div>
 
                 <!-- SUBVISTA 1: ENVIAR ARCHIVO -->
@@ -5135,6 +5143,27 @@
                             </thead>
                             <tbody id="tabla-transfer-enviados-body">
                                 <tr><td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">Cargando archivos enviados...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SUBVISTA 4: HISTORIAL DE TRANSFERENCIAS -->
+                <div id="subvista-transfer-historial" style="display: none;">
+                    <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <table class="tabla-vpro">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>De / Para</th>
+                                    <th>Archivo</th>
+                                    <th>Tamaño</th>
+                                    <th>Fecha</th>
+                                    <th>Red</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-transfer-historial-body">
+                                <tr><td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">Cargando historial...</td></tr>
                             </tbody>
                         </table>
                     </div>

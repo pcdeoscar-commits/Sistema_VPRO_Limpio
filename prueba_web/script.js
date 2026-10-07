@@ -11168,8 +11168,11 @@ async function cargarTransferenciasModulo() {
                 const actual = selectDestino.value;
                 selectDestino.innerHTML = '<option value="">-- Selecciona un colaborador activo --</option>' + 
                     empleados
-                        .filter(e => String(e.id_empleado).trim() !== String(usuarioLogueado.id_empleado).trim())
-                        .map(e => `<option value="${e.id_empleado}" data-nombre="${e.nombre}">${e.nombre} (${e.depto || 'General'} - ID ${e.id_empleado})</option>`)
+                        .map(e => {
+                            const esUsuarioActual = String(e.id_empleado).trim() === String(usuarioLogueado.id_empleado).trim();
+                            const textoNombre = esUsuarioActual ? `${e.nombre} (Tú / Guardar aquí)` : e.nombre;
+                            return `<option value="${e.id_empleado}" data-nombre="${e.nombre}">${textoNombre} (${e.depto || 'General'} - ID ${e.id_empleado})</option>`;
+                        })
                         .join("");
                 if (actual) selectDestino.value = actual;
             }

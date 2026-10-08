@@ -5165,6 +5165,13 @@ async function guardarEmpleadoForm() {
         return;
     }
 
+    if (!password.startsWith("$2b$")) {
+        if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[\W_]/.test(password)) {
+            alert("⚠️ La contraseña es demasiado simple. Debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.");
+            return;
+        }
+    }
+
     const payload = {
         id_empleado: id,
         nombre: nombre,

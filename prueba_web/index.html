@@ -5343,7 +5343,10 @@
             <h3 id="modal-nombre" style="margin: 0; font-size: 18px;">Usuario</h3>
             <p id="modal-depto" style="color: var(--text-muted); font-size: 12px; margin: 4px 0 16px 0;">DEPTO</p>
             
-            <input type="password" id="modal-password" placeholder="Ingresa tu contraseña" onkeydown="if(event.key==='Enter') verificarAcceso()">
+            <div style="position: relative; display: flex; align-items: center; width: 100%; max-width: 300px; margin: 0 auto 15px;">
+                <input type="password" id="modal-password" placeholder="Ingresa tu contraseña" style="width: 100%; padding-right: 35px; margin-bottom: 0;" onkeydown="if(event.key==='Enter') verificarAcceso()" oninput="document.getElementById('toggle-login-password').style.display = this.value.length > 0 ? 'block' : 'none'">
+                <i class="ph ph-eye" id="toggle-login-password" style="position: absolute; right: 10px; cursor: pointer; color: #64748b; display: none; font-size: 18px;" onclick="const input = document.getElementById('modal-password'); if (input.type === 'password') { input.type = 'text'; this.classList.remove('ph-eye'); this.classList.add('ph-eye-slash'); } else { input.type = 'password'; this.classList.remove('ph-eye-slash'); this.classList.add('ph-eye'); }" title="Mostrar/Ocultar contraseña"></i>
+            </div>
             <button class="btn-confirmar" onclick="verificarAcceso()">Entrar</button>
             <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
             <p id="modal-error" style="color: #dc2626; font-size: 13px; display: none; margin-top: 10px;"></p>

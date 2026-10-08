@@ -26,10 +26,15 @@ def obtener_empleados():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en BD: {str(e)}")
 
+from core.security import encriptar_password
+
 @router.post("/guardar")
 def guardar_empleado(payload: dict):
     """Crea o actualiza el registro de un empleado."""
     try:
+        if not payload.get("password", "").startswith("$2b$"):
+            payload["password"] = encriptar_password(payload["password"])
+
         with get_db_cursor("db_personal", commit=True) as cursor:
             cursor.execute(
                 "SELECT id_empleado FROM empleados WHERE id_empleado = %s;",

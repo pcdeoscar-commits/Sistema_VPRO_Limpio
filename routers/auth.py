@@ -61,9 +61,20 @@ def autenticar_usuario(datos: LoginRequest):
                 if not verificar_password(datos.contrasena, db_password):
                     raise HTTPException(status_code=401, detail="Contraseña incorrecta.")
                 
+                import re
+                def is_password_simple(pwd: str) -> bool:
+                    if len(pwd) < 8: return True
+                    if not re.search(r'[A-Z]', pwd): return True
+                    if not re.search(r'[a-z]', pwd): return True
+                    if not re.search(r'[0-9]', pwd): return True
+                    if not re.search(r'[\W_]', pwd): return True
+                    return False
+
                 requiere_cambio = False
                 clave_ingresada = datos.contrasena.strip()
-                if not db_password.startswith("$2b$") or clave_ingresada == "vpro123" or clave_ingresada.startswith("VPRO-"):
+                
+                # Checar si la contraseña es simple, o no está hasheada
+                if not db_password.startswith("$2b$") or is_password_simple(clave_ingresada) or clave_ingresada.startswith("VPRO-"):
                     requiere_cambio = True
                 
                 return {

@@ -2969,9 +2969,12 @@
                                         <label class="op-form-label">🚗 Licencia Vence</label>
                                         <input type="date" id="emp-licencia-vence" class="form-input">
                                     </div>
-                                    <div>
+                                    <div style="position: relative;">
                                         <label class="op-form-label">🔑 Contraseña de Acceso*</label>
-                                        <input type="password" id="emp-password" class="form-input" placeholder="Contraseña">
+                                        <div style="display: flex; align-items: center; position: relative;">
+                                            <input type="password" id="emp-password" class="form-input" placeholder="Contraseña" style="padding-right: 35px;" oninput="document.getElementById('toggle-emp-password').style.display = this.value.length > 0 ? 'block' : 'none'">
+                                            <i class="ph ph-eye" id="toggle-emp-password" style="position: absolute; right: 10px; cursor: pointer; color: #64748b; display: none; font-size: 18px;" onclick="const input = document.getElementById('emp-password'); if (input.type === 'password') { input.type = 'text'; this.classList.remove('ph-eye'); this.classList.add('ph-eye-slash'); } else { input.type = 'password'; this.classList.remove('ph-eye-slash'); this.classList.add('ph-eye'); }" title="Mostrar/Ocultar contraseña"></i>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

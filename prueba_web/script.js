@@ -102,8 +102,78 @@ async function verificarAcceso() {
         const resultado = await respuesta.json();
 
         if (respuesta.ok && resultado.autenticado) {
-            cerrarModal();
-            iniciarSesionExitosa(resultado);
+            if (resultado.requiere_cambio) {
+                cerrarModal();
+                const htmlCheck = `
+                    <div style="text-align: left; font-size: 14px; margin-top: 10px;">
+                        Tu contraseña actual es <b>demasiado simple</b> o insegura. Por políticas de seguridad, debes actualizarla.<br><br>
+                        <b>Debe contener:</b><br>
+                        - Al menos 8 caracteres<br>
+                        - Una letra MAYÚSCULA<br>
+                        - Una letra minúscula<br>
+                        - Un número<br>
+                        - Un carácter especial (ej. @, $, !, %, *, ?, &)
+                        <br><br>
+                        <input type="password" id="swal-new-pass" class="swal2-input" placeholder="Nueva Contraseña" style="margin-top: 0;">
+                        <input type="password" id="swal-confirm-pass" class="swal2-input" placeholder="Confirmar Nueva Contraseña">
+                    </div>
+                `;
+                
+                Swal.fire({
+                    title: '🛡️ Cambio de Contraseña Obligatorio',
+                    html: htmlCheck,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Actualizar y Entrar',
+                    cancelButtonText: 'Cancelar',
+                    allowOutsideClick: false,
+                    preConfirm: () => {
+                        const pass = Swal.getPopup().querySelector('#swal-new-pass').value;
+                        const confirm = Swal.getPopup().querySelector('#swal-confirm-pass').value;
+                        if (!pass || !confirm) {
+                            Swal.showValidationMessage('Debes ingresar la nueva contraseña y confirmarla');
+                            return false;
+                        }
+                        if (pass !== confirm) {
+                            Swal.showValidationMessage('Las contraseñas no coinciden');
+                            return false;
+                        }
+                        if (pass.length < 8 || !/[A-Z]/.test(pass) || !/[a-z]/.test(pass) || !/[0-9]/.test(pass) || !/[\W_]/.test(pass)) {
+                            Swal.showValidationMessage('La contraseña no cumple con los requisitos de seguridad');
+                            return false;
+                        }
+                        return pass;
+                    }
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        try {
+                            const resUpdate = await fetch(`${API_URL}/api/auth/cambiar-password`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    id_empleado: resultado.id_empleado,
+                                    nueva_contrasena: result.value
+                                })
+                            });
+                            if (resUpdate.ok) {
+                                Swal.fire('Éxito', 'Tu contraseña ha sido actualizada y encriptada.', 'success');
+                                iniciarSesionExitosa(resultado);
+                            } else {
+                                Swal.fire('Error', 'No se pudo actualizar la contraseña.', 'error');
+                                document.getElementById("modal-login").style.display = "flex"; // Re-open login
+                            }
+                        } catch (e) {
+                            Swal.fire('Error', 'Error de red al actualizar contraseña.', 'error');
+                            document.getElementById("modal-login").style.display = "flex";
+                        }
+                    } else {
+                        document.getElementById("modal-login").style.display = "flex"; // User cancelled, show login
+                    }
+                });
+            } else {
+                cerrarModal();
+                iniciarSesionExitosa(resultado);
+            }
         } else {
             errorMsg.innerText = resultado.detail || "Contraseña incorrecta.";
             errorMsg.style.display = "block";

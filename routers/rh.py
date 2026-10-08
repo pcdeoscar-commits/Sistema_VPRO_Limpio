@@ -389,88 +389,124 @@ def update_empleado(id_empleado: str, payload: EmpleadoUpdate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/alertas")
-def get_alertas():
+def get_alertas(id_empleado: Optional[int] = None):
     try:
+        from datetime import timedelta
         with engine_personal.connect() as conn:
             alertas = []
             hoy = date.today()
+            manana = hoy + timedelta(days=1)
             
-            # Contratos por vencer (<= 30 dias)
-            query_ctr = text("""
-                SELECT c.id_contrato, c.id_empleado, e.nombre, c.fecha_fin 
-                FROM public.rh_contratos c
-                JOIN public.empleados e ON c.id_empleado = e.id_empleado
-                WHERE c.estatus_contrato = 'VIGENTE' 
-                AND c.es_indefinido = false 
-                AND c.fecha_fin IS NOT NULL
-                AND e.estatus_empleado = 'ACTIVO'
-            """)
-            ctrs = conn.execute(query_ctr).mappings().fetchall()
-            for c in ctrs:
-                if c["fecha_fin"]:
-                    dias_restantes = (c["fecha_fin"] - hoy).days
-                    if 0 <= dias_restantes <= 30:
-                        nombre = safe_decode_hex(c.get("nombre", ""))
-                        urgencia = "ALTA" if dias_restantes <= 7 else "MEDIA"
-                        alertas.append({
-                            "tipo": "CONTRATO_POR_VENCER",
-                            "empleado": nombre,
-                            "id_empleado": c["id_empleado"],
-                            "mensaje": f"Contrato vence en {dias_restantes} días (el {c['fecha_fin']})",
-                            "urgencia": urgencia
-                        })
+            # Filtro opcional por empleado
+            filtro_emp = f"AND e.id_empleado = {id_empleado}" if id_empleado else ""
             
-            # Vacaciones por vencer (<= 60 dias limite goce)
-            query_vac = text("""
-                SELECT v.id_vacacion, v.id_empleado, e.nombre, v.fecha_limite_goce 
-                FROM public.rh_vacaciones v
-                JOIN public.empleados e ON v.id_empleado = e.id_empleado
-                WHERE v.estatus = 'PENDIENTE'
-                AND v.fecha_limite_goce IS NOT NULL
-                AND e.estatus_empleado = 'ACTIVO'
-            """)
-            vacs = conn.execute(query_vac).mappings().fetchall()
-            for v in vacs:
-                if v["fecha_limite_goce"]:
-                    dias_restantes = (v["fecha_limite_goce"] - hoy).days
-                    if 0 <= dias_restantes <= 60:
-                        nombre = safe_decode_hex(v.get("nombre", ""))
-                        urgencia = "ALTA" if dias_restantes <= 15 else "MEDIA"
-                        alertas.append({
-                            "tipo": "VACACIONES_POR_VENCER",
-                            "empleado": nombre,
-                            "id_empleado": v["id_empleado"],
-                            "mensaje": f"Periodo vacacional debe ser tomado antes del {v['fecha_limite_goce']} ({dias_restantes} días restantes)",
-                            "urgencia": urgencia
-                        })
-                        
-            # Documentos por vencer (<= 30 dias) -> en la descripcion decia "licencias por vencer"
-            query_doc = text("""
+            # 1. Licencia de Chofer por vencer (<= 15 dias) o vencida
+            query_doc = text(f"""
                 SELECT d.id_documento, d.id_empleado, e.nombre, d.tipo_documento, d.fecha_vencimiento
                 FROM public.rh_documentos d
                 JOIN public.empleados e ON d.id_empleado = e.id_empleado
                 WHERE d.esta_vigente = true
+                AND d.tipo_documento ILIKE '%LICENCIA%CHOFER%'
                 AND d.fecha_vencimiento IS NOT NULL
                 AND e.estatus_empleado = 'ACTIVO'
+                {filtro_emp}
             """)
             docs = conn.execute(query_doc).mappings().fetchall()
             for d in docs:
                 if d["fecha_vencimiento"]:
                     dias_restantes = (d["fecha_vencimiento"] - hoy).days
-                    if 0 <= dias_restantes <= 30:
+                    if dias_restantes <= 15:
                         nombre = safe_decode_hex(d.get("nombre", ""))
-                        urgencia = "ALTA" if dias_restantes <= 7 else "MEDIA"
+                        urgencia = "ALTA" if dias_restantes <= 0 else "MEDIA"
+                        if dias_restantes < 0:
+                            msg = f"🚨 Tu Licencia de Chofer ya venció el {d['fecha_vencimiento']}. Por favor renuévala y entrégala a RH." if id_empleado else f"🚨 La Licencia de Chofer de {nombre} ya venció el {d['fecha_vencimiento']}."
+                        elif dias_restantes == 0:
+                            msg = f"🚨 Tu Licencia de Chofer vence HOY. Por favor renuévala y entrégala a RH." if id_empleado else f"🚨 La Licencia de Chofer de {nombre} vence HOY."
+                        else:
+                            msg = f"🚨 Tu Licencia de Chofer está a {dias_restantes} días de vencer. Por favor renuévala y entrégala a RH." if id_empleado else f"🚨 La Licencia de Chofer de {nombre} vence en {dias_restantes} días."
+                        
                         alertas.append({
                             "tipo": "DOCUMENTO_POR_VENCER",
                             "empleado": nombre,
                             "id_empleado": d["id_empleado"],
-                            "mensaje": f"Documento {d['tipo_documento']} vence en {dias_restantes} días ({d['fecha_vencimiento']})",
+                            "mensaje": msg,
+                            "urgencia": urgencia
+                        })
+            
+            # 3. Cumpleaños
+            query_nac = text(f"""
+                SELECT e.id_empleado, e.nombre, e.fecha_nac 
+                FROM public.empleados e
+                WHERE e.estatus_empleado = 'ACTIVO'
+                AND e.fecha_nac IS NOT NULL
+                {filtro_emp}
+            """)
+            emps = conn.execute(query_nac).mappings().fetchall()
+            for e in emps:
+                if e["fecha_nac"]:
+                    nac = e["fecha_nac"]
+                    es_hoy = (nac.month == hoy.month and nac.day == hoy.day)
+                    es_manana = (nac.month == manana.month and nac.day == manana.day)
+                    
+                    if es_hoy or es_manana:
+                        nombre = safe_decode_hex(e.get("nombre", ""))
+                        if es_hoy:
+                            msg = f"🎉 ¡Hoy es tu cumpleaños! VPRO te desea un excelente día." if id_empleado else f"🎉 ¡Hoy es el cumpleaños de {nombre}! Deséale un excelente día."
+                            urgencia = "ALTA"
+                        else:
+                            msg = f"🎂 Mañana es tu cumpleaños. ¡Prepárate para celebrar!" if id_empleado else f"🎂 Mañana es el cumpleaños de {nombre}."
+                            urgencia = "MEDIA"
+                            
+                        alertas.append({
+                            "tipo": "CUMPLEANOS",
+                            "empleado": nombre,
+                            "id_empleado": e["id_empleado"],
+                            "mensaje": msg,
                             "urgencia": urgencia
                         })
                         
+            # 7. Retardos en los últimos 7 días (>= 15 min, Entrada > 09:15), excluye VILLARREAL
+            hace_7_dias = hoy - timedelta(days=7)
+            query_asis = text(f"""
+                SELECT a.id_empleado, e.nombre, a.fecha, a.hora_entrada
+                FROM public.control_asistencia a
+                JOIN public.empleados e ON a.id_empleado = e.id_empleado
+                WHERE a.fecha >= :hace_7_dias
+                AND e.estatus_empleado = 'ACTIVO'
+                {filtro_emp}
+            """)
+            asis = conn.execute(query_asis, {"hace_7_dias": hace_7_dias}).mappings().fetchall()
+            
+            retardos_por_empleado = {}
+            for a in asis:
+                nombre_hex = safe_decode_hex(a.get("nombre", ""))
+                if "VILLARREAL" in nombre_hex.upper():
+                    continue
+                    
+                if a["hora_entrada"]:
+                    hora = a["hora_entrada"]
+                    if hora.hour > 9 or (hora.hour == 9 and hora.minute >= 15):
+                        emp_id = a["id_empleado"]
+                        if emp_id not in retardos_por_empleado:
+                            retardos_por_empleado[emp_id] = {"nombre": nombre_hex, "retardos": []}
+                        retardos_por_empleado[emp_id]["retardos"].append(f"{a['fecha'].strftime('%d/%m')} ({hora.strftime('%H:%M')})")
+                        
+            for emp_id, data in retardos_por_empleado.items():
+                if len(data["retardos"]) > 0:
+                    dias_str = ", ".join(data["retardos"])
+                    msg = f"⏱️ Atención: Registraste {len(data['retardos'])} retardo(s) mayores a 15 min en los últimos 7 días: {dias_str}." if id_empleado else f"⏱️ Atención: {data['nombre']} registró {len(data['retardos'])} retardo(s) (>= 15 min) en los últimos 7 días: {dias_str}."
+                    alertas.append({
+                        "tipo": "RETARDO",
+                        "empleado": data["nombre"],
+                        "id_empleado": emp_id,
+                        "mensaje": msg,
+                        "urgencia": "MEDIA"
+                    })
+
             return alertas
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # --- SOLICITUDES DE EMPLEO ---
 @router.get("/solicitudes")

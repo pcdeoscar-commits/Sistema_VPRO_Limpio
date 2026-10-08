@@ -362,10 +362,52 @@ async function cargarDatosInicio() {
             }
         } catch (e) { console.error("Error al consultar checkouts en inicio:", e); }
 
+        // C. Alertas Personales de RRHH (Licencias, Cumpleaños, Retardos)
+        try {
+            const resAlertas = await fetch(`${API_URL}/api/rh/alertas?id_empleado=${usuarioLogueado.id_empleado}`);
+            if (resAlertas.ok) {
+                const alertas = await resAlertas.json();
+                if (alertas && alertas.length > 0) {
+                    alertas.forEach(alerta => {
+                        let icon = "ph-bell";
+                        let color = "#eab308"; // default warning yellow
+                        let bg = "#fef9c3";
+                        let border = "#ca8a04";
+                        
+                        if (alerta.tipo === "CUMPLEANOS") {
+                            icon = "ph-cake";
+                            color = "#ec4899"; bg = "#fdf2f8"; border = "#db2777";
+                        } else if (alerta.tipo === "RETARDO") {
+                            icon = "ph-clock-afternoon";
+                            color = "#f97316"; bg = "#fff7ed"; border = "#ea580c";
+                        } else if (alerta.tipo === "DOCUMENTO_POR_VENCER") {
+                            icon = "ph-identification-card";
+                            if (alerta.urgencia === "ALTA") {
+                                color = "#ef4444"; bg = "#fef2f2"; border = "#dc2626";
+                            }
+                        }
+
+                        htmlCards.push(`
+                            <div class="alerta-card info" style="background: ${bg}; border-left: 4px solid ${border}; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                                <div style="width: 42px; height: 42px; border-radius: 8px; background: ${color}; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                                    <i class="ph ${icon}"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 14px; color: #1e293b;">
+                                        <b>${alerta.mensaje}</b>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    });
+                }
+            }
+        } catch (e) { console.error("Error al consultar alertas RH en inicio:", e); }
+
         if (htmlCards.length > 0) {
             contenedorNotif.innerHTML = htmlCards.join("");
         } else {
-            contenedorNotif.innerHTML = `<div class="alerta-card success"><i class="ph ph-check-circle" style="font-size: 20px;"></i> Radar de Bodega: 100% de Checkouts al día y sin transferencias pendientes (Operación Limpia)</div>`;
+            contenedorNotif.innerHTML = `<div class="alerta-card success"><i class="ph ph-check-circle" style="font-size: 20px;"></i> Radar de Bodega y Notificaciones: Todo al día y sin pendientes.</div>`;
         }
     }
 

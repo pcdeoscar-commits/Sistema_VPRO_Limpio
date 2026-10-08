@@ -11050,23 +11050,20 @@ function tocarNota(frecuencia, tiempoInicio, duracion, volumenMax = 0.25) {
 function sonarEntrada() {
     const ctx = obtenerAudioContext();
     const ahora = ctx.currentTime;
-    // Notas: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
-    tocarNota(523.25, ahora + 0.00, 0.35, 0.22);
-    tocarNota(659.25, ahora + 0.12, 0.35, 0.22);
-    tocarNota(783.99, ahora + 0.24, 0.35, 0.22);
-    tocarNota(1046.50, ahora + 0.36, 0.70, 0.25);
+    // Tono 1 (ENTRADA): Campanada Brillante y Energética (5 segundos)
+    tocarNota(523.25, ahora, 5.0, 0.5); // C5 (Fundamental)
+    tocarNota(880.00, ahora, 4.5, 0.2); // A5 (Armónico)
+    tocarNota(1046.50, ahora, 4.0, 0.15); // C6 (Brillo)
 }
 
 // 🔴 SONIDO DE SALIDA (14:00 y 19:00) - Acorde relajante de descanso
 function sonarSalida() {
     const ctx = obtenerAudioContext();
     const ahora = ctx.currentTime;
-    // Notas: G5 (784Hz), E5 (659Hz), C5 (523Hz) con cola larga
-    tocarNota(783.99, ahora + 0.00, 0.50, 0.20);
-    tocarNota(659.25, ahora + 0.18, 0.60, 0.22);
-    tocarNota(523.25, ahora + 0.36, 1.20, 0.25);
-    // Nota grave de apoyo cálido (C4)
-    tocarNota(261.63, ahora + 0.36, 1.40, 0.15);
+    // Tono 2 (SALIDA): Campanada Grave y Relajante (5 segundos)
+    tocarNota(349.23, ahora, 5.0, 0.5); // F4 (Fundamental grave)
+    tocarNota(440.00, ahora, 4.5, 0.2); // A4 (Armónico)
+    tocarNota(698.46, ahora, 4.0, 0.15); // F5 (Brillo suave)
 }
 
 // ⏱️ VIGILANTE DE HORARIOS (Checa cada segundo)

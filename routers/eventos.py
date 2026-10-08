@@ -536,3 +536,16 @@ def mandar_al_historial_op(payload: dict):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+@router.put("/{id_evento}/vincular_cotizacion")
+def vincular_cotizacion(id_evento: int, payload: dict):
+    id_cot = payload.get("id_cotizacion")
+    if not id_cot:
+        raise HTTPException(status_code=400, detail="id_cotizacion requerido")
+    try:
+        with get_db_cursor("db_eventos", commit=True) as cursor:
+            cursor.execute("UPDATE eventos SET id_cotizacion_vinculada = %s WHERE id_evento = %s;", (id_cot, id_evento))
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Evento no encontrado")
+        return {"status": "ok", "mensaje": "Cotización vinculada exitosamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

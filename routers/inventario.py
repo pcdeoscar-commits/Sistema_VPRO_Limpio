@@ -414,18 +414,21 @@ def obtener_mis_reportes_dano(id_empleado: str):
         with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cursor:
             cursor.execute("""
                 SELECT 
-                    num_d_servicio,
-                    fecha_d_reporte,
-                    equipo_n_reparacion,
-                    descripcion_del_dano,
-                    estado_actual,
-                    area_q_pertenece
-                FROM public.reparaciones
-                WHERE reportante = %s
-                  AND UPPER(TRIM(estado_actual)) NOT IN (
+                    r.num_d_servicio,
+                    r.fecha_d_reporte,
+                    r.equipo_n_reparacion,
+                    COALESCE(i.descripcion, k.descripcion_inv_kits, r.equipo_n_reparacion) as nombre_equipo,
+                    r.descripcion_del_dano,
+                    r.estado_actual,
+                    r.area_q_pertenece
+                FROM public.reparaciones r
+                LEFT JOIN public.inventario i ON LOWER(TRIM(r.equipo_n_reparacion)) = LOWER(TRIM(i.codigo))
+                LEFT JOIN public.inventario_kits k ON LOWER(TRIM(r.equipo_n_reparacion)) = LOWER(TRIM(k.codigo_inv_kits))
+                WHERE r.reportante = %s
+                  AND UPPER(TRIM(r.estado_actual)) NOT IN (
                       'REPARADO', 'RESUELTO', 'BAJA DEFINITIVA', 'CERRADO'
                   )
-                ORDER BY fecha_d_reporte DESC
+                ORDER BY r.fecha_d_reporte DESC
             """, (f"Empleado ID: {id_empleado.strip()}",))
             rows = cursor.fetchall()
 
@@ -443,8 +446,9 @@ def obtener_mis_reportes_dano(id_empleado: str):
                 urgencia = "rojo"
 
             resultado.append({
-                "ticket":      r.get("num_d_servicio", ""),
-                "equipo":      r.get("equipo_n_reparacion", ""),
+                "ticket":        r.get("num_d_servicio", ""),
+                "equipo":        r.get("equipo_n_reparacion", ""),
+                "nombre_equipo": r.get("nombre_equipo", ""),
                 "descripcion": r.get("descripcion_del_dano", ""),
                 "estado":      r.get("estado_actual", ""),
                 "area":        r.get("area_q_pertenece", ""),

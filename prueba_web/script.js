@@ -578,6 +578,51 @@ async function cargarDatosInicio() {
         console.error("Error al cargar la asistencia semanal:", e);
         tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align: center; padding: 16px;">Error de red al consultar el registro de asistencia.</td></tr>`;
     }
+
+    // 3. Cargar Equipos Dañados en el Dropdown
+    const dropdownDanos = document.getElementById("dropdown-mis-danos");
+    if (dropdownDanos) {
+        try {
+            const resDanos = await fetch(`${API_URL}/api/inventario/mis-reportes-dano/${usuarioLogueado.id_empleado}`);
+            if (resDanos.ok) {
+                const danos = await resDanos.json();
+                if (danos && danos.length > 0) {
+                    dropdownDanos.innerHTML = `<option value="">-- Mis Reportes Activos (${danos.length}) --</option>` + 
+                        danos.map(d => `<option value="${d.ticket}" data-equipo="${d.equipo}">Folio ${d.ticket}: ${d.equipo} - ${d.nombre_equipo || 'Sin nombre'} (${d.estado})</option>`).join("");
+                        
+                    // Agregar evento de cambio para redireccionar
+                    dropdownDanos.addEventListener("change", function() {
+                        const selectedOption = dropdownDanos.options[dropdownDanos.selectedIndex];
+                        if (selectedOption.value) {
+                            const codigoEquipo = selectedOption.getAttribute("data-equipo");
+                            
+                            // 1. Cambiar a vista de daños
+                            cambiarVista('vista-danados');
+                            // 2. Cambiar a la pestaña de Expediente Clínico de Activo
+                            cambiarPestanaDanados('expediente');
+                            
+                            // 3. Establecer el valor en el buscador y disparar la búsqueda
+                            const inputBuscar = document.getElementById("input-expediente-buscar");
+                            if (inputBuscar) {
+                                inputBuscar.value = codigoEquipo;
+                                setTimeout(() => buscarExpedienteDanado(), 200);
+                            }
+                            
+                            // Resetear el dropdown
+                            dropdownDanos.value = "";
+                        }
+                    });
+                } else {
+                    dropdownDanos.innerHTML = `<option value="">No tienes equipos reportados como dañados.</option>`;
+                }
+            } else {
+                dropdownDanos.innerHTML = `<option value="">Error al cargar equipos dañados</option>`;
+            }
+        } catch (e) {
+            console.error("Error al cargar equipos dañados:", e);
+            dropdownDanos.innerHTML = `<option value="">Error de conexión</option>`;
+        }
+    }
 }
 
 // ==========================================

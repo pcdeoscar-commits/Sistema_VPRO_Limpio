@@ -1057,21 +1057,21 @@
             </div>
     
             <!-- ✅ ORDEN DE PRODUCCIÓN -->
-            <div class="nav-item" data-roles="ADMIN,PRODUCCION" onclick="cambiarVista('vista-ops')">
+            <div class="nav-item" data-roles="ADMIN,PRODUCCION,COORDINADOR" onclick="cambiarVista('vista-ops')">
                 <div class="nav-label"><i class="ph ph-clipboard-text"></i> <span class="nav-text">Orden de Producción [VPF-PAGL-OP]</span></div>
             </div>
 
-            <div class="nav-item" id="nav-catalogos" data-roles="ADMIN" onclick="cambiarVista('vista-catalogos'); abrirSubcatalogo('hub');">
+            <div class="nav-item" id="nav-catalogos" data-roles="ADMIN,COORDINADOR" onclick="cambiarVista('vista-catalogos'); abrirSubcatalogo('hub');">
                 <div class="nav-label"><i class="ph ph-folder"></i> <span class="nav-text">Catálogos (ABC)</span></div>
             </div>
 
-            <div class="nav-item" data-roles="ADMIN,VENTAS" onclick="cambiarVista('vista-cotizaciones')">
+            <div class="nav-item" data-roles="ADMIN,VENTAS,COORDINADOR" onclick="cambiarVista('vista-cotizaciones')">
                 <div class="nav-label"><i class="ph ph-file-text"></i> <span class="nav-text">Cotizaciones</span></div>
             </div>
             <div class="nav-item" data-roles="todos" onclick="cambiarVista('vista-checkout')">
                 <div class="nav-label"><i class="ph ph-package"></i> <span class="nav-text">Checkout [VPF]</span></div>
             </div>
-            <div class="nav-item" data-roles="ADMIN,PRODUCCION" onclick="cambiarVista('vista-incidencias')">
+            <div class="nav-item" data-roles="ADMIN,PRODUCCION,COORDINADOR" onclick="cambiarVista('vista-incidencias')">
                 <div class="nav-label"><i class="ph ph-warning-circle"></i> <span class="nav-text">Incidencias</span></div>
             </div>
     

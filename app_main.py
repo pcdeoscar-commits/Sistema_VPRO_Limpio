@@ -8,7 +8,7 @@ import time
 import os
 import base64
 
-from modulos_prueba import mod_autos, mod_eventos, mod_kiosco, mod_checkout, mod_incidencias, mod_empleados, mod_clientes, mod_inventario, mod_proveedores, mod_reporte_gastos, mod_equipos_danados,mod_analitica_kpis, mod_manual, mod_reuniones,mod_reporte_asistencia, mod_cotizaciones, mod_rh
+from modulos_prueba import mod_autos, mod_eventos, mod_kiosco, mod_checkout, mod_incidencias, mod_empleados, mod_clientes, mod_inventario, mod_proveedores, mod_reporte_gastos, mod_equipos_danados,mod_analitica_kpis, mod_manual, mod_reuniones,mod_reporte_asistencia, mod_cotizaciones, mod_rh, mod_agenda
 
 # 🎛️ CONFIGURACIÓN DE LIENZO MAESTRO
 st.set_page_config(
@@ -427,6 +427,7 @@ else:
         menu_opciones = ["🏠 Inicio"]
         if rol_actual in ["ADMIN", "COORDINADOR", "PRODUCTOR"]:
             menu_opciones.append("📝 Orden de Produccion")
+            menu_opciones.append("📅 Agenda de Actividades")
 
         if opciones_abc:
             menu_opciones.append("📁 Catálogos (ABC)")
@@ -466,6 +467,7 @@ else:
         menu_opciones = ["🏠 Inicio"]
         if rol_actual in ["ADMIN", "COORDINADOR", "PRODUCTOR"]:
             menu_opciones.append("📝 Orden de Produccion")
+            menu_opciones.append("📅 Agenda de Actividades")
             menu_opciones.append("🤝 Reuniones / Prospectos")
             menu_opciones.append("🚙 Autos")
             
@@ -821,6 +823,9 @@ if modulo_a_ejecutar == "🏠 Inicio":
 
 elif modulo_a_ejecutar == "📝 Orden de Produccion":
     mod_eventos.renderizar_modulo(API_URL)
+
+elif modulo_a_ejecutar == "📅 Agenda de Actividades":
+    mod_agenda.renderizar_modulo(API_URL)
 
 elif modulo_a_ejecutar == "📁 Catálogos (ABC)":
     st.markdown("""

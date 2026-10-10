@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="vendor/phosphor/phosphor.css">
     <!-- Librería Chart.js para Analítica y Gráficos (100% Local Offline) -->
     <script src="vendor/chartjs/chart.umd.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     <style>
         /* Variables de color estilo SaaS (Minimalismo y Acento) */
         :root {
@@ -1061,6 +1062,11 @@
                 <div class="nav-label"><i class="ph ph-clipboard-text"></i> <span class="nav-text">Orden de Producción [VPF-PAGL-OP]</span></div>
             </div>
 
+            <!-- ✅ AGENDA DE ACTIVIDADES -->
+            <div class="nav-item" data-roles="ADMIN,PRODUCCION,COORDINADOR" onclick="cambiarVista('vista-agenda'); inicializarAgendaUI();">
+                <div class="nav-label"><i class="ph ph-calendar-blank"></i> <span class="nav-text">Agenda / Calendario</span></div>
+            </div>
+
             <div class="nav-item" id="nav-catalogos" data-roles="ADMIN,COORDINADOR" onclick="cambiarVista('vista-catalogos'); abrirSubcatalogo('hub');">
                 <div class="nav-label"><i class="ph ph-folder"></i> <span class="nav-text">Catálogos (ABC)</span></div>
             </div>
@@ -2031,6 +2037,16 @@
 
             </div>
 
+
+            <!-- 📦 CAJA AGENDA -->
+            <div id="vista-agenda" class="vista-modulo" style="display:none; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); width: 100%; max-width: 1400px; margin: 0 auto;">
+                <h2 style="margin-top:0; color: #1e293b;"><i class="ph ph-calendar-blank" style="color:#4f46e5;"></i> Agenda de Actividades y Giras</h2>
+                <p style="color: #64748b;">Vista consolidada de Órdenes de Producción, Vacaciones y Comisiones.</p>
+                <div style="text-align: right; margin-bottom: 20px;">
+                    <button onclick="alert('Por favor crea tus OP en el módulo original de Órdenes de Producción. Se reflejarán aquí automáticamente.')" style="background: #4f46e5; color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold;"><i class="ph ph-info"></i> Info</button>
+                </div>
+                <div id="agenda-calendar" style="background: white; padding: 20px; border-radius: 12px; min-height: 800px;"></div>
+            </div>
 
             <!-- 📦 CAJA 7: CATÁLOGOS ABC -->
             <div id="vista-catalogos" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1400px; margin: 0 auto;">
@@ -5675,6 +5691,53 @@
     </div>
 
     <script src="script.js?v=2"></script>
+<!-- SCRIPT AGENDA DE ACTIVIDADES -->
+<script>
+let calendarAgenda = null;
+function inicializarAgendaUI() {
+    setTimeout(() => {
+        var calendarEl = document.getElementById('agenda-calendar');
+        if(!calendarEl) return;
+        
+        if(calendarAgenda) {
+            calendarAgenda.refetchEvents();
+            calendarAgenda.render(); 
+            return;
+        }
+        
+        calendarAgenda = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'es',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listMonth' },
+            buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana', list: 'Lista' },
+            firstDay: 1,
+            height: 800,
+            events: '/api/agenda/eventos',
+            eventDataTransform: function(evento) {
+                return {
+                    id: evento.id,
+                    title: evento.titulo,
+                    start: evento.fecha_inicio,
+                    end: evento.fecha_fin,
+                    allDay: evento.todo_el_dia,
+                    backgroundColor: evento.color_fondo || '#3788d8',
+                    extendedProps: {
+                        locacion: evento.locacion,
+                        recursos: evento.recursos_tecnicos,
+                        personal: evento.personal_asignado,
+                        notas: evento.notas_adicionales
+                    }
+                };
+            },
+            eventClick: function(info) {
+                var ev = info.event;
+                alert("📌 " + ev.title + "\n\n📍 Locación: " + (ev.extendedProps.locacion || 'N/A') + "\n👥 Personal: " + (ev.extendedProps.personal || 'N/A') + "\n🎥 Equipo: " + (ev.extendedProps.recursos || 'N/A') + "\n📝 Notas: " + (ev.extendedProps.notas || 'N/A'));
+            }
+        });
+        calendarAgenda.render();
+    }, 300); // Dar tiempo a que el div sea visible
+}
+</script>
 </body>
 </html>
 <!-- MODAL VINCULAR COTIZACION -->

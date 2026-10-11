@@ -150,6 +150,118 @@ def renderizar_aprobacion_horas_extras(API_URL):
     except Exception as e:
         print(f"⚠️ SILENCED ERROR in app_main_prueba.py: {e}")
 
+def renderizar_monitor_accesos_ceo(API_URL):
+    """
+    👑 Panel Ejecutivo Exclusivo para Don Pedro Villarreal Uribe (CEO) y Cuauhtémoc Rivera.
+    Permite consultar en un dropdown a cualquier colaborador y saber cuántas veces ha accesado
+    al sistema en los últimos 7 días con desglose de actividad.
+    """
+    nom_usr = str(st.session_state.get("usuario_actual", "")).strip()
+    id_usr = str(st.session_state.get("id_usuario", "")).strip()
+    
+    nombre_limpio = ''.join(c for c in unicodedata.normalize('NFD', nom_usr.upper()) if unicodedata.category(c) != 'Mn')
+    
+    es_pedro_ceo = ("PEDRO" in nombre_limpio and "VILLARREAL" in nombre_limpio) or id_usr == "203"
+    es_cuauhtemoc = ("CUAUHTEMOC" in nombre_limpio and "RIVERA" in nombre_limpio) or id_usr == "201"
+    
+    if not (es_pedro_ceo or es_cuauhtemoc):
+        return
+
+    with st.expander("👑 Auditoría de Accesos al Sistema (Dirección General) — [Exclusivo CEO]", expanded=False):
+        st.markdown("""
+        <p style="color: #64748b; font-size: 13.5px; margin-top: 0; margin-bottom: 15px;">
+            Selecciona un colaborador para consultar cuántas veces ha accesado al sistema en los últimos 7 días.
+        </p>
+        """, unsafe_allow_html=True)
+
+        try:
+            res_p = requests.get(f"{API_URL}/api/auth/personal-selector", verify=False, timeout=5)
+            personal_list = res_p.json() if res_p.status_code == 200 else []
+        except Exception as e:
+            personal_list = []
+
+        if not personal_list:
+            st.warning("⚠️ No se pudo cargar la lista de personal para el selector de accesos.")
+            return
+
+        opciones = ["-- Selecciona un colaborador --"] + [
+            f"{p['nombre']} - {p['depto']} (ID: {p['id_empleado']})" for p in personal_list
+        ]
+        map_personal = {
+            f"{p['nombre']} - {p['depto']} (ID: {p['id_empleado']})": p for p in personal_list
+        }
+
+        seleccion = st.selectbox(
+            "👥 Seleccionar Colaborador para consultar accesos:",
+            options=opciones,
+            key="sel_ceo_monitor_accesos"
+        )
+
+        if seleccion != "-- Selecciona un colaborador --":
+            colab = map_personal[seleccion]
+            id_emp = colab["id_empleado"]
+            nom_emp = colab["nombre"]
+            
+            try:
+                res_acc = requests.get(f"{API_URL}/api/auth/accesos-recientes/{id_emp}?dias=7", verify=False, timeout=5)
+                if res_acc.status_code == 200:
+                    data = res_acc.json()
+                    total_accesos = data.get("total_accesos", 0)
+                    total_sesiones = data.get("total_sesiones_erp", 0)
+                    total_checadas = data.get("total_checadas_asistencia", 0)
+                    dias_activos = data.get("dias_con_acceso", 0)
+                    historial = data.get("historial", [])
+                    
+                    color_borde = "#38bdf8" if total_accesos > 0 else "#f87171"
+                    st.markdown(f"""
+                    <div style="background-color: #0f172a; padding: 18px 22px; border-radius: 12px; border-left: 6px solid {color_borde}; margin: 15px 0 20px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Reporte de Accesos (Últimos 7 Días)</span>
+                                <h3 style="color: #ffffff; margin: 4px 0 6px 0; font-size: 21px;">{nom_emp}</h3>
+                                <p style="color: #cbd5e1; margin: 0; font-size: 14px;">
+                                    Departamento: <b style="color: #38bdf8;">{colab.get('depto', 'GENERAL')}</b> | 
+                                    Puesto: <b style="color: #f1f5f9;">{colab.get('puesto', 'Personal')}</b>
+                                </p>
+                            </div>
+                            <div style="text-align: right; background: rgba(56, 189, 248, 0.12); padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.3);">
+                                <span style="color: #94a3b8; font-size: 11px; font-weight: bold; text-transform: uppercase;">Total de Accesos</span>
+                                <div style="color: #38bdf8; font-size: 28px; font-weight: 800; line-height: 1.1;">{total_accesos} veces</div>
+                                <span style="color: #cbd5e1; font-size: 12px;">en los últimos 7 días</span>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    c1, c2, c3, c4 = st.columns(4)
+                    with c1:
+                        st.metric("📊 Total Accesos", f"{total_accesos} veces")
+                    with c2:
+                        st.metric("📅 Días Activos", f"{dias_activos} de 7 días")
+                    with c3:
+                        st.metric("🖥️ Inicios de Sesión (ERP)", f"{total_sesiones}")
+                    with c4:
+                        st.metric("🕒 Checador / Asistencia", f"{total_checadas}")
+                        
+                    if historial:
+                        with st.expander(f"📋 Ver detalle cronológico de accesos de {nom_emp} ({len(historial)} registros)", expanded=True):
+                            df_h = pd.DataFrame(historial)
+                            df_h.rename(columns={
+                                "fecha": "Fecha",
+                                "hora": "Hora",
+                                "tipo": "Tipo de Acceso",
+                                "detalle": "Detalle / Registro"
+                            }, inplace=True)
+                            st.dataframe(df_h, hide_index=True, use_container_width=True)
+                    else:
+                        st.info(f"ℹ️ {nom_emp} no registra accesos ni checadas en el sistema durante los últimos 7 días.")
+                else:
+                    st.error("Error al obtener los accesos del servidor.")
+            except Exception as e:
+                st.error(f"Error al conectar con la API: {e}")
+
+    st.write("---")
+
 # 📦 CONTROL DE SESIÓN GENERAL
 if "autenticado" not in st.session_state: st.session_state.autenticado = False
 if "confirmacion_baja_pendiente" not in st.session_state: st.session_state.confirmacion_baja_pendiente = False
@@ -386,6 +498,27 @@ es_kiosko = st.session_state.get("id_usuario") == "529" # Evaluar identidades cr
 usuario_real = str(st.session_state.get("usuario_actual", "")).strip()
 es_cuauhtemoc = "Cuauhtémoc Rivera" in usuario_real or "Cuauhtemoc Rivera" in usuario_real
 
+# 📡 REGISTRO AUTOMÁTICO DE SESIÓN ACTIVA EN LOG DE ACCESOS
+if st.session_state.get("autenticado") and not st.session_state.get("log_acceso_sesion_registrado"):
+    try:
+        id_usr_actual = str(st.session_state.get("id_usuario", ""))
+        nom_usr_actual = str(st.session_state.get("usuario_actual", ""))
+        if id_usr_actual and nom_usr_actual:
+            requests.post(
+                f"{API_URL}/api/auth/registrar-acceso",
+                json={
+                    "id_empleado": id_usr_actual,
+                    "nombre": nom_usr_actual,
+                    "tipo_evento": "LOGIN_PLATAFORMA",
+                    "ip_origen": "INTRANET_WEB"
+                },
+                verify=False,
+                timeout=2
+            )
+            st.session_state["log_acceso_sesion_registrado"] = True
+    except Exception:
+        pass
+
 if es_kiosko:       # 🎨 INYECCIÓN DE ESTILOS PREMIUM
     st.markdown("""<style>[data-testid="stSidebar"] { display: none !important; } [data-testid="stSidebarCollapseButton"] { display: none !important; } .main .block-container { max-width: 95% !important; padding-top: 2rem !important; padding-bottom: 2rem !important; padding-left: 5rem !important; padding-right: 5rem !important; }</style>""", unsafe_allow_html=True)
 else:
@@ -586,6 +719,9 @@ st.write("---")
 # 🔀 ENRUTADOR PRINCIPAL (El "Switch" de Módulos)
 if modulo_a_ejecutar == "🏠 Inicio":
     st.info("🏠 Bienvenido al Laboratorio de Pruebas VPRO. Selecciona un módulo en el menú izquierdo.")
+    
+    # 👑 Control Ejecutivo Exclusivo de Accesos para Don Pedro Villarreal Uribe (CEO) y Cuauhtémoc Rivera
+    renderizar_monitor_accesos_ceo(API_URL)
     
     renderizar_notificaciones(API_URL)
     renderizar_aprobacion_horas_extras(API_URL)

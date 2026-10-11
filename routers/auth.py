@@ -77,12 +77,27 @@ def autenticar_usuario(datos: LoginRequest):
                 if not db_password.startswith("$2b$") or is_password_simple(clave_ingresada) or clave_ingresada.startswith("VPRO-"):
                     requiere_cambio = True
                 
+                db_id_emp = safe_decode_hex(row[4]).strip()
+                try:
+                    with get_db_cursor("db_personal", commit=True) as cur_log:
+                        cur_log.execute("""
+                            INSERT INTO public.log_accesos (id_empleado, nombre_empleado, tipo_evento, ip_origen)
+                            VALUES (%s, %s, %s, %s)
+                        """, (
+                            int(db_id_emp) if db_id_emp.isdigit() else None,
+                            db_nombre,
+                            "LOGIN_SISTEMA",
+                            "INTRANET"
+                        ))
+                except Exception as err_log:
+                    print(f"⚠️ Error registrando log_accesos: {err_log}")
+
                 return {
                     "autenticado": True,
                     "nombre_completo": db_nombre,
                     "rol": safe_decode_hex(row[3]).strip().upper(),
                     "depto": safe_decode_hex(row[1]),
-                    "id_empleado": safe_decode_hex(row[4]).strip(),
+                    "id_empleado": db_id_emp,
                     "email": safe_decode_hex(row[5]).strip(),
                     "requiere_cambio": requiere_cambio
                 }
@@ -113,3 +128,136 @@ def cambiar_password(payload: dict):
         return {"status": "SUCCESS", "mensaje": "Contraseña encriptada y actualizada con éxito."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/personal-selector")
+def obtener_personal_para_selector():
+    """Retorna la lista de empleados activos para el dropdown del CEO."""
+    try:
+        with get_db_cursor("db_personal") as cursor:
+            cursor.execute("""
+                SELECT TRIM(id_empleado), nombre, depto, puesto
+                FROM public.empleados
+                WHERE (estatus_empleado = 'ACTIVO' OR estatus_empleado IS NULL)
+                  AND UPPER(COALESCE(rol, '')) NOT IN ('BAJA', 'PROVEEDOR')
+                  AND nombre IS NOT NULL
+                ORDER BY nombre ASC
+            """)
+            rows = cursor.fetchall()
+
+        resultado = []
+        for r in rows:
+            resultado.append({
+                "id_empleado": str(r[0]),
+                "nombre": str(r[1]).strip(),
+                "depto": str(r[2]).strip() if r[2] else "GENERAL",
+                "puesto": str(r[3]).strip() if r[3] else ""
+            })
+        return resultado
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/registrar-acceso")
+def registrar_acceso_sesion(payload: dict):
+    """Registra un evento de acceso / sesión activa en log_accesos."""
+    try:
+        id_emp = str(payload.get("id_empleado", "")).strip()
+        nombre = str(payload.get("nombre", "")).strip()
+        tipo = str(payload.get("tipo_evento", "ACCESO_SISTEMA")).strip()
+        ip = str(payload.get("ip_origen", "INTRANET")).strip()
+        
+        with get_db_cursor("db_personal", commit=True) as cursor:
+            cursor.execute("""
+                INSERT INTO public.log_accesos (id_empleado, nombre_empleado, tipo_evento, ip_origen)
+                VALUES (%s, %s, %s, %s)
+            """, (int(id_emp) if id_emp.isdigit() else None, nombre, tipo, ip))
+        return {"status": "SUCCESS", "mensaje": "Acceso registrado correctamente."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/accesos-recientes/{id_empleado}")
+def obtener_accesos_recientes_empleado(id_empleado: str, dias: int = 7):
+    """
+    Retorna cuántas veces ha accesado al sistema un empleado en los últimos N días.
+    Consolida accesos a la plataforma ERP (log_accesos) y registros de asistencia/checador (control_asistencia).
+    """
+    try:
+        id_emp_clean = id_empleado.strip()
+        with get_db_cursor("db_personal") as cursor:
+            # 1. Datos del empleado
+            cursor.execute(
+                "SELECT TRIM(id_empleado), nombre, puesto, depto FROM public.empleados WHERE TRIM(id_empleado) = %s",
+                (id_emp_clean,)
+            )
+            emp_row = cursor.fetchone()
+            nombre_emp = emp_row[1] if emp_row else f"ID: {id_emp_clean}"
+            depto_emp = emp_row[3] if emp_row else ""
+            puesto_emp = emp_row[2] if emp_row else ""
+
+            # 2. Consultar log_accesos (accesos a la plataforma VPRO)
+            cursor.execute("""
+                SELECT fecha, hora, tipo_evento, ip_origen 
+                FROM public.log_accesos 
+                WHERE (id_empleado = %s OR LOWER(nombre_empleado) = %s)
+                  AND fecha >= CURRENT_DATE - %s
+                ORDER BY fecha DESC, hora DESC
+            """, (int(id_emp_clean) if id_emp_clean.isdigit() else -1, nombre_emp.lower(), dias))
+            rows_logs = cursor.fetchall()
+
+            # 3. Consultar control_asistencia (checadas / Kiosco)
+            cursor.execute("""
+                SELECT fecha, hora_entrada, hora_salida, observaciones 
+                FROM public.control_asistencia 
+                WHERE TRIM(id_empleado) = %s AND fecha >= CURRENT_DATE - %s
+                ORDER BY fecha DESC, hora_entrada DESC
+            """, (id_emp_clean, dias))
+            rows_asis = cursor.fetchall()
+
+        historial = []
+        fechas_unicas = set()
+
+        for r in rows_logs:
+            f_str = str(r[0])
+            fechas_unicas.add(f_str)
+            historial.append({
+                "fecha": f_str,
+                "hora": str(r[1])[:8] if r[1] else "--:--",
+                "tipo": "🖥️ Plataforma ERP (Login)",
+                "detalle": f"Evento: {r[2] or 'Acceso'} | Origen: {r[3] or 'Intranet'}"
+            })
+
+        for r in rows_asis:
+            f_str = str(r[0])
+            fechas_unicas.add(f_str)
+            h_in = str(r[1])[:5] if r[1] else "--:--"
+            h_out = str(r[2])[:5] if r[2] else "--:--"
+            obs = r[3] or "Checador"
+            historial.append({
+                "fecha": f_str,
+                "hora": h_in,
+                "tipo": "🕒 Checador / Asistencia",
+                "detalle": f"Entrada: {h_in} | Salida: {h_out} ({obs})"
+            })
+
+        historial.sort(key=lambda x: (x["fecha"], x["hora"]), reverse=True)
+
+        total_sesiones_erp = len(rows_logs)
+        total_checadas = len(rows_asis)
+        total_dias_activos = len(fechas_unicas)
+        total_accesos_consolidado = len(historial)
+
+        return {
+            "status": "SUCCESS",
+            "id_empleado": id_emp_clean,
+            "nombre": nombre_emp,
+            "depto": depto_emp,
+            "puesto": puesto_emp,
+            "dias_evaluados": dias,
+            "total_accesos": total_accesos_consolidado,
+            "total_sesiones_erp": total_sesiones_erp,
+            "total_checadas_asistencia": total_checadas,
+            "dias_con_acceso": total_dias_activos,
+            "ultimo_acceso": historial[0] if historial else None,
+            "historial": historial
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

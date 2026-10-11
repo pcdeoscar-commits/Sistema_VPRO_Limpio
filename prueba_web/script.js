@@ -191,7 +191,22 @@ function iniciarSesionExitosa(usuario) {
     document.getElementById("sidebar").style.display = "flex";
     document.getElementById("vista-dashboard").style.display = "block";
     
+    // Registrar acceso en log
+    try {
+        fetch(`${API_URL}/api/auth/registrar-acceso`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id_empleado: usuario.id_empleado,
+                nombre: usuario.nombre_completo || usuario.nombre,
+                tipo_evento: "LOGIN_PLATAFORMA",
+                ip_origen: "WEB_PORTAL"
+            })
+        }).catch(() => {});
+    } catch(e) {}
+
     filtrarMenuPorRol(usuario.rol);
+    actualizarMonitorAccesosCEO();
     iniciarRelojKiosco();
     inicializarLectorKiosco(); 
     cargarBadges();
@@ -202,6 +217,10 @@ function cerrarSesion() {
     document.getElementById("sidebar").style.display = "none";
     document.getElementById("vista-dashboard").style.display = "none";
     document.getElementById("vista-login").style.display = "block";
+    const btnAgenda = document.getElementById("contenedor-boton-agenda-drive");
+    if (btnAgenda) btnAgenda.style.display = "none";
+    const contCEO = document.getElementById("contenedor-monitor-accesos-ceo");
+    if (contCEO) contCEO.style.display = "none";
     usuarioLogueado = null;
     empleadoSeleccionado = null;
 }
@@ -220,6 +239,206 @@ function filtrarMenuPorRol(rolUsuario) {
             item.style.display = 'none';
         }
     });
+    actualizarVisibilidadAgendaDrive();
+}
+
+function actualizarVisibilidadAgendaDrive() {
+    const btnAgenda = document.getElementById("contenedor-boton-agenda-drive");
+    if (!btnAgenda) return;
+
+    if (!usuarioLogueado) {
+        btnAgenda.style.display = "none";
+        return;
+    }
+
+    const rol = (usuarioLogueado.rol || '').toUpperCase();
+    const nombre = (usuarioLogueado.nombre || '').toUpperCase();
+
+    // Solo tienen acceso: Coordinador, Productores, Agundez y Admin
+    const esAdmin = rol.includes('ADMIN');
+    const esCoordinador = rol.includes('COORDINADOR') || rol.includes('COORDINACION');
+    const esProductor = rol.includes('PRODUCTOR') || rol.includes('PRODUCCION');
+    const esAgundez = nombre.includes('AGUNDEZ');
+
+    if (esAdmin || esCoordinador || esProductor || esAgundez) {
+        btnAgenda.style.display = "block";
+    } else {
+        btnAgenda.style.display = "none";
+    }
+}
+
+// ==========================================
+// 👑 MONITOR EJECUTIVO DE ACCESOS (CEO & CUAUHTEMOC)
+// ==========================================
+function actualizarMonitorAccesosCEO() {
+    const contenedor = document.getElementById("contenedor-monitor-accesos-ceo");
+    if (!contenedor) return;
+
+    if (!usuarioLogueado) {
+        contenedor.style.display = "none";
+        return;
+    }
+
+    const idEmp = String(usuarioLogueado.id_empleado || '').trim();
+    const nombre = String(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    const esPedro = (nombre.includes("PEDRO") && nombre.includes("VILLARREAL")) || idEmp === "203";
+    const esCuauhtemoc = (nombre.includes("CUAUHTEMOC") && nombre.includes("RIVERA")) || idEmp === "201";
+
+    if (esPedro || esCuauhtemoc) {
+        contenedor.style.display = "block";
+        cargarSelectorPersonalCEO();
+    } else {
+        contenedor.style.display = "none";
+    }
+}
+
+async function cargarSelectorPersonalCEO() {
+    const dropdown = document.getElementById("dropdown-personal-ceo");
+    if (!dropdown) return;
+    
+    // Si ya tiene las opciones del personal cargadas, no recargar innecesariamente
+    if (dropdown.options.length > 1) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/auth/personal-selector`);
+        if (res.ok) {
+            const personal = await res.json();
+            dropdown.innerHTML = '<option value="">-- Selecciona un colaborador --</option>';
+            personal.forEach(p => {
+                const opt = document.createElement("option");
+                opt.value = p.id_empleado;
+                opt.textContent = `${p.nombre} - ${p.depto} (ID: ${p.id_empleado})`;
+                dropdown.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.error("Error al cargar selector de personal CEO:", e);
+    }
+}
+
+async function consultarAccesosPersonalCEO(idEmpleado) {
+    const contResultado = document.getElementById("resultado-accesos-ceo");
+    if (!contResultado) return;
+
+    if (!idEmpleado) {
+        contResultado.style.display = "none";
+        contResultado.innerHTML = "";
+        return;
+    }
+
+    contResultado.style.display = "block";
+    contResultado.innerHTML = `
+        <div style="padding: 16px; text-align: center; color: #64748b; font-size: 14px;">
+            <i class="ph ph-spinner" style="font-size: 22px;"></i> Consultando bitácora de accesos de los últimos 7 días...
+        </div>
+    `;
+
+    try {
+        const res = await fetch(`${API_URL}/api/auth/accesos-recientes/${idEmpleado}?dias=7`);
+        if (!res.ok) {
+            contResultado.innerHTML = `<div class="alerta-card alert">Error al consultar accesos del servidor.</div>`;
+            return;
+        }
+
+        const data = await res.json();
+        const total = data.total_accesos || 0;
+        const totalERP = data.total_sesiones_erp || 0;
+        const totalAsis = data.total_checadas_asistencia || 0;
+        const diasActivos = data.dias_con_acceso || 0;
+        const historial = data.historial || [];
+        const nombre = data.nombre || `ID: ${idEmpleado}`;
+        const depto = data.depto || 'GENERAL';
+        const puesto = data.puesto || 'Personal';
+
+        const colorBorde = total > 0 ? '#10b981' : '#ef4444';
+        const colorFondo = total > 0 ? '#f0fdf4' : '#fef2f2';
+        const colorTexto = total > 0 ? '#166534' : '#991b1b';
+
+        let html = `
+            <div style="background: ${colorFondo}; border-left: 5px solid ${colorBorde}; border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div>
+                    <span style="font-size: 11.5px; text-transform: uppercase; font-weight: 700; color: ${colorTexto}; letter-spacing: 0.5px;">Resultado de los últimos 7 días</span>
+                    <h4 style="margin: 3px 0 4px 0; color: #0f172a; font-size: 18px;">${nombre}</h4>
+                    <p style="margin: 0; font-size: 13px; color: #475569;">
+                        Departamento: <b>${depto}</b> | Puesto: <b>${puesto}</b>
+                    </p>
+                </div>
+                <div style="text-align: right; background: white; padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                    <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Total de Accesos</div>
+                    <div style="font-size: 26px; font-weight: 800; color: ${colorTexto}; line-height: 1.1;">${total} veces</div>
+                    <span style="font-size: 12px; color: #64748b;">en los últimos 7 días</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center;">
+                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">📊 Total Accesos</span>
+                    <div style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 4px;">${total} veces</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center;">
+                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">📅 Días con Actividad</span>
+                    <div style="font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 4px;">${diasActivos} de 7 días</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center;">
+                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">🖥️ Inicios de Sesión (ERP)</span>
+                    <div style="font-size: 20px; font-weight: 700; color: #2563eb; margin-top: 4px;">${totalERP}</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center;">
+                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">🕒 Checador / Asistencia</span>
+                    <div style="font-size: 20px; font-weight: 700; color: #059669; margin-top: 4px;">${totalAsis}</div>
+                </div>
+            </div>
+        `;
+
+        if (historial.length > 0) {
+            html += `
+                <details style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px;">
+                    <summary style="font-size: 13.5px; font-weight: 600; color: #1e293b; cursor: pointer;">
+                        📋 Ver Bitácora Detallada de Registros (${historial.length} eventos en los últimos 7 días)
+                    </summary>
+                    <div style="overflow-x: auto; margin-top: 12px;">
+                        <table class="tabla-vpro" style="width: 100%; font-size: 13px;">
+                            <thead>
+                                <tr style="background: #f1f5f9;">
+                                    <th style="padding: 8px;">Fecha</th>
+                                    <th style="padding: 8px;">Hora</th>
+                                    <th style="padding: 8px;">Tipo de Acceso</th>
+                                    <th style="padding: 8px;">Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            historial.forEach(h => {
+                html += `
+                    <tr>
+                        <td style="padding: 8px; font-weight: 600;">${h.fecha}</td>
+                        <td style="padding: 8px;">${h.hora}</td>
+                        <td style="padding: 8px;">${h.tipo}</td>
+                        <td style="padding: 8px; color: #475569;">${h.detalle}</td>
+                    </tr>
+                `;
+            });
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            `;
+        } else {
+            html += `
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: center; color: #64748b; font-size: 13px;">
+                    ℹ️ No se encontraron registros de accesos a la plataforma ni al checador en los últimos 7 días para este colaborador.
+                </div>
+            `;
+        }
+
+        contResultado.innerHTML = html;
+    } catch (err) {
+        console.error("Error al consultar accesos:", err);
+        contResultado.innerHTML = `<div class="alerta-card alert">Error de conexión al obtener los datos.</div>`;
+    }
 }
 
 // ==========================================
@@ -362,6 +581,8 @@ function obtenerRangoSemanaActual() {
 
 async function cargarDatosInicio() {
     if (!usuarioLogueado) return;
+    actualizarVisibilidadAgendaDrive();
+    actualizarMonitorAccesosCEO();
 
     // 1. Notificaciones: Radar de Bodega (Checkouts) y VPRO Transfer (Archivos Compartidos)
     const contenedorNotif = document.getElementById("inicio-notificaciones");
@@ -1887,18 +2108,16 @@ function filtrarChatPorFechaTexto(textoCompleto, fechaStr) {
     const dInt = parseInt(dd, 10);
     const mInt = parseInt(mm, 10);
 
-    // Formatos posibles en WhatsApp:
-    // 1) dd/mm/yyyy o d/m/yy o dd/mm/yy (ej: 10/10/2026, 10/10/26)
-    // 2) yyyy-mm-dd
-    // 3) mm/dd/yyyy
+    // Formato estándar WhatsApp México / Hispanoamérica:
+    // [dd/mm/yy, hh:mm:ss] o dd/mm/yy, hh:mm - Nombre:
     const yy = yyyy.substring(2);
-    const regexs = [
-        new RegExp(`(^|\\n|\\r)\\[?.*?(0?${dInt}/0?${mInt}/(${yyyy}|${yy})).*?`, 'i'),
-        new RegExp(`(^|\\n|\\r)\\[?.*?(0?${mInt}/0?${dInt}/(${yyyy}|${yy})).*?`, 'i'),
-        new RegExp(`(^|\\n|\\r)\\[?.*?(${yyyy}-${mm}-${dd}).*?`, 'i')
-    ];
+    const ddPad = String(dInt).padStart(2, '0');
+    const mmPad = String(mInt).padStart(2, '0');
 
-    const patronFecha = new RegExp(`(^|\\n|\\r)\\[?\\s*(\\d{1,4}[/-]\\d{1,2}[/-]\\d{2,4})`, 'i');
+    // Expresión regular estricta: coincide con el inicio de línea o corchete [dd/mm/yyyy o [dd/mm/yy
+    const regexEstricto = new RegExp(`^\\[?\\s*0?${dInt}\\/${mmPad}\\/(${yyyy}|${yy})\\b`, 'i');
+
+    const patronNuevoMensaje = /^\s*\[?\s*\d{1,2}\/\d{1,2}\/\d{2,4}\b/;
 
     const lineas = textoCompleto.split(/\r?\n/);
     const resultado = [];
@@ -1906,19 +2125,17 @@ function filtrarChatPorFechaTexto(textoCompleto, fechaStr) {
 
     for (let i = 0; i < lineas.length; i++) {
         const linea = lineas[i];
-        // ¿Inicia un nuevo mensaje con timestamp?
-        const matchNuevo = linea.match(patronFecha);
-        if (matchNuevo) {
-            // Verificar si coincide con la fecha objetivo
-            const coincide = regexs.some(rgx => rgx.test(linea));
-            if (coincide) {
+        // ¿Inicia un nuevo mensaje con fecha?
+        if (patronNuevoMensaje.test(linea)) {
+            // Verificar si coincide estrictamente con la fecha Día/Mes/Año objetivo
+            if (regexEstricto.test(linea)) {
                 incluyendoMensaje = true;
                 resultado.push(linea);
             } else {
                 incluyendoMensaje = false;
             }
         } else if (incluyendoMensaje) {
-            // Línea de continuación del mensaje del mismo día
+            // Línea de continuación de un mensaje del día seleccionado
             resultado.push(linea);
         }
     }

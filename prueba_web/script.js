@@ -207,6 +207,11 @@ function iniciarSesionExitosa(usuario) {
 
     filtrarMenuPorRol(usuario.rol);
     actualizarMonitorAccesosCEO();
+    const elFotoInicio = document.getElementById("inicio-foto-empleado");
+    if (elFotoInicio) {
+        const idEmp = String(usuario.id_empleado || '000').trim();
+        elFotoInicio.src = usuario.foto_url || `${API_URL}/fotos/${idEmp}.jpg`;
+    }
     iniciarRelojKiosco();
     inicializarLectorKiosco(); 
     cargarBadges();
@@ -583,6 +588,13 @@ async function cargarDatosInicio() {
     if (!usuarioLogueado) return;
     actualizarVisibilidadAgendaDrive();
     actualizarMonitorAccesosCEO();
+
+    // Foto de perfil del empleado en banner de inicio
+    const elFotoInicio = document.getElementById("inicio-foto-empleado");
+    if (elFotoInicio) {
+        const idEmp = String(usuarioLogueado.id_empleado || '000').trim();
+        elFotoInicio.src = usuarioLogueado.foto_url || `${API_URL}/fotos/${idEmp}.jpg`;
+    }
 
     // 1. Notificaciones: Radar de Bodega (Checkouts) y VPRO Transfer (Archivos Compartidos)
     const contenedorNotif = document.getElementById("inicio-notificaciones");

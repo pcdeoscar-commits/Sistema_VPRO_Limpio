@@ -549,3 +549,130 @@ def vincular_cotizacion(id_evento: int, payload: dict):
         return {"status": "ok", "mensaje": "Cotización vinculada exitosamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+from core.database import get_db_cursor
+from core.security import verificar_password
+
+@router.get("/{folio}/estado-chat")
+def estado_chat_op(folio: str):
+    """Indica si la OP cuenta con chat de WhatsApp sellado registrado."""
+    folio = str(folio).strip()
+    try:
+        with engine_eventos.connect() as conn:
+            row = conn.execute(
+                text("SELECT chat_historial FROM public.eventos WHERE folio = :folio OR CAST(id_evento AS text) = :folio"),
+                {"folio": folio}
+            ).mappings().first()
+            if not row:
+                return {"tiene_chat": False}
+            tiene = bool(row["chat_historial"] and str(row["chat_historial"]).strip())
+            return {"tiene_chat": tiene}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/guardar-chat")
+def guardar_chat_op(payload: dict):
+    """Permite a Coordinador o Agundez capturar o integrar el chat de una OP."""
+    folio = str(payload.get("folio", "")).strip()
+    chat_texto = payload.get("chat_texto", "").strip()
+    usuario = str(payload.get("usuario", "")).strip().upper()
+    rol = str(payload.get("rol", "")).strip().upper()
+    
+    # Estricto: Solo rol COORDINADOR / COORDINACION o usuarios con apellido VILLARREAL o AGUNDEZ
+    es_coordinador = any(r in rol for r in ["COORDINADOR", "COORDINACION"])
+    es_direccion = "VILLARREAL" in usuario or "AGUNDEZ" in usuario
+    if not (es_coordinador or es_direccion):
+        raise HTTPException(
+            status_code=403, 
+            detail="Acceso denegado: Solo el personal con rol de Coordinador o apellidos Villarreal / Agundez puede integrar chats."
+        )
+        
+    if not folio or not chat_texto:
+        raise HTTPException(status_code=400, detail="Debe proporcionar el folio y el contenido del chat.")
+        
+    try:
+        with engine_eventos.begin() as conn:
+            res = conn.execute(
+                text("""
+                    UPDATE public.eventos
+                    SET chat_historial = :chat_texto
+                    WHERE folio = :folio OR CAST(id_evento AS text) = :folio
+                    RETURNING folio, nombre_evento;
+                """),
+                {"folio": folio, "chat_texto": chat_texto}
+            ).mappings().first()
+            
+            if not res:
+                raise HTTPException(status_code=404, detail=f"No se encontró la OP con folio '{folio}'.")
+                
+            return {
+                "ok": True,
+                "mensaje": f"Chat de WhatsApp integrado y sellado correctamente en el historial de la OP {res['folio']}."
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/consultar-chat")
+def consultar_chat_op(payload: dict):
+    """Permite consultar el chat sellado solo a usuarios con apellido Villarreal o Agundez tras verificar password."""
+    folio = str(payload.get("folio", "")).strip()
+    usuario = str(payload.get("usuario", "")).strip().upper()
+    password = str(payload.get("password", "")).strip()
+    
+    if "VILLARREAL" not in usuario and "AGUNDEZ" not in usuario:
+        raise HTTPException(
+            status_code=403, 
+            detail="Acceso restringido: Solo Dirección (apellidos Villarreal o Agundez) puede abrir el chat sellado."
+        )
+        
+    if not password:
+        raise HTTPException(status_code=400, detail="Debe ingresar su contraseña personal para abrir este chat sellado.")
+        
+    try:
+        with get_db_cursor("db_personal") as cursor:
+            cursor.execute("""
+                SELECT encode(nombre::bytea, 'hex'), encode(password::bytea, 'hex')
+                FROM public.empleados
+            """)
+            rows = cursor.fetchall()
+            
+        matched_pass = None
+        for r in rows:
+            db_nombre = safe_decode_hex(r[0]).strip().upper()
+            if db_nombre == usuario:
+                matched_pass = safe_decode_hex(r[1]).strip()
+                break
+                
+        if not matched_pass:
+            for r in rows:
+                db_nombre = safe_decode_hex(r[0]).strip().upper()
+                if ("VILLARREAL" in db_nombre and "VILLARREAL" in usuario) or ("AGUNDEZ" in db_nombre and "AGUNDEZ" in usuario):
+                    matched_pass = safe_decode_hex(r[1]).strip()
+                    break
+
+        if not matched_pass:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado en la base de datos de personal.")
+            
+        if not verificar_password(password, matched_pass):
+            raise HTTPException(status_code=401, detail="Contraseña incorrecta. Acceso no autorizado.")
+            
+        with engine_eventos.connect() as conn:
+            res_chat = conn.execute(
+                text("SELECT chat_historial FROM public.eventos WHERE folio = :folio OR CAST(id_evento AS text) = :folio"),
+                {"folio": folio}
+            ).mappings().first()
+            
+            if not res_chat:
+                raise HTTPException(status_code=404, detail=f"No se encontró la OP '{folio}'.")
+                
+            return {
+                "ok": True,
+                "chat_historial": res_chat["chat_historial"] or ""
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

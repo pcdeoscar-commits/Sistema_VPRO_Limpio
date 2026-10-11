@@ -1251,7 +1251,12 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
 
     const dis = isReadOnly ? 'disabled' : '';
     const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase();
+    const nombreUsuario = (usuarioLogueado?.nombre_completo || '').toUpperCase();
     const esCoordinadorOAdmin = rolUsuario.includes('ADMIN') || rolUsuario.includes('PRODUCCION') || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION');
+    // Estricto: Solo Coordinador o Villarreal o Agundez pueden integrar chats
+    const esPuedeIntegrarChat = rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') || nombreUsuario.includes('VILLARREAL') || nombreUsuario.includes('AGUNDEZ');
+    // Estricto: Solo Villarreal o Agundez pueden abrir el chat sellado
+    const esVillarrealOAgundez = nombreUsuario.includes('VILLARREAL') || nombreUsuario.includes('AGUNDEZ');
 
     return `
         <form id="form-orden-produccion-${isReadOnly ? 'hist' : 'act'}" onsubmit="guardarOrdenOP(event)">
@@ -1599,6 +1604,33 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 </div>
             </div>
 
+            <!-- 💬 BITÁCORA Y CHAT DE WHATSAPP (SELLADO / AUDITORÍA) -->
+            ${data.folio ? `
+                <div class="op-section-card" style="border-left: 5px solid #25D366; background: #f8fafc; margin-top: 14px; margin-bottom: 20px; padding: 18px 22px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                        <div>
+                            <div style="font-weight: 700; color: #0f172a; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-whatsapp-logo" style="font-size: 24px; color: #25D366;"></i>
+                                <span>Bitácora de Chat WhatsApp de la OP (Sellada)</span>
+                            </div>
+                            <div style="font-size: 13px; color: #64748b; margin-top: 4px; line-height: 1.4;">
+                                Registro para aclaraciones y auditoría operativa. Solo personal autorizado (Villarreal / Agundez) con clave puede abrirlo.
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                            ${esPuedeIntegrarChat ? `
+                                <button type="button" onclick="abrirModalCapturaChat('${folioVal}')" style="background: #25D366; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(37,211,102,0.3); transition: all 0.2s;">
+                                    <i class="ph ph-chat-centered-text" style="font-size: 17px;"></i> 📥 Integrar / Capturar Chat
+                                </button>
+                            ` : ''}
+                            <button type="button" onclick="solicitarDesellarChat('${folioVal}')" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: all 0.2s;">
+                                <i class="ph ph-lock-key" style="font-size: 17px; color: #fbbf24;"></i> 🔒 Abrir Chat Sellado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+
             <!-- 💾 BOTÓN GUARDAR MAESTRO Y ACCIÓN DE HISTORIAL -->
             ${!isReadOnly ? `
                 <div style="margin-top: 14px; margin-bottom: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
@@ -1841,6 +1873,344 @@ async function mandarOPAlHistorial(folio, mostrarConfirmacion = true) {
     }
 }
 
+// -------------------------------------------------------------
+// Bitácora y Chat de WhatsApp Sellado (Captura y Desellado Seguro)
+// -------------------------------------------------------------
+function filtrarChatPorFechaTexto(textoCompleto, fechaStr) {
+    if (!textoCompleto || !fechaStr) return textoCompleto;
+    // fechaStr format: YYYY-MM-DD
+    const partes = fechaStr.split('-');
+    if (partes.length !== 3) return textoCompleto;
+    const yyyy = partes[0];
+    const mm = partes[1];
+    const dd = partes[2];
+    const dInt = parseInt(dd, 10);
+    const mInt = parseInt(mm, 10);
+
+    // Formatos posibles en WhatsApp:
+    // 1) dd/mm/yyyy o d/m/yy o dd/mm/yy (ej: 10/10/2026, 10/10/26)
+    // 2) yyyy-mm-dd
+    // 3) mm/dd/yyyy
+    const yy = yyyy.substring(2);
+    const regexs = [
+        new RegExp(`(^|\\n|\\r)\\[?.*?(0?${dInt}/0?${mInt}/(${yyyy}|${yy})).*?`, 'i'),
+        new RegExp(`(^|\\n|\\r)\\[?.*?(0?${mInt}/0?${dInt}/(${yyyy}|${yy})).*?`, 'i'),
+        new RegExp(`(^|\\n|\\r)\\[?.*?(${yyyy}-${mm}-${dd}).*?`, 'i')
+    ];
+
+    const patronFecha = new RegExp(`(^|\\n|\\r)\\[?\\s*(\\d{1,4}[/-]\\d{1,2}[/-]\\d{2,4})`, 'i');
+
+    const lineas = textoCompleto.split(/\r?\n/);
+    const resultado = [];
+    let incluyendoMensaje = false;
+
+    for (let i = 0; i < lineas.length; i++) {
+        const linea = lineas[i];
+        // ¿Inicia un nuevo mensaje con timestamp?
+        const matchNuevo = linea.match(patronFecha);
+        if (matchNuevo) {
+            // Verificar si coincide con la fecha objetivo
+            const coincide = regexs.some(rgx => rgx.test(linea));
+            if (coincide) {
+                incluyendoMensaje = true;
+                resultado.push(linea);
+            } else {
+                incluyendoMensaje = false;
+            }
+        } else if (incluyendoMensaje) {
+            // Línea de continuación del mensaje del mismo día
+            resultado.push(linea);
+        }
+    }
+
+    return resultado.join('\n');
+}
+
+async function abrirModalCapturaChat(folio) {
+    if (!folio) {
+        Swal.fire('Atención', 'No se ha especificado el folio de la OP.', 'warning');
+        return;
+    }
+
+    // Obtener fecha del evento de la OP si existe en pantalla
+    const fechaEventoInput = document.getElementById('op_fec_del_evento')?.value || '';
+    const hoyStr = new Date().toISOString().substring(0, 10);
+    const fechaSugerida = fechaEventoInput || hoyStr;
+
+    window._rawChatTextoCompleto = '';
+
+    const { value: formValues } = await Swal.fire({
+        title: `📥 Integrar Chat WhatsApp - OP ${folio}`,
+        html: `
+            <div style="text-align: left; font-size: 13.5px; color: #334155;">
+                <p style="margin-bottom: 12px; color: #475569; line-height: 1.4;">
+                    Sube el archivo <strong>_chat.txt</strong>. El sistema filtrará automáticamente los mensajes del día seleccionado:
+                </p>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                    <label style="font-weight: 600; display: block; margin-bottom: 6px; color: #0f172a;">
+                        1. Seleccionar archivo _chat.txt:
+                    </label>
+                    <input type="file" id="swal-chat-file" accept=".txt" style="width: 100%; padding: 7px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;" onchange="
+                        const f = this.files[0];
+                        if (f) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                window._rawChatTextoCompleto = e.target.result;
+                                const fSel = document.getElementById('swal-chat-fecha')?.value;
+                                if (fSel) {
+                                    const filtrado = filtrarChatPorFechaTexto(window._rawChatTextoCompleto, fSel);
+                                    document.getElementById('swal-chat-text').value = filtrado;
+                                    const cLineas = filtrado.trim() ? filtrado.split('\\n').length : 0;
+                                    document.getElementById('swal-chat-status').innerText = '✅ ' + cLineas + ' líneas extraídas para el ' + fSel;
+                                } else {
+                                    document.getElementById('swal-chat-text').value = window._rawChatTextoCompleto;
+                                }
+                            };
+                            reader.readAsText(f, 'UTF-8');
+                        }
+                    ">
+                </div>
+
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                    <label style="font-weight: 600; display: block; margin-bottom: 6px; color: #166534;">
+                        📅 2. Filtrar únicamente este día:
+                    </label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="date" id="swal-chat-fecha" value="${fechaSugerida}" style="padding: 8px 12px; border: 1px solid #86efac; border-radius: 6px; font-size: 13.5px; font-weight: 600; outline: none;" onchange="
+                            if (window._rawChatTextoCompleto) {
+                                const filtrado = filtrarChatPorFechaTexto(window._rawChatTextoCompleto, this.value);
+                                document.getElementById('swal-chat-text').value = filtrado;
+                                const cLineas = filtrado.trim() ? filtrado.split('\\n').length : 0;
+                                document.getElementById('swal-chat-status').innerText = '✅ ' + cLineas + ' líneas extraídas para el ' + this.value;
+                            }
+                        ">
+                        <button type="button" style="background: #16a34a; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer;" onclick="
+                            const fSel = document.getElementById('swal-chat-fecha')?.value;
+                            const tOrigen = window._rawChatTextoCompleto || document.getElementById('swal-chat-text')?.value;
+                            if (fSel && tOrigen) {
+                                const filtrado = filtrarChatPorFechaTexto(tOrigen, fSel);
+                                document.getElementById('swal-chat-text').value = filtrado;
+                                const cLineas = filtrado.trim() ? filtrado.split('\\n').length : 0;
+                                document.getElementById('swal-chat-status').innerText = '✅ ' + cLineas + ' líneas extraídas para el ' + fSel;
+                            }
+                        ">
+                            Filtrar este día
+                        </button>
+                    </div>
+                    <div id="swal-chat-status" style="font-size: 12px; color: #15803d; font-weight: 600; margin-top: 6px;"></div>
+                </div>
+
+                <div>
+                    <label style="font-weight: 600; display: block; margin-bottom: 4px; color: #0f172a;">
+                        Vista previa de los mensajes que se sellarán:
+                    </label>
+                    <textarea id="swal-chat-text" rows="8" placeholder="Aquí aparecerán filtrados solo los mensajes del día elegido..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: monospace; font-size: 12px; box-sizing: border-box; resize: vertical; background: #ffffff;"></textarea>
+                </div>
+            </div>
+        `,
+        width: '680px',
+        showCancelButton: true,
+        confirmButtonText: '💾 Sellar Chat Filtrado en Historial',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#25D366',
+        preConfirm: () => {
+            const chatTexto = document.getElementById('swal-chat-text')?.value?.trim();
+            if (!chatTexto) {
+                Swal.showValidationMessage('No hay mensajes seleccionados para sellar. Revisa el archivo o la fecha.');
+                return false;
+            }
+            return { chatTexto };
+        }
+    });
+
+    if (formValues && formValues.chatTexto) {
+        Swal.fire({
+            title: 'Guardando y sellando chat...',
+            text: 'Por favor espera un momento.',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        try {
+            const rol = (usuarioLogueado?.rol || '').toUpperCase();
+            const usuario = usuarioLogueado?.nombre_completo || 'COORDINADOR';
+            const res = await fetch(`${API_URL}/api/eventos/guardar-chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    folio: folio,
+                    chat_texto: formValues.chatTexto,
+                    usuario: usuario,
+                    rol: rol
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Chat Sellado con Éxito!',
+                    text: data.mensaje || 'La bitácora de chat ha sido integrada y sellada en el expediente de la OP.',
+                    confirmButtonColor: '#16a34a'
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al sellar chat',
+                    text: data.detail || 'Ocurrió un error en el servidor.'
+                });
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: err.message
+            });
+        }
+    }
+}
+
+async function solicitarDesellarChat(folio) {
+    if (!folio) {
+        Swal.fire('Atención', 'No se ha especificado el folio de la OP.', 'warning');
+        return;
+    }
+
+    const nombreUsuario = (usuarioLogueado?.nombre_completo || '').toUpperCase();
+    const esAutorizado = nombreUsuario.includes('VILLARREAL') || nombreUsuario.includes('AGUNDEZ');
+
+    if (!esAutorizado) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Acceso Restringido',
+            html: `
+                <div style="font-size: 14px; color: #475569; text-align: center;">
+                    <p>🔒 Este registro de chat se encuentra <strong>sellado bajo custodia</strong> para fines de aclaraciones y auditoría.</p>
+                    <p style="margin-top: 8px; color: #b91c1c; font-weight: 600;">
+                        Solo personal de Dirección con apellido <u>Villarreal</u> o <u>Agundez</u> tiene autorización para abrirlo.
+                    </p>
+                </div>
+            `,
+            confirmButtonColor: '#334155'
+        });
+        return;
+    }
+
+    // Si es Villarreal o Agundez, solicitar contraseña
+    const { value: passIngresada } = await Swal.fire({
+        title: '🔐 Autorización de Seguridad',
+        html: `
+            <div style="font-size: 13.5px; color: #334155; text-align: left; margin-bottom: 12px;">
+                <p>Hola <strong>${usuarioLogueado?.nombre_completo || 'Usuario'}</strong>,</p>
+                <p>Para desellar y consultar la bitácora de chat de la <strong>OP ${folio}</strong>, ingresa tu contraseña de acceso:</p>
+            </div>
+            <input type="password" id="swal-pass-chat" class="swal2-input" placeholder="Tu contraseña de usuario" style="margin: 0 auto; width: 85%;">
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: '🔓 Desellar y Consultar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#1e293b',
+        preConfirm: () => {
+            const pass = document.getElementById('swal-pass-chat')?.value;
+            if (!pass) {
+                Swal.showValidationMessage('Debes ingresar tu contraseña.');
+                return false;
+            }
+            return pass;
+        }
+    });
+
+    if (passIngresada) {
+        Swal.fire({
+            title: 'Verificando credenciales...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        try {
+            const usuario = usuarioLogueado?.nombre_completo || '';
+            const res = await fetch(`${API_URL}/api/eventos/consultar-chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    folio: folio,
+                    usuario: usuario,
+                    password: passIngresada
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.ok) {
+                const contenido = data.chat_historial || '';
+                if (!contenido.trim()) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Expediente Sellado Vacío',
+                        text: `La OP ${folio} no cuenta aún con chat de WhatsApp registrado.`,
+                        confirmButtonColor: '#334155'
+                    });
+                    return;
+                }
+
+                const lineas = contenido.split('\n');
+                const totalLineas = lineas.length;
+
+                // Escapar HTML seguro
+                const seguroHtml = contenido
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+
+                Swal.fire({
+                    title: `📜 Chat WhatsApp Sellado - OP ${folio}`,
+                    html: `
+                        <div style="text-align: left; font-size: 13px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #f1f5f9; padding: 8px 12px; border-radius: 6px;">
+                                <span style="color: #475569; font-weight: 600;">📊 ${totalLineas} línea(s) registradas</span>
+                                <span style="color: #16a34a; font-weight: 600;">🔒 Desellado por: ${usuarioLogueado?.nombre_completo || 'Dirección'}</span>
+                            </div>
+                            <div id="contenedor-texto-chat-sellado" style="max-height: 420px; overflow-y: auto; background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; text-align: left; border: 1px solid #334155;">${seguroHtml}</div>
+                            <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 11.5px; color: #94a3b8;">⚠️ Documento Confidencial - Exclusivo para aclaraciones de la OP.</span>
+                                <button type="button" id="btn-copiar-chat-sellado" style="background: #334155; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                    📋 Copiar Texto
+                                </button>
+                            </div>
+                        </div>
+                    `,
+                    width: '850px',
+                    confirmButtonText: 'Cerrar Bitácora',
+                    confirmButtonColor: '#1e293b',
+                    didOpen: () => {
+                        const btnCopiar = document.getElementById('btn-copiar-chat-sellado');
+                        if (btnCopiar) {
+                            btnCopiar.onclick = () => {
+                                const texto = document.getElementById('contenedor-texto-chat-sellado')?.innerText || '';
+                                navigator.clipboard.writeText(texto).then(() => {
+                                    btnCopiar.innerText = '✅ ¡Copiado!';
+                                    setTimeout(() => { btnCopiar.innerText = '📋 Copiar Texto'; }, 2000);
+                                });
+                            };
+                        }
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Acceso Denegado',
+                    text: data.detail || 'Contraseña incorrecta o permisos insuficientes.',
+                    confirmButtonColor: '#ef4444'
+                });
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: err.message
+            });
+        }
+    }
+}
 
 // -------------------------------------------------------------
 // Bitácora de Gira y Horas de Locación
@@ -1937,6 +2307,12 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
             }).join('');
         } else {
             contenedor.innerHTML = '';
+            const contenedorGira = document.getElementById("contenedor-bitacora-gira");
+            const switchBg = document.getElementById("toggle-switch-gira");
+            const knob = document.getElementById("knob-switch-gira");
+            if (contenedorGira) contenedorGira.style.display = "none";
+            if (switchBg) switchBg.style.background = "#cbd5e1";
+            if (knob) knob.style.left = "3px";
         }
     } catch (e) {
         console.error("Error al cargar jornadas de gira:", e);

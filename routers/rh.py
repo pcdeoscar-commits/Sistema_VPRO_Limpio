@@ -302,9 +302,6 @@ class DocumentoUpdate(BaseModel):
     verificado_por_rh: Optional[bool] = None
     observaciones: Optional[str] = None
 
-
-# --- ENDPOINTS ---
-
 # --- EMPLEADOS ---
 @router.get("/empleados")
 def get_empleados():

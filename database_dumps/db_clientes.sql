@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict viamLrUz9T2xCplEPkDudmOcrZLKH0Lz9kHQc6nMywGaMkIumQFfXGFfCeeLgYt
+\restrict jAt0bUSMxldYaDn9u96s47CdeLsqGZwsQnCviM4ivQUMcBg8mr07anOwaPqLG0C
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -98,6 +98,7 @@ CESAVESIN										32
 COCA - COLA	ACTUALIZAR Please elnombr del Gte. Gral.	Sinaloa	Culiacan	000000000	ccolanolose@ccola	Eunice Hernandez	222222222	Alma D. Carrillo López	333333333	21
 H.AYUNTAMIENTO DE BADIRAGUATO		SINALOA	Badiraguato							33
 JAPAC										34
+ADECEM										35
 \.
 
 
@@ -105,7 +106,7 @@ JAPAC										34
 -- Name: clientes_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.clientes_id_cliente_seq', 25, true);
+SELECT pg_catalog.setval('public.clientes_id_cliente_seq', 35, true);
 
 
 --
@@ -128,5 +129,5 @@ ALTER TABLE ONLY public.clientes
 -- PostgreSQL database dump complete
 --
 
-\unrestrict viamLrUz9T2xCplEPkDudmOcrZLKH0Lz9kHQc6nMywGaMkIumQFfXGFfCeeLgYt
+\unrestrict jAt0bUSMxldYaDn9u96s47CdeLsqGZwsQnCviM4ivQUMcBg8mr07anOwaPqLG0C
 

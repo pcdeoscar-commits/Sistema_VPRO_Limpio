@@ -131,6 +131,48 @@ def main():
     except Exception:
         pass
 
+    print("\n--- 4. Sincronizando contadores y secuencias de claves primarias ---")
+    sync_seq_sql = """
+    DO $$
+    DECLARE
+        r RECORD;
+        max_val BIGINT;
+    BEGIN
+        FOR r IN (
+            SELECT 
+                t.table_schema,
+                t.table_name,
+                c.column_name,
+                pg_get_serial_sequence(quote_ident(t.table_schema) || '.' || quote_ident(t.table_name), c.column_name) as seq_name
+            FROM information_schema.tables t
+            JOIN information_schema.columns c 
+              ON t.table_schema = c.table_schema 
+             AND t.table_name = c.table_name
+            WHERE t.table_schema = 'public'
+              AND t.table_type = 'BASE TABLE'
+              AND c.column_default LIKE 'nextval%'
+        ) LOOP
+            IF r.seq_name IS NOT NULL THEN
+                EXECUTE format('SELECT COALESCE(MAX(%I), 1) FROM %I.%I', r.column_name, r.table_schema, r.table_name) INTO max_val;
+                IF max_val > 1 THEN
+                    EXECUTE format('SELECT setval(%L, %s, true)', r.seq_name, max_val);
+                ELSE
+                    EXECUTE format('SELECT setval(%L, 1, false)', r.seq_name);
+                END IF;
+            END IF;
+        END LOOP;
+    END $$;
+    """
+    for db in DATABASES:
+        try:
+            subprocess.run([
+                psql_cmd, "-U", db_user, "-h", db_host, "-p", db_port, "-d", db,
+                "-c", sync_seq_sql
+            ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        except Exception:
+            pass
+    print("✔ Secuencias sincronizadas en todas las bases de datos.")
+
     print("\n" + "=" * 70)
     print(f"🎉 RESTAURACIÓN COMPLETADA: {exitos}/{len(DATABASES)} bases de datos listas.")
     print("El sistema VPRO ya puede conectarse con todos sus módulos operativos.")

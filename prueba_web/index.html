@@ -1156,11 +1156,15 @@
                     </div>
                 </div>
 
-                <!-- ACCESO RÁPIDO A GOOGLE DRIVE DE AGENDA -->
-                <div id="contenedor-boton-agenda-drive" style="margin-bottom: 24px; text-align: center; display: none;">
+                <!-- ACCESO RÁPIDO: AGENDA Y CALENDARIO DE ACTIVIDADES -->
+                <div id="contenedor-boton-agenda-drive" style="margin-bottom: 24px; display: none; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap;">
                     <a href="https://docs.google.com/spreadsheets/d/1g7Yg06nF8NZ08d_YW1QdDWa8n9-NX7F2/edit?gid=1976790899#gid=1976790899" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px -2px rgba(37, 99, 235, 0.5)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px -1px rgba(37, 99, 235, 0.4)';">
                         <i class="ph ph-calendar-check" style="font-size: 20px;"></i>
                         Abrir Agenda de Actividades (Google Drive)
+                    </a>
+                    <a href="https://calendar.google.com/calendar/u/0/r" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background-color: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px -2px rgba(79, 70, 229, 0.5)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px -1px rgba(79, 70, 229, 0.4)';">
+                        <i class="ph ph-calendar" style="font-size: 20px;"></i>
+                        Abrir Calendario de Actividades (Google Calendar)
                     </a>
                 </div>
 
@@ -1204,7 +1208,12 @@
                     </select>
                 </div>
 
-                <h3 style="color: #0f172a; margin-top: 24px;"><i class="ph ph-bell-ringing"></i> Centro de Notificaciones</h3>
+                <h3 style="color: #0f172a; margin-top: 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span><i class="ph ph-bell-ringing"></i> Centro de Notificaciones</span>
+                    <span style="font-size: 12.5px; font-weight: 600; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; padding: 3px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
+                        ⚠️ <b>RECUERDA:</b> Los archivos permanecerán por solo 24 hrs. después que los has bajado.
+                    </span>
+                </h3>
                 <div id="inicio-notificaciones">
                     <div class="alerta-card success"><i class="ph ph-check-circle"></i> Cargando notificaciones...</div>
                 </div>
@@ -1464,18 +1473,147 @@
                     </h2>
                     
                     <!-- AYUDA CONTEXTUAL (EXPANDIBLE) -->
-                    <details class="op-accordion" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 24px; padding: 14px 18px;">
-                        <summary style="font-weight: 600; color: #334155; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
-                            <span>❓ Ayuda Contextual: ¿Cómo funciona la Orden de Producción?</span>
+                    <!-- AYUDA CONTEXTUAL (EXPANDIBLE) -->
+                    <details class="op-accordion" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 24px; padding: 16px 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                        <summary style="font-weight: 700; color: #1e293b; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; user-select: none;">
+                            <span style="display: flex; align-items: center; gap: 8px;">❓ Ayuda Contextual: ¿Cómo funciona la Orden de Producción?</span>
+                            <span style="font-size: 12px; color: #64748b; font-weight: normal;">(Clic para expandir / contraer)</span>
                         </summary>
-                        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; font-size: 13.5px; color: #475569; line-height: 1.6;">
-                            <h4 style="margin: 0 0 6px 0; color: #0f172a;">🎬 FASE 1: Planeación y Nacimiento del Proyecto</h4>
-                            <p style="margin: 0 0 8px 0;"><b>Actor responsable:</b> Administración, Coordinación o Ventas.<br><b>Objetivo:</b> Crear el evento y definir a los responsables.</p>
-                            <ul style="margin: 0; padding-left: 20px;">
-                                <li>📝 <b>Captura de Datos Base:</b> Se llenan los datos vitales: Cliente, Nombre, Locación y Fechas.</li>
-                                <li>👤 <b>El Nombramiento del Productor:</b> Se asigna obligatoriamente un Productor Responsable.</li>
-                                <li>🗂️ <b>Cierre de Ciclo Automático:</b> Cuando el evento finaliza y Ana Lilia aprueba los gastos en Auditoría, la OP pasa a la Bóveda Histórica de solo lectura.</li>
-                            </ul>
+                        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 13.5px; color: #334155; line-height: 1.65;">
+                            
+                            <!-- TARJETA CABECERA CON BOTÓN DE DESCARGA PDF -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #2563eb; padding: 12px 16px; border-radius: 8px; margin-bottom: 18px;">
+                                <div>
+                                    <b style="color: #0f172a; font-size: 14px;">🎬 Columna Vertebral Operativa VPRO [Formato VPF-PAGL-OP]</b>
+                                    <p style="margin: 2px 0 0 0; font-size: 12.5px; color: #475569;">Ningún evento o rodaje existe formalmente sin su OP. Este documento detona inventario, asistencia, viáticos y cierre financiero.</p>
+                                </div>
+                                <div>
+                                    <a href="Guia_Orden_de_Produccion_VPRO.pdf" target="_blank" download="Guia_Orden_de_Produccion_VPRO.pdf" style="display: inline-flex; align-items: center; gap: 8px; background: #2563eb; color: #ffffff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; box-shadow: 0 2px 4px rgba(37,99,235,0.25); transition: background 0.2s;">
+                                        <span>📄 Descargar Guía Oficial en PDF</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- SECCIÓN: PASO A PASO -->
+                            <h4 style="margin: 0 0 10px 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 6px;">
+                                <span>📋 1. Guía de Captura y Llenado Paso a Paso:</span>
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 18px;">
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                                    <b style="color: #1e293b; font-size: 13px;">1️⃣ Selector de Folios:</b>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #475569;">Conserva <i>'🆕 CREAR NUEVA ORDEN'</i> para proyectos nuevos, o selecciona un folio activo existente para consultar o modificar sus datos.</p>
+                                </div>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                                    <b style="color: #1e293b; font-size: 13px;">2️⃣ Datos Maestros del Evento:</b>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #475569;">Captura Cliente (catálogo oficial), Nombre del Proyecto, Sede / Locación precisa, Fecha/Hora de Instalación, del Evento y de Desmontaje.</p>
+                                </div>
+                                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px;">
+                                    <b style="color: #1d4ed8; font-size: 13px;">3️⃣ Productor Responsable (CANDADO CLAVE):</b>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #1e40af;"><b>⚠️ Obligatorio:</b> El usuario designado es el <u>único</u> facultado para usar la Claqueta Digital en set y rendir cuentas en el Reporte de Gastos.</p>
+                                </div>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                                    <b style="color: #1e293b; font-size: 13px;">4️⃣ Convocatoria y Logística:</b>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #475569;">Asigna al Staff interno VPRO, Apoyos/Técnicos externos, Flotilla vehicular (camionetas) y Proveedores externos contratados.</p>
+                                </div>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                                    <b style="color: #1e293b; font-size: 13px;">5️⃣ Modo Gira (Asistencia en Ruta):</b>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #475569;">Para eventos foráneos, activa el Modo Gira con las fechas de viaje para justificar la asistencia del personal y evitar faltas en RH/Kiosco.</p>
+                                </div>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                                    <b style="color: #1e293b; font-size: 13px;">6️⃣ Firmas y Guardado Oficial:</b>
+                                    <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #475569;">Registra las 4 firmas (Elaboró, Coordina, Organiza, Vo.Bo.) y presiona <i>'GUARDAR ORDEN'</i> para generar el folio y notificar a Almacén.</p>
+                                </div>
+                            </div>
+
+                            <!-- SECCIÓN: CICLO DE VIDA (6 FASES) -->
+                            <h4 style="margin: 16px 0 10px 0; color: #0f172a; font-size: 14.5px;">🔄 2. Ciclo de Vida y Trazabilidad Operativa (Las 6 Fases):</h4>
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 18px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+                                    <thead>
+                                        <tr style="background: #1e293b; color: #ffffff;">
+                                            <th style="padding: 8px 12px; font-weight: 600;">Fase</th>
+                                            <th style="padding: 8px 12px; font-weight: 600;">Actor</th>
+                                            <th style="padding: 8px 12px; font-weight: 600;">Acción Operativa</th>
+                                            <th style="padding: 8px 12px; font-weight: 600;">Estatus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff;">
+                                            <td style="padding: 8px 12px; font-weight: 600; color: #0284c7;">1. Planeación</td>
+                                            <td style="padding: 8px 12px;">Coordinación / Ventas</td>
+                                            <td style="padding: 8px 12px;">Captura de datos maestros, personal y flotilla. Nace el folio formal.</td>
+                                            <td style="padding: 8px 12px;"><span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">ACTIVA</span></td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #f1f5f9; background: #f8fafc;">
+                                            <td style="padding: 8px 12px; font-weight: 600; color: #d97706;">2. Despacho Hardware</td>
+                                            <td style="padding: 8px 12px;">Almacén / Bodega</td>
+                                            <td style="padding: 8px 12px;">En Módulo Checkout, Almacén carga equipo, coteja y autoriza salida física.</td>
+                                            <td style="padding: 8px 12px;"><span style="background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">DESPACHADO</span></td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff;">
+                                            <td style="padding: 8px 12px; font-weight: 600; color: #2563eb;">3. Operación en Set</td>
+                                            <td style="padding: 8px 12px;">Productor Responsable</td>
+                                            <td style="padding: 8px 12px;">En locación, usa Claqueta Digital: 'INICIAR LLAMADO' y 'TERMINAR JORNADA'.</td>
+                                            <td style="padding: 8px 12px;"><span style="background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">EN EVENTO</span></td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #f1f5f9; background: #f8fafc;">
+                                            <td style="padding: 8px 12px; font-weight: 600; color: #059669;">4. Retorno a Base</td>
+                                            <td style="padding: 8px 12px;">Almacén / Logística</td>
+                                            <td style="padding: 8px 12px;">Check-in de hardware pieza por pieza. Semáforo inteligente detecta averías a Taller.</td>
+                                            <td style="padding: 8px 12px;"><span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">RECIBIDO</span></td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff;">
+                                            <td style="padding: 8px 12px; font-weight: 600; color: #7c3aed;">5. Rendición Gastos</td>
+                                            <td style="padding: 8px 12px;">Productor Responsable</td>
+                                            <td style="padding: 8px 12px;">Captura odómetros vehiculares, gastos diarios de viáticos y remanente a devolver.</td>
+                                            <td style="padding: 8px 12px;"><span style="background: #f3e8ff; color: #6b21a8; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">EN AUDITORÍA</span></td>
+                                        </tr>
+                                        <tr style="background: #f8fafc;">
+                                            <td style="padding: 8px 12px; font-weight: 600; color: #475569;">6. Auditoría y Cierre</td>
+                                            <td style="padding: 8px 12px;">Dirección / Finanzas</td>
+                                            <td style="padding: 8px 12px;">Cotejo físico de tickets contra digital. Al aprobar, la OP se transfiere a la Bóveda Histórica.</td>
+                                            <td style="padding: 8px 12px;"><span style="background: #f1f5f9; color: #334155; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">ARCHIVADA</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- SECCIÓN: BITÁCORA DE CHAT WHATSAPP -->
+                            <h4 style="margin: 16px 0 10px 0; color: #0f172a; font-size: 14.5px;">💬 3. Bitácora de Chat WhatsApp de la OP (Sellada y Encriptada):</h4>
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 14px 16px; border-radius: 8px; margin-bottom: 18px; font-size: 12.5px; color: #166534;">
+                                <p style="margin: 0 0 8px 0; line-height: 1.5;">
+                                    <b>Propósito:</b> Respaldar conversaciones oficiales, acuerdos de última hora y aclaraciones con clientes y proveedores durante la planeación y ejecución del evento.
+                                </p>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 8px;">
+                                    <div style="background: #ffffff; border: 1px solid #86efac; border-radius: 6px; padding: 10px;">
+                                        <b style="color: #15803d;">📥 Botón "Integrar / Capturar Chat":</b>
+                                        <ul style="margin: 4px 0 0 0; padding-left: 16px; color: #14532d; line-height: 1.5;">
+                                            <li>Sube el archivo exportado de WhatsApp (<code>_chat.txt</code>).</li>
+                                            <li><b>Filtro Inteligente:</b> Extrae automáticamente solo los mensajes del día del evento, omitiendo charlas ajenas o de otras fechas.</li>
+                                            <li>Al dar clic en <i>'Sellar Chat en Historial'</i>, queda blindado en la base de datos de la OP.</li>
+                                        </ul>
+                                    </div>
+                                    <div style="background: #ffffff; border: 1px solid #86efac; border-radius: 6px; padding: 10px;">
+                                        <b style="color: #15803d;">🔒 Botón "Abrir Chat Sellado":</b>
+                                        <ul style="margin: 4px 0 0 0; padding-left: 16px; color: #14532d; line-height: 1.5;">
+                                            <li><b>Custodia de Privacidad:</b> Oculto para el personal operativo general.</li>
+                                            <li><b>Personal Autorizado:</b> Exclusivamente Dirección.</li>
+                                            <li><b>Validación con Contraseña:</b> Requiere teclear la contraseña de usuario para desellar y consultar el historial.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CANDADOS DE ORO -->
+                            <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 10px 14px; border-radius: 6px; font-size: 12.5px; color: #92400e;">
+                                <b>🔒 4. Candados de Seguridad Operativa:</b>
+                                <ul style="margin: 4px 0 0 0; padding-left: 18px; line-height: 1.55;">
+                                    <li><b>Candado de Hardware:</b> Es matemáticamente imposible que un Productor compruebe gastos si Bodega no ha finalizado antes el <i>Check-in de Retorno</i>.</li>
+                                    <li><b>Candado de Asignación:</b> El Productor únicamente puede ver y comprobar aquellas OPs donde su nombre fue asignado como Productor Responsable.</li>
+                                    <li><b>Candado de Bóveda:</b> Al aprobarse los gastos por Dirección, la OP se congela y no puede ser modificada por ningún usuario operativo.</li>
+                                </ul>
+                            </div>
+
                         </div>
                     </details>
 
@@ -3023,7 +3161,7 @@
                                         <label class="op-form-label">🔑 Contraseña de Acceso*</label>
                                         <div style="display: flex; align-items: center; position: relative;">
                                             <input type="password" id="emp-password" class="form-input" placeholder="Contraseña" style="padding-right: 35px;" oninput="document.getElementById('toggle-emp-password').style.display = this.value.length > 0 ? 'block' : 'none'">
-                                            <i class="ph ph-eye" id="toggle-emp-password" style="position: absolute; right: 10px; cursor: pointer; color: #64748b; display: none; font-size: 18px;" onclick="const input = document.getElementById('emp-password'); if (input.type === 'password') { input.type = 'text'; this.classList.remove('ph-eye'); this.classList.add('ph-eye-slash'); } else { input.type = 'password'; this.classList.remove('ph-eye-slash'); this.classList.add('ph-eye'); }" title="Mostrar/Ocultar contraseña"></i>
+                                            <i class="ph ph-eye" id="toggle-emp-password" style="position: absolute; right: 10px; cursor: pointer; color: #64748b; display: none; font-size: 18px;" onclick="alternarVisibilidadPassword(this, 'emp-password')" title="Mostrar/Ocultar contraseña"></i>
                                         </div>
                                     </div>
                                 </div>
@@ -5221,7 +5359,7 @@
                             <i class="ph ph-paper-plane-tilt" style="color: var(--accent-color);"></i> VPRO Transfer - Compartir Archivos
                         </h2>
                         <p style="margin: 6px 0 0 0; color: #64748b; font-size: 13.5px;">
-                            Comparte archivos seguros de hasta <b>5 GB</b> entre compañeros activos. El archivo se auto-eliminará del servidor en <b>7 horas</b> una vez que el destinatario lo descargue para optimizar el almacenamiento.
+                            Comparte archivos seguros de hasta <b>5 GB</b> entre compañeros activos. El archivo se auto-eliminará del servidor en <b>24 horas</b> una vez que el destinatario lo descargue para optimizar el almacenamiento.
                         </p>
                     </div>
                     <div style="display: flex; gap: 8px;">
@@ -5395,7 +5533,7 @@
             
             <div style="position: relative; display: flex; align-items: center; width: 100%; max-width: 300px; margin: 0 auto 15px;">
                 <input type="password" id="modal-password" placeholder="Ingresa tu contraseña" style="width: 100%; padding-right: 35px; margin-bottom: 0;" onkeydown="if(event.key==='Enter') verificarAcceso()" oninput="document.getElementById('toggle-login-password').style.display = this.value.length > 0 ? 'block' : 'none'">
-                <i class="ph ph-eye" id="toggle-login-password" style="position: absolute; right: 10px; cursor: pointer; color: #64748b; display: none; font-size: 18px;" onclick="const input = document.getElementById('modal-password'); if (input.type === 'password') { input.type = 'text'; this.classList.remove('ph-eye'); this.classList.add('ph-eye-slash'); } else { input.type = 'password'; this.classList.remove('ph-eye-slash'); this.classList.add('ph-eye'); }" title="Mostrar/Ocultar contraseña"></i>
+                <i class="ph ph-eye" id="toggle-login-password" style="position: absolute; right: 10px; cursor: pointer; color: #64748b; display: none; font-size: 18px;" onclick="alternarVisibilidadPassword(this, 'modal-password')" title="Mostrar/Ocultar contraseña"></i>
             </div>
             <button class="btn-confirmar" onclick="verificarAcceso()">Entrar</button>
             <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
@@ -5717,7 +5855,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=5"></script>
+    <script src="script.js?v=9"></script>
 </body>
 </html>
 <!-- MODAL VINCULAR COTIZACION -->

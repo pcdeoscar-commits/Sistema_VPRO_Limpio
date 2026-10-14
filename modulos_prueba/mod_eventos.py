@@ -25,14 +25,48 @@ def renderizar_modulo(API_URL: str):
     """, unsafe_allow_html=True)
     
     with st.expander("❓ Ayuda Contextual: ¿Cómo funciona la Orden de Producción?"):
+        pdf_path = "Guia_Orden_de_Produccion_VPRO.pdf"
+        if os.path.exists(pdf_path):
+            with open(pdf_path, "rb") as f_pdf:
+                st.download_button(
+                    label="📄 Descargar Guía Oficial de Orden de Producción (PDF)",
+                    data=f_pdf.read(),
+                    file_name="Guia_Orden_de_Produccion_VPRO.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
         st.markdown("""
-        ### 🎬 FASE 1: Planeación y Nacimiento del Proyecto
-        **Actor responsable:** Administración, Coordinación o Ventas.  
-        **Objetivo:** Crear el evento y definir a los responsables.
+        ### 🎬 Columna Vertebral Operativa VPRO [VPF-PAGL-OP]
+        La Orden de Producción es el documento maestro que detona inventario, asistencia de personal en set, viáticos vehiculares y auditoría contable.
 
-        *   📝 **Captura de Datos Base:** Se llenan los datos vitales: Cliente, Nombre, Locación y Fechas.
-        *   👤 **El Nombramiento del Productor:** Se asigna obligatoriamente un Productor Responsable.
-        *   🗂️ **Cierre de Ciclo Automático:** Cuando el evento finaliza y Ana Lilia aprueba los gastos en Auditoría, la OP pasa a la Bóveda Histórica de solo lectura.
+        ---
+        #### 📋 1. Guía de Captura y Llenado Paso a Paso:
+        * **1️⃣ Selector de Folio:** Conserva `🆕 CREAR NUEVA ORDEN` para nuevos llamados o selecciona un folio activo para editarlo.
+        * **2️⃣ Datos del Evento:** Cliente (catálogo), Nombre del Proyecto, Locación precisa, Fechas/Horas de Instalación, Evento y Desmontaje.
+        * **3️⃣ Productor Responsable (CANDADO CLAVE):** ⚠️ Asignación obligatoria. Es la **única persona** con acceso a la Claqueta Digital en set y al Reporte de Gastos al finalizar.
+        * **4️⃣ Convocatoria:** Selecciona Staff VPRO, Apoyos/Técnicos externos, Flotilla Vehicular (camionetas) y Proveedores.
+        * **5️⃣ Modo Gira (Asistencia en Ruta):** En llamados foráneos, justifica automáticamente asistencias en el Kiosco/Reloj Checador para evitar faltas en RH.
+        * **6️⃣ Firmas y Guardado:** Define las 4 firmas (Elaboró, Coordina, Organiza, Vo.Bo.) y presiona *Guardar Orden*.
+
+        ---
+        #### 🔄 2. Matriz de Fases del Ciclo de Vida:
+        1. **🎬 Fase 1: Planeación (Módulo Eventos):** Creación de la OP y asignación de recursos (`ACTIVA`).
+        2. **📦 Fase 2: Despacho de Hardware (Checkout Salida):** Bodega valida cantidades y autoriza salida física (`DESPACHADO`).
+        3. **🎥 Fase 3: Operación en Set (Claqueta Digital):** Productor marca *INICIAR LLAMADO* y *TERMINAR JORNADA* en set (`EN EVENTO`).
+        4. **📥 Fase 4: Retorno a Base (Checkout Retorno):** Almacén coteja equipo pieza por pieza y reporta averías a Taller (`RECIBIDO`).
+        5. **🧾 Fase 5: Rendición de Cuentas (Reporte de Gastos):** Productor captura odómetros y viáticos diarios (`ENVIADO AUDITORÍA`).
+        6. **🔎 Fase 6: Auditoría y Cierre:** Dirección aprueba números y traslada la OP a la **Bóveda Histórica** (`ARCHIVADA`).
+
+        ---
+        #### 💬 3. Bitácora de Chat WhatsApp de la OP (Sellada y Encriptada):
+        * **📥 Botón "Integrar / Capturar Chat":** Permite subir el archivo `_chat.txt` exportado de WhatsApp. Su filtro inteligente extrae exclusivamente los mensajes correspondientes a la fecha del evento para respaldar acuerdos técnicos y con clientes.
+        * **🔒 Botón "Abrir Chat Sellado":** El expediente permanece encriptado y sellado. Únicamente personal directivo autorizado (apellidos **Villarreal** o **Agundez**) puede desellarlo previa validación de su contraseña de usuario.
+
+        ---
+        #### 🔒 4. Candados de Seguridad Operativa:
+        * **Candado de Hardware:** No se pueden rendir gastos si Bodega no ha finalizado el Check-in de regreso.
+        * **Candado de Productor:** Solo el Productor asignado puede comprobar viáticos del evento.
+        * **Candado de Bóveda:** Tras la aprobación de Dirección, el evento se congela de solo lectura.
         """)
     
     if 'op_data' not in st.session_state: st.session_state.op_data = {}

@@ -79,6 +79,20 @@ function cerrarModal() {
     empleadoSeleccionado = null;
 }
 
+function alternarVisibilidadPassword(iconEl, inputId) {
+    const input = document.getElementById(inputId);
+    if (!input || !iconEl) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        iconEl.classList.remove('ph-eye');
+        iconEl.classList.add('ph-eye-slash');
+    } else {
+        input.type = 'password';
+        iconEl.classList.remove('ph-eye-slash');
+        iconEl.classList.add('ph-eye');
+    }
+}
+
 async function verificarAcceso() {
     const password = document.getElementById("modal-password").value;
     const errorMsg = document.getElementById("modal-error");
@@ -256,17 +270,18 @@ function actualizarVisibilidadAgendaDrive() {
         return;
     }
 
-    const rol = (usuarioLogueado.rol || '').toUpperCase();
-    const nombre = (usuarioLogueado.nombre || '').toUpperCase();
+    const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
+    const nombre = (usuarioLogueado.nombre || usuarioLogueado.nombre_completo || '').toUpperCase().trim();
 
-    // Solo tienen acceso: Coordinador, Productores, Agundez y Admin
-    const esAdmin = rol.includes('ADMIN');
-    const esCoordinador = rol.includes('COORDINADOR') || rol.includes('COORDINACION');
-    const esProductor = rol.includes('PRODUCTOR') || rol.includes('PRODUCCION');
-    const esAgundez = nombre.includes('AGUNDEZ');
+    // FILTRO AUTORIZADO: Solo Villarreal, Agundez, Coordinador y Productores
+    const esVillarreal = nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL');
+    const esAgundez = nombre.includes('AGUNDEZ') || nombre.includes('AGÚNDEZ');
+    const esCoordinador = rol === 'COORDINADOR' || rol.includes('COORDINADOR') || rol.includes('COORDINACION');
+    // Productor: por rol 'PRODUCTOR' o nombre asignado como Productor (Manuel Antonio Madrid Zazueta / Madrid)
+    const esProductor = rol === 'PRODUCTOR' || nombre.includes('MADRID');
 
-    if (esAdmin || esCoordinador || esProductor || esAgundez) {
-        btnAgenda.style.display = "block";
+    if (esVillarreal || esAgundez || esCoordinador || esProductor) {
+        btnAgenda.style.display = "flex";
     } else {
         btnAgenda.style.display = "none";
     }
@@ -621,7 +636,7 @@ async function cargarDatosInicio() {
                                         Enviado por: <b>${t.nombre_origen}</b> • ${t.fecha_subida_str || ''} ${t.mensaje ? `— <i>"${t.mensaje}"</i>` : ''}
                                     </div>
                                     <div style="font-size: 11.5px; color: #0284c7; margin-top: 3px;">
-                                        ⏱️ <i>Al descargarlo, permanecerá disponible 7 horas en el servidor antes de ser eliminado automáticamente.</i>
+                                        ⏱️ <i>Al descargarlo, permanecerá disponible 24 horas en el servidor antes de ser eliminado automáticamente.</i>
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -12249,7 +12264,7 @@ async function cargarTransferenciasRecibidos() {
                     <span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
                         <i class="ph ph-sparkle"></i> Nuevo (Sin descargar)
                     </span>
-                    <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Se iniciará cuenta de 7h al descargar</div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Se iniciará cuenta de 24h al descargar</div>
                 `;
                 btnDescarga = `
                     <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
@@ -12376,6 +12391,16 @@ async function cargarTransferenciasEnviados() {
     }
 }
 
+let timerRecargaTransferencias = null;
+function programarRecargaTransferencias(delay = 2000) {
+    if (timerRecargaTransferencias) clearTimeout(timerRecargaTransferencias);
+    timerRecargaTransferencias = setTimeout(() => {
+        cargarTransferenciasRecibidos();
+        cargarDatosInicio();
+        cargarBadges();
+    }, delay);
+}
+
 function descargarPaqueteZip(folioPaquete) {
     if (!folioPaquete) return;
     const urlDescarga = `${API_URL}/api/transferencias/descargar_paquete/${folioPaquete}`;
@@ -12387,12 +12412,7 @@ function descargarPaqueteZip(folioPaquete) {
     a.click();
     document.body.removeChild(a);
 
-    setTimeout(() => {
-        alert(`📥 Tu descarga del paquete ZIP ha comenzado.\n\n⚠️ RECUERDA: Todos los archivos de este paquete permanecerán disponibles en el servidor por 7 horas a partir de este momento. Después de ese lapso, el sistema los borrará automáticamente.`);
-        cargarTransferenciasRecibidos();
-        cargarDatosInicio();
-        cargarBadges();
-    }, 800);
+    programarRecargaTransferencias(2000);
 }
 
 function descargarArchivoTransferenciaDirecto(idTransferencia, nombreArchivo = "") {
@@ -12405,12 +12425,7 @@ function descargarArchivoTransferenciaDirecto(idTransferencia, nombreArchivo = "
     a.click();
     document.body.removeChild(a);
 
-    setTimeout(() => {
-        alert(`📥 Tu descarga ha comenzado.\n\n⚠️ RECUERDA: Este archivo permanecerá disponible en el servidor por 7 horas a partir de este momento. Después de ese lapso, el sistema lo borrará automáticamente para mantener limpio el almacenamiento.`);
-        cargarTransferenciasRecibidos();
-        cargarDatosInicio();
-        cargarBadges();
-    }, 800);
+    programarRecargaTransferencias(2000);
 }
 
 async function eliminarTransferencia(idTransferencia) {

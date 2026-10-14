@@ -40,12 +40,12 @@ def piloto_automatico_asistencias():
         print(f"[PILOTO AUTOMATICO ERROR]: {e}")
 
 def tarea_limpiar_archivos_compartidos():
-    """Limpia archivos compartidos que excedieron las 7 horas de su descarga o 72h sin descargar."""
+    """Limpia archivos compartidos que excedieron las 24 horas de su descarga o 72h sin descargar."""
     try:
         from routers.transferencias import ejecutar_limpieza_expirados
         eliminados = ejecutar_limpieza_expirados()
         if eliminados > 0:
-            print(f"[SCHEDULER] Se limpiaron {eliminados} archivos compartidos expirados (regla 7h).")
+            print(f"[SCHEDULER] Se limpiaron {eliminados} archivos compartidos expirados (regla 24h).")
     except Exception as e:
         print(f"[SCHEDULER ERROR] Error al limpiar archivos compartidos: {e}")
 

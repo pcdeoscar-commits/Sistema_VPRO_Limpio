@@ -95,7 +95,7 @@ def _tamano_legible(num_bytes: int) -> str:
 def ejecutar_limpieza_expirados():
     """
     Elimina físicamente del disco los archivos que ya cumplieron su periodo de retención:
-    1. Archivos descargados cuya fecha_limite_borrado (7 horas) ya se venció.
+    1. Archivos descargados cuya fecha_limite_borrado (24 horas) ya se venció.
     2. Archivos no descargados que lleven más de 72 horas sin ser descargados (para proteger el disco duro).
     """
     try:
@@ -301,7 +301,7 @@ async def subir_archivos_compartidos(
 def obtener_archivos_recibidos(id_empleado: str):
     """
     Retorna la lista de archivos que han sido enviados al empleado especificado.
-    Calcula el tiempo restante para los que ya fueron descargados (regla de 7 horas).
+    Calcula el tiempo restante para los que ya fueron descargados (regla de 24 horas).
     """
     ejecutar_limpieza_expirados()
     
@@ -383,7 +383,7 @@ def obtener_archivos_enviados(id_empleado: str):
                 item["fecha_primer_descarga_str"] = item["fecha_primer_descarga"].strftime("%d/%m/%Y %H:%M")
                 
             if item["estatus"] == "EXPIRADO_BORRADO":
-                item["estado_display"] = "🗑️ Eliminado por límite de 7h"
+                item["estado_display"] = "🗑️ Eliminado por límite de 24h"
             elif item["estatus"] == "CANCELADO":
                 item["estado_display"] = "❌ Cancelado por remitente"
             elif item["descargado"]:
@@ -448,7 +448,7 @@ def descargar_archivo_compartido(id_transferencia: int, request: Request):
     Al descargarse:
     - Marca 'descargado = TRUE'.
     - Fija 'fecha_primer_descarga = NOW()'.
-    - Fija 'fecha_limite_borrado = NOW() + 7 horas'.
+    - Fija 'fecha_limite_borrado = NOW() + 24 horas'.
     """
     ip_cliente = request.client.host if request and request.client else "unknown"
     es_lan = is_lan(ip_cliente)
@@ -470,7 +470,7 @@ def descargar_archivo_compartido(id_transferencia: int, request: Request):
         if reg["estatus"] == "EXPIRADO_BORRADO":
             raise HTTPException(
                 status_code=410,
-                detail="Este archivo ya cumplió su periodo de 7 horas posterior a la descarga y fue eliminado automáticamente para liberar espacio."
+                detail="Este archivo ya cumplió su periodo de 24 horas posterior a la descarga y fue eliminado automáticamente para liberar espacio."
             )
             
         if reg["estatus"] == "CANCELADO":
@@ -487,7 +487,7 @@ def descargar_archivo_compartido(id_transferencia: int, request: Request):
                     SET descargado = TRUE,
                         veces_descargado = COALESCE(veces_descargado, 0) + 1,
                         fecha_primer_descarga = CURRENT_TIMESTAMP,
-                        fecha_limite_borrado = CURRENT_TIMESTAMP + INTERVAL '7 hours',
+                        fecha_limite_borrado = CURRENT_TIMESTAMP + INTERVAL '24 hours',
                         estatus = 'DESCARGADO',
                         ip_descarga = :ip_descarga,
                         es_lan_descarga = :es_lan_descarga
@@ -525,7 +525,7 @@ def descargar_archivo_compartido(id_transferencia: int, request: Request):
 def descargar_paquete_completo_zip(folio_paquete: str):
     """
     Descarga todos los archivos de un paquete en un archivo ZIP.
-    Activa la regla de 7 horas para todos los archivos del paquete.
+    Activa la regla de 24 horas para todos los archivos del paquete.
     """
     try:
         with engine_personal.connect() as conn:
@@ -540,7 +540,7 @@ def descargar_paquete_completo_zip(folio_paquete: str):
         if not archivos:
             raise HTTPException(status_code=404, detail="El paquete no contiene archivos disponibles.")
 
-        # Activar regla de 7 horas en todos los archivos del paquete
+        # Activar regla de 24 horas en todos los archivos del paquete
         ids = [a["id_transferencia"] for a in archivos]
         with engine_personal.begin() as conn:
             conn.execute(text("""
@@ -548,7 +548,7 @@ def descargar_paquete_completo_zip(folio_paquete: str):
                 SET descargado = TRUE,
                     veces_descargado = COALESCE(veces_descargado, 0) + 1,
                     fecha_primer_descarga = COALESCE(fecha_primer_descarga, CURRENT_TIMESTAMP),
-                    fecha_limite_borrado = COALESCE(fecha_limite_borrado, CURRENT_TIMESTAMP + INTERVAL '7 hours'),
+                    fecha_limite_borrado = COALESCE(fecha_limite_borrado, CURRENT_TIMESTAMP + INTERVAL '24 hours'),
                     estatus = 'DESCARGADO'
                 WHERE id_transferencia = ANY(:ids)
             """), {"ids": ids})
@@ -645,7 +645,7 @@ def cancelar_o_eliminar_paquete(folio_paquete: str):
 
 @router.post("/limpiar_expirados")
 def ejecutar_limpieza_manual():
-    """Ejecuta de forma manual o bajo demanda la limpieza de archivos vencidos (>7 horas post descarga)."""
+    """Ejecuta de forma manual o bajo demanda la limpieza de archivos vencidos (>24 horas post descarga)."""
     eliminados = ejecutar_limpieza_expirados()
     return {"status": "SUCCESS", "archivos_eliminados": eliminados}
 

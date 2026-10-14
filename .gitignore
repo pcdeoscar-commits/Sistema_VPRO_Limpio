@@ -6,8 +6,10 @@ prueba_web/nuve_dumy.txt
 
 # Scratch y temporales
 scratch/
+scratch_avatar.png
 *.tmp
 *.zip
 Archivos_Compartidos/
+INFOR_ENVIADA_xALilia/
 __pycache__/
 *.pyc

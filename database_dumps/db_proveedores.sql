@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 9vPmS7VLXVCasvBKcNjiGCo9a0WC1v3Z7fdzGbj6nyAMdUOxf7qWoKR9VP7a5ag
+\restrict TlVCnJhKyRo3niOuQvrg2L042Izt5CtjSaEGDqF5PAGdZ1eefsQuh6U3AYeQdby
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -68,5 +68,5 @@ ALTER TABLE ONLY public.proveedores
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 9vPmS7VLXVCasvBKcNjiGCo9a0WC1v3Z7fdzGbj6nyAMdUOxf7qWoKR9VP7a5ag
+\unrestrict TlVCnJhKyRo3niOuQvrg2L042Izt5CtjSaEGDqF5PAGdZ1eefsQuh6U3AYeQdby
 

@@ -846,15 +846,13 @@ async function cargarDatosInicio() {
                             
                             // 1. Cambiar a vista de daños
                             cambiarVista('vista-danados');
-                            // 2. Cambiar a la pestaña de Expediente Clínico de Activo
-                            cambiarPestanaDanados('expediente');
                             
-                            // 3. Establecer el valor en el buscador y disparar la búsqueda
-                            const inputBuscar = document.getElementById("input-expediente-buscar");
-                            if (inputBuscar) {
-                                inputBuscar.value = codigoEquipo;
-                                setTimeout(() => buscarExpedienteDanado(), 200);
-                            }
+                            // 2. Abrir directamente el expediente clínico e historial en el modal
+                            setTimeout(() => {
+                                if (typeof abrirExpedienteEquipoModal === 'function') {
+                                    abrirExpedienteEquipoModal(codigoEquipo, codigoEquipo);
+                                }
+                            }, 300);
                             
                             // Resetear el dropdown
                             dropdownDanos.value = "";
@@ -1462,6 +1460,22 @@ function actualizarCrewGira() {
     el.innerText = crew.length > 0 ? crew.join(", ") : "Sin personal asignado en la orden";
 }
 
+function alCambiarFechaInicioEvento(input) {
+    if (!input || !input.value) return;
+    const fFin = document.getElementById("op_fec_fin_evento");
+    if (fFin && (!fFin.value || fFin.value < input.value)) {
+        fFin.value = input.value;
+    }
+}
+
+function copiarPresupuestoReunionAOP(monto) {
+    const el = document.getElementById("op_estimado_gasto");
+    if (el) {
+        el.value = Number(monto).toFixed(2);
+        el.focus();
+    }
+}
+
 // -------------------------------------------------------------
 // Generador Completo del Formulario de Orden de Producción
 // -------------------------------------------------------------
@@ -1476,8 +1490,12 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     const fInstalacion = (data.fec_de_instalacion ? String(data.fec_de_instalacion).substring(0, 10) : hoyStr);
     const hInstalacion = (data.hra_de_instalacion ? String(data.hra_de_instalacion).substring(0, 5) : "09:30");
     const fEvento = (data.fec_del_evento ? String(data.fec_del_evento).substring(0, 10) : hoyStr);
+    const fEventoFin = (data.fec_fin_evento ? String(data.fec_fin_evento).substring(0, 10) : fEvento);
     const hInicio = (data.inicio_del_evento ? String(data.inicio_del_evento).substring(0, 5) : "13:30");
     const hLlamado = (data.hra_de_llamado ? String(data.hra_de_llamado).substring(0, 5) : "09:00");
+    const depSolicitaVal = data.dependencia_solicita || '';
+    const quienSolicitaVal = data.quien_solicita || '';
+    const estimadoGastoVal = (data.estimado_gasto !== undefined && data.estimado_gasto !== null) ? Number(data.estimado_gasto) : 0;
 
     // Autorizaciones defaults
     const defElabora = data.elabora || "Ana Lilia Villarreal Uribe";
@@ -1522,9 +1540,14 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                             ¿Faltó adjuntar evidencias multimedia (fotos o videos) o requieres agregar/corregir información?
                         </div>
                     </div>
-                    <button type="button" onclick="habilitarOPParaEdicion('${folioVal}')" style="background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3); transition: all 0.2s;">
-                        <i class="ph ph-lock-key-open"></i> 🔓 Habilitar OP para Agregar Evidencias / Edición
-                    </button>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" onclick="imprimirOrdenProduccionActual('${folioVal}')" style="background: #0078d4; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0, 120, 212, 0.25); transition: all 0.2s;">
+                            <i class="ph ph-printer" style="font-size: 18px;"></i> 🖨️ Imprimir esta OP
+                        </button>
+                        <button type="button" onclick="habilitarOPParaEdicion('${folioVal}')" style="background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3); transition: all 0.2s;">
+                            <i class="ph ph-lock-key-open"></i> 🔓 Habilitar OP para Agregar Evidencias / Edición
+                        </button>
+                    </div>
                 </div>
             ` : ''}
 
@@ -1550,10 +1573,17 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
 
             <!-- 📝 1. DATOS DE LA ORDEN -->
             <div class="op-section-card">
-                <h3 class="op-section-title">📝 Datos de la Orden</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <h3 class="op-section-title" style="margin: 0;">📝 Datos de la Orden</h3>
+                    ${data.folio ? `
+                        <button type="button" onclick="imprimirOrdenProduccionActual('${folioVal}')" style="background: #0078d4; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0, 120, 212, 0.25);">
+                            <i class="ph ph-printer" style="font-size: 17px;"></i> 🖨️ Imprimir esta OP
+                        </button>
+                    ` : ''}
+                </div>
                 
-                <!-- Fila 1: Folio, Cliente, Evento -->
-                <div style="display: grid; grid-template-columns: 1fr 2.5fr 3.5fr; gap: 16px; margin-bottom: 16px;">
+                <!-- Fila 1: Folio, Cliente, Evento y Subtítulo -->
+                <div style="display: grid; grid-template-columns: 1fr 2fr 2.5fr 2fr; gap: 14px; margin-bottom: 16px;">
                     <div>
                         <label class="op-form-label">🔢 FOLIO VPRO:</label>
                         <input type="text" id="op_folio" value="${folioVal}" class="op-input" disabled>
@@ -1566,8 +1596,12 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                         </select>
                     </div>
                     <div>
-                        <label class="op-form-label">🎉 EVENTO:</label>
-                        <input type="text" id="op_nombre_evento" value="${data.nombre_evento || ''}" class="op-input" placeholder="Nombre completo del evento..." ${dis}>
+                        <label class="op-form-label">🎉 NOMBRE DE EVENTO:</label>
+                        <input type="text" id="op_nombre_evento" value="${data.nombre_evento || ''}" class="op-input" placeholder="Nombre principal del torneo o evento..." ${dis}>
+                    </div>
+                    <div>
+                        <label class="op-form-label">🏀 SUBTÍTULO / PARTIDO / SERIE:</label>
+                        <input type="text" id="op_subtitulo_evento" value="${data.subtitulo_evento || ''}" class="op-input" placeholder="Ej. TEBACAS VS EL ROSARIO..." ${dis}>
                     </div>
                 </div>
 
@@ -1587,11 +1621,15 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     </div>
                 </div>
 
-                <!-- Fila 3: Solicita, Productor Resp, Fecha Evento, H. Inicio, H. Llamado -->
-                <div style="display: grid; grid-template-columns: 1.8fr 2fr 1.2fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <!-- Fila 3: Dependencia/Área, Persona que solicita (Contacto / Responsable), Productor Resp. -->
+                <div style="display: grid; grid-template-columns: 1.6fr 1.6fr 1.8fr; gap: 16px; margin-bottom: 16px;">
                     <div>
-                        <label class="op-form-label">📣 SOLICITA:</label>
-                        <input type="text" id="op_quien_solicita" value="${data.quien_solicita || ''}" class="op-input" placeholder="Ej. DES.TECNOLOGICO" ${dis}>
+                        <label class="op-form-label">🏢 DEPENDENCIA O ÁREA SOLICITA:</label>
+                        <input type="text" id="op_dependencia_solicita" value="${depSolicitaVal}" class="op-input" placeholder="Ej. Presidencia, Comunicación Social, Giras..." ${dis}>
+                    </div>
+                    <div>
+                        <label class="op-form-label">👤 PERSONA QUE SOLICITA:</label>
+                        <input type="text" id="op_quien_solicita" value="${quienSolicitaVal}" class="op-input" placeholder="Nombre completo del contacto / responsable..." ${dis}>
                     </div>
                     <div>
                         <label class="op-form-label">🎬 PRODUCTOR RESP.:</label>
@@ -1599,9 +1637,17 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                             ${buildOptions(cats.staff_vpro, data.resp_de_produccion, true)}
                         </select>
                     </div>
+                </div>
+
+                <!-- Fila 4: Rango de Fechas del Evento, Horarios, Detalle Llamado y Estimado de Gasto -->
+                <div style="display: grid; grid-template-columns: 1.1fr 1.1fr 0.9fr 0.9fr 1.6fr 1.2fr; gap: 12px; margin-bottom: 16px;">
                     <div>
-                        <label class="op-form-label">🗓️ FECHA EVENTO:</label>
-                        <input type="date" id="op_fec_del_evento" value="${fEvento}" class="op-input" ${dis}>
+                        <label class="op-form-label">🗓️ FECHA INICIO:</label>
+                        <input type="date" id="op_fec_del_evento" value="${fEvento}" class="op-input" ${dis} onchange="alCambiarFechaInicioEvento(this)">
+                    </div>
+                    <div>
+                        <label class="op-form-label">🏁 FECHA FIN:</label>
+                        <input type="date" id="op_fec_fin_evento" value="${fEventoFin}" class="op-input" ${dis}>
                     </div>
                     <div>
                         <label class="op-form-label">🚀 H. INICIO:</label>
@@ -1611,18 +1657,57 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                         <label class="op-form-label">📞 H. LLAMADO:</label>
                         <input type="time" id="op_hra_de_llamado" value="${hLlamado}" class="op-input" ${dis}>
                     </div>
+                    <div>
+                        <label class="op-form-label">⏱️ DETALLE LLAMADO:</label>
+                        <input type="text" id="op_detalle_llamado" value="${data.detalle_llamado || ''}" class="op-input" placeholder="Ej. Manuel: 9:00 AM | Estudio: 4:00 PM..." ${dis}>
+                    </div>
+                    <div>
+                        <label class="op-form-label">💰 ESTIMADO GASTO ($):</label>
+                        <div style="position: relative;">
+                            <input type="number" step="0.01" min="0" id="op_estimado_gasto" value="${estimadoGastoVal > 0 ? estimadoGastoVal : ''}" class="op-input" placeholder="0.00" style="font-weight: 700; color: #166534; padding-left: 20px;" ${dis}>
+                            <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #166534; pointer-events: none;">$</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Fila 4: Ubicación Exacta -->
-                <div style="margin-bottom: 16px;">
-                    <label class="op-form-label">🗺️ UBICACIÓN EXACTA:</label>
-                    <input type="text" id="op_ubicacion" value="${data.ubicacion || ''}" class="op-input" placeholder="Dirección precisa, salón, piso o referencias GPS..." ${dis}>
+                <!-- Fila 5: Ubicación Exacta y Destino Vehicular -->
+                <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label class="op-form-label">🗺️ UBICACIÓN EXACTA:</label>
+                        <input type="text" id="op_ubicacion" value="${data.ubicacion || ''}" class="op-input" placeholder="Dirección precisa, salón, piso o referencias GPS..." ${dis}>
+                    </div>
+                    <div>
+                        <label class="op-form-label">🎯 DESTINO VEHICULAR / CIUDAD:</label>
+                        <input type="text" id="op_vehiculo_destino" value="${data.vehiculo_destino || ''}" class="op-input" placeholder="Ej. BADIRAGUATO, SIN..." ${dis}>
+                    </div>
                 </div>
 
                 <!-- Fila 5: Vincular Reunión(es) -->
                 <div style="margin-bottom: 16px;">
                     <label class="op-form-label">🤝 VINCULAR REUNIÓN(ES):</label>
                     <div id="ms-reuniones-${isReadOnly ? 'hist' : 'act'}"></div>
+                    ${(data.detalle_reuniones && data.detalle_reuniones.length > 0) ? `
+                        <div style="margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px;">
+                            <div style="font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                                📋 Minutas Previas Vinculadas a esta OP:
+                            </div>
+                            ${data.detalle_reuniones.map(dr => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 4px 0; border-bottom: 1px dashed #cbd5e1; gap: 8px; flex-wrap: wrap;">
+                                    <span><strong>${dr.nombre_proyecto_tentativo || 'Reunión'}</strong> (${dr.fecha_reunion || 'S/F'})</span>
+                                    ${(dr.presupuesto_estimado && Number(dr.presupuesto_estimado) > 0) ? `
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <span style="color: #166534; font-weight: 700;">Presupuesto Minuta: $ ${Number(dr.presupuesto_estimado).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                                            ${!isReadOnly ? `
+                                                <button type="button" onclick="copiarPresupuestoReunionAOP(${dr.presupuesto_estimado})" style="background: #16a34a; color: white; border: none; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">
+                                                    📥 Aplicar a OP
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
                 </div>
 
                 <!-- Fila 5.1: Vincular Cronograma(s) de Actividades -->
@@ -1714,6 +1799,11 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 <div style="margin-bottom: 16px;">
                     <label class="op-form-label">🏗️ ACTIVIDADES PROVEEDORES:</label>
                     <textarea id="op_actividades_de_proveedores" rows="5" class="op-textarea" style="background: #f1f5f9;" placeholder="Servicios externos, montajes o requerimientos de terceros..." ${dis}>${data.actividades_de_proveedores || ''}</textarea>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label class="op-form-label">🏆 ROL DE JUEGOS / ENCUENTROS DEL EVENTO:</label>
+                    <input type="text" id="op_rol_juegos" value="${data.rol_juegos || ''}" class="op-input" style="background: #fefce8; border-color: #fde047;" placeholder="Ej. Día 10/ Octubre | Partido | TEBACAS & El Rosario | Hora: 8:00 PM" ${dis}>
                 </div>
 
                 <div>
@@ -1879,21 +1969,740 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 </div>
             ` : ''}
 
-            <!-- 💾 BOTÓN GUARDAR MAESTRO Y ACCIÓN DE HISTORIAL -->
-            ${!isReadOnly ? `
-                <div style="margin-top: 14px; margin-bottom: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
+            <!-- 💾 BOTÓN GUARDAR MAESTRO, ACCIÓN DE HISTORIAL E IMPRESIÓN OFICIAL -->
+            <div style="margin-top: 14px; margin-bottom: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
+                ${!isReadOnly ? `
                     <button type="submit" style="flex: 2; min-width: 220px; background: #ef4444; color: white; border: none; padding: 16px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.25); transition: background 0.2s;">
                         💾 GUARDAR CAMBIOS ORDEN
                     </button>
                     ${esCoordinadorOAdmin && data.folio ? `
-                        <button type="button" onclick="mandarOPAlHistorial('${folioVal}')" style="flex: 1; min-width: 200px; background: #334155; color: white; border: none; padding: 16px 20px; border-radius: 8px; font-weight: 700; font-size: 14.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(51, 65, 85, 0.25); transition: background 0.2s;">
+                        <button type="button" onclick="mandarOPAlHistorial('${folioVal}')" style="flex: 1; min-width: 180px; background: #334155; color: white; border: none; padding: 16px 20px; border-radius: 8px; font-weight: 700; font-size: 14.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(51, 65, 85, 0.25); transition: background 0.2s;">
                             <i class="ph ph-archive-box"></i> 📦 Mandar al Historial
                         </button>
                     ` : ''}
-                </div>
-            ` : ''}
+                ` : ''}
+                ${(data.folio || !isReadOnly) ? `
+                    <button type="button" onclick="imprimirOrdenProduccionActual('${folioVal}')" style="flex: 1; min-width: 200px; background: #0078d4; color: white; border: none; padding: 16px 22px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(0, 120, 212, 0.3); transition: background 0.2s;">
+                        <i class="ph ph-printer" style="font-size: 20px;"></i> 🖨️ Imprimir esta OP
+                    </button>
+                ` : ''}
+            </div>
         </form>
     `;
+}
+
+// ==========================================================================
+// 🖨️ MOTOR OFICIAL DE IMPRESIÓN Y EXPORTACIÓN A PDF: ORDEN DE PRODUCCIÓN [VPF-PAGL-OP]
+// ==========================================================================
+
+function formatearFechaEspanolCorta(fechaStr) {
+    if (!fechaStr) return '';
+    const clean = String(fechaStr).substring(0, 10);
+    const parts = clean.split('-');
+    if (parts.length !== 3) return fechaStr;
+    const anio = parts[0].substring(2);
+    const mesIdx = parseInt(parts[1], 10) - 1;
+    const dia = parseInt(parts[2], 10);
+    const mesesCortos = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return `${dia}-${mesesCortos[mesIdx] || parts[1]}-${anio}`;
+}
+
+function formatearFechaEspanolLarga(fechaStr) {
+    if (!fechaStr) return '';
+    const clean = String(fechaStr).substring(0, 10);
+    const parts = clean.split('-');
+    if (parts.length !== 3) return fechaStr;
+    const anio = parts[0];
+    const mesIdx = parseInt(parts[1], 10) - 1;
+    const dia = parseInt(parts[2], 10);
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return `${meses[mesIdx] || parts[1]} ${dia} de ${anio}`;
+}
+
+function formatearRangoFechasEvento(fecInicioStr, fecFinStr) {
+    if (!fecInicioStr) return '';
+    const fIni = String(fecInicioStr).substring(0, 10);
+    const fFin = fecFinStr ? String(fecFinStr).substring(0, 10) : fIni;
+    if (!fFin || fIni === fFin) {
+        return formatearFechaEspanolCorta(fIni).toUpperCase();
+    }
+    const pIni = fIni.split('-');
+    const pFin = fFin.split('-');
+    if (pIni.length !== 3 || pFin.length !== 3) return `${fIni} al ${fFin}`;
+    
+    const dIni = parseInt(pIni[2], 10);
+    const dFin = parseInt(pFin[2], 10);
+    const mIni = parseInt(pIni[1], 10) - 1;
+    const mFin = parseInt(pFin[1], 10) - 1;
+    const mesesCortos = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+
+    // Mismo mes y mismo año
+    if (mIni === mFin && pIni[0] === pFin[0]) {
+        const difDias = dFin - dIni;
+        if (difDias === 1) {
+            return `${dIni} y ${dFin} ${mesesCortos[mIni]}.`;
+        } else if (difDias === 2) {
+            return `${dIni}, ${dIni + 1} y ${dFin} ${mesesCortos[mIni]}.`;
+        } else {
+            return `${dIni} al ${dFin} de ${mesesCortos[mIni]}.`;
+        }
+    } else {
+        return `${dIni} ${mesesCortos[mIni]} al ${dFin} ${mesesCortos[mFin]}`;
+    }
+}
+
+function formatearHoraAmPm(horaStr) {
+    if (!horaStr) return '';
+    const clean = String(horaStr).trim().substring(0, 5);
+    const parts = clean.split(':');
+    if (parts.length !== 2) return horaStr;
+    let h = parseInt(parts[0], 10);
+    const m = parts[1];
+    const ampm = h >= 12 ? 'pm' : 'am';
+    h = h % 12;
+    if (h === 0) h = 12;
+    return `${h}:${m}${ampm}`;
+}
+
+function parsearLineasLedgerJS(data) {
+    if (Array.isArray(data.personal_roles_op) && data.personal_roles_op.length > 0) {
+        return data.personal_roles_op;
+    }
+    const prod = (data.produccion || '').trim();
+    const net = (data.internet_redes || '').trim();
+    const act = (data.actividades_de_proveedores || '').trim();
+    const convocados = Array.isArray(data.personal_convocado_op) ? data.personal_convocado_op.map(p => String(p).trim()).filter(Boolean) : [];
+    const externos = Array.isArray(data.externos_op) ? data.externos_op.map(p => String(p).trim()).filter(Boolean) : [];
+
+    const nomEv = String(data.nombre_evento || '').toUpperCase();
+    const esTebacasMuestra = (nomEv.includes('TEBACAS') || prod.toUpperCase().includes('ESTUDIO DE TV')) && convocados.length === 0;
+
+    if (esTebacasMuestra) {
+        return [
+            { tipo: 'seccion', titulo: 'ESTUDIO DE TV:', estilo: 'verde' },
+            { req: 'Switcher', persona: 'Osiel' },
+            { req: 'Audio', persona: 'Paco' },
+            { req: 'Gráficos y marcador (OCR)', persona: 'Carlos' },
+            { req: 'Redes', persona: 'Cuauhtemoc' },
+            { tipo: 'seccion', titulo: 'EXTERNO:', estilo: 'subrayado' },
+            { req: 'Repeticiones', persona: 'Javier' },
+            { req: 'Comentarista #1', persona: 'Miguel Lara' },
+            { req: 'Comentarista #2', persona: 'Ernesto Gutierrez' },
+            { tipo: 'seccion', titulo: 'EN CANCHA:', estilo: 'amarillo' },
+            { req: 'Productor Deportes', persona: 'Manuel' },
+            { req: '2 cámaras fijas (sin camarógrafo) para seguimiento y repeticiones', persona: '' },
+            { req: '1 Antena Starlink', persona: '' },
+            { req: '4 Encoder E3 para transmisión SRT', persona: '' },
+            { req: 'Redes', persona: 'Edgar' },
+            { tipo: 'seccion', titulo: 'EXTERNOS:', estilo: 'subrayado' },
+            { req: 'Camarógrafo #1 (central de seguimiento)', persona: 'Eduardo Araujo' }
+        ];
+    }
+
+    const rows = [];
+    const bloques = [];
+    if (prod) bloques.push(['PRODUCCIÓN:', prod, 'verde']);
+    if (net) bloques.push(['SISTEMAS / REDES:', net, 'amarillo']);
+    if (act) bloques.push(['ACTIVIDADES / PROVEEDORES:', act, 'subrayado']);
+
+    const allPeople = [...convocados, ...externos];
+    let pIdx = 0;
+
+    if (bloques.length > 0) {
+        bloques.forEach(([secTitle, secText, secEstilo]) => {
+            rows.push({ tipo: 'seccion', titulo: secTitle, estilo: secEstilo });
+            const lines = secText.split('\n').map(l => l.trim()).filter(Boolean);
+            lines.forEach(line => {
+                if (line.endsWith(':') && line.length < 35) {
+                    rows.push({ tipo: 'seccion', titulo: line, estilo: 'subrayado' });
+                } else {
+                    const personaMatch = pIdx < allPeople.length ? allPeople[pIdx] : '';
+                    pIdx++;
+                    rows.push({ req: line, persona: personaMatch });
+                }
+            });
+        });
+    }
+
+    // Si aún quedan personas convocadas de VPRO que no tuvieron línea de texto asignada:
+    if (pIdx < convocados.length) {
+        if (bloques.length === 0) {
+            rows.push({ tipo: 'seccion', titulo: 'PERSONAL VPRO ASIGNADO:', estilo: 'verde' });
+        }
+        while (pIdx < convocados.length) {
+            rows.push({ req: '', persona: convocados[pIdx] });
+            pIdx++;
+        }
+    }
+
+    // Si hay personal externo que falta por listar:
+    if (externos.length > 0) {
+        const idxExternosStart = convocados.length;
+        if (pIdx <= idxExternosStart) {
+            rows.push({ tipo: 'seccion', titulo: 'PERSONAL EXTERNO / APOYOS:', estilo: 'subrayado' });
+            externos.forEach(ext => {
+                rows.push({ req: '', persona: ext });
+            });
+        } else if (pIdx < allPeople.length) {
+            rows.push({ tipo: 'seccion', titulo: 'PERSONAL EXTERNO RESTANTE:', estilo: 'subrayado' });
+            while (pIdx < allPeople.length) {
+                rows.push({ req: '', persona: allPeople[pIdx] });
+                pIdx++;
+            }
+        }
+    }
+
+    if (rows.length === 0) {
+        rows.push({ req: '', persona: '' });
+    }
+
+    // Rellenar con filas vacías si son pocas (< 16) para mantener la estética corporativa de la hoja
+    while (rows.length < 16) {
+        rows.push({ req: '', persona: '' });
+    }
+
+    return rows;
+}
+
+function generarHtmlOPInteligente(data) {
+    const hoyStr = formatearFechaLocal(new Date());
+    const fElabFmt = formatearFechaEspanolLarga(data.fec_de_elaboracion_de_op || hoyStr);
+    const folioVal = data.folio || '001';
+
+    const clienteVal = (data.para_q_cliente || 'SIN CLIENTE ASIGNADO').trim();
+    const areaSolicitaVal = (data.dependencia_solicita || '').trim();
+    const nombreEventoVal = (data.nombre_evento || 'SIN NOMBRE DE EVENTO').trim();
+    const locacionVal = (data.locacion || 'POR DEFINIR').trim();
+    const quienSolicitaVal = (data.quien_solicita || 'Sin contacto solicitante').trim();
+    const ubicacionVal = (data.ubicacion || 'CULIACÁN, SIN').trim().toUpperCase();
+    const respProduccionVal = (data.resp_de_produccion || 'Por asignar').trim();
+
+    const fInstFmt = formatearFechaEspanolCorta(data.fec_de_instalacion || hoyStr);
+    const hInstFmt = formatearHoraAmPm(data.hra_de_instalacion || '12:00');
+    const rangoEventoFmt = formatearRangoFechasEvento(data.fec_del_evento || hoyStr, data.fec_fin_evento || data.fec_del_evento || hoyStr);
+    const hInicioFmt = formatearHoraAmPm(data.inicio_del_evento || '20:00');
+    const hLlamadoFmt = formatearHoraAmPm(data.hra_de_llamado || '09:00');
+
+    // Subtítulo del evento (e.g. TEBACAS VS EL ROSARIO)
+    let subEvVal = (data.subtitulo_evento || '').trim();
+    let nomEvLimpio = nombreEventoVal;
+    if (!subEvVal) {
+        const m = nombreEventoVal.match(/\(([^)]+)\)/);
+        if (m) {
+            subEvVal = m[1].trim();
+            nomEvLimpio = nombreEventoVal.replace(`(${subEvVal})`, '').trim();
+        }
+    } else {
+        nomEvLimpio = nombreEventoVal.replace(`(${subEvVal})`, '').trim();
+    }
+
+    // Detalle de llamado multilínea
+    let detLlamVal = (data.detalle_llamado || '').trim();
+    if (!detLlamVal) {
+        detLlamVal = hLlamadoFmt;
+    }
+    const detLlamHtml = detLlamVal.replace(/\n/g, '<br>').replace(/\|/g, '<br>');
+
+    // Rol de juegos
+    let rolJuegosVal = (data.rol_juegos || '').trim();
+    if (!rolJuegosVal) {
+        if (nomEvLimpio.toUpperCase().includes('TEBACAS')) {
+            rolJuegosVal = 'Día 10/ Octubre | Partido | TEBACAS & El Rosario | Hora: 8:00 PM';
+        } else {
+            rolJuegosVal = 'N/A | Evento General | Sin rol de juegos asignado | ---';
+        }
+    }
+    let rolParts = rolJuegosVal.split('|').map(s => s.trim());
+    while (rolParts.length < 4) rolParts.push('');
+
+    // Vehículos a utilizar y destino
+    let vehDestVal = (data.vehiculo_destino || ubicacionVal || 'CULIACÁN').trim().toUpperCase();
+    const listaCarros = (Array.isArray(data.carros_usados_op) && data.carros_usados_op.length > 0)
+        ? data.carros_usados_op.map(c => String(c).trim()).filter(Boolean)
+        : ['Sin vehículos asignados'];
+
+    const tipoServicioVal = (data.tipo_de_servicio || 'Producción de evento').trim();
+    const gastoVal = parseFloat(data.estimado_gasto) || 0;
+    const rowsLedger = parsearLineasLedgerJS(data);
+
+    // Firmas
+    const elaboraVal = (data.elabora || 'Ana Lilia Villarreal Uribe').replace('Ana Lilia Villarreal Uribe', 'Ana Lilia Villarreal U. (Admon)');
+    const coordinaVal = data.coordina || 'Manuel Eduardo Madrid';
+    const organizaVal = data.organiza || 'Martin Eduardo Sanchez Estrada';
+    const voboVal = (data.vobo || 'Gerardo Villarreal Uribe').replace('Gerardo Villarreal Uribe', 'Gerardo Villarreal U.');
+
+    return `
+        <div style="width: 100%; max-width: 960px; margin: 0 auto; color: #000000; font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; box-sizing: border-box; background: #ffffff;">
+            <!-- CONTENEDOR MAESTRO CON BORDE NEGRO EXACTO -->
+            <div style="border: 1.5px solid #000000; width: 100%; box-sizing: border-box;">
+                
+                <!-- 1. HEADER (3 COLUMNAS) -->
+                <table style="width: 100%; border-collapse: collapse; border-bottom: 1.5px solid #000000; table-layout: fixed;">
+                    <tr>
+                        <!-- Columna Izquierda: Logo + Banner Formato -->
+                        <td style="width: 26%; vertical-align: middle; text-align: center; border-right: 1.5px solid #000000; padding: 0;">
+                            <div style="padding: 10px 8px 8px 8px; display: flex; align-items: center; justify-content: center; min-height: 58px;">
+                                <img src="vendor/img/vpro_logo_oficial.png" alt="vpro® Visual Creative" style="max-height: 48px; max-width: 155px; object-fit: contain;">
+                            </div>
+                            <div style="background: #000000; color: #ffffff; font-weight: bold; font-size: 11px; padding: 4px 6px; text-align: center; letter-spacing: 0.5px; border-top: 1px solid #000000;">
+                                FORMATO:VPF-PAGL-OP
+                            </div>
+                        </td>
+
+                        <!-- Columna Central: ORDEN DE PRODUCCIÓN + Fecha de Elaboración -->
+                        <td style="width: 46%; vertical-align: top; text-align: center; border-right: 1.5px solid #000000; padding: 0;">
+                            <div style="padding: 10px 8px 6px 8px;">
+                                <h1 style="margin: 0; font-size: 21px; font-weight: 900; letter-spacing: 0.8px; color: #000000; line-height: 1.15; text-transform: uppercase;">
+                                    ORDEN DE PRODUCCIÓN
+                                </h1>
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #000000;">
+                                <tr>
+                                    <td style="background: #0078d4; color: #ffffff; font-size: 11px; font-weight: bold; padding: 4px 6px; text-align: center; border-right: 1px solid #000000; width: 45%;">
+                                        Fecha de Elaboración:
+                                    </td>
+                                    <td style="font-size: 11.5px; font-weight: 700; padding: 4px 6px; text-align: center; background: #ffffff;">
+                                        ${fElabFmt}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+
+                        <!-- Columna Derecha: Datos Fiscales + FOLIO ROJO -->
+                        <td style="width: 28%; vertical-align: top; padding: 0;">
+                            <div style="padding: 6px 8px; text-align: center; font-size: 9.5px; line-height: 1.35; color: #000000; min-height: 52px; display: flex; flex-direction: column; justify-content: center;">
+                                <div>Laguna de Tamiahua 1344-B, Col. Las Quintas C.P.80060</div>
+                                <div>Tel. (667) 258-16-85 Culiacán, Sin.</div>
+                                <div style="font-weight: 700;">R.F.C. VIUP-680807-UT4</div>
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #000000;">
+                                <tr>
+                                    <td style="background: #e2e8f0; color: #000000; font-size: 11.5px; font-weight: 900; padding: 3px 6px; text-align: center; border-right: 1px solid #000000; width: 45%;">
+                                        FOLIO:
+                                    </td>
+                                    <td style="font-size: 18px; font-weight: 900; color: #dc2626; padding: 2px 6px; text-align: center; background: #ffffff;">
+                                        ${folioVal}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 2. DETALLES DE EVENTO (TABLA MATRIZ EXACTA AL MODELO FÍSICO) -->
+                <table style="width: 100%; border-collapse: collapse; border-bottom: 1.5px solid #000000; table-layout: fixed; font-size: 11px;">
+                    <!-- Cabecera de la sección -->
+                    <tr>
+                        <td colspan="2" style="background: #0078d4; color: #ffffff; font-weight: bold; font-size: 11.5px; padding: 4px 8px; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            Detalles de Evento:
+                        </td>
+                        <td style="width: 22%; background: #0078d4; color: #ffffff; font-weight: bold; font-size: 10px; padding: 4px 6px; text-align: center; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            FECHA DE INSTALACION:
+                        </td>
+                        <td style="width: 18%; background: #d4edda; color: #000000; font-weight: bold; font-size: 11px; padding: 4px 6px; text-align: center; border-bottom: 1px solid #000000;">
+                            ${fInstFmt}
+                        </td>
+                    </tr>
+
+                    <!-- Fila 1: CLIENTE vs HORA DE INSTALACION -->
+                    <tr>
+                        <td style="width: 18%; background: #ffffff; color: #000000; font-weight: bold; font-size: 10px; padding: 4px 8px; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            CLIENTE:
+                        </td>
+                        <td style="width: 42%; font-weight: 800; text-transform: uppercase; font-size: 11.5px; padding: 4px 8px; text-align: center; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            ${clienteVal}
+                        </td>
+                        <td style="background: #0078d4; color: #ffffff; font-weight: bold; font-size: 10px; padding: 4px 6px; text-align: center; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            HORA DE INSTALACION:
+                        </td>
+                        <td style="background: #f1f5f9; color: #000000; font-weight: 700; font-size: 11px; padding: 4px 6px; text-align: center; border-bottom: 1px solid #000000;">
+                            ${hInstFmt}
+                        </td>
+                    </tr>
+
+                    <!-- Fila 2: NOMBRE DE EVENTO (AMARILLO VIVO) vs FECHA EVENTO -->
+                    <tr>
+                        <td style="background: #ffffff; color: #000000; font-weight: bold; font-size: 10px; padding: 4px 8px; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            NOMBRE DE EVENTO:
+                        </td>
+                        <td style="background: #fde047; color: #000000; font-weight: 900; text-transform: uppercase; font-size: 11px; padding: 6px 8px; text-align: center; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            ${nomEvLimpio}
+                        </td>
+                        <td style="background: #0078d4; color: #ffffff; font-weight: bold; font-size: 10px; padding: 4px 6px; text-align: center; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            FECHA EVENTO:
+                        </td>
+                        <td style="background: #d4edda; color: #000000; font-weight: bold; font-size: 11px; padding: 4px 6px; text-align: center; border-bottom: 1px solid #000000;">
+                            ${rangoEventoFmt}
+                        </td>
+                    </tr>
+
+                    <!-- Fila 3: SUBTÍTULO (TEBACAS VS EL ROSARIO) vs HORA INICIO EVENTO -->
+                    <tr>
+                        <td colspan="2" style="background: #ffffff; font-weight: 800; font-size: 11.5px; padding: 4px 8px; text-align: center; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            ${subEvVal}
+                        </td>
+                        <td style="background: #0078d4; color: #ffffff; font-weight: bold; font-size: 10px; padding: 4px 6px; text-align: center; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            HORA DE INICIO EVENTO:
+                        </td>
+                        <td style="background: #ffffff; color: #000000; font-weight: 700; font-size: 11px; padding: 4px 6px; text-align: center; border-bottom: 1px solid #000000;">
+                            ${hInicioFmt}
+                        </td>
+                    </tr>
+
+                    <!-- Fila 4: LOCACION vs HORA DE LLAMADO (NEGRO / GRIS) -->
+                    <tr>
+                        <td style="background: #ffffff; color: #000000; font-weight: bold; font-size: 10px; padding: 4px 8px; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            LOCACION:
+                        </td>
+                        <td style="font-weight: 700; font-size: 11px; padding: 4px 8px; text-align: center; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            ${locacionVal}
+                        </td>
+                        <td style="background: #000000; color: #ffffff; font-weight: bold; font-size: 10px; padding: 4px 6px; text-align: center; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            HORA DE LLAMADO:
+                        </td>
+                        <td style="background: #9ca3af; color: #ffffff; font-weight: 900; font-size: 11.5px; padding: 4px 6px; text-align: center; border-bottom: 1px solid #000000; line-height: 1.25;">
+                            ${detLlamHtml}
+                        </td>
+                    </tr>
+
+                    <!-- Fila 5: Solicita el servicio vs UBICACIÓN -->
+                    <tr>
+                        <td colspan="2" style="background: #0078d4; color: #ffffff; font-weight: bold; font-size: 10.5px; padding: 4px 8px; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            Solicita el servicio:
+                        </td>
+                        <td style="background: #0078d4; color: #ffffff; font-weight: bold; font-size: 10px; padding: 4px 6px; border-right: 1px solid #000000; border-bottom: 1px solid #000000;">
+                            UBICACIÓN:
+                        </td>
+                        <td style="font-weight: 800; font-size: 11px; padding: 4px 6px; text-align: center; border-bottom: 1px solid #000000;">
+                            ${ubicacionVal}
+                        </td>
+                    </tr>
+
+                    <!-- Fila 6: Dependencia / Contacto Solicitante vs Responsable de Producción -->
+                    <tr>
+                        <td colspan="2" style="padding: 6px 8px; text-align: center; border-right: 1px solid #000000; vertical-align: middle;">
+                            ${areaSolicitaVal ? `<div style="font-size: 10px; font-weight: 700; color: #1e293b; text-transform: uppercase;">${areaSolicitaVal}</div>` : ''}
+                            <div style="font-size: 11.5px; font-weight: 800; color: #000000; ${areaSolicitaVal ? 'margin-top: 2px;' : ''}">${quienSolicitaVal}</div>
+                        </td>
+                        <td colspan="2" style="vertical-align: top; padding: 0;">
+                            <div style="background: #000000; color: #ffffff; font-weight: bold; font-size: 10px; padding: 3px 6px; text-align: center; border-bottom: 1px solid #000000;">
+                                Responsable de Producción:
+                            </div>
+                            <div style="padding: 6px 8px; font-weight: 800; font-size: 11px; text-align: center;">
+                                ${respProduccionVal}
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 3. DESCRIPCIÓN DEL SERVICIO -->
+                <table style="width: 100%; border-collapse: collapse; border-bottom: 1.5px solid #000000; table-layout: fixed;">
+                    <tr>
+                        <td colspan="2" style="background: #cbd5e1; color: #000000; font-weight: 900; font-size: 11.5px; padding: 4px 8px; text-align: center; letter-spacing: 0.5px; border-bottom: 1px solid #000000;">
+                            DESCRIPCIÓN DEL SERVICIO
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 20%; background: #0078d4; color: #ffffff; font-weight: bold; font-size: 10px; padding: 5px 8px; border-right: 1px solid #000000; vertical-align: middle;">
+                            TIPO DE SERVICIO:
+                        </td>
+                        <td style="width: 80%; font-size: 11px; font-weight: 700; color: #1d4ed8; padding: 5px 10px; background: #dbeafe;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                <span>${tipoServicioVal}</span>
+                                ${gastoVal > 0 ? `<span style="background: #1e293b; color: #a3e635; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; white-space: nowrap;">Presupuesto Est.: $${gastoVal.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 4. DETALLE TÉCNICO Y LOGÍSTICA CONVOCADA (2 COLUMNAS LEDGER) -->
+                <table style="width: 100%; border-collapse: collapse; border-bottom: 1.5px solid #000000; table-layout: fixed; font-size: 10.5px;">
+                    <thead>
+                        <tr style="background: #f8fafc; font-style: italic; font-size: 9.5px; color: #475569; border-bottom: 1px solid #cbd5e1;">
+                            <th style="width: 55%; text-align: left; padding: 3px 8px; font-weight: normal; border-right: 1.5px solid #000000;">Servicio requerido:</th>
+                            <th style="width: 45%; text-align: left; padding: 3px 8px; font-weight: normal;">Personal Convocado:</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsLedger.map(r => {
+                            if (r.tipo === 'seccion') {
+                                let bg = '#ffffff';
+                                let estilo = 'font-weight: bold;';
+                                if (r.estilo === 'verde') {
+                                    bg = '#a3e635';
+                                } else if (r.estilo === 'amarillo') {
+                                    bg = '#fde047';
+                                } else if (r.estilo === 'subrayado') {
+                                    estilo += 'text-decoration: underline;';
+                                }
+                                return `
+                                    <tr style="border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
+                                        <td style="background: ${bg}; ${estilo} padding: 3px 8px; border-right: 1.5px solid #000000; font-size: 10px;">
+                                            ${r.titulo}
+                                        </td>
+                                        <td style="padding: 3px 8px; background: #ffffff;"></td>
+                                    </tr>
+                                `;
+                            } else {
+                                return `
+                                    <tr style="border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
+                                        <td style="padding: 2.5px 8px; border-right: 1.5px solid #000000; font-size: 10px; color: #1e293b;">
+                                            ${r.req || ''}
+                                        </td>
+                                        <td style="padding: 2.5px 8px; font-weight: bold; background: #ffffff; font-size: 10px; color: #000000;">
+                                            ${r.persona || ''}
+                                        </td>
+                                    </tr>
+                                `;
+                            }
+                        }).join('')}
+                    </tbody>
+                </table>
+
+                <!-- 4.2 ROL DE JUEGOS Y VEHÍCULOS A UTILIZAR -->
+                <table style="width: 100%; border-collapse: collapse; border-bottom: 1.5px solid #000000; table-layout: fixed; font-size: 10.5px; page-break-inside: avoid;">
+                    <tr>
+                        <!-- Columna Izquierda: ROL DE JUEGOS -->
+                        <td style="width: 55%; vertical-align: top; padding: 0; border-right: 1.5px solid #000000;">
+                            <div style="background: #f59e0b; color: #000000; font-weight: 900; font-size: 11px; padding: 3px 6px; text-align: center; border-bottom: 1px solid #000000;">
+                                ROL DE JUEGOS
+                            </div>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: center;">
+                                <tr>
+                                    <td style="padding: 4px; border-right: 1px solid #000000; font-weight: bold; width: 25%;">${rolParts[0]}</td>
+                                    <td style="padding: 4px; border-right: 1px solid #000000; font-weight: bold; width: 18%;">${rolParts[1]}</td>
+                                    <td style="padding: 4px; border-right: 1px solid #000000; font-weight: 800; width: 37%;">${rolParts[2]}</td>
+                                    <td style="padding: 4px; font-weight: bold; width: 20%;">${rolParts[3]}</td>
+                                </tr>
+                            </table>
+                        </td>
+
+                        <!-- Columna Derecha: VEHÍCULOS A UTILIZAR -->
+                        <td style="width: 45%; vertical-align: top; padding: 0;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                                <tr>
+                                    <td style="font-weight: 900; padding: 3px 6px; width: 45%; border-bottom: 1px solid #000000; border-right: 1px solid #000000;">
+                                        VEHICULO A UTILIZAR:
+                                    </td>
+                                    <td colspan="4" style="font-weight: 800; padding: 3px 6px; text-align: center; border-bottom: 1px solid #000000;">
+                                        ${vehDestVal}
+                                    </td>
+                                </tr>
+                                <tr style="text-align: center; font-size: 9px; background: #f8fafc; border-bottom: 1px solid #000000;">
+                                    <td style="border-right: 1px solid #000000;"></td>
+                                    <td style="border-right: 1px solid #000000; width: 14%;">km</td>
+                                    <td style="border-right: 1px solid #000000; width: 14%;">gas</td>
+                                    <td style="border-right: 1px solid #000000; width: 14%;">km</td>
+                                    <td style="width: 14%;">gas</td>
+                                </tr>
+                                ${listaCarros.map(carro => `
+                                <tr style="border-bottom: 1px solid #000000;">
+                                    <td style="padding: 3px 6px; font-weight: 800; border-right: 1px solid #000000; font-size: 9.5px;">
+                                        ${carro}
+                                    </td>
+                                    <td style="border-right: 1px solid #000000;"></td>
+                                    <td style="border-right: 1px solid #000000;"></td>
+                                    <td style="border-right: 1px solid #000000;"></td>
+                                    <td></td>
+                                </tr>
+                                `).join('')}
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 5. NOTA BANNER (NEGRO TOTAL) -->
+                <div style="background: #000000; color: #ffffff; font-weight: bold; font-size: 9px; line-height: 1.35; padding: 6px 10px; border-bottom: 1.5px solid #000000; page-break-inside: avoid;">
+                    NOTA: Toda orden de producción esta sujeta a supervisión permanente hasta el término del evento, por cambios generados de último minuto por el cliente, siendo reportado de inmediato a Administración y Coordinación para su debido llenado y actualización en cotización y agenda.
+                </div>
+
+                <!-- 6. FIRMAS DE AUTORIZACIÓN (2x2 GRID) -->
+                <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 10px; page-break-inside: avoid;">
+                    <tr style="border-bottom: 1px solid #000000;">
+                        <td style="width: 50%; padding: 6px 10px; border-right: 1px solid #000000;">
+                            <b>Elaboró:</b> ${elaboraVal}
+                        </td>
+                        <td style="width: 50%; padding: 6px 10px;">
+                            <b>Área que organiza:</b> ${organizaVal}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 6px 10px; border-right: 1px solid #000000;">
+                            <b>Coordinación de Producción:</b> ${coordinaVal}
+                        </td>
+                        <td style="padding: 6px 10px;">
+                            <b>Vo.Bo. Gerencia :</b> ${voboVal}
+                        </td>
+                    </tr>
+                </table>
+
+            </div>
+        </div>
+    `;
+}
+
+async function imprimirOrdenProduccionActual(folio) {
+    let opData = null;
+
+    // 1. Intentar consultar datos desde la API si hay folio
+    if (folio) {
+        try {
+            const resp = await fetch(`${API_URL}/api/eventos/op/${folio}`);
+            if (resp.ok) {
+                opData = await resp.json();
+            }
+        } catch (e) {
+            console.warn("No se pudo obtener OP desde API, usando datos en vivo del DOM:", e);
+        }
+    }
+
+    // 2. Complementar o sustituir con datos en vivo del formulario activo en pantalla
+    const formActivo = document.getElementById('form-orden-produccion-act') || document.getElementById('form-orden-produccion-hist');
+    if (formActivo) {
+        const getVal = (id) => document.getElementById(id)?.value || '';
+        const folioForm = getVal('op_folio') || folio || '001';
+
+        opData = opData || {};
+        opData.folio = folioForm;
+        opData.id_evento = document.getElementById('op_id_evento')?.value || opData.id_evento || 1;
+        opData.para_q_cliente = getVal('op_para_q_cliente') || opData.para_q_cliente || '';
+        opData.nombre_evento = getVal('op_nombre_evento') || opData.nombre_evento || '';
+        opData.subtitulo_evento = getVal('op_subtitulo_evento') || opData.subtitulo_evento || '';
+        opData.locacion = getVal('op_locacion') || opData.locacion || '';
+        opData.fec_de_instalacion = getVal('op_fec_de_instalacion') || opData.fec_de_instalacion || '';
+        opData.hra_de_instalacion = getVal('op_hra_de_instalacion') || opData.hra_de_instalacion || '';
+        opData.dependencia_solicita = getVal('op_dependencia_solicita') || opData.dependencia_solicita || '';
+        opData.quien_solicita = getVal('op_quien_solicita') || opData.quien_solicita || '';
+        opData.resp_de_produccion = getVal('op_resp_de_produccion') || opData.resp_de_produccion || '';
+        opData.fec_del_evento = getVal('op_fec_del_evento') || opData.fec_del_evento || '';
+        opData.fec_fin_evento = getVal('op_fec_fin_evento') || opData.fec_fin_evento || opData.fec_del_evento;
+        opData.inicio_del_evento = getVal('op_inicio_del_evento') || opData.inicio_del_evento || '';
+        opData.hra_de_llamado = getVal('op_hra_de_llamado') || opData.hra_de_llamado || '';
+        opData.detalle_llamado = getVal('op_detalle_llamado') || opData.detalle_llamado || '';
+        opData.estimado_gasto = getVal('op_estimado_gasto') || opData.estimado_gasto || 0;
+        opData.ubicacion = getVal('op_ubicacion') || opData.ubicacion || '';
+        opData.vehiculo_destino = getVal('op_vehiculo_destino') || opData.vehiculo_destino || '';
+        opData.rol_juegos = getVal('op_rol_juegos') || opData.rol_juegos || '';
+        opData.tipo_de_servicio = getVal('op_tipo_de_servicio') || opData.tipo_de_servicio || '';
+        opData.produccion = getVal('op_produccion') || opData.produccion || '';
+        opData.internet_redes = getVal('op_internet_redes') || opData.internet_redes || '';
+        opData.actividades_de_proveedores = getVal('op_actividades_de_proveedores') || opData.actividades_de_proveedores || '';
+        opData.nota = getVal('op_nota') || opData.nota || '';
+        opData.elabora = getVal('op_elabora') || opData.elabora || '';
+        opData.coordina = getVal('op_coordina') || opData.coordina || '';
+        opData.organiza = getVal('op_organiza') || opData.organiza || '';
+        opData.vobo = getVal('op_vobo') || opData.vobo || '';
+
+        if (window.opMultiSelects) {
+            if (window.opMultiSelects.personal_vpro && window.opMultiSelects.personal_vpro.length > 0) {
+                opData.personal_convocado_op = window.opMultiSelects.personal_vpro;
+            }
+            if (window.opMultiSelects.personal_externo && window.opMultiSelects.personal_externo.length > 0) {
+                opData.externos_op = window.opMultiSelects.personal_externo;
+            }
+            if (window.opMultiSelects.vehiculos && window.opMultiSelects.vehiculos.length > 0) {
+                opData.carros_usados_op = window.opMultiSelects.vehiculos;
+            }
+            if (window.opMultiSelects.proveedores && window.opMultiSelects.proveedores.length > 0) {
+                opData.proveedor_op = window.opMultiSelects.proveedores;
+            }
+        }
+    }
+
+    if (!opData) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin datos disponibles',
+            text: 'Por favor selecciona o guarda una Orden de Producción para generar su formato imprimible.'
+        });
+        return;
+    }
+
+    const htmlImpresion = generarHtmlOPInteligente(opData);
+    const contenedor = document.getElementById('op-hoja-oficial');
+    const modal = document.getElementById('modal-op-impresion');
+
+    if (contenedor && modal) {
+        window.opFolioActivoImpresion = opData.folio || folio || '001';
+        contenedor.innerHTML = htmlImpresion;
+        modal.style.display = 'flex';
+    }
+}
+
+function cerrarModalOPImpresion() {
+    const modal = document.getElementById('modal-op-impresion');
+    if (modal) modal.style.display = 'none';
+    document.body.classList.remove('imprimiendo-modo-op');
+}
+
+function ejecutarImpresionOP() {
+    document.body.classList.add('imprimiendo-modo-op');
+    window.print();
+    setTimeout(() => {
+        document.body.classList.remove('imprimiendo-modo-op');
+    }, 1200);
+}
+
+function abrirOPEntestañaImprimible() {
+    const hoja = document.getElementById('op-hoja-oficial');
+    if (!hoja) return;
+    const win = window.open('', '_blank');
+    if (!win) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Ventana emergente bloqueada',
+            text: 'Por favor permite ventanas emergentes en tu navegador para ver la hoja oficial en una pestaña independiente.'
+        });
+        return;
+    }
+    win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Orden de Producción VPRO - VPF-PAGL-OP</title>
+    <style>
+        body { margin: 0; padding: 24px; background: #ffffff; color: #000000; font-family: Arial, sans-serif; }
+        .no-print-bar {
+            max-width: 960px;
+            margin: 0 auto 16px auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .btn-print-action {
+            background: #0078d4;
+            color: #ffffff;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 120, 212, 0.3);
+        }
+        @media print {
+            body { padding: 0 !important; margin: 0 !important; }
+            .no-print-bar { display: none !important; }
+            @page { size: letter portrait; margin: 8mm 8mm 8mm 8mm; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print-bar">
+        <button class="btn-print-action" onclick="window.print()">🖨️ Mandar a Imprimir / Guardar en PDF</button>
+    </div>
+    ${hoja.innerHTML}
+</body>
+</html>`);
+    win.document.close();
+}
+
+function descargarPDFDirectoOP() {
+    const folio = window.opFolioActivoImpresion || document.getElementById('op_folio')?.value || '1';
+    window.open(`${API_URL}/api/eventos/pdf/${encodeURIComponent(folio)}`, '_blank');
 }
 
 // -------------------------------------------------------------
@@ -2674,9 +3483,12 @@ async function guardarOrdenOP(event) {
     const locacion = document.getElementById("op_locacion")?.value;
     const fec_de_instalacion = document.getElementById("op_fec_de_instalacion")?.value;
     const hra_de_instalacion = document.getElementById("op_hra_de_instalacion")?.value;
+    const dependencia_solicita = document.getElementById("op_dependencia_solicita")?.value;
     const quien_solicita = document.getElementById("op_quien_solicita")?.value;
     const resp_de_produccion = document.getElementById("op_resp_de_produccion")?.value;
     const fec_del_evento = document.getElementById("op_fec_del_evento")?.value;
+    const fec_fin_evento = document.getElementById("op_fec_fin_evento")?.value;
+    const estimado_gasto = document.getElementById("op_estimado_gasto")?.value;
     const inicio_del_evento = document.getElementById("op_inicio_del_evento")?.value;
     const hra_de_llamado = document.getElementById("op_hra_de_llamado")?.value;
     const ubicacion = document.getElementById("op_ubicacion")?.value;
@@ -2690,20 +3502,32 @@ async function guardarOrdenOP(event) {
     const organiza = document.getElementById("op_organiza")?.value;
     const vobo = document.getElementById("op_vobo")?.value;
 
+    const subtitulo_evento = document.getElementById("op_subtitulo_evento")?.value;
+    const detalle_llamado = document.getElementById("op_detalle_llamado")?.value;
+    const rol_juegos = document.getElementById("op_rol_juegos")?.value;
+    const vehiculo_destino = document.getElementById("op_vehiculo_destino")?.value;
+
     const payload = {
         id_evento: parseInt(id_evento) || 0,
         folio: folio || String(id_evento),
         para_q_cliente: para_q_cliente || "",
         nombre_evento: nombre_evento || "",
+        subtitulo_evento: (subtitulo_evento || "").trim(),
         locacion: locacion || "",
         fec_de_instalacion: fec_de_instalacion || null,
         hra_de_instalacion: hra_de_instalacion ? (hra_de_instalacion.length === 5 ? hra_de_instalacion + ":00" : hra_de_instalacion) : null,
-        quien_solicita: quien_solicita || "",
+        dependencia_solicita: (dependencia_solicita || "").trim(),
+        quien_solicita: (quien_solicita || "").trim(),
         resp_de_produccion: resp_de_produccion || "",
         fec_del_evento: fec_del_evento || null,
+        fec_fin_evento: fec_fin_evento || fec_del_evento || null,
+        estimado_gasto: parseFloat(estimado_gasto) || 0.0,
         inicio_del_evento: inicio_del_evento ? (inicio_del_evento.length === 5 ? inicio_del_evento + ":00" : inicio_del_evento) : null,
         hra_de_llamado: hra_de_llamado ? (hra_de_llamado.length === 5 ? hra_de_llamado + ":00" : hra_de_llamado) : null,
+        detalle_llamado: (detalle_llamado || "").trim(),
         ubicacion: ubicacion || "",
+        vehiculo_destino: (vehiculo_destino || "").trim(),
+        rol_juegos: (rol_juegos || "").trim(),
         tipo_de_servicio: tipo_de_servicio || "",
         produccion: produccion || "",
         internet_redes: internet_redes || "",
@@ -3029,23 +3853,9 @@ document.addEventListener("click", function(e) {
 });
 
 function cambiarPestanaDanados(tab) {
-    const btnRadar = document.getElementById("tab-danados-btn-radar");
-    const btnExpediente = document.getElementById("tab-danados-btn-expediente");
+    // Vista unificada: si se invoca por compatibilidad, asegurar que la vista principal esté activa
     const viewRadar = document.getElementById("subvista-danados-radar");
-    const viewExpediente = document.getElementById("subvista-danados-expediente");
-
-    if (tab === 'radar') {
-        if (btnRadar) { btnRadar.style.background = '#0f172a'; btnRadar.style.color = 'white'; btnRadar.style.border = 'none'; }
-        if (btnExpediente) { btnExpediente.style.background = '#f1f5f9'; btnExpediente.style.color = '#475569'; btnExpediente.style.border = '1px solid #cbd5e1'; }
-        if (viewRadar) viewRadar.style.display = 'block';
-        if (viewExpediente) viewExpediente.style.display = 'none';
-    } else {
-        if (btnExpediente) { btnExpediente.style.background = '#0f172a'; btnExpediente.style.color = 'white'; btnExpediente.style.border = 'none'; }
-        if (btnRadar) { btnRadar.style.background = '#f1f5f9'; btnRadar.style.color = '#475569'; btnRadar.style.border = '1px solid #cbd5e1'; }
-        if (viewRadar) viewRadar.style.display = 'none';
-        if (viewExpediente) viewExpediente.style.display = 'block';
-        setTimeout(() => document.getElementById("input-expediente-buscar")?.focus(), 100);
-    }
+    if (viewRadar) viewRadar.style.display = 'block';
 }
 
 async function cargarModuloDanados() {
@@ -3060,20 +3870,27 @@ async function cargarModuloDanados() {
             const catalogo = await resCat.json();
             catalogoGlobalEquipos = catalogo || [];
             const selDirecto = document.getElementById("danos-sel-equipo-directo");
-            const selExpediente = document.getElementById("sel-expediente-equipo-buscar");
 
             if (selDirecto && selDirecto.tagName === 'SELECT' && selDirecto.children.length <= 1) {
                 selDirecto.innerHTML = '<option value="">--- Seleccionar Activo ---</option>' +
                     catalogo.map(c => `<option value="${c}">${c}</option>`).join("");
             }
-            if (selExpediente && selExpediente.tagName === 'SELECT' && selExpediente.children.length <= 1) {
-                selExpediente.innerHTML = '<option value="">--- Selecciona o escribe el equipo a auditar ---</option>' +
-                    catalogo.map(c => `<option value="${c}">${c}</option>`).join("");
-            }
         }
 
         if (resRadar.ok) {
-            datosRadarDanosCache = await resRadar.json();
+            const rawRadar = await resRadar.json();
+            
+            // 🛡️ DEDUPLICACIÓN ESTRICTA: Garantizar que cada NUM_SERVICIO aparezca exactamente una vez
+            const vistosServicios = new Set();
+            datosRadarDanosCache = [];
+            (rawRadar || []).forEach(d => {
+                const numServ = d.NUM_SERVICIO ? String(d.NUM_SERVICIO).trim() : null;
+                if (!numServ || !vistosServicios.has(numServ)) {
+                    if (numServ) vistosServicios.add(numServ);
+                    datosRadarDanosCache.push(d);
+                }
+            });
+
             const badgeDanados = document.getElementById("badge-danados");
             if (badgeDanados) badgeDanados.innerText = datosRadarDanosCache.length || 0;
 
@@ -3172,7 +3989,7 @@ function aplicarFiltrosDanados() {
     // Actualizar gráfica Chart.js
     renderizarGraficaDanadosPersonal(conteoRep);
 
-    // Renderizar tabla
+    // Renderizar tabla interactiva
     renderizarTablaDanados(datosDanosFiltrados);
 }
 
@@ -3225,12 +4042,22 @@ function renderizarGraficaDanadosPersonal(conteoRep) {
     });
 }
 
+function escaparHTMLSeguro(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 function renderizarTablaDanados(lista) {
     const tbody = document.getElementById("tabla-danados-body");
     if (!tbody) return;
 
     if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 24px; color: #166534; font-weight: 500;">✅ No hay equipos con daño bajo estos criterios de búsqueda.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 24px; color: #166534; font-weight: 500;">✅ No hay equipos con daño bajo estos criterios de búsqueda.</td></tr>`;
         return;
     }
 
@@ -3241,18 +4068,49 @@ function renderizarTablaDanados(lista) {
         else if (estado.includes('PIEZA') || estado.includes('ESPERA')) badgeStyle = "background: #e0e7ff; color: #3730a3;";
         else if (estado.includes('REPARADO') || estado.includes('RESUELTO')) badgeStyle = "background: #dcfce7; color: #166534;";
 
+        const idSeguro = encodeURIComponent(eq.ID || '');
+        const nomSeguro = encodeURIComponent(eq.EQUIPO || eq.ID || '');
+        const ticketSeguro = encodeURIComponent(eq.NUM_SERVICIO || '');
+
         return `
-            <tr>
-                <td style="font-weight: 700; color: #0f172a;">#${eq.NUM_SERVICIO || '--'}</td>
+            <tr style="transition: background-color 0.15s ease;">
+                <td style="font-weight: 700; color: #2563eb; cursor: pointer;" 
+                    onclick="abrirExpedienteEquipoModal(decodeURIComponent('${idSeguro}'), decodeURIComponent('${nomSeguro}'), decodeURIComponent('${ticketSeguro}'))" 
+                    title="Haz clic para ver el expediente clínico de este equipo">
+                    <span style="display: inline-flex; align-items: center; gap: 4px; text-decoration: underline dotted;">
+                        #${escaparHTMLSeguro(eq.NUM_SERVICIO) || '--'}
+                    </span>
+                </td>
                 <td>${eq.FECHA_REPORTE ? String(eq.FECHA_REPORTE).substring(0, 10) : '--'}</td>
                 <td><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">${eq.DIAS_FUERA || 0} d</span></td>
-                <td><code>${eq.ID || '--'}</code></td>
-                <td style="font-weight: 600; color: #0f172a;">${eq.EQUIPO || '--'}</td>
-                <td>${eq.DEPARTAMENTO || '--'}</td>
-                <td>${eq["REPORTÓ"] || eq["REPORTÓ_RAW"] || '--'}</td>
-                <td><span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; ${badgeStyle}">${estado}</span></td>
-                <td style="max-width: 240px; font-size: 12px; line-height: 1.4;">${eq.FALLA || '--'}</td>
+                <td style="cursor: pointer;" 
+                    onclick="abrirExpedienteEquipoModal(decodeURIComponent('${idSeguro}'), decodeURIComponent('${nomSeguro}'), decodeURIComponent('${ticketSeguro}'))" 
+                    title="Haz clic para consultar el historial completo del activo ${escaparHTMLSeguro(eq.ID)}">
+                    <code style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; text-decoration: underline dotted;">
+                        ${escaparHTMLSeguro(eq.ID) || '--'}
+                        <i class="ph ph-magnifying-glass" style="font-size: 11px;"></i>
+                    </code>
+                </td>
+                <td style="font-weight: 600; color: #0f172a; cursor: pointer;" 
+                    onclick="abrirExpedienteEquipoModal(decodeURIComponent('${idSeguro}'), decodeURIComponent('${nomSeguro}'), decodeURIComponent('${ticketSeguro}'))" 
+                    title="Haz clic para abrir el expediente de ${escaparHTMLSeguro(eq.EQUIPO)}">
+                    <span style="display: inline-flex; align-items: center; gap: 6px; color: #0f172a;">
+                        ${escaparHTMLSeguro(eq.EQUIPO) || '--'}
+                        <i class="ph ph-arrow-square-out" style="color: #64748b; font-size: 13px;"></i>
+                    </span>
+                </td>
+                <td>${escaparHTMLSeguro(eq.DEPARTAMENTO) || '--'}</td>
+                <td>${escaparHTMLSeguro(eq["REPORTÓ"] || eq["REPORTÓ_RAW"]) || '--'}</td>
+                <td><span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; ${badgeStyle}">${escaparHTMLSeguro(estado)}</span></td>
+                <td style="max-width: 240px; font-size: 12px; line-height: 1.4;">${escaparHTMLSeguro(eq.FALLA) || '--'}</td>
                 <td style="font-weight: 700; color: #0f172a;">$${Number(eq.COSTO || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                <td>
+                    <button type="button" 
+                        onclick="abrirExpedienteEquipoModal(decodeURIComponent('${idSeguro}'), decodeURIComponent('${nomSeguro}'), decodeURIComponent('${ticketSeguro}'))" 
+                        style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 5px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="ph ph-first-aid"></i> Historial
+                    </button>
+                </td>
             </tr>
         `;
     }).join("");
@@ -3386,129 +4244,208 @@ async function cerrarTicketDanado() {
     }
 }
 
-async function buscarExpedienteDanado() {
-    ocultarSugerenciasExpediente();
-    let sel = document.getElementById("sel-expediente-equipo-buscar")?.value;
-    const inputVal = document.getElementById("input-expediente-buscar")?.value?.trim() || "";
+// ══════════════════════════════════════════════════════════════════════════════
+// MODAL DE EXPEDIENTE CLÍNICO INTEGRADO (ACCESIBLE DESDE CÓDIGO ID / EQUIPO / TICKET)
+// ══════════════════════════════════════════════════════════════════════════════
+function cerrarModalExpedienteDanado() {
+    const modal = document.getElementById("modal-danados-expediente");
+    if (modal) modal.style.display = "none";
+}
 
-    let textoNombreMostrar = "";
+async function abrirExpedienteEquipoModal(codigoEquipo, nombreEquipo, numServicio) {
+    const modal = document.getElementById("modal-danados-expediente");
+    const titulo = document.getElementById("modal-expediente-titulo");
+    const subtitulo = document.getElementById("modal-expediente-subtitulo");
+    const contenido = document.getElementById("modal-expediente-contenido");
+    const footerAcciones = document.getElementById("modal-expediente-acciones-footer");
 
-    // Si el usuario escribió directamente en el buscador o no hay selección previa
-    if (inputVal) {
-        if (inputVal.includes(" - ")) {
-            const p = inputVal.split(" - ");
-            sel = p[0].trim();
-            textoNombreMostrar = inputVal;
-        } else {
-            // Buscar coincidencia en el catálogo
-            const norm = normalizarTextoBusqueda(inputVal);
-            const matchExacto = catalogoGlobalEquipos.find(c => {
-                const p = c.split(" - ");
-                const cod = normalizarTextoBusqueda(p[0]);
-                const nom = normalizarTextoBusqueda(p.slice(1).join(" - "));
-                return cod === norm || nom === norm;
-            });
+    if (!modal || !contenido) return;
 
-            if (matchExacto) {
-                sel = matchExacto.split(" - ")[0].trim();
-                textoNombreMostrar = matchExacto;
-                const inputEl = document.getElementById("input-expediente-buscar");
-                if (inputEl) inputEl.value = matchExacto;
-            } else {
-                // Coincidencia parcial por palabras
-                const palabras = norm.split(" ").filter(Boolean);
-                const matchParcial = catalogoGlobalEquipos.find(c => {
-                    const cNorm = normalizarTextoBusqueda(c);
-                    return palabras.every(pal => cNorm.includes(pal));
-                });
-                if (matchParcial) {
-                    sel = matchParcial.split(" - ")[0].trim();
-                    textoNombreMostrar = matchParcial;
-                    const inputEl = document.getElementById("input-expediente-buscar");
-                    if (inputEl) inputEl.value = matchParcial;
-                } else {
-                    sel = inputVal;
-                    textoNombreMostrar = inputVal;
-                }
-            }
-        }
-    }
+    modal.style.display = "flex";
+    const codLimpio = (codigoEquipo || "").trim();
+    const nomLimpio = (nombreEquipo || codLimpio).trim();
 
-    if (!sel) {
-        alert("⚠️ Por favor teclea el nombre, descripción o código del equipo a auditar.");
-        document.getElementById("input-expediente-buscar")?.focus();
-        return;
-    }
+    titulo.innerHTML = `<i class="ph ph-first-aid" style="color: #ef4444;"></i> Expediente Clínico: <code style="background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #0f172a; margin-left: 6px;">${escaparHTMLSeguro(codLimpio)}</code>`;
+    subtitulo.innerText = `Activo: ${nomLimpio}`;
 
-    const codPuro = sel.includes(" - ") ? sel.split(" - ")[0].trim() : sel.trim();
-    const hidden = document.getElementById("sel-expediente-equipo-buscar");
-    if (hidden) hidden.value = codPuro;
+    contenido.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #64748b;">
+            <i class="ph ph-spinner ph-spin" style="font-size: 32px; color: #2563eb;"></i>
+            <p style="margin-top: 10px; font-size: 14px;">Consultando historial médico y movimientos de ${escaparHTMLSeguro(nomLimpio)}...</p>
+        </div>
+    `;
 
-    const resultadoDiv = document.getElementById("danos-expediente-resultado");
-    const codTitulo = document.getElementById("expediente-codigo-titulo");
-    const nomEquipo = document.getElementById("expediente-nombre-equipo");
-    const estBadge = document.getElementById("expediente-estatus-badge");
-    const totMovs = document.getElementById("expediente-total-movs");
-    const fotoImg = document.getElementById("expediente-foto-img");
-    const sinFoto = document.getElementById("expediente-sin-foto");
-    const tbody = document.getElementById("tabla-expediente-historial-body");
+    if (footerAcciones) footerAcciones.innerHTML = "";
 
     try {
-        const res = await fetch(`${API_URL}/api/inventario/expediente/${encodeURIComponent(codPuro)}`);
-        if (!res.ok) throw new Error("Expediente no encontrado");
+        const res = await fetch(`${API_URL}/api/inventario/expediente/${encodeURIComponent(codLimpio)}`);
+        if (!res.ok) throw new Error("No se pudo obtener el historial del equipo");
 
         const data = await res.json();
         const historial = data.historial || [];
+        const fotos = data.fotos || [];
 
-        resultadoDiv.style.display = "block";
-        codTitulo.innerText = `📁 Expediente Clínico: ${codPuro}`;
-        nomEquipo.innerText = textoNombreMostrar || sel;
-        totMovs.innerText = historial.length;
+        // Calcular costo acumulado histórico
+        const costoTotal = historial.reduce((acc, h) => {
+            const val = parseFloat(h["COSTO ($)"] || h["COSTO"] || 0);
+            return acc + (isNaN(val) ? 0 : val);
+        }, 0);
 
-        const ultimoEst = historial.length > 0 ? (historial[0]["ESTADO POSTERIOR"] || "DESCONOCIDO") : "BUEN ESTADO";
-        estBadge.innerText = ultimoEst;
+        const ultimoEstado = historial.length > 0 ? (historial[0]["ESTADO POSTERIOR"] || "EN REVISIÓN") : "BUEN ESTADO";
 
-        // Foto de evidencia
+        // URL de foto de evidencia
+        let urlFoto = "";
         if (historial.length > 0) {
             const folioRef = String(historial[0]["FOLIO OP / REF"] || "MANTENIMIENTO_INTERNO").replace(/[/\\ ]/g, "_").toUpperCase();
-            const codSafe = codPuro.replace(/[/\\ ]/g, "_").toUpperCase();
-            const nombreFoto = `Evidencia_${folioRef}_${codSafe}.jpg`;
-            const urlFoto = `${API_URL}/evidencias_web/${nombreFoto}`;
-
-            fotoImg.onload = () => {
-                fotoImg.style.display = "block";
-                sinFoto.style.display = "none";
-            };
-            fotoImg.onerror = () => {
-                fotoImg.style.display = "none";
-                sinFoto.style.display = "block";
-                sinFoto.innerText = "Sin foto de evidencia";
-            };
-            fotoImg.src = urlFoto;
-        } else {
-            fotoImg.style.display = "none";
-            sinFoto.style.display = "block";
-            sinFoto.innerText = "Sin movimientos registrados";
+            const codSafe = codLimpio.replace(/[/\\ ]/g, "_").toUpperCase();
+            urlFoto = `${API_URL}/evidencias_web/Evidencia_${folioRef}_${codSafe}.jpg`;
+        } else if (fotos.length > 0) {
+            urlFoto = `${API_URL}/${fotos[0]}`;
         }
 
-        // Renderizar tabla del historial
-        if (historial.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">No hay historial de movimientos para este activo.</td></tr>`;
+        // Renderizar ficha del equipo y tabla histórica
+        contenido.innerHTML = `
+            <!-- Ficha Resumen -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <div>
+                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Nombre del Activo</span>
+                            <div style="font-size: 17px; font-weight: 700; color: #0f172a; margin-top: 2px;">${escaparHTMLSeguro(nomLimpio)}</div>
+                            <span style="font-size: 12px; color: #64748b; font-family: monospace;">ID: ${escaparHTMLSeguro(codLimpio)}</span>
+                        </div>
+                        <span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 700;">
+                            ${escaparHTMLSeguro(ultimoEstado)}
+                        </span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; border-top: 1px solid #cbd5e1; padding-top: 12px;">
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
+                            <span style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Intervenciones Históricas</span>
+                            <div style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 2px;">${historial.length}</div>
+                        </div>
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
+                            <span style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Costo Acumulado Total</span>
+                            <div style="font-size: 22px; font-weight: 800; color: #047857; margin-top: 2px;">$${Number(costoTotal).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">📸 Evidencia Fotográfica</span>
+                    <div style="width: 100%; height: 135px; background: #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img id="modal-expediente-foto" src="${urlFoto}" alt="Evidencia" 
+                            style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;"
+                            onclick="if(this.src) window.open(this.src, '_blank')"
+                            onerror="this.style.display='none'; document.getElementById('modal-expediente-sin-foto').style.display='block';">
+                        <div id="modal-expediente-sin-foto" style="display: none; color: #94a3b8; font-size: 12px; padding: 10px;">
+                            <i class="ph ph-image-square" style="font-size: 28px; display: block; margin-bottom: 4px;"></i>
+                            Sin fotografía vinculada
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Historial Completo -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+                <h5 style="margin: 0 0 12px 0; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                    <i class="ph ph-clock-counter-clockwise" style="color: #2563eb;"></i> Bitácora Cronológica de Entradas a Taller y Fallas
+                </h5>
+                <div class="tabla-container" style="max-height: 280px; overflow-y: auto;">
+                    <table class="tabla-vpro" style="font-size: 12px; width: 100%;">
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th>Fecha</th>
+                                <th>Folio / OP</th>
+                                <th>Área</th>
+                                <th>Tipo Evento</th>
+                                <th>Diagnóstico / Notas</th>
+                                <th>Costo</th>
+                                <th>Estado Posterior</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${historial.length === 0 ? `
+                                <tr><td colspan="7" style="text-align: center; padding: 24px; color: #166534; font-weight: 500;">
+                                    ✅ Este equipo no tiene registros previos de daño o reparación en su expediente.
+                                </td></tr>
+                            ` : historial.map(h => {
+                                const fec = h["FECHA"] ? String(h["FECHA"]).substring(0, 10) : '--';
+                                const fol = h["FOLIO OP / REF"] || '--';
+                                const area = h["ÁREA"] || '--';
+                                const tipo = h["TIPO DE EVENTO"] || h["TIPO EVENTO"] || '--';
+                                const diag = h["DIAGNÓSTICO / NOTAS"] || h["DIAGNÓSTICO"] || h["DETALLE"] || '--';
+                                const cto = Number(h["COSTO ($)"] || h["COSTO"] || 0);
+                                const est = h["ESTADO POSTERIOR"] || '--';
+                                return `
+                                    <tr>
+                                        <td>${escaparHTMLSeguro(fec)}</td>
+                                        <td><b>${escaparHTMLSeguro(fol)}</b></td>
+                                        <td>${escaparHTMLSeguro(area)}</td>
+                                        <td><span style="background: #eff6ff; color: #1e40af; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${escaparHTMLSeguro(tipo)}</span></td>
+                                        <td style="max-width: 260px; line-height: 1.3;">${escaparHTMLSeguro(diag)}</td>
+                                        <td style="font-weight: 600;">$${cto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                                        <td><span style="font-weight: 700; font-size: 11px;">${escaparHTMLSeguro(est)}</span></td>
+                                    </tr>
+                                `;
+                            }).join("")}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        // Acción rápida de resolución si se abrió desde un ticket activo
+        if (numServicio && numServicio !== 'undefined' && footerAcciones) {
+            footerAcciones.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: #475569; font-weight: 600;">Resolver Ticket #${escaparHTMLSeguro(numServicio)}:</span>
+                    <select id="modal-sel-estado-cierre" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px;">
+                        <option value="REPARADO">REPARADO</option>
+                        <option value="RESUELTO">RESUELTO</option>
+                        <option value="BAJA DEFINITIVA">BAJA DEFINITIVA</option>
+                    </select>
+                    <button type="button" onclick="cerrarTicketDesdeModal('${escaparHTMLSeguro(numServicio)}')" style="background: #16a34a; color: white; border: none; border-radius: 6px; padding: 7px 14px; font-weight: 600; cursor: pointer; font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="ph ph-check"></i> Rehabilitar Equipo
+                    </button>
+                </div>
+            `;
+        }
+
+    } catch (err) {
+        console.error("Error al cargar expediente:", err);
+        contenido.innerHTML = `
+            <div style="padding: 24px; text-align: center; color: #b91c1c;">
+                <i class="ph ph-warning-circle" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
+                <p style="font-weight: 600;">Error al cargar el expediente clínico:</p>
+                <p style="font-size: 13px; color: #475569;">${err.message}</p>
+            </div>
+        `;
+    }
+}
+
+async function cerrarTicketDesdeModal(numServicio) {
+    const selEstado = document.getElementById("modal-sel-estado-cierre")?.value || "REPARADO";
+    if (!confirm(`¿Confirmas rehabilitar el equipo y marcar el ticket #${numServicio} como ${selEstado}?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/reparacion/cerrar/${encodeURIComponent(numServicio)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ estado_actual: selEstado })
+        });
+
+        if (res.ok) {
+            alert(`✅ Ticket #${numServicio} cerrado exitosamente como ${selEstado}.`);
+            cerrarModalExpedienteDanado();
+            cargarModuloDanados();
         } else {
-            tbody.innerHTML = historial.map(h => `
-                <tr>
-                    <td>${h["FECHA"] ? String(h["FECHA"]).substring(0, 10) : '--'}</td>
-                    <td><b>${h["FOLIO OP / REF"] || '--'}</b></td>
-                    <td>${h["EMPLEADO"] || '--'}</td>
-                    <td><span style="background: #eff6ff; color: #1e40af; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${h["TIPO EVENTO"] || '--'}</span></td>
-                    <td style="max-width: 250px; font-size: 12.5px;">${h["DETALLE"] || '--'}</td>
-                    <td style="font-weight: 600;">$${Number(h["COSTO"] || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
-                    <td><span style="font-weight: 700; font-size: 11.5px;">${h["ESTADO POSTERIOR"] || '--'}</span></td>
-                </tr>
-            `).join("");
+            const err = await res.text();
+            alert(`❌ Error al cerrar ticket: ${err}`);
         }
     } catch (e) {
-        alert(`❌ Error al consultar expediente: ${e.message}`);
+        alert(`❌ Error de comunicación: ${e.message}`);
     }
 }
 
@@ -3634,6 +4571,7 @@ async function seleccionarFolioParaGastos(folioId) {
         const elCliente = document.getElementById("gastos-info-cliente");
         const elEvento = document.getElementById("gastos-info-evento");
         const elProductor = document.getElementById("gastos-info-productor");
+        const elEstimado = document.getElementById("gastos-info-estimado");
         const elEmpRinde = document.getElementById("gastos-input-empleado");
         const elDepto = document.getElementById("gastos-input-depto");
         const elDesde = document.getElementById("gastos-input-desde");
@@ -3643,13 +4581,19 @@ async function seleccionarFolioParaGastos(folioId) {
         if (elCliente) elCliente.innerText = evData.cliente || "--";
         if (elEvento) elEvento.innerText = evData.nombre_evento || "--";
         if (elProductor) elProductor.innerText = evData.productor_responsable || "No asignado";
+        if (elEstimado) {
+            const estNum = Number(evData.estimado_gasto || 0);
+            elEstimado.innerText = `$ ${estNum.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
         if (elEmpRinde) elEmpRinde.value = evData.productor_responsable || usuarioLogueado?.nombre_completo || "Productor VPRO";
         if (elDepto) elDepto.value = usuarioLogueado?.depto || "PRODUCCION";
 
         const hoy = new Date().toISOString().substring(0, 10);
-        const fInst = evData.fec_de_instalacion ? String(evData.fec_de_instalacion).substring(0, 10) : hoy;
-        if (elDesde) elDesde.value = fInst;
-        if (elHasta) elHasta.value = hoy;
+        const fIni = evData.fec_del_evento ? String(evData.fec_del_evento).substring(0, 10) : (evData.fec_de_instalacion ? String(evData.fec_de_instalacion).substring(0, 10) : hoy);
+        const fFin = evData.fec_fin_evento ? String(evData.fec_fin_evento).substring(0, 10) : (evData.fec_del_evento ? String(evData.fec_del_evento).substring(0, 10) : hoy);
+        if (elDesde) elDesde.value = fIni;
+        if (elHasta) elHasta.value = fFin;
+        recalcularDiasGastos();
 
         // Cargar autos y sus últimos odómetros
         let autos = [];

@@ -123,6 +123,7 @@ def obtener_radar_danos():
             danados = cursor_inv.fetchall()
 
         resultados_finales = []
+        servicios_vistos = set()
         for row in danados:
             reportante_crudo = str(row["REPORTÓ_RAW"] or "")
             numeros_encontrados = re.findall(r'\d+', reportante_crudo)
@@ -132,6 +133,13 @@ def obtener_radar_danos():
             fila_limpia = dict(row)
             fila_limpia["REPORTÓ"] = nombre_real
             del fila_limpia["REPORTÓ_RAW"]
+
+            num_serv = str(fila_limpia.get("NUM_SERVICIO") or "").strip()
+            if num_serv:
+                if num_serv in servicios_vistos:
+                    continue
+                servicios_vistos.add(num_serv)
+
             resultados_finales.append(fila_limpia)
 
         return resultados_finales

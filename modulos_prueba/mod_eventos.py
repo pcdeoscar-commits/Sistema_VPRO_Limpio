@@ -137,7 +137,9 @@ def renderizar_modulo(API_URL: str):
                 idx_cli = lista_clientes.index(d.get('para_q_cliente')) if d.get('para_q_cliente') in lista_clientes else 0
                 cli_op = c2.selectbox("👤 CLIENTE:", options=lista_clientes, index=idx_cli, key=f"cli_{id_actual}")
                 
-                eve_op = c3.text_input("🎉 EVENTO:", value=d.get('nombre_evento', ""), key=f"eve_{id_actual}")
+                c_ev1, c_ev2 = st.columns([1.5, 1.5])
+                eve_op = c_ev1.text_input("🎉 NOMBRE DE EVENTO:", value=d.get('nombre_evento', ""), key=f"eve_{id_actual}")
+                sub_op = c_ev2.text_input("🏀 SUBTÍTULO / PARTIDO / ENCUENTRO:", value=d.get('subtitulo_evento', ""), key=f"sub_{id_actual}", placeholder="Ej. TEBACAS VS EL ROSARIO")
                 
                 c4, c5, c6 = st.columns([2, 1.5, 1.5])
                 loc_op = c4.text_input("📍 LOCACIÓN (Lugar):", value=d.get('locacion', ""), key=f"loc_{id_actual}")
@@ -148,22 +150,31 @@ def renderizar_modulo(API_URL: str):
                 val_h_inst = datetime.time.fromisoformat(d.get('hra_de_instalacion')) if d.get('hra_de_instalacion') else datetime.time(9, 0)
                 h_inst = c6.time_input("⏰ HORA INSTALACIÓN:", value=val_h_inst, key=f"hinst_{id_actual}")
                 
-                c7, c8, c9, c10, c11 = st.columns([1.5, 1.5, 1, 1, 1])
-                sol_op = c7.text_input("📣 SOLICITA:", value=d.get('quien_solicita', ""), key=f"sol_{id_actual}")
-                
+                # Fila de Solicitantes y Productor
+                c_dep, c_sol, c_prd = st.columns([1.5, 1.5, 1.5])
+                dep_op = c_dep.text_input("🏢 DEPENDENCIA O ÁREA SOLICITA:", value=d.get('dependencia_solicita', ""), key=f"dep_{id_actual}", placeholder="Ej. Presidencia, Comunicación Social...")
+                sol_op = c_sol.text_input("👤 PERSONA QUE SOLICITA:", value=d.get('quien_solicita', ""), key=f"sol_{id_actual}", placeholder="Nombre de contacto / responsable...")
                 idx_prd = (staff_vpro.index(d.get('resp_de_produccion'))+1) if d.get('resp_de_produccion') in staff_vpro else 0
-                prd_op = c8.selectbox("🎬 PRODUCTOR RESP.:", options=["---"] + staff_vpro, index=idx_prd, key=f"prd_{id_actual}")
-                
+                prd_op = c_prd.selectbox("🎬 PRODUCTOR RESP.:", options=["---"] + staff_vpro, index=idx_prd, key=f"prd_{id_actual}")
+
+                # Fila de Rango de Fechas, Horarios, Detalle Llamado y Estimado de Gasto
+                c_f1, c_f2, c_hi, c_hl, c_gas = st.columns([1.2, 1.2, 1, 1, 1.2])
                 val_f_even = datetime.date.fromisoformat(d.get('fec_del_evento')) if d.get('fec_del_evento') else datetime.date.today()
-                f_even = c9.date_input("📅 FECHA EVENTO:", value=val_f_even, key=f"feve_{id_actual}")
-                
+                f_even = c_f1.date_input("📅 FECHA INICIO EVENTO:", value=val_f_even, key=f"feve_{id_actual}")
+                val_f_fin = datetime.date.fromisoformat(d.get('fec_fin_evento')) if d.get('fec_fin_evento') else val_f_even
+                f_even_fin = c_f2.date_input("🏁 FECHA FIN EVENTO:", value=val_f_fin, key=f"fevefin_{id_actual}")
                 val_h_inic = datetime.time.fromisoformat(d.get('inicio_del_evento')) if d.get('inicio_del_evento') else datetime.time(11, 0)
-                h_inic = c10.time_input("🚀 H. INICIO:", value=val_h_inic, key=f"hinic_{id_actual}")
-                
+                h_inic = c_hi.time_input("🚀 H. INICIO:", value=val_h_inic, key=f"hinic_{id_actual}")
                 val_h_llam = datetime.time.fromisoformat(d.get('hra_de_llamado')) if d.get('hra_de_llamado') else datetime.time(6, 0)
-                h_llam = c11.time_input("📞 H. LLAMADO:", value=val_h_llam, key=f"hllam_{id_actual}")
+                h_llam = c_hl.time_input("📞 H. LLAMADO:", value=val_h_llam, key=f"hllam_{id_actual}")
+                val_est_gasto = float(d.get('estimado_gasto') or 0.0)
+                est_gasto = c_gas.number_input("💰 ESTIMADO GASTO ($):", min_value=0.0, value=val_est_gasto, step=500.0, key=f"gas_{id_actual}")
                 
-                ubi_op = st.text_input("🗺️ UBICACIÓN EXACTA:", value=d.get('ubicacion', ""), key=f"ubi_{id_actual}")
+                det_llam_op = st.text_input("⏱️ DETALLE DE LLAMADO (Horarios escalonados / áreas):", value=d.get('detalle_llamado', ""), key=f"detllam_{id_actual}", placeholder="Ej. Manuel: 9:00 AM | Estudio: 4:00 PM")
+
+                c_ub1, c_ub2 = st.columns([2, 1.2])
+                ubi_op = c_ub1.text_input("🗺️ UBICACIÓN EXACTA:", value=d.get('ubicacion', ""), key=f"ubi_{id_actual}")
+                dest_veh_op = c_ub2.text_input("🎯 DESTINO VEHICULAR / CIUDAD:", value=d.get('vehiculo_destino', ""), key=f"destveh_{id_actual}", placeholder="Ej. BADIRAGUATO, SIN")
                 
                 # ==============================================================
                 # 🤝 SECCIÓN NUEVA: MULTISELECT DE REUNIONES
@@ -233,6 +244,7 @@ def renderizar_modulo(API_URL: str):
                 ins_p = st.text_area("📦 PRODUCCIÓN:(LEER las INSTRUCCIONES y SI HAY DUDAS PREGUNTAR a su jefe inmediato)", value=d.get('produccion', ""), height=200, key=f"prod_{id_actual}")
                 ins_s = st.text_area("💻 SISTEMAS / REDES:", value=d.get('internet_redes', ""), height=200, key=f"redes_{id_actual}")
                 ins_v = st.text_area("🏗️ ACTIVIDADES PROVEEDORES:", value=d.get('actividades_de_proveedores', ""), height=200, key=f"act_prov_{id_actual}")
+                rol_op = st.text_input("🏆 ROL DE JUEGOS / ENCUENTROS DEL EVENTO:", value=d.get('rol_juegos', ""), key=f"rol_{id_actual}", placeholder="Ej. Día 10/ Octubre | Partido | TEBACAS & El Rosario | Hora: 8:00 PM")
                 nota = st.text_area("📝 NOTAS ADICIONALES:", value=d.get('nota', ""), height=140, key=f"nota_{id_actual}")
                 
             es_productor_asignado = str(d.get('resp_de_produccion', '')).strip().upper() == str(nombre_usuario).strip().upper() # ✈️ BITÁCORA DE GIRA (REEMPLAZA A LA VIEJA CLAQUETA)
@@ -423,7 +435,28 @@ def renderizar_modulo(API_URL: str):
             st.divider()
             creador_original = d.get('empleado_que_creo_la_op', nombre_usuario)
             
-            if st.button("💾 GUARDAR CAMBIOS ORDEN", use_container_width=True, type="primary", key=f"save_{id_actual}"):    # 💾 BOTÓN GUARDAR MAESTRO
+            col_save1, col_save2 = st.columns([2, 1])
+            with col_save1:
+                boton_guardar_presionado = st.button("💾 GUARDAR CAMBIOS ORDEN", use_container_width=True, type="primary", key=f"save_{id_actual}")    # 💾 BOTÓN GUARDAR MAESTRO
+            with col_save2:
+                if str(val_folio_mostrar).strip():
+                    try:
+                        res_pdf = requests.get(f"{API_URL}/api/eventos/pdf/{val_folio_mostrar}", verify=False)
+                        if res_pdf.status_code == 200:
+                            st.download_button(
+                                label="🖨️ Imprimir esta OP (PDF)",
+                                data=res_pdf.content,
+                                file_name=f"OP_{val_folio_mostrar}_VPF-PAGL-OP.pdf",
+                                mime="application/pdf",
+                                use_container_width=True,
+                                key=f"pdf_btn_{id_actual}"
+                            )
+                        else:
+                            st.button("🖨️ Imprimir esta OP", disabled=True, use_container_width=True, key=f"pdf_btn_dis_{id_actual}")
+                    except Exception:
+                        st.button("🖨️ Imprimir esta OP", disabled=True, use_container_width=True, key=f"pdf_btn_dis_{id_actual}")
+            
+            if boton_guardar_presionado:
                 es_autorizado = es_admin_coordinador
                 es_el_dueno = (creador_original == nombre_usuario)
                 
@@ -435,15 +468,22 @@ def renderizar_modulo(API_URL: str):
                         "folio": str(val_folio_mostrar).strip(), 
                         "para_q_cliente": str(cli_op),
                         "nombre_evento": str(eve_op).strip(), 
+                        "subtitulo_evento": str(sub_op).strip(),
                         "locacion": str(loc_op).strip(),
                         "fec_de_instalacion": str(f_inst), 
                         "hra_de_instalacion": str(h_inst), 
+                        "dependencia_solicita": str(dep_op).strip(),
                         "quien_solicita": str(sol_op).strip(),
                         "resp_de_produccion": str(prd_op), 
                         "fec_del_evento": str(f_even), 
+                        "fec_fin_evento": str(f_even_fin),
+                        "estimado_gasto": float(est_gasto), 
                         "inicio_del_evento": str(h_inic),
                         "hra_de_llamado": str(h_llam), 
+                        "detalle_llamado": str(det_llam_op).strip(),
                         "ubicacion": str(ubi_op).strip(), 
+                        "vehiculo_destino": str(dest_veh_op).strip(),
+                        "rol_juegos": str(rol_op).strip(),
                         "reuniones_vinculadas": list(reuniones_sel), # 🔥 AQUÍ SE INYECTAN LAS REUNIONES EN EL PAYLOAD
                         "tipo_de_servicio": str(serv_op).strip(),
                         "produccion": str(ins_p).strip(), 
@@ -458,6 +498,7 @@ def renderizar_modulo(API_URL: str):
                         "personal_convocado_op": list(pers_sel), 
                         "carros_usados_op": list(cars), 
                         "externos_op": list(proveed_sel),
+                        "personal_roles_op": d.get("personal_roles_op", []),
                         "empleado_que_creo_la_op": str(creador_original)
                     }
                     
@@ -575,7 +616,23 @@ def renderizar_modulo(API_URL: str):
                                     f_a4.text_input("✅ Vo.Bo.:", value=data_h.get('vobo', ''), disabled=True, key=f"h_vobo_{folio_h}")
 
                                 st.write("---")
-                                st.success("✅ **STATUS:** CERRADA Y SELLADA FINANCIERAMENTE POR DIRECCIÓN VPRO.")
+                                col_hist_btn1, col_hist_btn2 = st.columns([2, 1])
+                                with col_hist_btn1:
+                                    st.success("✅ **STATUS:** CERRADA Y SELLADA FINANCIERAMENTE POR DIRECCIÓN VPRO.")
+                                with col_hist_btn2:
+                                    try:
+                                        res_pdf_h = requests.get(f"{API_URL}/api/eventos/pdf/{folio_h}", verify=False)
+                                        if res_pdf_h.status_code == 200:
+                                            st.download_button(
+                                                label="🖨️ Imprimir esta OP (PDF)",
+                                                data=res_pdf_h.content,
+                                                file_name=f"OP_{folio_h}_VPF-PAGL-OP.pdf",
+                                                mime="application/pdf",
+                                                use_container_width=True,
+                                                key=f"pdf_btn_h_{folio_h}"
+                                            )
+                                    except Exception:
+                                        pass
 
                                 st.write("---") # 4. 🧳 HISTORIAL DE BODEGA / CHECKOUTS ASOCIADOS
                                 st.markdown("### 🧳 Manifiestos de Bodega (Checkouts Asignados)")

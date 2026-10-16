@@ -609,8 +609,8 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                                 ops = conn_ev.execute(text("""
                                     SELECT id_evento, folio, nombre_evento, resp_de_produccion, personal_convocado_op
                                     FROM public.eventos
-                                    WHERE fec_del_evento >= CAST(:ayer AS date) - INTERVAL '2 days'
-                                      AND fec_del_evento <= CAST(:ayer AS date)
+                                    WHERE fec_del_evento - INTERVAL '2 days' <= CAST(:ayer AS date)
+                                      AND COALESCE(fec_fin_evento, fec_del_evento) >= CAST(:ayer AS date)
                                     ORDER BY id_evento DESC
                                 """), {"ayer": ayer_str}).mappings().all()
 

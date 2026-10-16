@@ -39,11 +39,16 @@ def safe_decode_hex(hex_str: Any) -> str:
         return reparar_mojibake(s)
 
 def serialize_row_dates(row_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """Convierte objetos de fecha/hora de un diccionario a string para serialización JSON."""
+    """Convierte objetos de fecha/hora y Decimal de un diccionario para serialización JSON segura."""
     d = dict(row_dict)
     for k, v in d.items():
         if isinstance(v, (datetime.date, datetime.time, datetime.datetime)):
             d[k] = str(v)
+        elif hasattr(v, '__float__') and not isinstance(v, (int, float, bool)):
+            try:
+                d[k] = float(v)
+            except Exception:
+                pass
     return d
 
 

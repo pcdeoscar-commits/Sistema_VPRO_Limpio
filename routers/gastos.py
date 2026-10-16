@@ -42,7 +42,9 @@ def listar_folios_pendientes_gastos():
                encode(e.nombre_evento::bytea, 'hex'),
                encode(e.resp_de_produccion::bytea, 'hex'),
                e.fec_del_evento,
-               e.fec_de_instalacion
+               e.fec_de_instalacion,
+               e.fec_fin_evento,
+               COALESCE(e.estimado_gasto, 0.0)
         FROM public.eventos e
         WHERE NOT EXISTS (
             SELECT 1 FROM public.informes_gastos_maestro m 
@@ -59,7 +61,8 @@ def listar_folios_pendientes_gastos():
                     "cliente": safe_decode_hex(r[1]), 
                     "nombre_evento": safe_decode_hex(r[2]),
                     "productor": safe_decode_hex(r[3]),
-                    "fec_evento": str(r[4]) if r[4] else (str(r[5]) if r[5] else "")
+                    "fec_evento": f"{r[4]} al {r[6]}" if (r[4] and r[6] and r[4] != r[6]) else (str(r[4]) if r[4] else (str(r[5]) if r[5] else "")),
+                    "estimado_gasto": float(r[7] or 0.0)
                 } for r in rows
             ]
     except Exception as e: 
@@ -74,7 +77,12 @@ def obtener_datos_evento_gasto(id_evento: int):
                carros_usados_op, 
                personal_convocado_op,
                encode(nombre_evento::bytea, 'hex'),
-               encode(para_q_cliente::bytea, 'hex')
+               encode(para_q_cliente::bytea, 'hex'),
+               fec_del_evento,
+               fec_fin_evento,
+               COALESCE(estimado_gasto, 0.0),
+               quien_solicita,
+               dependencia_solicita
         FROM public.eventos WHERE id_evento = :id
     """)
     try:
@@ -107,7 +115,12 @@ def obtener_datos_evento_gasto(id_evento: int):
                     "carros_usados_op": autos_list, 
                     "personal_convocado_op": personal_list,
                     "nombre_evento": safe_decode_hex(res[4]),
-                    "cliente": safe_decode_hex(res[5])
+                    "cliente": safe_decode_hex(res[5]),
+                    "fec_del_evento": str(res[6]) if res[6] else None,
+                    "fec_fin_evento": str(res[7]) if res[7] else (str(res[6]) if res[6] else None),
+                    "estimado_gasto": float(res[8] or 0.0),
+                    "quien_solicita": str(res[9] or ""),
+                    "dependencia_solicita": str(res[10] or "")
                 }
             raise HTTPException(status_code=404, detail="Evento no mapeado")
     except Exception as e: 

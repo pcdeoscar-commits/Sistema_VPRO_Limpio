@@ -1,7 +1,7 @@
 {
   "python.defaultInterpreterPath": "C:\\Python314\\python.exe",
   "python.analysis.autoImportCompletions": true,
-  "files.autoSave": "afterDelay",
+  "files.autoSave": "off",
   "files.autoSaveDelay": 1000,
   "terminal.integrated.defaultProfile.windows": "PowerShell"
 }

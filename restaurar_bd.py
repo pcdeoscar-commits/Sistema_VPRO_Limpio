@@ -122,12 +122,45 @@ def main():
         subprocess.run([
             psql_cmd, "-U", db_user, "-h", db_host, "-p", db_port, "-d", "db_eventos",
             "-c", """
-                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS habilitada_para_edicion BOOLEAN DEFAULT FALSE;
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS chat_historial text;
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS dependencia_solicita character varying(150) DEFAULT '';
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS fec_fin_evento date;
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS estimado_gasto numeric(12,2) DEFAULT 0.00;
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS id_cotizacion_vinculada integer;
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS subtitulo_evento character varying(200) DEFAULT '';
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS detalle_llamado character varying(150) DEFAULT '';
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS rol_juegos text DEFAULT '';
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS vehiculo_destino character varying(100) DEFAULT '';
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS personal_roles_op jsonb DEFAULT '[]'::jsonb;
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS habilitada_para_edicion boolean DEFAULT false;
                 ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS fotos_evidencia text[] DEFAULT '{}'::text[];
                 ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS cronogramas_vinculados text[] DEFAULT '{}'::text[];
+                ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS reuniones_vinculadas text[] DEFAULT '{}'::text[];
+
+                ALTER TABLE public.eventos ALTER COLUMN folio TYPE character varying(50);
+                ALTER TABLE public.eventos ALTER COLUMN elabora TYPE character varying(150);
+                ALTER TABLE public.eventos ALTER COLUMN organiza TYPE character varying(150);
+                ALTER TABLE public.eventos ALTER COLUMN coordina TYPE character varying(150);
+                ALTER TABLE public.eventos ALTER COLUMN vobo TYPE character varying(150);
+                ALTER TABLE public.eventos ALTER COLUMN nombre_evento TYPE character varying(200);
+                ALTER TABLE public.eventos ALTER COLUMN locacion TYPE character varying(200);
+                ALTER TABLE public.eventos ALTER COLUMN quien_solicita TYPE character varying(150);
+                ALTER TABLE public.eventos ALTER COLUMN ubicacion TYPE character varying(200);
+                ALTER TABLE public.eventos ALTER COLUMN resp_de_produccion TYPE character varying(150);
+                ALTER TABLE public.eventos ALTER COLUMN subtitulo_evento TYPE character varying(200);
+                ALTER TABLE public.eventos ALTER COLUMN dependencia_solicita TYPE character varying(150);
+                ALTER TABLE public.eventos ALTER COLUMN detalle_llamado TYPE character varying(150);
+                ALTER TABLE public.eventos ALTER COLUMN vehiculo_destino TYPE character varying(100);
+                ALTER TABLE public.eventos ALTER COLUMN estimado_gasto TYPE numeric(12,2);
+
+                UPDATE public.eventos SET reuniones_vinculadas = '{}'::text[] WHERE reuniones_vinculadas IS NULL;
+                UPDATE public.eventos SET fotos_evidencia = '{}'::text[] WHERE fotos_evidencia IS NULL;
+                UPDATE public.eventos SET cronogramas_vinculados = '{}'::text[] WHERE cronogramas_vinculados IS NULL;
+                UPDATE public.eventos SET personal_roles_op = '[]'::jsonb WHERE personal_roles_op IS NULL;
+                UPDATE public.eventos SET fec_fin_evento = fec_del_evento WHERE fec_fin_evento IS NULL AND fec_del_evento IS NOT NULL;
             """
         ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        print("✔ Columnas 'habilitada_para_edicion', 'fotos_evidencia' y 'cronogramas_vinculados' verificadas en public.eventos (db_eventos).")
+        print("✔ Esquema completo y columnas de public.eventos (db_eventos) verificados.")
     except Exception:
         pass
 

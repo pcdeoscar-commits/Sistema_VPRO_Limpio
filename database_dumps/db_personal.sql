@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict L5m6Xphv0icZP0Em3uVpvQxQtyK2D2UYcu7GNqAWpgUuyTEcOzYjWinqjnBuCGt
+\restrict CWbyavCBznUjUgQ6CJ20KcPaN4o9ji52A1hdUh7r7Odn3Zu1Jvrv1h99gzkYcZ0
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -1992,6 +1992,10 @@ COPY public.log_accesos (id_log, fecha, hora, ip_origen, id_empleado, nombre_emp
 173	2026-10-15	17:42:43.554686	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
 174	2026-10-15	18:01:12.060989	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
 175	2026-10-15	18:01:12.227056	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+176	2026-10-15	18:53:28.213544	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+177	2026-10-15	18:53:28.394104	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+178	2026-10-15	19:33:53.647054	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+179	2026-10-15	19:33:53.71286	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
 \.
 
 
@@ -2434,7 +2438,7 @@ SELECT pg_catalog.setval('public.departamentos_id_seq', 5, true);
 -- Name: log_accesos_id_log_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.log_accesos_id_log_seq', 175, true);
+SELECT pg_catalog.setval('public.log_accesos_id_log_seq', 179, true);
 
 
 --
@@ -2913,5 +2917,5 @@ ALTER TABLE ONLY public.rh_vacaciones
 -- PostgreSQL database dump complete
 --
 
-\unrestrict L5m6Xphv0icZP0Em3uVpvQxQtyK2D2UYcu7GNqAWpgUuyTEcOzYjWinqjnBuCGt
+\unrestrict CWbyavCBznUjUgQ6CJ20KcPaN4o9ji52A1hdUh7r7Odn3Zu1Jvrv1h99gzkYcZ0
 

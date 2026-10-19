@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict xchgfcIBrWtEmV88ZREtGw0Ijg9l0oZNUywdAcuGgS9pGitoEDgGN9XA8lm6Txf
+\restrict vlclB2nIiyVKwC0tLxMDOUjs3jRts3YmctXssbkj3LVcVIahJfMhw9mFJbhm3GE
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -2010,5 +2010,5 @@ ALTER TABLE ONLY public.inventario_kits
 -- PostgreSQL database dump complete
 --
 
-\unrestrict xchgfcIBrWtEmV88ZREtGw0Ijg9l0oZNUywdAcuGgS9pGitoEDgGN9XA8lm6Txf
+\unrestrict vlclB2nIiyVKwC0tLxMDOUjs3jRts3YmctXssbkj3LVcVIahJfMhw9mFJbhm3GE
 

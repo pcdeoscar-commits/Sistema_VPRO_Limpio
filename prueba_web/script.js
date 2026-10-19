@@ -1508,10 +1508,15 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     // Select options helpers
     const buildOptions = (list, selectedVal, addEmpty = false) => {
         let opts = addEmpty ? '<option value="">---</option>' : '';
+        let found = false;
         (list || []).forEach(item => {
             const sel = (String(item).trim() === String(selectedVal || '').trim()) ? 'selected' : '';
+            if (sel) found = true;
             opts += `<option value="${item}" ${sel}>${item}</option>`;
         });
+        if (selectedVal && !found) {
+            opts += `<option value="${selectedVal}" selected>${selectedVal}</option>`;
+        }
         return opts;
     };
 

@@ -6,6 +6,7 @@ streamlit
 # --- Conexión a Base de Datos (PostgreSQL) ---
 sqlalchemy
 psycopg2-binary
+psycopg[binary]
 
 # --- Procesamiento de Datos y Gráficos ---
 pandas

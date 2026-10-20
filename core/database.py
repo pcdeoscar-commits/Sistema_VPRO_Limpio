@@ -51,7 +51,7 @@ def get_db_cursor(
 
 def _make_engine(db_name: str):
     return create_engine(
-        f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{db_name}",
+        f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{db_name}",
         pool_size=5,
         max_overflow=10,
         pool_pre_ping=True,

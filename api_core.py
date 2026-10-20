@@ -10,7 +10,8 @@ from fastapi.staticfiles import StaticFiles
 
 from core.config import (
     CORS_ORIGINS, 
-    FOTOS_EQUIPOS_DIR, 
+    FOTOS_EQUIPOS_DIR,
+    FOTOS_PERSONAL_DIR, 
     DIR_EVIDENCIAS_REAL,
     FOTOS_EVENTOS_DIR
 )
@@ -80,7 +81,7 @@ app.add_middleware(
 )
 
 # 3️⃣ MONTAJE DE DIRECTORIOS ESTÁTICOS
-app.mount("/fotos", StaticFiles(directory="Fotos_de_personal"), name="fotos")
+app.mount("/fotos", StaticFiles(directory=str(FOTOS_PERSONAL_DIR)), name="fotos")
 app.mount("/Fotos_de_equipos", StaticFiles(directory=str(FOTOS_EQUIPOS_DIR)), name="fotos_equipos")
 app.mount("/Fotos_de_eventos", StaticFiles(directory=str(FOTOS_EVENTOS_DIR)), name="fotos_eventos")
 app.mount("/evidencias_web", StaticFiles(directory=str(DIR_EVIDENCIAS_REAL)), name="evidencias")

@@ -553,9 +553,18 @@
         
         /* Columna 2: Tabla de Matriz */
         .kiosco-matriz { flex: 2.5; width: 100%; }
-        .tabla-container { max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; }
-        .tabla-container::-webkit-scrollbar { width: 6px; }
-        .tabla-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .tabla-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #f1f5f9;
+        }
+        .tabla-container::-webkit-scrollbar { width: 8px; height: 8px; }
+        .tabla-container::-webkit-scrollbar-track { background: #f8fafc; border-radius: 4px; }
+        .tabla-container::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        .tabla-container::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
         .tabla-vpro { width: 100%; border-collapse: collapse; font-size: 13px; }
         .tabla-vpro th { background-color: #f1f5f9; padding: 12px; text-align: left; color: var(--text-main); font-weight: 600; position: sticky; top: 0; z-index: 10; }
@@ -5469,7 +5478,15 @@
 
                 <!-- SUBVISTA 2: ARCHIVOS RECIBIDOS -->
                 <div id="subvista-transfer-recibidos" style="display: none;">
-                    <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <!-- BARRA DE BÚSQUEDA Y TOTAL EN TIEMPO REAL -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap;">
+                        <div style="position: relative; flex: 1; max-width: 420px;">
+                            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px;"></i>
+                            <input type="text" id="transfer-buscar-recibidos" oninput="filtrarTransferencias('recibidos')" placeholder="Buscar archivo o remitente..." style="width: 100%; padding: 8px 12px 8px 36px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; background: white; box-sizing: border-box;">
+                        </div>
+                        <div id="transfer-contador-recibidos" style="font-size: 13px; color: #64748b; font-weight: 600;"></div>
+                    </div>
+                    <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; max-height: calc(100vh - 270px); min-height: 480px; overflow-y: auto; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                         <table class="tabla-vpro">
                             <thead>
                                 <tr>
@@ -5491,7 +5508,15 @@
 
                 <!-- SUBVISTA 3: ARCHIVOS ENVIADOS -->
                 <div id="subvista-transfer-enviados" style="display: none;">
-                    <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <!-- BARRA DE BÚSQUEDA Y TOTAL EN TIEMPO REAL -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap;">
+                        <div style="position: relative; flex: 1; max-width: 420px;">
+                            <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px;"></i>
+                            <input type="text" id="transfer-buscar-enviados" oninput="filtrarTransferencias('enviados')" placeholder="Buscar archivo o destinatario..." style="width: 100%; padding: 8px 12px 8px 36px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; background: white; box-sizing: border-box;">
+                        </div>
+                        <div id="transfer-contador-enviados" style="font-size: 13px; color: #64748b; font-weight: 600;"></div>
+                    </div>
+                    <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; max-height: calc(100vh - 270px); min-height: 480px; overflow-y: auto; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                         <table class="tabla-vpro">
                             <thead>
                                 <tr>
@@ -5513,7 +5538,7 @@
 
                 <!-- SUBVISTA 4: HISTORIAL DE TRANSFERENCIAS -->
                 <div id="subvista-transfer-historial" style="display: none;">
-                    <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; max-height: calc(100vh - 270px); min-height: 480px; overflow-y: auto; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                         <table class="tabla-vpro">
                             <thead>
                                 <tr>
@@ -5908,7 +5933,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20261020_chunk_v2"></script>
+    <script src="script.js?v=20261020_chunk_v3"></script>
 </body>
 </html>
 <!-- MODAL VINCULAR COTIZACION -->

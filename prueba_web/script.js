@@ -13294,6 +13294,179 @@ El destinatario ya puede ver la notificación para descargarlo.`);
     }
 }
 
+let cacheTransferenciasRecibidos = [];
+let cacheTransferenciasEnviados = [];
+
+function filtrarTransferencias(tipo) {
+    if (tipo === 'recibidos') {
+        const input = document.getElementById("transfer-buscar-recibidos");
+        const query = (input ? input.value : "").trim().toLowerCase();
+        const lbl = document.getElementById("transfer-contador-recibidos");
+        let filtrados = cacheTransferenciasRecibidos;
+        if (query) {
+            filtrados = cacheTransferenciasRecibidos.filter(r => 
+                (r.nombre_archivo_original || "").toLowerCase().includes(query) ||
+                (r.nombre_origen || "").toLowerCase().includes(query) ||
+                (r.folio_paquete || "").toLowerCase().includes(query) ||
+                (r.mensaje || "").toLowerCase().includes(query)
+            );
+        }
+        if (lbl) {
+            lbl.innerText = query 
+                ? `${filtrados.length} de ${cacheTransferenciasRecibidos.length} archivos`
+                : `${cacheTransferenciasRecibidos.length} archivos recibidos`;
+        }
+        renderizarFilasTransferenciasRecibidos(filtrados);
+    } else if (tipo === 'enviados') {
+        const input = document.getElementById("transfer-buscar-enviados");
+        const query = (input ? input.value : "").trim().toLowerCase();
+        const lbl = document.getElementById("transfer-contador-enviados");
+        let filtrados = cacheTransferenciasEnviados;
+        if (query) {
+            filtrados = cacheTransferenciasEnviados.filter(e => 
+                (e.nombre_archivo_original || "").toLowerCase().includes(query) ||
+                (e.nombre_destino || "").toLowerCase().includes(query) ||
+                (e.folio_paquete || "").toLowerCase().includes(query) ||
+                (e.mensaje || "").toLowerCase().includes(query)
+            );
+        }
+        if (lbl) {
+            lbl.innerText = query 
+                ? `${filtrados.length} de ${cacheTransferenciasEnviados.length} archivos`
+                : `${cacheTransferenciasEnviados.length} archivos enviados`;
+        }
+        renderizarFilasTransferenciasEnviados(filtrados);
+    }
+}
+
+function renderizarFilasTransferenciasRecibidos(recibidos) {
+    const tbody = document.getElementById("tabla-transfer-recibidos-body");
+    if (!tbody) return;
+
+    if (!recibidos || recibidos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 32px;">📭 No hay archivos compartidos recibidos que coincidan.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = recibidos.map(item => {
+        let estatusBadge = "";
+        let btnDescarga = "";
+
+        if (!item.descargado) {
+            estatusBadge = `
+                <span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="ph ph-sparkle"></i> Nuevo (Sin descargar)
+                </span>
+                <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Se iniciará cuenta de 24h al descargar</div>
+            `;
+            btnDescarga = `
+                <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                        <i class="ph ph-download-simple"></i> Descargar
+                    </button>
+                    ${item.folio_paquete ? `
+                    <button onclick="descargarPaqueteZip('${item.folio_paquete}')" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;" title="Descargar paquete completo en ZIP">
+                        <i class="ph ph-file-zip"></i> ZIP Paquete
+                    </button>` : ''}
+                </div>
+            `;
+        } else {
+            estatusBadge = `
+                <span style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="ph ph-clock-countdown"></i> ${item.tiempo_restante_texto}
+                </span>
+                <div style="font-size: 11px; color: #d97706; margin-top: 3px;">Descargado ${item.veces_descargado || 1} vez(ces)</div>
+            `;
+            btnDescarga = `
+                <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #0284c7; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px;">
+                        <i class="ph ph-arrow-counter-clockwise"></i> Re-descargar
+                    </button>
+                    ${item.folio_paquete ? `
+                    <button onclick="descargarPaqueteZip('${item.folio_paquete}')" style="background: #475569; color: white; border: none; padding: 7px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px;" title="Descargar paquete completo en ZIP">
+                        <i class="ph ph-file-zip"></i> ZIP
+                    </button>` : ''}
+                </div>
+            `;
+        }
+
+        return `
+            <tr>
+                <td style="font-weight: 600; color: #0f172a;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+                            ${(item.nombre_origen || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div>${item.nombre_origen}</div>
+                            <span style="font-size: 11px; color: #64748b;">ID: ${item.id_empleado_origen}</span>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-weight: 600; color: #1e3a8a; max-width: 250px; word-break: break-all;">
+                    <i class="ph ph-file-text" style="color: #3b82f6; margin-right: 4px;"></i>
+                    ${item.nombre_archivo_original}
+                    ${item.folio_paquete ? `<div style="font-size: 10.5px; color: #6366f1; font-weight: 500;"><i class="ph ph-package"></i> Paquete: ${item.folio_paquete}</div>` : ''}
+                </td>
+                <td style="white-space: nowrap;"><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155;">${item.tamano_legible}</span></td>
+                <td style="font-size: 12.5px; color: #475569; white-space: nowrap;">${item.fecha_subida_str || ''}</td>
+                <td style="font-size: 12.5px; color: #475569; max-width: 220px;">${item.mensaje ? `"${item.mensaje}"` : '<span style="color:#cbd5e1;">Sin notas</span>'}</td>
+                <td>${estatusBadge}</td>
+                <td style="text-align: center; white-space: nowrap;">${btnDescarga}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function renderizarFilasTransferenciasEnviados(enviados) {
+    const tbody = document.getElementById("tabla-transfer-enviados-body");
+    if (!tbody) return;
+
+    if (!enviados || enviados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 32px;">No has enviado archivos recientemente o no hay coincidencias.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = enviados.map(item => {
+        const puedeEliminar = item.estatus !== 'EXPIRADO_BORRADO' && item.estatus !== 'CANCELADO';
+        const btnAccion = puedeEliminar ? `
+            <button onclick="eliminarTransferencia(${item.id_transferencia})" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 5px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;" title="Eliminar archivo del servidor">
+                <i class="ph ph-trash"></i> Cancelar / Borrar
+            </button>
+        ` : `<span style="font-size: 12px; color: #94a3b8;">Finalizado</span>`;
+
+        return `
+            <tr>
+                <td style="font-weight: 600; color: #0f172a;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+                            ${(item.nombre_destino || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div>${item.nombre_destino}</div>
+                            <span style="font-size: 11px; color: #64748b;">ID: ${item.id_empleado_destino}</span>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-weight: 600; color: #1e3a8a; max-width: 250px; word-break: break-all;">
+                    <i class="ph ph-file" style="color: #64748b; margin-right: 4px;"></i>
+                    ${item.nombre_archivo_original}
+                    ${item.folio_paquete ? `<div style="font-size: 10.5px; color: #6366f1; font-weight: 500;"><i class="ph ph-package"></i> Paquete: ${item.folio_paquete}</div>` : ''}
+                </td>
+                <td style="white-space: nowrap;"><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155;">${item.tamano_legible}</span></td>
+                <td style="font-size: 12.5px; color: #475569; white-space: nowrap;">${item.fecha_subida_str || ''}</td>
+                <td style="font-size: 12.5px; color: #475569; max-width: 220px;">${item.mensaje ? `"${item.mensaje}"` : '<span style="color:#cbd5e1;">Sin notas</span>'}</td>
+                <td>
+                    <span style="font-size: 12.5px; font-weight: 600; color: #334155;">
+                        ${item.estado_display}
+                    </span>
+                </td>
+                <td style="text-align: center; white-space: nowrap;">${btnAccion}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
 async function cargarTransferenciasRecibidos() {
     if (!usuarioLogueado) return;
     const tbody = document.getElementById("tabla-transfer-recibidos-body");
@@ -13307,8 +13480,9 @@ async function cargarTransferenciasRecibidos() {
         }
 
         const recibidos = await res.json();
+        cacheTransferenciasRecibidos = Array.isArray(recibidos) ? recibidos : [];
         const badgeCount = document.getElementById("badge-transfer-recibidos-count");
-        const noDescargados = recibidos.filter(r => !r.descargado);
+        const noDescargados = cacheTransferenciasRecibidos.filter(r => !r.descargado);
         if (badgeCount) {
             if (noDescargados.length > 0) {
                 badgeCount.innerText = noDescargados.length;
@@ -13318,80 +13492,7 @@ async function cargarTransferenciasRecibidos() {
             }
         }
 
-        if (!recibidos || recibidos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 32px;">📭 No tienes archivos compartidos recibidos por el momento.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = recibidos.map(item => {
-            let estatusBadge = "";
-            let btnDescarga = "";
-
-            if (!item.descargado) {
-                estatusBadge = `
-                    <span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
-                        <i class="ph ph-sparkle"></i> Nuevo (Sin descargar)
-                    </span>
-                    <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Se iniciará cuenta de 24h al descargar</div>
-                `;
-                btnDescarga = `
-                    <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
-                        <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
-                            <i class="ph ph-download-simple"></i> Descargar
-                        </button>
-                        ${item.folio_paquete ? `
-                        <button onclick="descargarPaqueteZip('${item.folio_paquete}')" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;" title="Descargar paquete completo en ZIP">
-                            <i class="ph ph-file-zip"></i> ZIP Paquete
-                        </button>` : ''}
-                    </div>
-                `;
-            } else {
-                estatusBadge = `
-                    <span style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
-                        <i class="ph ph-clock-countdown"></i> ${item.tiempo_restante_texto}
-                    </span>
-                    <div style="font-size: 11px; color: #d97706; margin-top: 3px;">Descargado ${item.veces_descargado || 1} vez(ces)</div>
-                `;
-                btnDescarga = `
-                    <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
-                        <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #0284c7; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px;">
-                            <i class="ph ph-arrow-counter-clockwise"></i> Re-descargar
-                        </button>
-                        ${item.folio_paquete ? `
-                        <button onclick="descargarPaqueteZip('${item.folio_paquete}')" style="background: #475569; color: white; border: none; padding: 7px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px;" title="Descargar paquete completo en ZIP">
-                            <i class="ph ph-file-zip"></i> ZIP
-                        </button>` : ''}
-                    </div>
-                `;
-            }
-
-            return `
-                <tr>
-                    <td style="font-weight: 600; color: #0f172a;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
-                                ${(item.nombre_origen || 'U').charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <div>${item.nombre_origen}</div>
-                                <span style="font-size: 11px; color: #64748b;">ID: ${item.id_empleado_origen}</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td style="font-weight: 600; color: #1e3a8a; max-width: 250px; word-break: break-all;">
-                        <i class="ph ph-file-text" style="color: #3b82f6; margin-right: 4px;"></i>
-                        ${item.nombre_archivo_original}
-                        ${item.folio_paquete ? `<div style="font-size: 10.5px; color: #6366f1; font-weight: 500;"><i class="ph ph-package"></i> Paquete: ${item.folio_paquete}</div>` : ''}
-                    </td>
-                    <td style="white-space: nowrap;"><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155;">${item.tamano_legible}</span></td>
-                    <td style="font-size: 12.5px; color: #475569; white-space: nowrap;">${item.fecha_subida_str || ''}</td>
-                    <td style="font-size: 12.5px; color: #475569; max-width: 220px;">${item.mensaje ? `"${item.mensaje}"` : '<span style="color:#cbd5e1;">Sin notas</span>'}</td>
-                    <td>${estatusBadge}</td>
-                    <td style="text-align: center; white-space: nowrap;">${btnDescarga}</td>
-                </tr>
-            `;
-        }).join("");
-
+        filtrarTransferencias('recibidos');
     } catch (e) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Error al cargar archivos recibidos.</td></tr>';
     }
@@ -13410,54 +13511,13 @@ async function cargarTransferenciasEnviados() {
         }
 
         const enviados = await res.json();
-        if (!enviados || enviados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 32px;">No has enviado archivos recientemente.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = enviados.map(item => {
-            const puedeEliminar = item.estatus !== 'EXPIRADO_BORRADO' && item.estatus !== 'CANCELADO';
-            const btnAccion = puedeEliminar ? `
-                <button onclick="eliminarTransferencia(${item.id_transferencia})" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 5px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;" title="Eliminar archivo del servidor">
-                    <i class="ph ph-trash"></i> Cancelar / Borrar
-                </button>
-            ` : `<span style="font-size: 12px; color: #94a3b8;">Finalizado</span>`;
-
-            return `
-                <tr>
-                    <td style="font-weight: 600; color: #0f172a;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
-                                ${(item.nombre_destino || 'U').charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <div>${item.nombre_destino}</div>
-                                <span style="font-size: 11px; color: #64748b;">ID: ${item.id_empleado_destino}</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td style="font-weight: 600; color: #1e3a8a; max-width: 250px; word-break: break-all;">
-                        <i class="ph ph-file" style="color: #64748b; margin-right: 4px;"></i>
-                        ${item.nombre_archivo_original}
-                        ${item.folio_paquete ? `<div style="font-size: 10.5px; color: #6366f1; font-weight: 500;"><i class="ph ph-package"></i> Paquete: ${item.folio_paquete}</div>` : ''}
-                    </td>
-                    <td style="white-space: nowrap;"><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #334155;">${item.tamano_legible}</span></td>
-                    <td style="font-size: 12.5px; color: #475569; white-space: nowrap;">${item.fecha_subida_str || ''}</td>
-                    <td style="font-size: 12.5px; color: #475569; max-width: 220px;">${item.mensaje ? `"${item.mensaje}"` : '<span style="color:#cbd5e1;">Sin notas</span>'}</td>
-                    <td>
-                        <span style="font-size: 12.5px; font-weight: 600; color: #334155;">
-                            ${item.estado_display}
-                        </span>
-                    </td>
-                    <td style="text-align: center; white-space: nowrap;">${btnAccion}</td>
-                </tr>
-            `;
-        }).join("");
-
+        cacheTransferenciasEnviados = Array.isArray(enviados) ? enviados : [];
+        filtrarTransferencias('enviados');
     } catch (e) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Error al cargar archivos enviados.</td></tr>';
     }
 }
+
 
 let timerRecargaTransferencias = null;
 function programarRecargaTransferencias(delay = 2000) {

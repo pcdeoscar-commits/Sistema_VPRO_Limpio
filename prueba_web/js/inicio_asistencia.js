@@ -1,0 +1,847 @@
+// ==============================================================================
+// MÓDULO: inicio_asistencia.js
+// 4-5. Módulo Inicio, notificaciones, reloj, kiosco, asistencia
+// Líneas originales: 572–1252 de script.js
+// ==============================================================================
+
+// ==========================================
+// 4. MÓDULO INICIO (NOTIFICACIONES Y ASISTENCIA)
+// ==========================================
+function formatearFechaLocal(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function obtenerRangoSemanaActual() {
+    const ahora = new Date();
+    const diaSemana = ahora.getDay();
+    // En JS: 0=Domingo, 1=Lunes, ..., 6=Sábado
+    const diffLunes = (diaSemana === 0 ? -6 : 1 - diaSemana);
+    const lunes = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + diffLunes);
+    
+    const dias = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + i);
+        dias.push({
+            dateObj: d,
+            iso: formatearFechaLocal(d),
+            diaSemanaIdx: d.getDay(),
+            display: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+        });
+    }
+    return { lunes: dias[0], domingo: dias[6], dias };
+}
+
+async function cargarDatosInicio() {
+    if (!usuarioLogueado) return;
+    actualizarVisibilidadAgendaDrive();
+    actualizarMonitorAccesosCEO();
+
+    // Foto de perfil del empleado en banner de inicio
+    const elFotoInicio = document.getElementById("inicio-foto-empleado");
+    if (elFotoInicio) {
+        const idEmp = String(usuarioLogueado.id_empleado || '000').trim();
+        elFotoInicio.src = usuarioLogueado.foto_url || `${API_URL}/fotos/${idEmp}.jpg`;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // CENTRO DE NOTIFICACIONES — Sistema de Dropdowns por Categoría
+    // Categorías: Transfer, OPs/Checkout, Licencia, Docs oficiales,
+    //             Vacaciones disponibles, Gastos sin comprobar
+    // ══════════════════════════════════════════════════════════════════
+    const contenedorNotif = document.getElementById("inicio-notificaciones");
+    if (contenedorNotif) {
+        contenedorNotif.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:12px;font-size:13px;">⏳ Cargando notificaciones...</div>`;
+
+        const idEmp = usuarioLogueado.id_empleado;
+
+        // Lanzar todas las peticiones en paralelo
+        const [resTrans, resCheck, resAlertas, resVac, resGastos] = await Promise.allSettled([
+            fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${idEmp}`),
+            fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo)}`),
+            fetch(`${API_URL}/api/rh/alertas?id_empleado=${idEmp}`),
+            fetch(`${API_URL}/api/rh/vacaciones/${idEmp}`),
+            fetch(`${API_URL}/api/gastos/pendientes-auditoria`)
+        ]);
+
+        // ── Helper: construir tarjeta-grupo tipo accordion/dropdown ──────
+        let _notifUID = 0;
+        function buildDropdownCard({ icon, color, bg, border, titulo, badge, badgeColor, items, renderItem }) {
+            if (!items || items.length === 0) return '';
+            const uid = `notif-drop-${++_notifUID}`;
+            const itemsHtml = items.map((it, idx) => renderItem(it, idx)).join('');
+            return `
+            <div class="notif-dropdown-card" style="background:${bg}; border-left:4px solid ${border}; border-radius:10px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); overflow:hidden;">
+                <div onclick="toggleNotifDropdown('${uid}')" style="display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; user-select:none;">
+                    <div style="width:42px;height:42px;border-radius:8px;background:${color};color:white;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">
+                        <i class="ph ${icon}"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:14px;font-weight:700;color:#1e293b;">${titulo}</div>
+                    </div>
+                    <span style="background:${badgeColor||border};color:white;border-radius:20px;padding:3px 11px;font-size:12px;font-weight:700;margin-right:6px;">${badge}</span>
+                    <i class="ph ph-caret-down" id="${uid}-caret" style="font-size:18px;color:${color};transition:transform .25s;"></i>
+                </div>
+                <div id="${uid}" style="display:none; border-top:1px solid rgba(0,0,0,0.07); padding:8px 14px 12px;">
+                    ${itemsHtml}
+                </div>
+            </div>`;
+        }
+
+        let gruposHtml = [];
+
+        // ── A. VPRO Transfer — Archivos pendientes de bajar ──────────────
+        try {
+            if (resTrans.status === 'fulfilled' && resTrans.value.ok) {
+                const dataTrans = await resTrans.value.json();
+                const pendientes = dataTrans?.pendientes || [];
+                gruposHtml.push(buildDropdownCard({
+                    icon: 'ph-cloud-arrow-down',
+                    color: '#2563eb', bg: '#eff6ff', border: '#3b82f6',
+                    titulo: '📦 Archivos pendientes de descargar',
+                    badge: `${pendientes.length} archivo${pendientes.length !== 1 ? 's' : ''}`,
+                    badgeColor: '#2563eb',
+                    items: pendientes,
+                    renderItem: (t) => `
+                        <div onclick="cambiarVista('vista-transferencias'); cambiarPestanaTransferencias('recibidos');"
+                             style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
+                             onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='transparent'">
+                            <i class="ph ph-file-arrow-down" style="font-size:18px;color:#2563eb;flex-shrink:0;"></i>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;font-weight:600;color:#1e3a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    ${t.nombre_archivo_original}
+                                    <span style="background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:700;margin-left:6px;">${t.tamano_legible}</span>
+                                </div>
+                                <div style="font-size:11.5px;color:#475569;">De: <b>${t.nombre_origen}</b> · ${t.fecha_subida_str || ''}</div>
+                                <div style="font-size:11px;color:#0284c7;">⏱️ Expira 24h después de descargarlo</div>
+                            </div>
+                            <button onclick="event.stopPropagation(); descargarArchivoTransferenciaDirecto(${t.id_transferencia}, '${(t.nombre_archivo_original||'').replace(/'/g, "\'")}')"
+                                    style="background:#2563eb;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
+                                <i class="ph ph-download-simple"></i> Bajar
+                            </button>
+                        </div>`
+                }));
+            }
+        } catch(e) { console.error('Transfer notif:', e); }
+
+        // ── B. OPs convocadas (Checkout pendiente) ────────────────────────
+        try {
+            if (resCheck.status === 'fulfilled' && resCheck.value.ok) {
+                const ops = await resCheck.value.json();
+                gruposHtml.push(buildDropdownCard({
+                    icon: 'ph-clipboard-text',
+                    color: '#b45309', bg: '#fffbeb', border: '#d97706',
+                    titulo: '📋 Órdenes de Producción asignadas',
+                    badge: `${ops.length} OP${ops.length !== 1 ? 's' : ''}`,
+                    badgeColor: '#b45309',
+                    items: ops,
+                    renderItem: (op) => `
+                        <div onclick="abrirCheckoutConOP(${op.id_evento||0}, '${(op.label||'').replace(/'/g, "\'")}')"
+                             style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
+                             onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='transparent'">
+                            <i class="ph ph-warning-circle" style="font-size:18px;color:#d97706;flex-shrink:0;"></i>
+                            <div style="flex:1;">
+                                <div style="font-size:13px;font-weight:600;color:#78350f;">${op.label||op.folio||'Orden pendiente'}</div>
+                                <div style="font-size:11.5px;color:#92400e;">Estatus: <b>${op.estado||'PENDIENTE'}</b></div>
+                            </div>
+                            <i class="ph ph-arrow-right" style="color:#b45309;font-size:16px;flex-shrink:0;"></i>
+                        </div>`
+                }));
+            }
+        } catch(e) { console.error('Checkout notif:', e); }
+
+        // ── C. Alertas RH: Licencia de manejo + Documentos oficiales ──────
+        try {
+            if (resAlertas.status === 'fulfilled' && resAlertas.value.ok) {
+                const alertas = await resAlertas.value.json();
+                const docsAlerta = (alertas || []).filter(a => a.tipo === 'DOCUMENTO_POR_VENCER');
+                const licencias  = docsAlerta.filter(a => (a.mensaje||'').toUpperCase().includes('LICENCIA'));
+                const otrosDocs  = docsAlerta.filter(a => !(a.mensaje||'').toUpperCase().includes('LICENCIA'));
+
+                // Licencia de manejo/chofer
+                const licUrgente = licencias.some(a => a.urgencia === 'ALTA');
+                gruposHtml.push(buildDropdownCard({
+                    icon: 'ph-steering-wheel',
+                    color: licUrgente ? '#dc2626' : '#d97706',
+                    bg: licUrgente ? '#fef2f2' : '#fffbeb',
+                    border: licUrgente ? '#ef4444' : '#f59e0b',
+                    titulo: '🚗 Licencia de manejo — Aviso',
+                    badge: licUrgente ? '⚠️ VENCIDA' : 'Vence pronto',
+                    badgeColor: licUrgente ? '#dc2626' : '#d97706',
+                    items: licencias,
+                    renderItem: (a) => `
+                        <div onclick="cambiarVista('vista-rh'); setTimeout(()=>activarPestanaRH('expediente'),300);"
+                             style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
+                             onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'">
+                            <i class="ph ph-identification-card" style="font-size:18px;color:${a.urgencia==='ALTA'?'#dc2626':'#d97706'};flex-shrink:0;"></i>
+                            <div style="flex:1;">
+                                <div style="font-size:13px;font-weight:600;color:#7f1d1d;">${a.mensaje}</div>
+                                <div style="font-size:11.5px;color:#991b1b;">👉 Ir a RH → Expediente Digital para actualizar</div>
+                            </div>
+                            <i class="ph ph-arrow-right" style="color:#dc2626;font-size:16px;flex-shrink:0;"></i>
+                        </div>`
+                }));
+
+                // Otros documentos oficiales (INE, NSS, etc.)
+                gruposHtml.push(buildDropdownCard({
+                    icon: 'ph-files',
+                    color: '#7c3aed', bg: '#f5f3ff', border: '#8b5cf6',
+                    titulo: '📄 Documentos oficiales por vencer',
+                    badge: `${otrosDocs.length} doc${otrosDocs.length !== 1 ? 's' : ''}`,
+                    badgeColor: '#7c3aed',
+                    items: otrosDocs,
+                    renderItem: (a) => `
+                        <div onclick="cambiarVista('vista-rh'); setTimeout(()=>activarPestanaRH('expediente'),300);"
+                             style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
+                             onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='transparent'">
+                            <i class="ph ph-identification-badge" style="font-size:18px;color:#7c3aed;flex-shrink:0;"></i>
+                            <div style="flex:1;">
+                                <div style="font-size:13px;font-weight:600;color:#4c1d95;">${a.mensaje}</div>
+                                <div style="font-size:11.5px;color:#6d28d9;">👉 Ir a RH → Expediente Digital</div>
+                            </div>
+                            <i class="ph ph-arrow-right" style="color:#7c3aed;font-size:16px;flex-shrink:0;"></i>
+                        </div>`
+                }));
+            }
+        } catch(e) { console.error('Alertas RH notif:', e); }
+
+        // ── D. Vacaciones disponibles ──────────────────────────────────────
+        try {
+            if (resVac.status === 'fulfilled' && resVac.value.ok) {
+                const dataVac = await resVac.value.json();
+                const resumen = dataVac?.resumen;
+                const diasDisp = resumen?.dias_pendientes || 0;
+                if (diasDisp > 0) {
+                    gruposHtml.push(buildDropdownCard({
+                        icon: 'ph-beach',
+                        color: '#059669', bg: '#f0fdf4', border: '#34d399',
+                        titulo: '🏖️ Vacaciones disponibles',
+                        badge: `${diasDisp} día${diasDisp !== 1 ? 's' : ''}`,
+                        badgeColor: '#059669',
+                        items: [resumen],
+                        renderItem: (r) => `
+                            <div onclick="cambiarVista('vista-rh'); setTimeout(()=>activarPestanaRH('vacaciones'),300);"
+                                 style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
+                                 onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">
+                                <i class="ph ph-sun-horizon" style="font-size:18px;color:#059669;flex-shrink:0;"></i>
+                                <div style="flex:1;">
+                                    <div style="font-size:13px;font-weight:600;color:#14532d;">
+                                        Tienes <b>${r.dias_pendientes}</b> días de vacaciones disponibles (LFT)
+                                    </div>
+                                    <div style="font-size:11.5px;color:#166534;">
+                                        Correspondientes: ${r.dias_totales_correspondientes} · Tomados: ${r.dias_tomados}
+                                    </div>
+                                    <div style="font-size:11px;color:#15803d;">👉 Ir a RH → Vacaciones para solicitar</div>
+                                </div>
+                                <i class="ph ph-arrow-right" style="color:#059669;font-size:16px;flex-shrink:0;"></i>
+                            </div>`
+                    }));
+                }
+            }
+        } catch(e) { console.error('Vacaciones notif:', e); }
+
+        // ── E. Gastos pendientes de comprobación ──────────────────────────
+        try {
+            if (resGastos.status === 'fulfilled' && resGastos.value.ok) {
+                const todosGastos = await resGastos.value.json();
+                const misGastos = (todosGastos || []).filter(g =>
+                    String(g.id_empleado).trim() === String(idEmp).trim()
+                );
+                gruposHtml.push(buildDropdownCard({
+                    icon: 'ph-receipt',
+                    color: '#0891b2', bg: '#f0f9ff', border: '#38bdf8',
+                    titulo: '🧾 Gastos pendientes de comprobación',
+                    badge: `${misGastos.length} OP${misGastos.length !== 1 ? 's' : ''}`,
+                    badgeColor: '#0891b2',
+                    items: misGastos,
+                    renderItem: (g) => `
+                        <div onclick="cambiarVista('vista-gastos');"
+                             style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
+                             onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='transparent'">
+                            <i class="ph ph-money" style="font-size:18px;color:#0891b2;flex-shrink:0;"></i>
+                            <div style="flex:1;">
+                                <div style="font-size:13px;font-weight:600;color:#0c4a6e;">
+                                    OP-${g.folio_op} · ${g.evento||'Evento'}
+                                </div>
+                                <div style="font-size:11.5px;color:#0369a1;">Pendiente de revisión de auditoría</div>
+                                <div style="font-size:11px;color:#0284c7;">👉 Ir a Gastos para comprobar</div>
+                            </div>
+                            <i class="ph ph-arrow-right" style="color:#0891b2;font-size:16px;flex-shrink:0;"></i>
+                        </div>`
+                }));
+            }
+        } catch(e) { console.error('Gastos notif:', e); }
+
+        // ── Render final ───────────────────────────────────────────────────
+        const gruposFiltrados = gruposHtml.filter(Boolean);
+        if (gruposFiltrados.length > 0) {
+            contenedorNotif.innerHTML = gruposFiltrados.join('');
+        } else {
+            contenedorNotif.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:#f0fdf4;border-left:4px solid #34d399;border-radius:10px;">
+                    <i class="ph ph-check-circle" style="font-size:24px;color:#059669;"></i>
+                    <span style="font-size:14px;color:#065f46;font-weight:600;">✅ Todo al día — Sin notificaciones pendientes.</span>
+                </div>`;
+        }
+    }
+
+    // 2. Asistencia Semanal y Detección de Advertencia de Conducta
+    const tbody = document.getElementById("inicio-tabla-asistencia");
+    const alertaConductaContenedor = document.getElementById("inicio-alerta-conducta");
+    if (!tbody) return;
+
+    try {
+        const semana = obtenerRangoSemanaActual();
+        const resAsist = await fetch(`${API_URL}/api/asistencia/auditoria`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fecha_inicio: semana.lunes.iso,
+                fecha_fin: semana.domingo.iso,
+                empleado: usuarioLogueado.nombre_completo
+            })
+        });
+
+        const registros = resAsist.ok ? await resAsist.json() : [];
+        const diasEspanol = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+        const hoyIso = formatearFechaLocal(new Date());
+
+        const esVillarreal = usuarioLogueado.nombre_completo.toUpperCase().includes("VILLARREAL");
+        let advertenciaConductaDetectada = false;
+
+        const limpiaHora = (h) => (h && h !== "None" && h !== "null" && h !== "--:--") ? String(h).substring(0, 5) : "--:--";
+
+        let htmlTabla = "";
+        for (let i = 0; i < 7; i++) {
+            const diaInfo = semana.dias[i];
+            const fIso = diaInfo.iso;
+            const reg = registros.find(r => r.fecha === fIso);
+
+            let mIn = reg ? limpiaHora(reg.hora_entrada) : "--:--";
+            let mOut = reg ? limpiaHora(reg.hora_salida) : "--:--";
+            let vIn = reg ? limpiaHora(reg.hora_entrada_v) : "--:--";
+            let vOut = reg ? limpiaHora(reg.hora_salida_v) : "--:--";
+            let obs = reg ? (reg.observaciones || "") : "";
+
+            const esPasadoOHoy = fIso <= hoyIso;
+            const esFinDeSemana = (i === 5 || i === 6); // Sábado o Domingo
+
+            // Verificar si hubo omisión de comida
+            const omitioComida = (!esVillarreal) && (
+                obs.toUpperCase().includes("OMISIÓN") || 
+                obs.toUpperCase().includes("ADVERTENCIA") ||
+                (mIn !== "--:--" && mOut === "--:--" && vIn === "--:--" && vOut !== "--:--")
+            );
+
+            if (omitioComida) {
+                advertenciaConductaDetectada = true;
+                obs = "🚨 Práctica indebida: Omisión de registro de comida";
+            } else if (esPasadoOHoy && mIn === "--:--" && mOut === "--:--" && vIn === "--:--" && vOut === "--:--") {
+                obs = esFinDeSemana ? "Descanso" : "❌ Sin registro";
+            } else if (esPasadoOHoy && !obs && (mIn !== "--:--" || vOut !== "--:--")) {
+                obs = "✅ Al día";
+            }
+
+            // Resaltado de marcas faltantes
+            const claseIn = (mIn === "--:--" && esPasadoOHoy && !esFinDeSemana) ? "td-error" : "";
+            const claseOut = (mOut === "--:--" && mIn !== "--:--" && !omitioComida) ? "td-error" : "";
+
+            htmlTabla += `
+                <tr>
+                    <td style="font-weight: 600; color: #1e293b;">${diasEspanol[i]}</td>
+                    <td>${diaInfo.display}</td>
+                    <td class="${claseIn}">${mIn}</td>
+                    <td class="${claseOut}">${mOut}</td>
+                    <td>${vIn}</td>
+                    <td>${vOut}</td>
+                    <td>${obs}</td>
+                </tr>
+            `;
+        }
+        tbody.innerHTML = htmlTabla;
+
+        // Renderizar banner de advertencia de conducta si corresponde
+        if (alertaConductaContenedor) {
+            if (advertenciaConductaDetectada && !esVillarreal) {
+                alertaConductaContenedor.innerHTML = `
+                    <div style="background-color: #fef2f2; color: #991b1b; border: 1px solid #f87171; margin-bottom: 24px; padding: 18px 24px; border-radius: 12px; display: flex; align-items: flex-start; gap: 16px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);">
+                        <i class="ph ph-warning-octagon" style="font-size: 32px; color: #ef4444; flex-shrink: 0; margin-top: 2px;"></i>
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0 0 6px 0; font-size: 16px; color: #991b1b; font-weight: 700;">🚨 ADVERTENCIA DE CONDUCTA LABORAL</h4>
+                            <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #7f1d1d;">
+                                <b>Atención ${usuarioLogueado.nombre_completo}:</b> Se ha detectado una práctica incorrecta en tus registros de asistencia al registrar únicamente entrada matutina y salida vespertina omitiendo el registro de comida. El horario corrido continuo no está autorizado. Favor de pasar a Recursos Humanos para regularizar tu estatus.
+                            </p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                alertaConductaContenedor.innerHTML = "";
+            }
+        }
+    } catch (e) {
+        console.error("Error al cargar la asistencia semanal:", e);
+        tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align: center; padding: 16px;">Error de red al consultar el registro de asistencia.</td></tr>`;
+    }
+
+    // 3. Cargar Equipos Dañados en el Dropdown
+    const dropdownDanos = document.getElementById("dropdown-mis-danos");
+    if (dropdownDanos) {
+        try {
+            const resDanos = await fetch(`${API_URL}/api/inventario/mis-reportes-dano/${usuarioLogueado.id_empleado}`);
+            if (resDanos.ok) {
+                const danos = await resDanos.json();
+                if (danos && danos.length > 0) {
+                    dropdownDanos.innerHTML = `<option value="">-- Mis Reportes Activos (${danos.length}) --</option>` + 
+                        danos.map(d => `<option value="${d.ticket}" data-equipo="${d.equipo}">Folio ${d.ticket}: ${d.equipo} - ${d.nombre_equipo || 'Sin nombre'} (${d.estado})</option>`).join("");
+                        
+                    // Agregar evento de cambio para redireccionar
+                    dropdownDanos.addEventListener("change", function() {
+                        const selectedOption = dropdownDanos.options[dropdownDanos.selectedIndex];
+                        if (selectedOption.value) {
+                            const codigoEquipo = selectedOption.getAttribute("data-equipo");
+                            
+                            // 1. Cambiar a vista de daños
+                            cambiarVista('vista-danados');
+                            
+                            // 2. Abrir directamente el expediente clínico e historial en el modal
+                            setTimeout(() => {
+                                if (typeof abrirExpedienteEquipoModal === 'function') {
+                                    abrirExpedienteEquipoModal(codigoEquipo, codigoEquipo);
+                                }
+                            }, 300);
+                            
+                            // Resetear el dropdown
+                            dropdownDanos.value = "";
+                        }
+                    });
+                } else {
+                    dropdownDanos.innerHTML = `<option value="">No tienes equipos reportados como dañados.</option>`;
+                }
+            } else {
+                dropdownDanos.innerHTML = `<option value="">Error al cargar equipos dañados</option>`;
+            }
+        } catch (e) {
+            console.error("Error al cargar equipos dañados:", e);
+            dropdownDanos.innerHTML = `<option value="">Error de conexión</option>`;
+        }
+    }
+}
+
+// ==========================================
+// 5. MOTOR DEL RELOJ Y KIOSCO
+// ==========================================
+function iniciarRelojKiosco() {
+    const reloj = document.getElementById("reloj-pantalla");
+    const fecha = document.getElementById("fecha-pantalla");
+    if (!reloj || !fecha) return;
+
+    const actualizar = () => {
+        const ahora = new Date();
+        reloj.innerText = ahora.toLocaleTimeString('es-MX', { hour12: false });
+        fecha.innerText = ahora.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        verificarHorariosCampana();
+    };
+    
+    actualizar();
+    clearInterval(intervaloReloj);
+    intervaloReloj = setInterval(actualizar, 1000);
+}
+
+async function cargarMatrizKiosco(idRecienRegistrado = null) {
+    const tbody = document.getElementById("tabla-asistencia-body");
+    if (!tbody) return;
+
+    try {
+        const [resEmps, resAsist] = await Promise.all([
+            fetch(`${API_URL}/api/empleados`),
+            fetch(`${API_URL}/api/asistencia/reporte`)
+        ]);
+
+        const empleados = await resEmps.json();
+        const asistencia = await resAsist.json();
+
+        const hoyStr = formatearFechaLocal(new Date());
+        const registrosHoy = asistencia.filter(r => r.fecha && r.fecha.startsWith(hoyStr));
+        tbody.innerHTML = ""; 
+
+        // 1. Filtrar empleados activos (excluyendo bajas, inactivos, proveedores, externos)
+        const esValidoActivo = (e) => {
+            if (!e) return false;
+            const idE = String(e.id_empleado || '').trim();
+            if (idE === "529" || !idE) return false;
+            const email = String(e.email || '').trim();
+            if (!email.includes("@")) return false;
+            const todoTexto = `${e.estatus || ''} ${e.estatus_empleado || ''} ${e.rol || ''} ${e.depto || ''}`.toUpperCase();
+            if (todoTexto.includes("BAJA") || todoTexto.includes("INACT") || todoTexto.includes("PROV") || todoTexto.includes("EXTERN")) return false;
+            return true;
+        };
+
+        const mapEmpleados = new Map();
+        empleados.forEach(e => {
+            if (esValidoActivo(e)) {
+                mapEmpleados.set(String(e.id_empleado).trim(), e);
+            }
+        });
+
+        // 2. Determinar si un registro tiene checada real o incidencia RH
+        const esHoraValida = (h) => (h && h !== "None" && h !== "null" && h !== "--:--" && String(h).trim() !== "");
+        const tieneRegistroActivoHoy = (r) => {
+            if (!r) return false;
+            const est = String(r.estatus || '').toUpperCase();
+            if (['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(est)) return true;
+            return esHoraValida(r.hora_entrada) || esHoraValida(r.hora_salida) || esHoraValida(r.hora_entrada_v) || esHoraValida(r.hora_salida_v);
+        };
+
+        // 3. Filtrar registros de hoy: SOLO empleados activos que ya registraron asistencia o incidencia
+        const registrosFiltrados = registrosHoy.filter(r => {
+            const idE = String(r.id_empleado || '').trim();
+            return mapEmpleados.has(idE) && tieneRegistroActivoHoy(r);
+        });
+
+        // 4. Si aún no hay registros hoy, mostrar estado esperando checadas
+        if (registrosFiltrados.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 13.5px;">
+                        <i class="ph ph-clock-countdown" style="font-size: 28px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
+                        <span>Esperando checadas del día de hoy. La lista se irá formando conforme el personal registre su asistencia.</span>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // 5. Ordenar cronológicamente conforme se van registrando (por id_registro ASC o primera hora)
+        registrosFiltrados.sort((a, b) => {
+            const idA = Number(a.id_registro) || 0;
+            const idB = Number(b.id_registro) || 0;
+            if (idA > 0 && idB > 0 && idA !== idB) return idA - idB;
+            const horaA = String(a.hora_entrada || a.hora_entrada_v || '99:99');
+            const horaB = String(b.hora_entrada || b.hora_entrada_v || '99:99');
+            return horaA.localeCompare(horaB);
+        });
+
+        // 6. Renderizar únicamente a quienes ya checaron hoy
+        registrosFiltrados.forEach(reg => {
+            const emp = mapEmpleados.get(String(reg.id_empleado).trim());
+            if (!emp) return;
+
+            const esReciente = (idRecienRegistrado && String(emp.id_empleado).trim() === String(idRecienRegistrado).trim());
+            const estiloFila = esReciente ? 'style="background: #f0fdf4; border-left: 4px solid #10b981; transition: background 0.6s ease;"' : '';
+
+            // 🌴 Si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad
+            if (['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(String(reg.estatus || '').toUpperCase())) {
+                const est = String(reg.estatus).toUpperCase();
+                let badgeTxt = '🌴 EN VACACIONES AUTORIZADAS';
+                let bgStyle = 'background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;';
+                if (est === 'PERMISO') {
+                    badgeTxt = '⏱️ PERMISO LABORAL AUTORIZADO';
+                    bgStyle = 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;';
+                } else if (est === 'INCAPACIDAD') {
+                    badgeTxt = '🏥 INCAPACIDAD MÉDICA (IMSS)';
+                    bgStyle = 'background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;';
+                }
+
+                tbody.innerHTML += `
+                    <tr ${estiloFila}>
+                        <td style="font-weight: 600; color: var(--text-main);">${emp.nombre}</td>
+                        <td colspan="4" style="text-align: center; font-weight: 700; font-size: 12px; padding: 6px; ${bgStyle} border-radius: 6px;">
+                            ${badgeTxt}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const limpiaHora = (h) => esHoraValida(h) ? String(h).substring(0, 5) : "--:--";
+            const inMat = limpiaHora(reg.hora_entrada);
+            const outMat = limpiaHora(reg.hora_salida);
+            const inVesp = limpiaHora(reg.hora_entrada_v);
+            const outVesp = limpiaHora(reg.hora_salida_v);
+
+            const stError = "color: #9f1239; background: #ffe4e6; font-weight: bold;";
+            const tdOutMat = (outMat === "--:--" && inMat !== "--:--") ? `<td style="${stError}">--:--</td>` : `<td>${outMat}</td>`;
+
+            tbody.innerHTML += `
+                <tr ${estiloFila}>
+                    <td style="font-weight: 600; color: var(--text-main);">${emp.nombre}</td>
+                    <td>${inMat}</td>
+                    ${tdOutMat}
+                    <td>${inVesp}</td>
+                    <td>${outVesp}</td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 16px;">Error cargando la matriz del kiosco.</td></tr>`;
+    }
+}
+
+function reproducirBeepKiosco(tipo = 'ok') {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const audioCtx = new AudioContext();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        if (tipo === 'ok') {
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        } else {
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+    } catch (e) {}
+}
+
+function cambiarPestanaChecador(tab) {
+    const tabs = ['kiosco', 'credencial', 'auditoria'];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`tab-checador-btn-${t}`);
+        const view = document.getElementById(`subvista-checador-${t}`);
+        if (btn && view) {
+            if (t === tab) {
+                btn.style.background = '#0f172a';
+                btn.style.color = 'white';
+                btn.style.border = 'none';
+                view.style.display = 'block';
+            } else {
+                btn.style.background = '#f1f5f9';
+                btn.style.color = '#475569';
+                btn.style.border = '1px solid #cbd5e1';
+                view.style.display = 'none';
+            }
+        }
+    });
+
+    if (tab === 'kiosco') {
+        iniciarRelojKiosco();
+        cargarMatrizKiosco();
+    } else if (tab === 'credencial') {
+        cargarCredencialPersonal();
+    } else if (tab === 'auditoria') {
+        cargarAuditoriaAsistencia();
+    }
+}
+
+function filtrarMatrizKiosco(termino) {
+    const t = (termino || "").toLowerCase().trim();
+    const rows = document.querySelectorAll("#tabla-asistencia-body tr");
+    rows.forEach(r => {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(t) ? "" : "none";
+    });
+}
+
+async function cargarCredencialPersonal() {
+    if (!usuarioLogueado) return;
+    const idEmp = String(usuarioLogueado.id_empleado || '000').trim();
+    
+    const elNombre = document.getElementById("credencial-nombre");
+    const elId = document.getElementById("credencial-id");
+    const elDepto = document.getElementById("credencial-depto");
+    const elPuesto = document.getElementById("credencial-puesto");
+    const elIngreso = document.getElementById("credencial-ingreso");
+    const elRolBadge = document.getElementById("credencial-badge-rol");
+    const elFoto = document.getElementById("credencial-foto");
+
+    if (elNombre) elNombre.innerText = usuarioLogueado.nombre_completo || 'Colaborador VPRO';
+    if (elId) elId.innerText = idEmp;
+    if (elDepto) elDepto.innerText = usuarioLogueado.depto || 'General';
+    if (elPuesto) elPuesto.innerText = usuarioLogueado.rol || 'Personal';
+    if (elRolBadge) elRolBadge.innerText = (usuarioLogueado.rol || 'OPERADOR').toUpperCase();
+    if (elFoto) elFoto.src = usuarioLogueado.foto_url || `${API_URL}/fotos/${idEmp}.jpg`;
+
+    try {
+        const resQr = await fetch(`${API_URL}/api/empleados/${idEmp}/qr`);
+        if (resQr.ok) {
+            const dataQr = await resQr.json();
+            const qrImg = document.getElementById("credencial-qr-img");
+            const btnDescargar = document.getElementById("credencial-btn-descargar-qr");
+            if (qrImg && dataQr.qr_base64) {
+                qrImg.src = dataQr.qr_base64;
+            }
+            if (btnDescargar && dataQr.qr_base64) {
+                btnDescargar.href = dataQr.qr_base64;
+                btnDescargar.download = `QR_VPRO_${idEmp}.png`;
+            }
+        }
+    } catch (e) {
+        console.warn("No se pudo cargar el QR:", e);
+    }
+
+    try {
+        const resAsist = await fetch(`${API_URL}/api/asistencia/reporte`);
+        if (resAsist.ok) {
+            const registros = await resAsist.json();
+            const hoyStr = formatearFechaLocal(new Date());
+            const miReg = registros.find(r => String(r.id_empleado).trim() === idEmp && r.fecha && r.fecha.startsWith(hoyStr));
+            
+            const matIn = document.getElementById("mi-marca-mat-in");
+            const matOut = document.getElementById("mi-marca-mat-out");
+            const vespIn = document.getElementById("mi-marca-vesp-in");
+            const vespOut = document.getElementById("mi-marca-vesp-out");
+
+            const matInEst = document.getElementById("mi-marca-mat-in-est");
+            const matOutEst = document.getElementById("mi-marca-mat-out-est");
+            const vespInEst = document.getElementById("mi-marca-vesp-in-est");
+            const vespOutEst = document.getElementById("mi-marca-vesp-out-est");
+
+            const limpiaHora = (h) => (h && h !== "None" && h !== "null" && h !== "--:--") ? String(h).substring(0, 8) : "--:--:--";
+            
+            if (miReg) {
+                const h1 = limpiaHora(miReg.hora_entrada);
+                const h2 = limpiaHora(miReg.hora_salida);
+                const h3 = limpiaHora(miReg.hora_entrada_v);
+                const h4 = limpiaHora(miReg.hora_salida_v);
+
+                if (matIn) matIn.innerText = h1;
+                if (matOut) matOut.innerText = h2;
+                if (vespIn) vespIn.innerText = h3;
+                if (vespOut) vespOut.innerText = h4;
+
+                if (matInEst) matInEst.innerHTML = h1 !== "--:--:--" ? '<span style="color:#16a34a; font-weight:700;">🟢 Registrada</span>' : '<span style="color:#94a3b8;">Pendiente</span>';
+                if (matOutEst) matOutEst.innerHTML = h2 !== "--:--:--" ? '<span style="color:#16a34a; font-weight:700;">🟢 Registrada</span>' : '<span style="color:#94a3b8;">Pendiente</span>';
+                if (vespInEst) vespInEst.innerHTML = h3 !== "--:--:--" ? '<span style="color:#16a34a; font-weight:700;">🟢 Registrada</span>' : '<span style="color:#94a3b8;">Pendiente</span>';
+                if (vespOutEst) vespOutEst.innerHTML = h4 !== "--:--:--" ? '<span style="color:#16a34a; font-weight:700;">🟢 Registrada</span>' : '<span style="color:#94a3b8;">Pendiente</span>';
+            }
+        }
+    } catch (e) {
+        console.warn("No se pudieron consultar marcas de hoy:", e);
+    }
+}
+
+function inicializarLectorKiosco() {
+    const inputGafete = document.getElementById("input-gafete");
+    const alertaKiosco = document.getElementById("kiosco-alerta");
+    if (!inputGafete || !alertaKiosco) return;
+
+    setInterval(() => {
+        const vistaKiosco = document.getElementById("vista-checador");
+        if (vistaKiosco && vistaKiosco.style.display !== "none" && document.activeElement !== inputGafete) {
+            inputGafete.focus();
+        }
+    }, 1200);
+
+    inputGafete.addEventListener("keydown", async function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            const qrCode = inputGafete.value.trim();
+            inputGafete.value = ""; 
+            if (!qrCode) return;
+
+            const ahoraTS = Date.now();
+            if (memoriaKiosco[qrCode] && (ahoraTS - memoriaKiosco[qrCode]) < 60000) {
+                mostrarAlerta("⏱️ Asistencia ya registrada recientemente.", "#fef3c7", "#92400e", "#f59e0b");
+                reproducirBeepKiosco('warn');
+                return;
+            }
+            memoriaKiosco[qrCode] = ahoraTS;
+            
+            try {
+                const respuesta = await fetch(`${API_URL}/api/asistencia/checar`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id_empleado: qrCode, tipo_movimiento: "CHEQUEO", estatus: "ASISTENCIA", observaciones: "Kiosco HTML" })
+                });
+                const resultado = await respuesta.json();
+
+                if (respuesta.ok && resultado.status !== "WARNING") {
+                    // 🗣️ Le pasamos el ID escaneado (qrCode) y el nombre de respaldo
+                    decirSaludoKiosco(qrCode, resultado.nombre_empleado || "");
+                }
+                
+                try {
+                    const resEmps = await fetch(`${API_URL}/api/empleados`);
+                    const emp = (await resEmps.json()).find(e => String(e.id_empleado).trim() === qrCode);
+                    if (emp) {
+                        document.getElementById("scan-nombre").innerText = emp.nombre;
+                        document.getElementById("scan-id").innerText = `ID: ${emp.id_empleado}`;
+                        if (resultado.tipo_rh) {
+                            const badge = document.getElementById("scan-badge");
+                            badge.innerText = `🌴 ${resultado.tipo_rh}`;
+                            badge.style.background = "#dcfce7";
+                            badge.style.color = "#166534";
+                        } else {
+                            document.getElementById("scan-badge").innerText = resultado.status === "WARNING" ? "🚨 OMISIÓN DETECTADA" : "✅ REGISTRADO";
+                        }
+                        document.getElementById("scan-foto").src = `${API_URL}/fotos/${emp.id_empleado}.jpg`;
+                    }
+                } catch (e) {}
+
+                if (respuesta.ok && resultado.status !== "WARNING") {
+                    reproducirBeepKiosco('ok');
+                    mostrarAlerta(`✅ ${resultado.mensaje}`, "#d1fae5", "#065f46", "#10b981");
+                } else if (resultado.status === "WARNING") {
+                    reproducirBeepKiosco('warn');
+                    mostrarAlerta(`⚠️ ${resultado.mensaje}`, "#fef3c7", "#92400e", "#f59e0b");
+                } else {
+                    reproducirBeepKiosco('warn');
+                    mostrarAlerta(`❌ ${resultado.detail || "Error al registrar."}`, "#fee2e2", "#991b1b", "#ef4444");
+                }
+
+                cargarMatrizKiosco(qrCode);
+            } catch (error) { 
+                reproducirBeepKiosco('warn');
+                mostrarAlerta("📡 Error de conexión con el servidor.", "#fee2e2", "#991b1b", "#ef4444"); 
+            }
+        }
+    });
+
+    function mostrarAlerta(texto, bg, color, border) {
+        alertaKiosco.style.display = "block";
+        alertaKiosco.style.backgroundColor = bg;
+        alertaKiosco.style.color = color;
+        alertaKiosco.style.border = `1px solid ${border}`;
+        alertaKiosco.innerText = texto;
+        setTimeout(() => alertaKiosco.style.display = "none", 4000);
+    }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════
+// HELPERS CENTRO DE NOTIFICACIONES
+// ══════════════════════════════════════════════════════════════════════
+
+/**
+ * Abre/cierra el dropdown de una tarjeta de notificación.
+ * Rota el icono caret al abrir.
+ */
+function toggleNotifDropdown(uid) {
+    const panel = document.getElementById(uid);
+    const caret = document.getElementById(uid + '-caret');
+    if (!panel) return;
+    const open = panel.style.display === 'none' || panel.style.display === '';
+    panel.style.display = open ? 'block' : 'none';
+    if (caret) caret.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+/**
+ * Navega a la vista de RH y activa la pestaña indicada.
+ * pestana: 'expediente' | 'vacaciones' | 'contratos' | 'permisos' | 'capacitacion' | 'documentos'
+ */
+function activarPestanaRH(pestana) {
+    // Mapeo de nombre a valor que usa cambiarPestanaRH() en index.html
+    const tabMap = {
+        'expediente':     'documentos',
+        'vacaciones':     'vacaciones',
+        'contratos':      'contratos',
+        'permisos':       'permisos',
+        'capacitacion':   'capacitacion',
+        'documentos':     'documentos'
+    };
+    const tabVal = tabMap[pestana] || pestana;
+    if (typeof cambiarPestanaRH === 'function') {
+        cambiarPestanaRH(tabVal);
+    }
+}

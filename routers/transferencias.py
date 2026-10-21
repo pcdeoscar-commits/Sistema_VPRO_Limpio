@@ -134,6 +134,15 @@ def ejecutar_limpieza_expirados():
                     WHERE id_transferencia = ANY(:ids)
                 """), {"ids": ids_a_marcar})
 
+        # Limpiar fragmentos temporales huérfanos de más de 24 horas
+        try:
+            ahora_ts = time.time()
+            for p in CARPETA_TRANSFERENCIAS.glob("temp_*.part"):
+                if ahora_ts - p.stat().st_mtime > 86400:
+                    p.unlink(missing_ok=True)
+        except Exception:
+            pass
+
         return len(ids_a_marcar)
     except Exception as e:
         print(f"[VPRO Transfer] Error en ejecutar_limpieza_expirados: {e}")
@@ -296,6 +305,127 @@ async def subir_archivos_compartidos(
             except Exception:
                 pass
         raise HTTPException(status_code=500, detail=f"Error al procesar la transferencia: {str(e)}")
+
+@router.post("/subir_chunk")
+async def subir_chunk_transferencia(
+    request: Request,
+    upload_id: str = Form(...),
+    folio_paquete: str = Form(...),
+    chunk_index: int = Form(...),
+    total_chunks: int = Form(...),
+    nombre_archivo: str = Form(...),
+    tamano_total: int = Form(...),
+    id_empleado_origen: str = Form(...),
+    nombre_origen: str = Form(...),
+    id_empleado_destino: str = Form(...),
+    nombre_destino: str = Form(...),
+    mensaje: Optional[str] = Form(""),
+    tipo_mime: Optional[str] = Form("application/octet-stream"),
+    chunk: UploadFile = File(...)
+):
+    """
+    Recibe un bloque (chunk de ~20 MB) para permitir transferencias de gran tamaño (hasta 5.0 GB)
+    a través de Cloudflare o conexiones remotas, eludiendo el límite de 100 MB por petición.
+    """
+    if tamano_total > LIMITE_MAX_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail="El archivo excede el límite máximo permitido de 5.0 GB."
+        )
+
+    upload_id_clean = re.sub(r'[^a-zA-Z0-9_-]', '', upload_id)
+    temp_file_path = CARPETA_TRANSFERENCIAS / f"temp_{upload_id_clean}.part"
+
+    try:
+        mode = "wb" if chunk_index == 0 else "ab"
+        chunk_bytes = await chunk.read()
+        with open(temp_file_path, mode) as f:
+            f.write(chunk_bytes)
+
+        if chunk_index < total_chunks - 1:
+            return {
+                "status": "CHUNK_OK",
+                "chunk_index": chunk_index,
+                "total_chunks": total_chunks,
+                "bytes_recibidos": len(chunk_bytes)
+            }
+
+        # Último bloque: validar peso, renombrar y registrar en BD
+        peso_real = temp_file_path.stat().st_size
+        if peso_real > LIMITE_MAX_BYTES:
+            temp_file_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=400, detail="El archivo excede el límite máximo de 5.0 GB.")
+
+        nombre_original = os.path.basename(nombre_archivo or "archivo_compartido")
+        nombre_limpio = re.sub(r'[^a-zA-Z0-9_.-]', '_', nombre_original)
+        timestamp = int(time.time())
+        token_unico = uuid.uuid4().hex[:8]
+        nombre_fisico = f"trans_{timestamp}_{token_unico}_{nombre_limpio}"
+        destino_path = CARPETA_TRANSFERENCIAS / nombre_fisico
+
+        temp_file_path.replace(destino_path)
+
+        ip_cliente = request.client.host if request and request.client else "unknown"
+        es_lan = is_lan(ip_cliente)
+
+        query_insert = text("""
+            INSERT INTO public.archivos_compartidos (
+                id_empleado_origen, nombre_origen, id_empleado_destino, nombre_destino,
+                nombre_archivo_original, nombre_archivo_fisico, tamano_bytes, tamano_legible,
+                tipo_mime, mensaje, folio_paquete, fecha_subida, descargado, veces_descargado, estatus,
+                ip_origen, es_lan_origen
+            ) VALUES (
+                :id_origen, :nom_origen, :id_destino, :nom_destino,
+                :nom_orig_file, :nom_fisico, :tam_bytes, :tam_leg,
+                :mime, :msg, :folio_paq, CURRENT_TIMESTAMP, FALSE, 0, 'DISPONIBLE',
+                :ip_origen, :es_lan_origen
+            ) RETURNING id_transferencia
+        """)
+
+        with engine_personal.begin() as conn:
+            new_id = conn.execute(query_insert, {
+                "id_origen": str(id_empleado_origen).strip(),
+                "nom_origen": str(nombre_origen).strip(),
+                "id_destino": str(id_empleado_destino).strip(),
+                "nom_destino": str(nombre_destino).strip(),
+                "nom_orig_file": nombre_original,
+                "nom_fisico": nombre_fisico,
+                "tam_bytes": peso_real,
+                "tam_leg": _tamano_legible(peso_real),
+                "mime": tipo_mime or "application/octet-stream",
+                "msg": str(mensaje or "").strip(),
+                "folio_paq": folio_paquete,
+                "ip_origen": ip_cliente,
+                "es_lan_origen": es_lan
+            }).scalar()
+
+        return {
+            "status": "SUCCESS",
+            "id_transferencia": new_id,
+            "folio_paquete": folio_paquete,
+            "nombre_archivo": nombre_original,
+            "tamano_total": _tamano_legible(peso_real),
+            "destinatario": nombre_destino,
+            "mensaje": f"Se envió exitosamente {nombre_original} ({_tamano_legible(peso_real)}) a {nombre_destino}."
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        temp_file_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail=f"Error al procesar bloque de archivo: {str(e)}")
+
+@router.delete("/cancelar_chunk/{upload_id}")
+def cancelar_subida_chunk(upload_id: str):
+    """Limpia el archivo temporal si el usuario cancela la subida."""
+    try:
+        upload_id_clean = re.sub(r'[^a-zA-Z0-9_-]', '', upload_id)
+        temp_file_path = CARPETA_TRANSFERENCIAS / f"temp_{upload_id_clean}.part"
+        if temp_file_path.exists():
+            temp_file_path.unlink(missing_ok=True)
+        return {"status": "SUCCESS"}
+    except Exception:
+        return {"status": "ERROR"}
 
 @router.get("/recibidos/{id_empleado}")
 def obtener_archivos_recibidos(id_empleado: str):

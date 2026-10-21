@@ -13045,11 +13045,40 @@ function renderizarListaArchivosSeleccionados() {
 }
 
 // Compatibilidad con llamada singular y plural
+const CHUNK_SIZE_TRANSFERENCIA = 20 * 1024 * 1024; // 20 MB por bloque (100% amigable con Cloudflare)
+let peticionSubidaXHR = null;
+let peticionSubidaCancelada = false;
+let peticionSubidaActualUploadId = null;
+
+function cancelarSubidaTransferenciaActual() {
+    peticionSubidaCancelada = true;
+    if (peticionSubidaXHR) {
+        try {
+            peticionSubidaXHR.abort();
+        } catch (_) {}
+        peticionSubidaXHR = null;
+    }
+    if (peticionSubidaActualUploadId) {
+        try {
+            fetch(`${API_URL}/api/transferencias/cancelar_chunk/${peticionSubidaActualUploadId}`, { method: 'DELETE' });
+        } catch (_) {}
+        peticionSubidaActualUploadId = null;
+    }
+    const btnEnviar = document.getElementById("btn-enviar-transferencia");
+    if (btnEnviar) {
+        btnEnviar.disabled = false;
+        btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo(s)`;
+    }
+    const progresoBox = document.getElementById("transfer-progreso-box");
+    if (progresoBox) progresoBox.style.display = "none";
+    alert("⚠️ Subida de archivos cancelada.");
+}
+
 function enviarTransferenciaArchivo() {
     enviarTransferenciaArchivos();
 }
 
-function enviarTransferenciaArchivos() {
+async function enviarTransferenciaArchivos() {
     if (!usuarioLogueado) {
         alert("Debes iniciar sesión para transferir archivos.");
         return;
@@ -13070,24 +13099,13 @@ function enviarTransferenciaArchivos() {
     const nombreDestino = optionSel ? (optionSel.getAttribute("data-nombre") || optionSel.text) : "Destinatario";
     const mensaje = document.getElementById("transfer-input-mensaje")?.value || "";
 
-    const formData = new FormData();
-    formData.append("id_empleado_origen", usuarioLogueado.id_empleado);
-    formData.append("nombre_origen", usuarioLogueado.nombre_completo);
-    formData.append("id_empleado_destino", selectDestino.value);
-    formData.append("nombre_destino", nombreDestino);
-    formData.append("mensaje", mensaje);
-
-    // Adjuntar todos los archivos
-    archivosTransferenciaSeleccionados.forEach(f => {
-        formData.append("files", f);
-    });
-
     const btnEnviar = document.getElementById("btn-enviar-transferencia");
     const progresoBox = document.getElementById("transfer-progreso-box");
     const barraProgreso = document.getElementById("transfer-progreso-barra");
     const textoPorcentaje = document.getElementById("transfer-progreso-porcentaje");
     const textoDetalle = document.getElementById("transfer-progreso-detalle");
     const textoProgreso = document.getElementById("transfer-progreso-texto");
+    const textoVel = document.getElementById("transfer-progreso-velocidad");
 
     if (btnEnviar) {
         btnEnviar.disabled = true;
@@ -13096,83 +13114,185 @@ function enviarTransferenciaArchivos() {
     if (progresoBox) progresoBox.style.display = "block";
     if (barraProgreso) barraProgreso.style.width = "0%";
     if (textoPorcentaje) textoPorcentaje.innerText = "0%";
+    if (textoVel) textoVel.innerText = "⚡ Iniciando transferencia en bloques...";
 
-    const xhr = new XMLHttpRequest();
-    peticionSubidaXHR = xhr;
+    peticionSubidaCancelada = false;
 
-    xhr.upload.onprogress = function(e) {
-        if (e.lengthComputable) {
-            const porcentaje = Math.round((e.loaded / e.total) * 100);
-            if (barraProgreso) barraProgreso.style.width = porcentaje + "%";
-            if (textoPorcentaje) textoPorcentaje.innerText = porcentaje + "%";
-            
-            const subidoMB = (e.loaded / (1024 * 1024)).toFixed(1);
-            const totalMB = (e.total / (1024 * 1024)).toFixed(1);
-            if (textoDetalle) {
-                if (e.total >= 1024 * 1024 * 1024) {
-                    const subidoGB = (e.loaded / (1024 * 1024 * 1024)).toFixed(2);
-                    const totalGB = (e.total / (1024 * 1024 * 1024)).toFixed(2);
-                    textoDetalle.innerText = `${subidoGB} GB / ${totalGB} GB`;
-                } else {
-                    textoDetalle.innerText = `${subidoMB} MB / ${totalMB} MB`;
-                }
-            }
-            if (textoProgreso) {
-                textoProgreso.innerText = (porcentaje >= 100) 
-                    ? "Procesando y registrando en servidor..." 
-                    : `Subiendo archivo(s): ${porcentaje}%`;
-            }
-        }
+    const formatoBytes = (b) => {
+        if (b < 1024 * 1024) return (b / 1024).toFixed(1) + " KB";
+        if (b < 1024 * 1024 * 1024) return (b / (1024 * 1024)).toFixed(1) + " MB";
+        return (b / (1024 * 1024 * 1024)).toFixed(2) + " GB";
     };
 
-    xhr.onload = function() {
-        if (btnEnviar) {
-            btnEnviar.disabled = false;
-            btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo(s)`;
-        }
-        if (xhr.status === 200) {
-            try {
-                const res = JSON.parse(xhr.responseText);
-                const descArchivos = res.total_archivos > 1 ? `${res.total_archivos} archivos (${res.tamano_total})` : `"${res.nombre_archivo || 'archivo'}" (${res.tamano_total || res.tamano})`;
-                alert(`✅ Transferencia enviada con éxito!\n\nSe envió ${descArchivos} a ${res.destinatario}.\nEl destinatario ya puede ver la notificación para descargarlo.`);
-                
-                // Limpiar formulario
-                limpiarArchivosTransferencia();
-                if (document.getElementById("transfer-input-mensaje")) {
-                    document.getElementById("transfer-input-mensaje").value = "";
+    const totalBytesTodos = archivosTransferenciaSeleccionados.reduce((acc, f) => acc + f.size, 0);
+    const totalStr = formatoBytes(totalBytesTodos);
+    const folioPaquete = "TRF-" + Math.floor(Date.now() / 1000) + "-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const tiempoInicio = Date.now();
+    let bytesSubidosAcumulados = 0;
+
+    try {
+        for (let fileIdx = 0; fileIdx < archivosTransferenciaSeleccionados.length; fileIdx++) {
+            const file = archivosTransferenciaSeleccionados[fileIdx];
+            const uploadId = "up_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
+            peticionSubidaActualUploadId = uploadId;
+
+            const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE_TRANSFERENCIA));
+
+            for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+                if (peticionSubidaCancelada) return;
+
+                const start = chunkIdx * CHUNK_SIZE_TRANSFERENCIA;
+                const end = Math.min(file.size, start + CHUNK_SIZE_TRANSFERENCIA);
+                const chunkBlob = file.slice(start, end);
+                const chunkBytes = end - start;
+
+                const chunkFormData = new FormData();
+                chunkFormData.append("upload_id", uploadId);
+                chunkFormData.append("folio_paquete", folioPaquete);
+                chunkFormData.append("chunk_index", chunkIdx);
+                chunkFormData.append("total_chunks", totalChunks);
+                chunkFormData.append("nombre_archivo", file.name);
+                chunkFormData.append("tamano_total", file.size);
+                chunkFormData.append("id_empleado_origen", usuarioLogueado.id_empleado);
+                chunkFormData.append("nombre_origen", usuarioLogueado.nombre_completo);
+                chunkFormData.append("id_empleado_destino", selectDestino.value);
+                chunkFormData.append("nombre_destino", nombreDestino);
+                chunkFormData.append("mensaje", mensaje);
+                chunkFormData.append("tipo_mime", file.type || "application/octet-stream");
+                chunkFormData.append("chunk", chunkBlob, file.name);
+
+                let subidaExitosa = false;
+                let intentos = 0;
+                while (!subidaExitosa && intentos < 3) {
+                    if (peticionSubidaCancelada) return;
+                    intentos++;
+
+                    await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        peticionSubidaXHR = xhr;
+
+                        xhr.upload.onprogress = function(e) {
+                            if (e.lengthComputable && !peticionSubidaCancelada) {
+                                const cargadoEsteBloque = e.loaded;
+                                const cargadoTotalActual = bytesSubidosAcumulados + cargadoEsteBloque;
+                                const pctExacto = totalBytesTodos > 0 ? (cargadoTotalActual / totalBytesTodos) * 100 : 0;
+                                const pctStr = pctExacto < 10 ? pctExacto.toFixed(1) : Math.round(pctExacto);
+
+                                if (barraProgreso) barraProgreso.style.width = Math.min(100, Math.max(0.5, pctExacto)) + "%";
+                                if (textoPorcentaje) textoPorcentaje.innerText = pctStr + "%";
+
+                                const tiempoSeg = (Date.now() - tiempoInicio) / 1000;
+                                if (tiempoSeg > 0.5) {
+                                    const velBps = cargadoTotalActual / tiempoSeg;
+                                    const mbps = (velBps / (1024 * 1024)).toFixed(1);
+                                    const bytesRestantes = Math.max(0, totalBytesTodos - cargadoTotalActual);
+                                    const segRestantes = velBps > 0 ? Math.round(bytesRestantes / velBps) : 0;
+
+                                    let etaStr = "";
+                                    if (segRestantes >= 3600) {
+                                        const h = Math.floor(segRestantes / 3600);
+                                        const m = Math.floor((segRestantes % 3600) / 60);
+                                        etaStr = `~${h}h ${m}m restantes`;
+                                    } else if (segRestantes >= 60) {
+                                        const m = Math.floor(segRestantes / 60);
+                                        const s = segRestantes % 60;
+                                        etaStr = `~${m}m ${s}s restantes`;
+                                    } else {
+                                        etaStr = `~${segRestantes}s restantes`;
+                                    }
+
+                                    if (textoVel) {
+                                        const infoBloque = totalChunks > 1 ? ` (Bloque ${chunkIdx + 1}/${totalChunks})` : "";
+                                        textoVel.innerText = pctExacto >= 100 ? "Procesando en servidor..." : `⚡ ${mbps} MB/s • ${etaStr}${infoBloque}`;
+                                    }
+                                }
+
+                                if (textoDetalle) {
+                                    textoDetalle.innerText = `${formatoBytes(cargadoTotalActual)} / ${totalStr}`;
+                                }
+                                if (textoProgreso) {
+                                    textoProgreso.innerText = pctExacto >= 100 
+                                        ? "Procesando y registrando en servidor..." 
+                                        : `Subiendo archivo(s): ${pctStr}%`;
+                                }
+                            }
+                        };
+
+                        xhr.onload = function() {
+                            peticionSubidaXHR = null;
+                            if (xhr.status === 200) {
+                                subidaExitosa = true;
+                                resolve();
+                            } else {
+                                let errDetail = `Error ${xhr.status}`;
+                                try {
+                                    const errObj = JSON.parse(xhr.responseText);
+                                    errDetail = errObj.detail || errDetail;
+                                } catch (_) {}
+                                reject(new Error(errDetail));
+                            }
+                        };
+
+                        xhr.onerror = function() {
+                            peticionSubidaXHR = null;
+                            reject(new Error("Error de conexión durante el bloque"));
+                        };
+
+                        xhr.onabort = function() {
+                            peticionSubidaXHR = null;
+                            reject(new Error("ABORTADO"));
+                        };
+
+                        xhr.open("POST", `${API_URL}/api/transferencias/subir_chunk`, true);
+                        xhr.send(chunkFormData);
+                    }).catch(err => {
+                        if (err.message === "ABORTADO" || peticionSubidaCancelada) return;
+                        if (intentos >= 3) throw err;
+                    });
                 }
-                if (progresoBox) progresoBox.style.display = "none";
 
-                // Cambiar a pestaña de Enviados
-                cambiarPestanaTransferencias("enviados");
-            } catch (err) {
-                alert("Transferencia completada correctamente.");
-                limpiarArchivosTransferencia();
-                if (progresoBox) progresoBox.style.display = "none";
-                cambiarPestanaTransferencias("enviados");
+                if (!subidaExitosa && !peticionSubidaCancelada) {
+                    throw new Error(`No se pudo subir el bloque ${chunkIdx + 1} de ${file.name}`);
+                }
+
+                bytesSubidosAcumulados += chunkBytes;
             }
-        } else {
-            let errorMsg = "Error al subir archivos.";
-            try {
-                const errObj = JSON.parse(xhr.responseText);
-                errorMsg = errObj.detail || errorMsg;
-            } catch (_) {}
-            alert("❌ " + errorMsg);
-            if (progresoBox) progresoBox.style.display = "none";
         }
-    };
 
-    xhr.onerror = function() {
-        if (btnEnviar) {
-            btnEnviar.disabled = false;
-            btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo(s)`;
+        if (peticionSubidaCancelada) return;
+
+        const cantArchivos = archivosTransferenciaSeleccionados.length;
+        const descArchivos = cantArchivos > 1 
+            ? `${cantArchivos} archivos (${totalStr})` 
+            : `"${archivosTransferenciaSeleccionados[0].name}" (${totalStr})`;
+
+        alert(`✅ ¡Transferencia completada con éxito por bloques!
+
+Se envió ${descArchivos} a ${nombreDestino}.
+El destinatario ya puede ver la notificación para descargarlo.`);
+
+        limpiarArchivosTransferencia();
+        if (document.getElementById("transfer-input-mensaje")) {
+            document.getElementById("transfer-input-mensaje").value = "";
         }
         if (progresoBox) progresoBox.style.display = "none";
-        alert("❌ Error de conexión al intentar subir los archivos.");
-    };
 
-    xhr.open("POST", `${API_URL}/api/transferencias/subir`, true);
-    xhr.send(formData);
+        cambiarPestanaTransferencias("enviados");
+        cargarTransferenciasRecibidos();
+        cargarDatosInicio();
+        cargarBadges();
+
+    } catch (e) {
+        if (peticionSubidaCancelada || e.message === "ABORTADO") return;
+        alert(`❌ Error al subir archivo(s): ${e.message}`);
+        if (progresoBox) progresoBox.style.display = "none";
+    } finally {
+        peticionSubidaActualUploadId = null;
+        if (btnEnviar) {
+            btnEnviar.disabled = false;
+            btnEnviar.innerHTML = `<i class="ph ph-paper-plane-tilt"></i> Enviar Archivo(s)`;
+        }
+    }
 }
 
 async function cargarTransferenciasRecibidos() {

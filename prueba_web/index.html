@@ -5451,6 +5451,12 @@
                                 <div id="transfer-progreso-barra" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5, #06b6d4); transition: width 0.15s ease;"></div>
                             </div>
                             <div style="font-size: 11.5px; color: #94a3b8; margin-top: 4px; text-align: right;" id="transfer-progreso-detalle">0 MB / 0 MB</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #64748b; margin-top: 5px;">
+                                <span id="transfer-progreso-velocidad" style="color: #0284c7; font-weight: 600;">⚡ Calculando velocidad...</span>
+                                <button type="button" id="btn-cancelar-subida-transfer" onclick="cancelarSubidaTransferenciaActual()" style="background: none; border: none; color: #ef4444; font-size: 11.5px; font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0;">
+                                    ✕ Cancelar subida
+                                </button>
+                            </div>
                         </div>
 
                         <div style="display: flex; justify-content: flex-end; gap: 12px;">

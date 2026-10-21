@@ -11,6 +11,14 @@ import sys
 import subprocess
 from pathlib import Path
 
+# Asegurar codificacion UTF-8 en Windows para evitar errores con caracteres especiales
+if sys.platform.startswith("win"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 BASE_DIR = Path(__file__).resolve().parent
 DUMPS_DIR = BASE_DIR / "database_dumps"
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict CWbyavCBznUjUgQ6CJ20KcPaN4o9ji52A1hdUh7r7Odn3Zu1Jvrv1h99gzkYcZ0
+\restrict rzEozaHyHdJLw7iR0i3K4gJQStTVyzv3q2hhjZdgog4dcCKlc0bNNf4uC6Pqf7S
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -1085,6 +1085,7 @@ COPY public.archivos_compartidos (id_transferencia, id_empleado_origen, nombre_o
 2	201	Cuauhtemoc Rivera Agundez	124	Manuel Eduardo Madrid	Talking Photo.mp4	trans_1791250447_6eed46c8_Talking_Photo.mp4	459212	448.4 KB	video/mp4		TRF-1791250447-8431D3	2026-10-05 19:34:07.790939	t	1	2026-10-05 19:35:48.962733	2026-10-06 02:35:48.962733	EXPIRADO_BORRADO	\N	\N	\N	\N
 4	124	Manuel Eduardo Madrid	201	Cuauhtemoc Rivera Agundez	CRONOGRAMA TEBACAS JUEGO 03DE OCTUBRE DE 2026.docx	trans_1791250678_379984b6_CRONOGRAMA_TEBACAS_JUEGO_03DE_OCTUBRE_DE_2026.docx	27185	26.5 KB	application/vnd.openxmlformats-officedocument.wordprocessingml.document	Te mando el archivo	TRF-1791250678-3B879B	2026-10-05 19:37:58.365447	t	1	2026-10-05 19:38:59.720447	2026-10-06 02:38:59.720447	EXPIRADO_BORRADO	\N	\N	\N	\N
 5	201	Cuauhtemoc Rivera Agundez	200	Andrea Maria Vilarreal Lopez	Talking Photo.mp4	trans_1791250793_843e1eb8_Talking_Photo.mp4	459212	448.4 KB	video/mp4	Este archivo enviado es de prueba.. a ver que te parece.	TRF-1791250793-9C752C	2026-10-05 19:39:53.728385	t	1	2026-10-05 19:44:43.656763	2026-10-06 02:44:43.656763	EXPIRADO_BORRADO	\N	\N	\N	\N
+187	201	Cuauhtemoc Rivera Agundez	203	Pedro Villarreal Uribe	PROMO_inauguración_TEBACAS.docx	trans_1792441174_f7d2f7eb_PROMO_inauguracio_n_TEBACAS.docx	16235	15.9 KB	application/vnd.openxmlformats-officedocument.wordprocessingml.document	Señor Pedro este archivo le va a permitir darse cuenta de lo efectivo que sera la transferencia de archivos	TRF-1792441174-AA350C	2026-10-19 14:19:34.752872	f	0	\N	\N	DISPONIBLE	177.230.25.3	f	\N	\N
 99	101	Ana Lilia Villarreal Uribe	201	Cuauhtemoc Rivera Agundez	ORDEN DE PROD.No145 Proveeduria internet a 10 modulos y cableado a stand, dias 02,03 y 04 sept. Costa Rica.xls	trans_1791914705_91e837ca_ORDEN_DE_PROD.No145_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_02_03_y_04_sept._Costa_Rica.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1791914705-CC5967	2026-10-13 12:05:05.812331	t	1	2026-10-13 13:57:03.849919	2026-10-14 13:57:03.849919	EXPIRADO_BORRADO	189.195.177.20	f	127.0.0.1	t
 32	101	Ana Lilia Villarreal Uribe	201	Cuauhtemoc Rivera Agundez	ORDEN DE PROD.No.012 REUNION SEGURIDAD HARFUCH MAZATLAN 23-oct-25.xls	trans_1791914585_bef293d2_ORDEN_DE_PROD.No.012_REUNION_SEGURIDAD_HARFUCH_MAZATLAN_23-oct-25.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1791914585-D96C68	2026-10-13 12:03:05.747693	t	1	2026-10-13 14:02:46.050957	2026-10-14 14:02:46.050957	EXPIRADO_BORRADO	189.195.177.20	f	127.0.0.1	t
 8	201	Cuauhtemoc Rivera Agundez	121	Sofia Alejandra Villarreal Lopez	PEDRO VILLAREAL URIBE - BATERIAS DE RESPALDO.pdf	trans_1791305197_24143be1_PEDRO_VILLAREAL_URIBE_-_BATERIAS_DE_RESPALDO.pdf	141914	138.6 KB	application/pdf		TRF-1791305197-927572	2026-10-06 10:46:37.068982	t	1	2026-10-06 10:47:01.747362	2026-10-06 17:47:01.747362	EXPIRADO_BORRADO	\N	\N	\N	\N
@@ -1283,13 +1284,14 @@ COPY public.asistencia_eventos (id, id_empleado, nombre_empleado, cliente, fecha
 --
 
 COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, hora_salida, estatus, observaciones, hora_entrada_v, hora_salida_v) FROM stdin;
-1	201	2026-08-13	05:00:00	22:00:00	ASISTENCIA	Llamado Locación (OP-1) a las 05:00 | Salida Locación: 22:00:00	\N	\N
-2	202	2026-08-13	05:00:00	22:00:00	ASISTENCIA	Llamado Locación (OP-1) a las 05:00 | Salida Locación: 22:00:00	\N	\N
-3	104	2026-08-13	05:00:00	22:00:00	ASISTENCIA	Llamado Locación (OP-1) a las 05:00 | Salida Locación: 22:00:00	\N	\N
 4	201	2026-08-17	17:04:09	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
-5	119	2026-08-17	19:00:29	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
-6	124	2026-08-17	19:00:32	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
+2	202	2026-08-13	05:00:00	22:00:00	ASISTENCIA	Llamado Locación (OP-1) a las 05:00 | Salida Locación: 22:00:00	\N	\N
 7	113	2026-08-17	19:00:35	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
+3	104	2026-08-13	05:00:00	22:00:00	ASISTENCIA	Llamado Locación (OP-1) a las 05:00 | Salida Locación: 22:00:00	\N	\N
+5	119	2026-08-17	19:00:29	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
+342	121	2026-09-24	08:51:57	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+6	124	2026-08-17	19:00:32	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
+1	201	2026-08-13	05:00:00	22:00:00	ASISTENCIA	Llamado Locación (OP-1) a las 05:00 | Salida Locación: 22:00:00	\N	\N
 8	109	2026-08-17	19:00:42	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
 15	105	2026-08-18	08:54:49	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 41	113	2026-08-21	05:35:28	12:33:11	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
@@ -1404,6 +1406,7 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 119	115	2026-09-01	08:43:37	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 120	121	2026-09-01	08:46:17	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 123	105	2026-09-01	08:51:34	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+182	115	2026-09-08	08:36:51	14:00:53	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 130	201	2026-09-02	08:03:14	14:36:28	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:59:01	17:35:15
 132	121	2026-09-02	08:40:40	14:00:30	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:30:14	18:04:40
 133	200	2026-09-02	08:42:22	14:00:37	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:30:25	18:05:46
@@ -1462,7 +1465,6 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 172	124	2026-09-07	08:56:09	14:01:16	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:53:38	17:59:24
 184	105	2026-09-08	08:59:00	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 203	115	2026-09-10	08:36:53	14:00:56	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
-182	115	2026-09-08	08:36:51	14:00:53	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 205	201	2026-09-10	08:57:51	14:35:01	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:14:21	18:52:17
 187	119	2026-09-08	09:17:05	14:04:02	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 202	107	2026-09-10	08:27:41	14:00:36	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:21	18:58:25
@@ -1614,7 +1616,6 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 396	121	2026-09-29	10:20:51	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 394	109	2026-09-29	09:19:01	14:02:19	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 327	200	2026-09-23	08:46:24	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos) | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:50
-342	121	2026-09-24	08:51:57	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 371	113	2026-09-26	09:21:20	14:00:27	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 367	124	2026-09-26	09:08:59	14:00:36	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 365	115	2026-09-26	08:56:18	14:00:51	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
@@ -1728,6 +1729,7 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 460	200	2026-10-06	08:44:19	13:34:56	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:59:06	19:10:02
 459	121	2026-10-06	08:43:39	\N	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Fin Jornada | Kiosco - Fin Jornada	\N	19:10:13
 445	104	2026-10-05	06:49:02	15:02:42	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+568	107	2026-10-17	09:03:31	14:00:59	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 452	201	2026-10-05	09:04:12	14:25:47	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:54	18:55:24
 449	202	2026-10-05	08:55:27	14:27:20	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:00:08	19:00:04
 451	105	2026-10-05	09:04:10	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:05
@@ -1755,23 +1757,119 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 487	109	2026-10-08	09:20:20	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 477	121	2026-10-08	08:44:21	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 486	113	2026-10-08	09:13:45	14:00:02	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:19:00	19:00:32
-488	124	2026-10-09	08:57:07	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 478	202	2026-10-08	08:45:46	14:03:41	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:54:01	19:03:33
 483	107	2026-10-08	08:58:36	14:01:20	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:55:19	19:00:29
 480	201	2026-10-08	08:51:12	14:17:44	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:25	19:01:48
 481	124	2026-10-08	08:56:24	14:01:38	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:08:50	19:02:06
 482	119	2026-10-08	08:56:53	14:01:39	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:09:24	19:01:56
 484	200	2026-10-08	09:05:28	13:47:15	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:29:37	19:04:38
-491	113	2026-10-09	09:09:24	\N	RETARDO	Kiosco - T. Matutino	\N	\N
-492	107	2026-10-09	09:09:41	\N	RETARDO	Kiosco - T. Matutino	\N	\N
-493	201	2026-10-09	09:17:59	\N	RETARDO	Kiosco - T. Matutino	\N	\N
-494	200	2026-10-09	09:34:26	\N	RETARDO	Kiosco - T. Matutino	\N	\N
-495	119	2026-10-09	10:58:14	\N	RETARDO	Kiosco - T. Matutino	\N	\N
-490	202	2026-10-09	09:03:01	12:51:18	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
-489	115	2026-10-09	08:57:17	12:52:14	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
-496	102	2026-10-09	12:55:00	12:58:03	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
-497	103	2026-10-09	12:58:14	\N	ASISTENCIA	Kiosco HTML	\N	\N
-498	104	2026-10-09	06:00:00	12:58:18	GIRA / COMIDA	📍 [EN GIRA] Entrada: 06:00 | Kiosco - Salida Matutina / Comida	\N	\N
+491	113	2026-10-09	09:09:24	14:16:54	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	19:01:04	\N
+494	200	2026-10-09	09:34:26	13:39:27	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:57:25	19:09:31
+489	115	2026-10-09	08:57:17	14:00:36	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+492	107	2026-10-09	09:09:41	14:00:24	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:03:09	19:01:42
+496	105	2026-10-09	06:00:00	17:49:23	GIRA / COMIDA	📍 [EN GIRA] Entrada: 06:00 | Kiosco - Salida Matutina / Comida	\N	\N
+497	109	2026-10-09	06:00:00	18:11:09	GIRA / COMIDA	📍 [EN GIRA] Entrada: 06:00 | Kiosco - Salida Matutina / Comida	\N	\N
+493	201	2026-10-09	09:17:59	14:00:21	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:02:35	19:01:32
+495	119	2026-10-09	10:58:14	14:01:10	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:44	19:01:37
+488	124	2026-10-09	08:57:07	14:01:44	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:40	19:02:35
+490	202	2026-10-09	09:03:01	14:00:13	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:58:56	19:05:15
+499	202	2026-10-10	08:52:11	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+500	119	2026-10-10	09:00:16	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+502	107	2026-10-10	09:02:39	12:57:56	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+501	124	2026-10-10	09:00:21	12:58:00	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+498	115	2026-10-10	08:44:21	13:01:35	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+504	200	2026-10-10	13:30:31	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+503	121	2026-10-10	09:49:07	13:30:44	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+507	109	2026-10-10	15:53:17	\N	ASISTENCIA	Kiosco - T. Vespertino	\N	\N
+571	105	2026-10-17	09:22:49	14:01:32	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+508	201	2026-10-10	15:55:14	\N	OMISIÓN COMIDA	Kiosco - T. Vespertino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	22:37:17
+506	105	2026-10-10	15:44:26	\N	OMISIÓN COMIDA	Kiosco - T. Vespertino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	22:45:58
+509	113	2026-10-10	16:05:09	\N	OMISIÓN COMIDA	Kiosco - T. Vespertino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	22:46:02
+505	104	2026-10-10	15:12:18	\N	OMISIÓN COMIDA	Kiosco - T. Vespertino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	22:55:05
+510	119	2026-10-11	11:48:24	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+511	202	2026-10-11	11:48:27	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+512	104	2026-10-12	03:45:41	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+520	121	2026-10-12	09:44:07	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+514	107	2026-10-12	03:59:59	11:59:43	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+515	201	2026-10-12	04:02:13	12:00:21	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+513	105	2026-10-12	03:45:58	12:00:26	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+516	109	2026-10-12	04:02:15	13:06:11	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+518	115	2026-10-12	08:54:44	14:00:36	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+521	200	2026-10-12	09:44:26	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	16:45:51
+519	113	2026-10-12	09:06:39	14:02:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:56:24	19:01:21
+517	124	2026-10-12	08:47:43	14:01:11	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:53:53	19:01:50
+524	121	2026-10-13	08:43:16	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+526	115	2026-10-13	08:46:28	14:02:13	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+529	107	2026-10-13	08:56:33	14:04:24	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:54:47	19:00:43
+525	202	2026-10-13	08:46:07	14:05:45	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:00:49	19:00:52
+530	105	2026-10-13	09:07:59	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:01:23
+531	104	2026-10-13	09:24:46	14:13:18	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:46:03	19:01:26
+522	113	2026-10-13	07:39:12	14:04:51	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:47	19:01:33
+532	109	2026-10-13	09:35:12	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:01:41
+523	201	2026-10-13	08:43:13	14:10:17	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:08:13	19:01:52
+528	119	2026-10-13	08:54:56	14:04:09	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:24	19:02:43
+527	124	2026-10-13	08:54:39	14:04:15	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:01:07	19:02:45
+537	107	2026-10-14	09:00:00	14:00:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Fin Jornada | Kiosco - T. Vespertino	16:00:00	19:02:17
+536	115	2026-10-14	09:00:00	14:00:00	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+533	113	2026-10-14	13:45:52	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+539	104	2026-10-14	09:00:00	14:00:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Fin Jornada | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:00:00	19:01:40
+538	202	2026-10-14	09:30:00	14:00:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Fin Jornada | Kiosco - T. Vespertino	16:00:00	19:03:10
+540	201	2026-10-14	09:00:00	14:00:00	COMPLETO	Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:00:00	19:01:54
+542	109	2026-10-14	19:01:34	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
+541	105	2026-10-14	10:20:00	14:00:00	RETARDO	Kiosco - T. Vespertino	16:00:00	\N
+535	119	2026-10-14	09:00:00	14:00:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Fin Jornada | Kiosco - T. Vespertino	16:00:00	19:01:23
+534	124	2026-10-14	09:00:00	14:00:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Fin Jornada | Kiosco - T. Vespertino	16:00:00	19:01:36
+545	115	2026-10-15	08:50:56	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+544	104	2026-10-15	08:41:49	14:11:02	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	15:51:07	\N
+554	121	2026-10-15	13:34:50	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+564	200	2026-10-17	08:58:02	13:20:34	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+569	113	2026-10-17	09:18:15	14:00:39	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+553	200	2026-10-15	09:26:07	13:34:48	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	16:55:13	\N
+551	113	2026-10-15	09:23:12	14:03:48	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	19:00:28	\N
+548	124	2026-10-15	09:03:22	14:00:38	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:08:34	19:01:01
+546	201	2026-10-15	08:52:42	14:38:33	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:28	19:02:04
+543	202	2026-10-15	08:41:04	14:09:26	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:07:18	19:04:26
+552	109	2026-10-15	09:24:07	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:04:51
+549	119	2026-10-15	09:03:28	14:00:46	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:08:39	19:06:48
+547	107	2026-10-15	08:57:07	14:00:41	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:14:33	19:07:08
+550	105	2026-10-15	09:11:31	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:07:14
+558	202	2026-10-16	08:56:59	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+559	119	2026-10-16	08:57:13	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+567	124	2026-10-17	09:01:44	14:00:49	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+570	109	2026-10-17	09:18:36	14:01:37	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+572	119	2026-10-17	09:45:00	14:01:53	GIRA / COMIDA	📍 [EN GIRA] Entrada: 09:45 | Kiosco - Salida Matutina / Comida	\N	\N
+573	202	2026-10-17	09:45:00	14:04:08	GIRA / COMIDA	📍 [EN GIRA] Entrada: 09:45 | Kiosco - Salida Matutina / Comida	\N	\N
+565	201	2026-10-17	08:59:43	14:04:53	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+566	104	2026-10-17	08:59:45	14:04:57	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+557	124	2026-10-16	08:56:52	13:59:29	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:59:05	19:00:09
+561	107	2026-10-16	09:08:16	13:59:07	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:02:47	19:00:12
+560	201	2026-10-16	08:57:31	14:30:52	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:26:31	22:17:56
+555	113	2026-10-16	07:49:56	10:24:56	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:46:33	22:24:38
+563	109	2026-10-16	15:22:30	\N	OMISIÓN COMIDA	Kiosco - T. Vespertino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	22:29:10
+556	105	2026-10-16	08:05:03	10:25:07	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:10:11	22:29:24
+562	104	2026-10-16	14:53:43	15:22:44	ASISTENCIA	Kiosco - T. Vespertino | Kiosco - Comida | Kiosco - T. Vespertino	22:30:32	\N
+579	105	2026-10-19	09:07:21	14:01:05	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:03	19:00:13
+582	113	2026-10-19	09:19:22	14:14:19	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:55:32	19:00:28
+578	104	2026-10-19	09:05:04	14:00:59	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:51:35	19:00:32
+581	107	2026-10-19	09:08:27	14:00:52	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:51:29	19:00:34
+574	115	2026-10-19	08:47:06	14:01:13	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+575	202	2026-10-19	08:51:33	14:15:37	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:23:43	19:00:39
+576	124	2026-10-19	09:01:43	14:02:13	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:35	19:04:00
+577	119	2026-10-19	09:02:26	14:02:18	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:05:07	19:04:09
+585	104	2026-10-20	08:51:00	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+586	115	2026-10-20	08:51:21	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+583	109	2026-10-19	09:24:53	14:22:47	RETARDO	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
+587	202	2026-10-20	08:51:48	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+588	105	2026-10-20	08:56:42	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+589	107	2026-10-20	08:58:10	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+590	124	2026-10-20	09:05:05	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+591	119	2026-10-20	09:05:40	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
+592	109	2026-10-20	09:22:21	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+593	113	2026-10-20	09:25:33	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+580	200	2026-10-19	09:07:32	13:40:44	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	16:29:56	\N
+594	200	2026-10-20	09:31:01	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+584	201	2026-10-19	12:07:09	14:09:21	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:04:26	18:59:32
+595	201	2026-10-20	09:52:39	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 \.
 
 
@@ -1817,6 +1915,9 @@ COPY public.departamentos (id, nombre) FROM stdin;
 --
 
 COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_ing, licencia_vence, password, rol, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, foto_url, estatus_empleado, fecha_baja, motivo_baja) FROM stdin;
+102	Gerardo Villarreal Uribe	EDICION	gerardo@vprovideo.com	6673291087	1979-08-31	2015-12-27	2028-06-04	$2b$12$i4sfscS821ykcQvydKKPtOP1iA8Cwhcaskv383JWmW5e418fzAEee	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+121	Sofia Alejandra Villarreal Lopez	VENTAS	sofia.ventas@vprovideo.com	6673903759	1996-08-11	1996-08-11	2050-01-09	SofiA	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+125	Diego Villareal Lopez	ADMINISTRACION	diego@gmail.com	\N	2005-09-15	2005-09-15	2050-05-27	DiegoV	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 103	Wilfrido Castro Beltran	ADMINISTRACION	notiene@hotmail.com	6676917919	1965-03-01	2016-01-28	2025-12-30	WilfridoC	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 110	Eduardo Alonso Valdez Gomez	PRODUCCION	eduardo.produccion@vprovideo.mx	6677769481	1976-10-01	2022-09-04	2050-02-25	EduardoA	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 116	Luz Damaris Quintero Pimentel	PRODUCCION		6674099301	2001-04-05	2025-03-10	2026-02-10	LuzD	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
@@ -1824,23 +1925,48 @@ COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_
 118	Hector Rementeria de la Rocha	PRODUCCION	hector.audio@vprovideo.mx	6671323708	2026-06-03	2022-11-26	2027-09-19	HectoR	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 122	Andrea Rivera Rivas	ADMINISTRACION	mkt@vprovideo.mx	6672090837	2000-09-08	2025-11-26	2026-01-15	AndreaR	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 123	Juan Pablo Espino Diaz	PRODUCCION	\N	6673278169	2003-06-17	2026-02-16	2026-01-31	JuanP	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+517	Ricardo Gonzalez	PRODUCCION		\N	1977-09-18	2024-08-22	2052-03-18	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 113	Carlos Jacobo Quezada Mendoza	PRODUCCION	carlos.edicion@vprovideo.mx	6674667614	2000-02-12	2023-12-07	2027-09-19	$2b$12$0/2ZlsvvQ3VvA5iB7fKDIO3SvhQF9orN6Em70sA1TjaR2L/b0uqcu	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 115	Ibon Araceli Campos Medina	ADMINISTRACION	notieneemail@hotmail.com	6674305028	1973-08-16	2025-02-09	2030-03-09	IbonA	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+508	Jaime Muro	PRODUCCION		\N	1900-01-01	2026-03-20	2050-05-22	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+101	Ana Lilia Villarreal Uribe	ADMINISTRACION	contabilidad@vprovideo.com	6671022524	1973-09-29	2015-11-26	2028-01-09	$2b$12$PdjiLZAyyKN1G/Oi7nAqkeUo7tZ492LZRYIP43gg9/Q6fjxvcz5.q	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+501	eduardo el condor	PRODUCCION	direcciown@vprovideo.com	\N	2026-09-08	2026-11-02	2026-12-12	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+525	Carlos Castillo	PRODUCCION		\N	1981-06-07	2023-12-10	2053-10-25	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 529	Kiosco Bodega	KIOSKO		\N	2026-05-19	2026-05-09	2099-12-25	KioskO	LOGISTICA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 104	Jose Francisco Torres Sanchez	PRODUCCION	francisco.tecnico@vprovideo.mx	6672072138	1975-12-06	2016-12-04	2026-12-16	$2b$12$maVMyOl/cY9wwGFeGYj5guBuA1ZEUcSeE1cTFqA0fFvjHZMPpo5rm	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-102	Gerardo Villarreal Uribe	EDICION	gerardo@vprovideo.com	6673291087	1979-08-31	2015-12-27	2028-06-04	$2b$12$i4sfscS821ykcQvydKKPtOP1iA8Cwhcaskv383JWmW5e418fzAEee	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-121	Sofia Alejandra Villarreal Lopez	VENTAS	sofia.ventas@vprovideo.com	6673903759	1996-08-11	1996-08-11	2050-01-09	SofiA	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-125	Diego Villareal Lopez	ADMINISTRACION	diego@gmail.com	\N	2005-09-15	2005-09-15	2050-05-27	DiegoV	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 200	Andrea Maria Vilarreal Lopez	EDICION	andrea@vprovideo.mx	6673903762	1994-07-23	1994-07-23	2050-02-10	$2b$12$lV2c85P4yc6lwnIRoCi2j.Hljo1oSHpZaKdO7PH2XsdpR/arFOtGO	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 202	Edgar Javier Amarillas	SISTEMAS	live.stream@vprovideo.com	6672090481	1975-02-03	2024-09-24	2029-01-09	$2b$12$Kfzpr9LbUuRK3dIv/HMhOunhnQ3w6MGBXydLse2wTO/XyH8gje0XG	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 105	Jose Daniel Torres Arroyo	PRODUCCION	daniel.produccion@vprovideo.mx	6675788854	1999-01-28	2016-03-30	2100-02-21	$2b$12$GkNreszVLLBmt67EPXrk8eq5vqp1IzUQq/DayBhrESBKrWQZK/vUS	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 203	Pedro Villarreal Uribe	ADMINISTRACION	direccion@vprovideo.com	6672300488	1968-08-07	1964-08-07	2050-12-24	$2b$12$fXpITFlsgHoryqPp3q4MnOpzcmPswF.sI1XYbH9xxyI/Iv20VMtHq	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-201	Cuauhtemoc Rivera Agundez	SISTEMAS	cuauhtemoc.manager@audiovideopro.com.mx	6674305026	1970-09-30	2021-03-31	2025-03-31	$2b$12$3nqc7ExmR0y2vyo5L8Ug1OwcwLsJ.28Lep/q3RGBbJ9oR80GaaBvm	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-124	Manuel Eduardo Madrid	PRODUCCION	coordinador@vprovideo.com		1999-05-18	2026-03-23	2028-08-21	$2b$12$yi/.y4i8H7Pyg7G9icRaZuS2coy11GdoYQNWSwa8nHTkWIzQL8fuu	COORDINADOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-107	Martin Eduardo Sanchez Estrada	PRODUCCION	live.ventas@vprovideo.com	6678901234	1971-03-17	2016-06-01	2050-03-31	$2b$12$x2.aABcDfquVMc3gjo3JR.H5/lGp5gaLoYqNqgDeLbJvWJ1PGL7le	PRODUCTOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+502	Javier Garcia	PRODUCCION		\N	1900-01-01	2026-03-20	2027-12-12	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+512	Leonardo Leon	PRODUCCION		\N	2002-07-04	2021-06-21	2051-07-26	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+504	Ernesto Gutierrez	PRODUCCION		\N	1900-01-01	2026-03-20	2029-01-22	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+505	Calixto Villa	PRODUCCION		\N	1900-01-01	2026-03-20	2030-05-31	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+509	Jonahtan	PRODUCCION		\N	1900-01-01	2026-03-20	2050-05-23	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+506	Ignacio Garcia	PRODUCCION		\N	1900-01-01	2026-03-20	2050-02-21	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+510	Ivan Martinez	PRODUCCION		\N	2000-05-02	2018-04-21	2050-05-24	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+513	Ivan Jr	PRODUCCION		\N	2003-08-05	2022-07-22	2052-07-27	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 109	Osiel Cuauhtemoc Hernandez Aldape	PRODUCCION	osiel.switcher@vprovideo.mx	6671520296	1970-12-20	2022-08-03	2029-09-17	$2b$12$F/bN.Tz9OO8JWdaAA0Ck3eXAx.61ynhxHzEkNS3RBVN3s5wmAvxwm	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-119	Manuel Antonio Madrid Zazueta	PRODUCCION	manuel@vprovideo.com	6671325182	1972-08-03	2019-11-26	2026-10-25	$2b$12$96Fw/6RABVtKdELqnoBXs.mVuGhN6LuNJJVF9TUZwMhkO5CcrQ2Qq	PRODUCTOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-101	Ana Lilia Villarreal Uribe	ADMINISTRACION	contabilidad@vprovideo.com	6671022524	1973-09-29	2015-11-26	2028-01-09	$2b$12$5s4UH59kZ6phWxloq7O4x.JxjFVL.Ypij9goubCAnJp2ngGwFHXcS	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+515	Cristian Soto	PRODUCCION		\N	1975-02-04	2023-08-22	2051-07-27	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+521	Beatriz Cota	PRODUCCION		\N	1976-02-28	2023-12-05	2041-03-18	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+518	Cuquis	PRODUCCION		\N	1980-03-09	2024-07-23	2040-05-19	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+522	Jose Carlos	PRODUCCION		\N	1980-03-30	2024-10-09	2052-02-07	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+526	Victor (homi)	PRODUCCION		\N	1988-02-10	2022-09-15	2051-04-30	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+519	Miguel	PRODUCCION		\N	1978-08-09	2024-02-11	2051-09-18	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+201	Cuauhtemoc Rivera Agundez	SISTEMAS	cuauhtemoc.manager@audiovideopro.com.mx	6674305026	1970-09-30	2021-03-31	2025-03-31	$2b$12$3nqc7ExmR0y2vyo5L8Ug1OwcwLsJ.28Lep/q3RGBbJ9oR80GaaBvm	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+503	Miguel Lara	PRODUCCION		\N	1900-01-01	2026-03-20	2028-12-21	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+527	Hair Sanchez	PRODUCCION		\N	1979-08-09	2024-11-12	2052-07-27	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+523	Luis Silva	PRODUCCION		\N	1983-10-31	2024-11-08	2050-03-06	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+530	Lorenzo Bastidas	PRODUCCION		\N	1988-08-17	2026-05-16	2050-05-20	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+507	Ernesto Cuen	PRODUCCION		\N	1900-01-01	2026-03-20	2050-12-22	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+511	Pony	PRODUCCION		\N	2001-06-03	2020-05-20	2050-06-25	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+520	Cristina	PRODUCCION		\N	1988-08-07	2023-10-01	2053-03-17	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+516	Martin Miranda	PRODUCCION		\N	1978-08-04	2024-08-22	2053-07-27	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+524	Carlos Pinzon	PRODUCCION		\N	1982-09-18	2023-11-07	2051-08-19	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+528	Carlos Aleman	PRODUCCION		\N	1981-09-08	2024-07-10	2050-04-25	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+107	Martin Eduardo Sanchez Estrada	PRODUCCION	live.ventas@vprovideo.com	6678901234	1971-03-17	2016-06-01	2050-03-31	$2b$12$x2.aABcDfquVMc3gjo3JR.H5/lGp5gaLoYqNqgDeLbJvWJ1PGL7le	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+119	Manuel Antonio Madrid Zazueta	PRODUCCION	manuel@vprovideo.com	6671325182	1972-08-03	2019-11-26	2026-10-25	$2b$12$96Fw/6RABVtKdELqnoBXs.mVuGhN6LuNJJVF9TUZwMhkO5CcrQ2Qq	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+124	Manuel Eduardo Madrid	PRODUCCION	coordinador@vprovideo.com		1999-05-18	2026-03-23	2028-08-21	$2b$12$yi/.y4i8H7Pyg7G9icRaZuS2coy11GdoYQNWSwa8nHTkWIzQL8fuu	COORDINADOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 \.
 
 
@@ -1996,6 +2122,16 @@ COPY public.log_accesos (id_log, fecha, hora, ip_origen, id_empleado, nombre_emp
 177	2026-10-15	18:53:28.394104	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
 178	2026-10-15	19:33:53.647054	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
 179	2026-10-15	19:33:53.71286	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+180	2026-10-15	19:56:32.669571	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+181	2026-10-15	19:56:32.754841	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+182	2026-10-17	14:59:44.480708	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+183	2026-10-17	14:59:44.57429	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+184	2026-10-19	14:17:06.449951	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+185	2026-10-19	14:17:06.659327	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+186	2026-10-20	11:07:40.205338	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+187	2026-10-20	11:07:40.282826	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+188	2026-10-20	14:38:31.099655	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+189	2026-10-20	14:38:31.172508	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
 \.
 
 
@@ -2396,7 +2532,7 @@ COPY public.rh_vacaciones (id_vacacion, id_empleado, anio_periodo, dias_correspo
 -- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.archivos_compartidos_id_transferencia_seq', 186, true);
+SELECT pg_catalog.setval('public.archivos_compartidos_id_transferencia_seq', 187, true);
 
 
 --
@@ -2438,7 +2574,7 @@ SELECT pg_catalog.setval('public.departamentos_id_seq', 5, true);
 -- Name: log_accesos_id_log_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.log_accesos_id_log_seq', 179, true);
+SELECT pg_catalog.setval('public.log_accesos_id_log_seq', 189, true);
 
 
 --
@@ -2917,5 +3053,5 @@ ALTER TABLE ONLY public.rh_vacaciones
 -- PostgreSQL database dump complete
 --
 
-\unrestrict CWbyavCBznUjUgQ6CJ20KcPaN4o9ji52A1hdUh7r7Odn3Zu1Jvrv1h99gzkYcZ0
+\unrestrict rzEozaHyHdJLw7iR0i3K4gJQStTVyzv3q2hhjZdgog4dcCKlc0bNNf4uC6Pqf7S
 

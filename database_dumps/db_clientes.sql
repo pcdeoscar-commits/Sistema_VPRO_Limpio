@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict JhJdrR1svzuj1dXqviM4qhYJM1fFIALJPnnHLhYIOqQ3HZk1WaSg2ZBBJ337mKq
+\restrict Eh3ubfLBFL0PEdHg8iesAuoPXwoLbhgO00TE71SrpYH6IHm3GgIEpPBu4dd8oxd
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -95,10 +95,11 @@ DIF Sinaloa	Nomeacuerdo	6666666	Culiacan	7777777	Difnolose@nolose.com	DifNolose	
 GOBIERNO FEDERAL	GFNolose	000000	CDMX	111111	GFnolose@nolose.com	GFNolose	222222	GFNolose	333333	19
 GOBIERNO DEL ESTADO DE SINALOA	Eleazar(PapiRINGO)	Sinaloa	Culiacan	22222222222	nolose@nolose.com	Papi	3333333333	Angel	6674602906	13
 CESAVESIN										32
+COCA - COLA	ACTUALIZAR Please elnombr del Gte. Gral.	Sinaloa	Culiacan	000000000	ccolanolose@ccola	Eunice Hernandez	222222222	Alma D. Carrillo López	333333333	21
 H.AYUNTAMIENTO DE BADIRAGUATO		SINALOA	Badiraguato							33
 JAPAC										34
 ADECEM										35
-MORENA	Comite	Sinaloa	Culiacán, Sin.							21
+JULIO CESAR SILVA										36
 \.
 
 
@@ -129,5 +130,5 @@ ALTER TABLE ONLY public.clientes
 -- PostgreSQL database dump complete
 --
 
-\unrestrict JhJdrR1svzuj1dXqviM4qhYJM1fFIALJPnnHLhYIOqQ3HZk1WaSg2ZBBJ337mKq
+\unrestrict Eh3ubfLBFL0PEdHg8iesAuoPXwoLbhgO00TE71SrpYH6IHm3GgIEpPBu4dd8oxd
 

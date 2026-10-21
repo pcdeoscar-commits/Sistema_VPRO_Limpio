@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict vlclB2nIiyVKwC0tLxMDOUjs3jRts3YmctXssbkj3LVcVIahJfMhw9mFJbhm3GE
+\restrict agqKok9PhatyQ04OzPIWFiJYr0sUnugUVCBBACXA1xAJfEB2fefEmekAD4cf1tP
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -220,11 +220,12 @@ COPY public.historial_equipo (id_registro, codigo_equipo, fecha, folio_vpro, id_
 10	INV_VPRO_ALT_00181	2026-08-20	OP-4	000	CHECKIN_REVISIÓN	Por doble evento se quedo en la locación	0.00	RESUELTO	BODEGA
 11	INV_VPRO_ALT_00252	2026-08-20	OP-4	000	CHECKIN_REVISIÓN	Por doble evento se quedo en la locación	0.00	RESUELTO	BODEGA
 12	COMPUTADORA DE ESCRITORIO CON DOS MONITORES	2026-08-25	MANTENIMIENTO_INTERNO	201	MANTENIMIENTO_TÉCNICO	zumbaba machin.	0.00	PENDIENTE	SISTEMAS
+19	INV_VPRO_ALT_00024	2026-08-28	OP-4	000	CHECKIN_REVISIÓN	Por doble evento se quedo en la locación	0.00	RESUELTO	BODEGA
+33	INV_VPRO_ALT_00181	2026-10-14	OP-33	000	CHECKIN_REVISIÓN	No regreso la extension	0.00	RESUELTO	BODEGA
 15	AIRE ACONDICIONADO TIPO MINI SPLIT DE 2 TON. MARCA MIRAGE ABSOLUT	2026-08-25	MANTENIMIENTO_INTERNO	201	FALLA_OPERATIVA	Tira un chorro de agua que no se puede contener y casi nos ahogamos aqui en el departamento de sistemas, periferia, lugares cercanos y aledaños.. en un caos total.	0.00	PENDIENTE	SISTEMAS
 16	MONITOR LCD, AOC,TECLADO ASSY P/697737-161 CT:BCYSTOAHH7132V. MOUSE 24GHZ WIRELESS OPTICAL	2026-08-26	MANTENIMIENTO_INTERNO	201	FALLA_OPERATIVA	Se ve mal la imagen, Daña la vista lo tenia Geo Estrada.... Se acordó que se le instalará otro por mientras pero si hay evento se llevará al evento, quedandose el momentaneamente sin monitor.	0.00	DAÑADO	SISTEMAS
 17	MONITOR LCD, AOC,TECLADO ASSY P/697737-161 CT:BCYSTOAHH7132V. MOUSE 24GHZ WIRELESS OPTICAL	2026-08-26	MANTENIMIENTO_INTERNO	201	FALLA_OPERATIVA	Se ve mal la imagen, Daña la vista lo tenia Geo Estrada.... Se acordó que se le instalará otro por mientras pero si hay evento se llevará al evento, quedandose el momentaneamente sin monitor.	0.00	DAÑADO	SISTEMAS
 18	MONITOR LCD, AOC,TECLADO ASSY P/697737-161 CT:BCYSTOAHH7132V. MOUSE 24GHZ WIRELESS OPTICAL	2026-08-27	MANTENIMIENTO_INTERNO	201	FALLA_OPERATIVA	Se ve mal la imagen, Daña la vista lo tenia Geo Estrada.... Se acordó que se le instalará otro por mientras pero si hay evento se llevará al evento, quedandose el momentaneamente sin monitor.	0.00	DAÑADO	SISTEMAS
-19	INV_VPRO_ALT_00024	2026-08-28	OP-4	000	CHECKIN_REVISIÓN	Por doble evento se quedo en la locación	0.00	RESUELTO	BODEGA
 20	INV_VPRO_ALT_00181	2026-08-28	OP-4	000	CHECKIN_REVISIÓN	Por doble evento se quedo en la locación	0.00	RESUELTO	BODEGA
 21	INV_VPRO_ALT_00252	2026-08-28	OP-4	000	CHECKIN_REVISIÓN	Por doble evento se quedo en la locación	0.00	RESUELTO	BODEGA
 22	INV_VPRO_ALT_00015	2026-08-28	OP-4	000	CHECKIN_REVISIÓN	Por doble evento se quedo en la locación	0.00	RESUELTO	BODEGA
@@ -238,7 +239,8 @@ COPY public.historial_equipo (id_registro, codigo_equipo, fecha, folio_vpro, id_
 30	TELMEX-SERCOMM-GN25L95	2026-09-22	MANTENIMIENTO_INTERNO	202	BAJA_DEFINITIVA	Equipo dañado, fue reemplazado por telmex\ndatos de equipo nuevo:\nModem: Huawei EchoLife HG8145V5\nSerie: HWTC6EDEFBA2 \nModelo: HG8145V5	0.00	BAJA	SISTEMAS
 31	VPNRED039	2026-09-23	MANTENIMIENTO_INTERNO	202	REPARACIÓN_TÉCNICA	Se dañó agarradera de la maleta al bajar de la camioneta... se me soltó/desprendió el sujetador (Cuauhtémoc).	0.00	PENDIENTE	SISTEMAS
 32	VPNRED076	2026-09-26	MANTENIMIENTO_INTERNO	202	MANTENIMIENTO_TÉCNICO	Daño en baterías, es necesario reemplazarlas	0.00	PENDIENTE	SISTEMAS
-33	INV_VPRO_ALT_00098	2026-10-07	MANTENIMIENTO_INTERNO	201	FALLA_OPERATIVA	Estaba trajando con actualizacioens y el diseño del sistema Integral Vpro, cuandio de repente se reinicia la pc, y aparece el mensaje que se anexa	1000.00	DAÑADO	SISTEMAS
+34	INV_VPRO_ALT_00181	2026-10-14	OP-33	000	CHECKIN_REVISIÓN	No regreso la extension	0.00	RESUELTO	BODEGA
+35	VPROCARTIIDA2	2026-10-17	MANTENIMIENTO_INTERNO	124	DAÑO_FÍSICO_OFICINA	Al automovil tiida #2 en el estacionamiento de super ley, le robaron la copa de la llanta trasera del lado del copiloto	343.00	PENDIENTE	PRODUCCION
 \.
 
 
@@ -247,6 +249,24 @@ COPY public.historial_equipo (id_registro, codigo_equipo, fecha, folio_vpro, id_
 --
 
 COPY public.inventario (codigo, responsiva, fecha_compra, descripcion, marca, modelo, serie, responsable, estado, ubicacion, observaciones) FROM stdin;
+VIRA030			(6) base a piso para TV	High Resistance						
+VPNEST010			CPU armado	S/M	S/M	S/N		Bueno	Estudio TV	
+VPNDGF023		23/06/2025	Disco Duro	LA100	LRDOTU3	NL100G08	102	Bueno	Digital Films	
+VIRA016		03/07/2025	Pantalla de 55" LED LCD	HISESNSE	55R6000GM	55G21260RH03315	104.0	Bien	Bodega 2	
+VIRA026			(5) Bases de hierro a piso							
+VPNCAR017			Convertidor Micro Usb A Hdmi 5 Pin Adaptador Mhl Tv Celular	MHL	Micro USB a HDMI	S/N	Concepcion Castro Mendoza	Bueno	Carton 001	
+VPNDGF033		23/06/2025	Adaptador a USB 3.0, HDMI y lector de tarjetas SD Y TF	UGREEN	S/M	S/N	102	Bueno	Digital Films	
+VPNEST012			Receptor inalambrico con cable de corriente	SHURE	SLX4	1MA1033908-01		Bueno	Estudio TV	
+VPNPRO411			Monitor chico	Elvid	WDM-758G	758G140969	119			
+VPNEST008			Interfaz de audio con cable (VPNAUD003) audio 2.0	PEAVEY	S/M	0DB1M226327		Bueno	Estudio TV	
+VPNEST009			Hibrido digital Broadcast Host	JK-AUDIO	S/M	BH07961		Bueno	Estudio TV	
+VPNEST011			Microfono inalambrico de podium	S/M	MX890	S/N		Bueno	Estudio TV	
+VPNEST014	VPNEST014		Disponible							
+VPNAUD038		27/02/2024	Microfono inalambrico con transmisor de mano, con receptor UHF, transmisor de mano slxd2 con la cápsula de micrófono dinámico supercardioide beta 58a y (1) receptor slxd4 de un solo canal con antena y accesorios de montaje en rack, (1) bolsa con cremallera y (2) pilas aa	SHURE	SLXD24 B58-G58 SLXD2 G58 PS43US	3CK07942469 3CK07932239	118	Funcional	Departamento de audio	se cambio el perico por el VPNAUD054
+VPNEST018			Disponible							
+VPNPRO386		08/06/2025	Switcher Black Magic				119			
+VPNPRO176	Resp. 010	11/04/2023	(2) Video capturadores HDMI con cable	S/M	S/M	S/N	109	Bueno	Caja Splitter	1 se dio de baja (checar cual)
+VPNPRO177	Resp. 010	11/04/2023	(3) Video capturadores HDMI sin cable	S/M	S/M	S/N	109	Bueno	Caja Splitter	
 VIRA017		03/07/2025	Pantalla de 55" LED LCD	PHILIPHS	55PFL5765/F8	CC2A2104116994	104.0	Bien	Bodega 2	
 VIRA018		03/07/2025	Pantalla de 55" LED LCD	HISENSE	55R6000GM	55G21260RH03316	104.0	BAJA	Bodega 2	No funciona la pantalla
 VIRA019		03/07/2025	Pantalla de 40" FHD CON ROKU TV	JVC	SI40FR	COJVC20240841673	104.0	Bien	Bodega 2	
@@ -259,7 +279,6 @@ VIRA025		15/07/2025	(8) Bases de soporte para televisión con ruedas y (2) baras
 VIRA027			(3) Soportes de TV de 42" a 85"	Link Bits	C3275N41B	S/N				
 VIRA028			Compresor de aire de trasmisión directa de 25 Litros	MH	Master Hardware	S/N				
 VIRA029			Monitor	AOC	215LM004O	AEJF79A002282		SIN CABLE		
-VIRA030			(6) base a piso para TV	High Resistance						
 VIRA031			(8) Soportes para monitor de 65"		Commercial electric	(6) XD2165-1       (2) Master				
 VPNADM001			Laptop DELL INSPIRON 3558 y cargador.	Dell	Dell inspiron 15	24095400914	121	Bueno	Administracion	
 VPNADM002			Impresora COLOR LASER JET PRO MFP M176N	HP	MFP M176N	S/N		Baja	Administracion	
@@ -284,12 +303,6 @@ VPNCAR020			U DIN 1.0/2.3 Mini BNC to HD SDI BNC RG179 75ohm RF Coaxial Cable Vi
 VPNDGF009		22/06/2025	(1) Latigo Follow Focus chico de 8" (1) Latigo Follow Focus largo de 12" (1) Micro Follow focus (1) Cable IEEE 1394a FireWire	Red Rock Micro	1-13-0281R	S/N	102	Bueno	Closet comercialización	
 VPNDGF010		22/06/2025	(1) Cargador de baterias Sony 100V-240V output 8.4V 0.28A (1) cargador de baterias output 4.2V (8.4V) (1) Cargador de bateria FM50/70/90/QM7/1D/91D	SONY.                                Travel Charger                                    S/M	*SONY: BC- VH1                        *Travel charger: S/M.	*SONY: F811053                            *Travel charger: S/N	102	Bueno	Closet comercialización	
 VPNDGF011		24/06/2025	Deslizador de cámara de 60 cm	SEVENOAK	SKGT01	S/N	102	Bueno	Closet comercialización	
-VPNDGF023		23/06/2025	Disco Duro	LA100	LRDOTU3	NL100G08	102	Bueno	Digital Films	
-VIRA016		03/07/2025	Pantalla de 55" LED LCD	HISESNSE	55R6000GM	55G21260RH03315	104.0	Bien	Bodega 2	
-VIRA026			(5) Bases de hierro a piso							
-VPNAUD038		27/02/2024	Microfono inalambrico con transmisor de mano, con receptor UHF, transmisor de mano slxd2 con la cápsula de micrófono dinámico supercardioide beta 58a y (1) receptor slxd4 de un solo canal con antena y accesorios de montaje en rack, (1) bolsa con cremallera y (2) pilas aa	SHURE	SLXD24 B58-G58 SLXD2 G58 PS43US	3CK07942469 3CK07932239	118	Funcional	Departamento de audio	se cambio el perico por el VPNAUD054
-VPNCAR017			Convertidor Micro Usb A Hdmi 5 Pin Adaptador Mhl Tv Celular	MHL	Micro USB a HDMI	S/N	Concepcion Castro Mendoza	Bueno	Carton 001	
-VPNDGF033		23/06/2025	Adaptador a USB 3.0, HDMI y lector de tarjetas SD Y TF	UGREEN	S/M	S/N	102	Bueno	Digital Films	
 VPNDGF034		23/06/2025	Cámara SONY (1) Unidad de Extención (1) Control Remoto de Empuñadura (1) Visor Ocular, (1) Batería Portatíl (VPNPRO049) (1) Caja de transportación PELICAN 1550 negra	SONY	*Cámara:  PXWF7                                  *Unidad de Extención: XDCA-FS7                    *Bateria: BP-L60A	*Cámara: 20312                                            *Unidad de Extención:  2015-02.               *Bateria: 020046	102	Bueno	Digital Films	
 VPNDGF037		21/07/2025	(7) Adaptadores CA para Seagate Freeagent FW External HDD Disco Duro - Negro - Positiva Punta	Product Smith	WA-24E12	(1) : 539001333                            (2): 539002154                           (3): 129004648                             (4): 129061296                            (5): 129059107.                           (6): 3B9005127                           (7): 299027095	102		Digital Films	
 VPNDGF039		21/07/2025	Adaptador AC/AC	Powertron Electronics	PA'1024-120IB200	B20170500071517	102			
@@ -334,11 +347,6 @@ VPNEST001			TriCaster	NEWTEK	455 MULTISTANDAR	NA2056026334262		Bueno	Estudio TV
 VPNEST002			Panel de control TriCaster con teclado y mouse inhalambrico	NEWTEK	XD460 CONTROL SURFACE Teclado y mouse: COM-6200NE	N1AN138844990796		Bueno	Estudio TV	
 VPNEST003			Televisión de 28.6" x 19.03"	VIZIO	E32-C1	LTB7SJER3202666		Bueno	Estudio TV	
 VPNEST004			Televisión de 28.6" x 19.03"	VIZIO	E32-C1	LTB7SJER320669		Bueno	Estudio TV	
-VPNEST008			Interfaz de audio con cable (VPNAUD003) audio 2.0	PEAVEY	S/M	0DB1M226327		Bueno	Estudio TV	
-VPNEST009			Hibrido digital Broadcast Host	JK-AUDIO	S/M	BH07961		Bueno	Estudio TV	
-VPNEST010			CPU armado	S/M	S/M	S/N		Bueno	Estudio TV	
-VPNEST011			Microfono inalambrico de podium	S/M	MX890	S/N		Bueno	Estudio TV	
-VPNEST012			Receptor inalambrico con cable de corriente	SHURE	SLX4	1MA1033908-01		Bueno	Estudio TV	
 VPNEST013	VPNEST014		(2) Bocinas	KRK	ROKIT 5	HAE1018025 HAE1120398	Hector Rementeria	Bueno	Estudio TV	
 VPNEST015			Switch de escritorio con cabes de corriente	TPLINK	LS105G	S/N		Bueno	Estudio TV	
 VPNEST017			Web caster x2 con HDMI, antena, y cable HDMI.	EPHIPAN VIDEO	WEBCASTER X2	HWCX17124656		Bueno	Estudio TV	
@@ -384,6 +392,7 @@ VPNPRO005	Resp.004	15/02/2023	Sony 64GB SxS-1 (G1C) Memory Card SBS64G1C	Sony	SB
 VPNPRO006	Resp.004	15/02/2023	Sony 64GB SxS-1 (G1C) Memory Card SBS64G1C	Sony	SBS-64G1B	9EDN1063	116	Bueno	Coordinacion de Producción	
 VPNPRO007	Resp.004	15/02/2023	Sony 64GB SxS-1 (G1C) Memory Card SBS64G1C	Sony	SBS-64G1B	SKEB7012	116	Bueno	Coordinacion de Producción	
 VPNPRO008	Resp.004	15/02/2023	Sony 64GB SxS-1 (G1C) Memory Card SBS64G1C	Sony	SBS-64G1B	DEKZ1254	116	Bueno	Coordinacion de Producción	
+VPNPRO131	Resp. 010	04/04/2023	Extencion de USB	S/M	S/M	S/N	109	Bueno	Mochila Plata	
 VPNPRO009	Resp.004	15/02/2023	Sony 64GB SxS-1 (G1C) Memory Card SBS64G1C	Sony	SBS-64G1B	DELB1013	116	Bueno	Coordinacion de Producción	
 VPNPRO010	Resp.004	15/02/2023	Sony 64GB SxS-1 (G1C) Memory Card SBS64G1C	Sony	SBS-64G1B	9EDN1064	116	Bueno	Coordinacion de Producción	
 VPNPRO011	Resp.004	15/02/2023	Sony 16GB SxS Memory Card SBS-16G1B	Sony	SBS-16G1B	EFEH1079	116	Bueno	Coordinacion de Producción	Esta quebrada la parte donde va el N0 de serie
@@ -423,6 +432,7 @@ VPNPRO062	PRO-001	07/09/2023	(2) - Cargadrores de baterias Canon CA-920	Canon	CA
 VPNPRO063	PRO-001	07/09/2023	(3) - Cargador De Batería Sony BC-U1 BP-U30/U35/U60/U70/U90/U100 FX6/EX1R/fx3/FS7/EX280/EX260 Cámara	Sony	BC-U1	12063000282                             10123002127                             14093003072	119	Funcional	Estante de Baterias	
 VPNPRO193	Resp. 010	11/04/2023	"KIT SEMANERA #2" (1) Monitor Gamer Xzeal XZ4015-1 / Negro / 27" / 1MS / 165HZ / Full HD, y (1) Gabinete Acteck Kiruna II - Media Torre #2, (1) Teclado con mouse, (1) Panel de control SWITCHER #2, con (1) cable de poder de 1.5 M	Monitor: XZEAL REAL GAMING                                     Gabinete: ACTECK                                                       Switcher: TYST VIDEO	XZ4015-1                                       GM420                                TY-1500HD	X2401521092468                                              00233568004528	110	Bueno	Caja VMIX	
 VPNPRO367		05/04/2024	Spliter de 4 puertos de alta velociad HDMI con audio	STARTECH	S1124HDMI2	MM0811XD00604	104			
+VPNPRO127	Resp. 010	04/04/2023	Switches y Conversores - Switch TP-Link TL-SG1008D, 8 Puertos 10/100/1000 Mbps	TP-LINK	TL-SG1008D	21634810 01735	109	Bueno	Mochila Plata	
 VPNAUD004		08/09/2023	(KIT) Microfono receptor de mano con cable estereo, (1) cable cannon a 3.5, microfono y soporte de microfono	SONY	Microfono: UTX-M03 Receptor: URX-B03	102122                                            108718	118	Funcional	Se utilizó el cable estereo y cannon del VPNAUD007	
 VPNAUD005		08/09/2023	(KIT) Microfono receptor de mano con cable estereo, (1) cable cannon a 3.5, microfono y soporte de microfono	SONY	Microfono: UTX-M03 Receptor: URX-B03	102125                                            109992	118	Funcional	Departamento de audio	
 VPNAUD006		08/09/2023	(KIT) Microfono receptor de mano con cable estereo, (1) cable cannon a 3.5, microfono y soporte de microfono	SONY	Microfono: UTX-M03 Receptor: URX-B03	102749                                            114345	118	Funcional	Departamento de audio	
@@ -505,9 +515,7 @@ VPNPRO122	Resp. 010	04/04/2023	Capturadora de video - Adaptador video UNISHEEN 5
 VPNPRO123	Resp. 010	04/04/2023	Capturadora de video - Adaptador video UNISHEEN 5.8x4x2.1" 1080P USB 3.0	UNISHEEN	VC32005	202030 13812503	119	Baja	Mochila Plata	Obsoletas
 VPNPRO125	Resp. 010	04/04/2023	Mouse para computadora	S/M	S/M	S/N	109	Baja	Mochila Plata	Dejó de funcionar
 VPNPRO126	Resp. 010	04/04/2023	HDMI Splitter 4 Puertos	STEREN	BOS-304	S/N	109	Bueno	Mochila Plata	
-VPNPRO127	Resp. 010	04/04/2023	Switches y Conversores - Switch TP-Link TL-SG1008D, 8 Puertos 10/100/1000 Mbps	TP-LINK	TL-SG1008D	21634810 01735	109	Bueno	Mochila Plata	
 VPNPRO130	Resp. 010	04/04/2023	Extencion de USB	UGREEN	S/M	S/N	109	Bueno	Mochila Plata	
-VPNPRO131	Resp. 010	04/04/2023	Extencion de USB	S/M	S/M	S/N	109	Bueno	Mochila Plata	
 VPNPRO132	Resp. 010	04/04/2023	Extension de USB	S/M	S/M	S/N	109	Bueno	Mochila Plata	
 VPNPRO133	Resp. 010	04/04/2023	(3) LinkBand Audio Video Capture Cards HDMI a USB 2.0 1080P, grabación a través de DSLR, videocámara, cámara de acción para transmisión en vivo	S/M	S/M	S/N	109	Bueno	Mochila Plata	
 VPNPRO134	Resp. 010	04/04/2023	Convertidor Hdmi A Rca Hdmi2av	VIMI	HDMI2AV	S/N	109	Bueno	Mochila Plata	
@@ -608,6 +616,7 @@ VPNPRO256	Resp. 009		Extensor ultra HD HDMI 4K@60Hz con IR; Distancia de 30 metr
 VPNPRO257	Resp. 009		Extensor ultra HD HDMI 4K@60Hz con IR; Distancia de 30 metros	TEPCOM TITANIUM	TT672	SKG20050264	101	Bueno	Bodega 1	Se estan usando para extender la pantalla de las camaras
 VPNPRO258	Resp. 009		Blackamgic Micro Converter BiDirectional SDI/HDMI wPSU 12G	BlackMagic Desing	SDI/HDMI wPSU 12G	5040186	110	Bueno	Bodega 1	
 VPNPRO259	Resp. 009		Blackamgic Micro Converter BiDirectional SDI/HDMI wPSU 12G	BlackMagic Desing	SDI/HDMI wPSU 12G	5040163	109	Bueno	Bodega 1	
+VPNPRO324	Resp. 009		Splitter HDMI 1x2 con EDID y cargador	OREI	HDS-102	S/N	109	Bueno	Bodega 1	Volver a consultar
 VPNPRO260	Resp. 009		Blackmagic Design SDI a HDMI Micro Converter, con Fuente de alimentación	BlackMagic Desing	SDI a HDMI Micro Converter	7041439	104	Bueno	Bodega 1	
 VPNPRO261	Resp. 009		Blackmagic Design SDI a HDMI Micro Converter, con Fuente de alimentación	BlackMagic Desing	SDI a HDMI Micro Converter	7041518	109	Bueno	Bodega 1	Caja en cabina de estudio
 VPNPRO264	Resp. 010	04/11/2023	Mini splitter HDMI 1x2 con cargador	ELE-GATE	S/M	S/N	109	Bueno	Mochila semanera	no se escontro
@@ -657,7 +666,6 @@ VPNPRO319	Resp. 009		Splitter HDMI de 4 puertos 1x4	STEREN	BOS-304	S/N	104	Bueno
 VPNPRO320	Resp. 009		Antena para T.V	RCA	ANTIZIE	SX36KE	104	Bueno	Bodega 1	Revisar para ver si se dan de baja
 VPNPRO321	Resp. 009		Antena para T.V	RCA	ANTIZIE	4X28ICE	104	Bueno	Bodega 1	Revisar para ver si se dan de baja
 VPNPRO323	Resp. 009		Splitter HDMI 1x2 con EDID y cargador	OREI	HDS-102	S/N	109	Bueno	Bodega 1	Volver a consultar
-VPNPRO324	Resp. 009		Splitter HDMI 1x2 con EDID y cargador	OREI	HDS-102	S/N	109	Bueno	Bodega 1	Volver a consultar
 VPNPRO325	Resp. 009		Splitter HDMI 1x4 con EDID y cargador	OREI	HDS-104	S/N	110	Bueno	Bodega 1	checar con eduardo s la tiene
 VPNPRO326	Resp. 009		Splitter HDMI 1x4 con EDID y cargador	OREI	HDS-104	S/N	104	Bueno	Bodega 1	checar con eduardo s la tiene
 VPNPRO274	Resp. 009	04/11/2023	Cable de fibra optica de 200 m con cable jumper doble	LINKEDPRO	EF200M	S/N	104	Bueno	Bodega 1	
@@ -736,7 +744,6 @@ VPNPRO407			Monitor Samsung con CPU Armado, on teclado y mouse (combo creator mk
 VPNPRO408			Tarjetero par Switches con tarjeta N0. 2	CEFC	OWCHELIOS3S	S/N	110			
 VPNPRO409			Steren Adaptador de Red USB, Inalámbrica, WLAN, 867Mbit/s, COM-8235	STEREN	COM-8235	S/N	116			
 VPNPRO410			LAMPARA RED TOP DE ESCRITORIO CAMPANA LED GRIS	Red Top	LA30196V	S/N	119			
-VPNPRO411			Monitor chico	Elvid	WDM-758G	758G140969	119			
 VPNPRO412			Multicontactos koblenz	Koblenz	SS-090-C	5526-08-16 00:00:00	119			
 VPNPRO415			1 CABLE USB PARA FUENTE DE PODER	Shielder	S/M	S/N	119			
 VPNPRO413			6 Cables RCA (2 Gris, 1 morado y 3 azul marino)	RCA	S/M	S/N	119			
@@ -783,7 +790,6 @@ VPNRED064	Resp.21	22/10/2024	Mouse pad Ergonomico	PERFECT CHOICE	S/M	S/N	202	Bue
 VPNRED065	Resp.16	25/10/2024	Tarjeta capturadora 4K HD y cale USB	PACOXI	PX-C7	S/N	109	Bueno	Sistemas y redes	
 VPNRED066	Resp.16	25/10/2024	Tarjeta capturadora 4K HD y cale USB	PACOXI	PX-C7	S/N	109	Bueno	Sistemas y redes	
 VPNEST005			Monitor de 32" con mouse y teclado	SAMSUNG	C32F391FWL	0AF3HCPN900063V		Bueno	Estudio TV	sin mouse
-VPNEST014	VPNEST014		Disponible							
 VPNPRO402			(5) CABLES SDI PARA SWITCHER PARA (Unidad Movil) (4) DE 6 MTRS Y (1) DE 7 MTRS	Belden	1855ABHDI	S/N	119			
 VPNRED013			Adaptador de USB a RED	STEREN	506-430	S/N	201	Baja	Sistemas y redes	
 VPNRED067		29/01/2025	(2) Adaptadores Starlink SPX a RJ45 para generación 2	STARLINK	SPX a RJ45	S/N	201	Bueno	Sistemas y redes	
@@ -918,7 +924,6 @@ VPNPRO230	Resp. 014		(2) Mezcladora Estereo Profesional de 2 Canales	BEHRINGER	Z
 VPNPRO231	Resp. 014		(15) Amp Power Supply Power Strip with 1800VA Rack Mountable 9 Outlets	PYLE		S/N	119	Bueno	Switcher Grande	
 VPNEST006			Mouse con cable	MICROSOFT	S/M	S/N		Bueno	Estudio TV	
 VPNEST007			Teclado con cable	NEWTEK	S/M	S/N		Bueno	Estudio TV	
-VPNEST018			Disponible							
 VPNBOG015			Refurbished) Dell E2014Hc 1600x900 HD Widescreen monitor	DELL	E2014Hc	CN-012MWY-64180-537-0FZL		Funcional	Bodega	Sin cable de Corriente
 VPNBOG016			Computadora HP All-in-One 18-5202la - 18.5" - AMD E1-6010 - 4GB - 500GB - Windows 8.1 - Plata/Negro - J5U02AA	HP	18-5202la	4CE447085W		Funcional	Bodega	Sin Mause ni Teclado
 VPNPRO129	Resp. 010	04/04/2023	Cable USB a USB tipo C	STEREN	S/M	S/N	109	Bueno	Mochila Plata	
@@ -1031,7 +1036,6 @@ VPNBOG001			Huawei E3276s-500 4G LTE FDD Band 2/4/5/7(1900/AWS(1700/2100)/850/26
 VPNBOG002			Huawei E3276s-500 4G LTE FDD Band 2/4/5/7(1900/AWS(1700/2100)/850/2600MHz) 3G 850/1900/2100Mhz USB Stick Modem	Huawei	E3276s-500	V7UDW15321000933		Funcional	Bodega	
 VPNBOG003			Huawei E3276s-500 4G LTE FDD Band 2/4/5/7(1900/AWS(1700/2100)/850/2600MHz) 3G 850/1900/2100Mhz USB Stick Modem	Huawei	E3276s-500	V7UDW15619000636		Funcional	Bodega	
 VPNBOG004			Huawei E3276s-500 4G LTE FDD Band 2/4/5/7(1900/AWS(1700/2100)/850/2600MHz) 3G 850/1900/2100Mhz USB Stick Modem	Huawei	E3276s-500	V7UDW15504000314		Funcional	Bodega	
-VPNPRO386		08/06/2025	Switcher Black Magic				119			
 VPNRED042		20/02/2024	Tarjeta para capturar contenidos con calidad cinematográfica con dos entradas y dos salidas SDI 12G para señales en formato DCI 4K. Cable multiconector para señales analógicas y control de dispositivos mediante la conexión RS-422. Cable para alimentación externa	BLACKMAGICDESINGN	Decklink 4k Extreme 12	11737742	201	Inactivo	Sistemas y redes	
 VPNRED043	Resp.16	18/05/2024	(3) pares trenzados Cable UTP 305 gris	Brobotix	CAT6	S/N	201		Sistemas y redes	se termino
 VPNRED044	Resp.16	19/06/2024	ATEM streaming bridge	BLACK MAGIC DESIGN	SWATEMMINISBPR	10949353	201	Activo	Sistemas y redes	
@@ -1059,8 +1063,6 @@ VPNPRO118	Resp. 006	04/04/2023	Cable de audio XLR a CANON	S/M	S/M	S/N	110	Bueno	
 VPNPRO119	Resp. 006	04/04/2023	Cable de Audio CANON a PLUG 3/4	S/M	S/M	S/N	109	Bueno	Mochila Roja	
 VPNPRO174	Resp. 010	11/04/2023	Cable de RED de medio metro	S/M	S/M	S/N	109	Bueno	Mochilas semanera	
 VPNPRO175	Resp. 010	11/04/2023	Splitter HDMI dos puertos 1x2 con cargador	KANEXPRO	S/M	S/N	109	Bueno	Caja Splitter	
-VPNPRO176	Resp. 010	11/04/2023	(2) Video capturadores HDMI con cable	S/M	S/M	S/N	109	Bueno	Caja Splitter	1 se dio de baja (checar cual)
-VPNPRO177	Resp. 010	11/04/2023	(3) Video capturadores HDMI sin cable	S/M	S/M	S/N	109	Bueno	Caja Splitter	
 VPNPRO178	Resp. 010	11/04/2023	Splitter HDMI 4 puertos 4K con cargador	KANEXPRO	S/M	S/N	109	Bueno	Caja Splitter	No se encontro
 VPNPRO221	Resp. 014		NewTek 3Play 425 Replay System with Control Surface (1)Teclado, (1) Mouse, (2) cables de corriente y (3) cables de USB a USB tipo B	NEWTEC	3PXD425	M8AF12714881042	119	Bueno	Bodega 1	
 VPNPRO232	Resp. 014		Grabadora Hyperdeck Studio HD Mini Blackmagic Design	BlackMagic Desing	Studio HD Mini	5257015	119	Bueno	Switcher Grande	
@@ -1102,6 +1104,7 @@ TELMEX-02		2026-09-19	Modem INFINITUM Huawei EchoLife HG8145V5, TELMEX-02	Huawei
 TELMEX-03		\N	Modem INFINITUM Huawei EchoLife HG8145V5, TELMEX-03	Huawei	EchoLife HG8145V5	HWTCDE8448A2	Sistemas	BUEN ESTADO	RECEPCIÓN	Modem en recepción para uso general\nwifi "GUERRA"
 VPNRED022	Resp.16	\N	ROUTER GIGABIT MULTI-WAN VPN SAFESTREAM	TP-LINK	TL-ER6020	218B208000200	201	BUEN ESTADO	Sistemas y redes	COMPRADO USADO
 VPNRED103		2026-10-02	Router WiFi AX2 - WiFi 6 1500Mbps Router	HUAWEI	WS7001	5JYQU24617018111	SISTEMAS	BUEN ESTADO	SISTEMAS	Se le compró a la señora Ibon
+VPROCARTIIDA2		\N	AUTOMOVIL TIIDA 02	NISSAN	SEDAN			DAÑADO	BODEGA PRINCIPAL	
 \.
 
 
@@ -1110,6 +1113,82 @@ VPNRED103		2026-10-02	Router WiFi AX2 - WiFi 6 1500Mbps Router	HUAWEI	WS7001	5JY
 --
 
 COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, fecha_de_compra_inv_kits, descripcion_inv_kits, marca_inv_kits, modelo_inv_kits, serie_inv_kits, responsable_inv_kits, id_empleado_ref_inv_kits, estado_inv_kits, ubicacion_inv_kits, observaciones_inv_kits, fecha_registro_inv_kits) FROM stdin;
+3755	INV_ALT_1090025	\N	\N	bateria AA	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA		2026-08-04 17:46:09.06974
+3624	INV_VPRO_ALT_00173	\N	\N	cable sdi	\N	\N	\N	Jose Daniel Torres Arroyo	105	BUEN ESTADO	BODEGA		2026-08-04 17:13:45.193679
+4109	Inv_alt_1190009	\N	\N	imperdecs	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:imperdecs] None	2026-08-18 10:56:04.961021
+5752	INV_ALT_1190066	\N	\N	USB cables	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-14 11:16:44.949657
+6041	INV_VPRO_ALT_00220	\N	\N	Base metal para monitor	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-09-21 11:10:13.481647
+5921	INV_ALT_1090038	\N	\N	MAC	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
+5928	INV_ALT_1090044	\N	\N	cable SDI corto	\N	\N	\N	Manuel Antonio Madrid Zazueta	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
+5022	INV_ALT_2020033	\N	\N	Cutter trupper	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-31 18:21:49.457829
+6182	INV_ALT_1190073	\N	\N	Mochila azul	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 12:45:19.455148
+6379	INV_ALT_1190075	\N	\N	mini contactos de energía blancos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
+6380	INV_ALT_1190076	\N	\N	mini converter blackmagig	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
+6381	INV_ALT_1190077	\N	\N	escalador decimator	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
+6382	INV_ALT_1190078	\N	\N	convertidores de energia 400 w y 500 w	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
+6383	INV_ALT_1190079	\N	\N	abanicos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
+3844	INV_VPRO_ALT_00246	\N	\N	Desarmador de pala	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
+4051	INV_VPRO_ALT_00189	\N	\N	Pinza ponchadora passthrough	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-06 18:18:51.425966
+4312	INV_ALT_2020015	\N	\N	Frasco con terminales utp cat 6	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:56:46.246729
+4366	INV_ALT_2020019	\N	\N	Adaptadores eth a eth cat 6	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 13:35:02.845495
+5316	INV_ALT_1190046	\N	\N	cámaras miniblack	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+5317	INV_ALT_1190047	\N	\N	cable SDI largos ( 3 LARGOS NEGROS Y 2 LILAS)	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+5318	INV_ALT_1190048	\N	\N	lineas de audio largas	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+4245	INV_ALT_2020009	\N	\N	Caja grande c/tapa azul con cables ethernet cortos y largos	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:21:05.617014
+6152	Inv_alt_1190073	\N	\N	Mochila azul	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:Mochila azul]	2026-10-02 12:45:17.666106
+5828	INV_VPRO_ALT_00211	\N	\N	HDMI	\N	\N	\N	Manuel Eduardo Madrid	109	BUEN ESTADO	BODEGA		2026-09-14 18:00:05.097918
+1609	Inv_Vpro_alt_00078	\N	\N	Base de Proyector	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
+1610	Inv_Vpro_alt_00079	\N	\N	Pantalla Latex y Cuadro con Tripie	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
+1611	Inv_Vpro_alt_00080	\N	\N	Bolsa contra Peso	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
+1607	Inv_Vpro_alt_00076	\N	\N	Control Remoto Pantalla	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
+1658	Inv_Vpro_alt_00083	\N	\N	Carpa	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:20:41.219445
+2111	VPRO_ALT_16389	\N	\N	Cables SDI	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
+2113	VPRO_ALT_16445	\N	\N	HDMI	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
+1750	Inv_Vpro_alt_00087	\N	\N	Control Remoto Pantalla	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:37:25.948566
+1612	Inv_Vpro_alt_00081	\N	\N	Base de Madera Tv	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
+1613	Inv_Vpro_alt_00082	\N	\N	Dolly's	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
+1725	Inv_Vpro_alt_00084	\N	\N	Pantalla de 40"	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:34:46.130221
+1726	Inv_Vpro_alt_00085	\N	\N	Tela de Base	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:34:46.130221
+1727	Inv_Vpro_alt_00086	\N	\N	Yellow Jake(pisacable)	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:34:46.130221
+1778	Inv_Vpro_alt_00088	\N	\N	vMix	\N	\N	\N	Osiel Cuauhtémoc Hernández Aldape	109	Buen Estado	\N	None	2026-05-20 18:44:02.78216
+1873	Inv_Vpro_alt_00095	\N	\N	IMPRESORA SAMSUNG EXPRESS M2022	\N	\N	\N	Manuel Eduardo Madrid	124	Buen Estado	\N	None	2026-05-26 14:24:37.090349
+1875	Inv_Vpro_alt_00096	\N	\N	TELEFONO PANASONIC	\N	\N	\N	Manuel Eduardo Madrid	124	Buen Estado	\N	no funcionaba la linea	2026-05-26 14:27:41.384826
+2702	Inv_Vpro_alt_00184	\N	\N	Switch 8 puertos	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2703	Inv_Vpro_alt_00185	\N	\N	Cableado UTP cortos	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2092	VPRO_ALT_14873	\N	\N	Accesorio extra	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	None	2026-05-28 18:35:41.937688
+2116	VPRO_ALT_16484	\N	\N	Carpa	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
+1899	Inv_Vpro_alt_00106	\N	\N	Silla1	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	El respaldo de la silla esta dañando por lo cual no se puede sostener solo.	2026-05-27 11:52:46.634474
+1900	Inv_Vpro_alt_00107	\N	\N	Silla2	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	El respaldo de la silla esta dañando por lo cual no se puede sostener solo.	2026-05-27 11:52:46.634474
+1901	Inv_Vpro_alt_00108	\N	\N	Silla3	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	La base donde están las llantas  esta quebrada y se extravió una llanta.	2026-05-27 11:52:46.634474
+1902	Inv_Vpro_alt_00109	\N	\N	Silla1 de tela	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	La base donde están las llantas  esta quebrada y se extravió una llanta.	2026-05-27 11:52:46.634474
+1903	Inv_Vpro_alt_00110	\N	\N	Silla2 de tela	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	La base donde están las llantas  esta quebrada y se extravió  dos llantas.	2026-05-27 11:52:46.634474
+2136	VPRO_ALT_75546	\N	\N	Lampara Techo 1	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	Lampara de techo cuadrada, luz led.	2026-05-29 11:27:01.503177
+2118	VPRO_ALT_16530	\N	\N	Multicontactos	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
+2119	VPRO_ALT_16540	\N	\N	Abanico	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
+2120	VPRO_ALT_16556	\N	\N	Grabadoras	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
+2180	VPRO_ALT_17725	\N	\N	base metal para monitor	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-06-02 10:31:15.940205
+2112	VPRO_ALT_16418	\N	\N	extensiones	\N	\N	\N	Jose Daniel Torres Arroyo	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
+2115	VPRO_ALT_16469	\N	\N	sillas	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
+1894	Inv_Vpro_alt_00101	\N	\N	dollys	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-26 19:09:20.517456
+1895	Inv_Vpro_alt_00102	\N	\N	monitor de ingeneria	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-26 19:09:20.517456
+1850	Inv_Vpro_alt_00090	\N	\N	bolsa de sinchos	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	None	2026-05-21 18:35:58.324156
+1851	Inv_Vpro_alt_00091	\N	\N	desarmador estrella	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	None	2026-05-21 18:35:58.324156
+2488	Inv_Vpro_alt_00157	\N	\N	Laptop HP	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-05 16:12:12.421551
+2712	Inv_Vpro_alt_00194	\N	\N	Tablet Android	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2713	Inv_Vpro_alt_00195	\N	\N	Tripie para bocina	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2714	Inv_Vpro_alt_00196	\N	\N	Desarmador de estrella	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2715	Inv_Vpro_alt_00197	\N	\N	Desarmador de pala	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2718	Inv_Vpro_alt_00200	\N	\N	fuentes de póder	\N	\N	\N	Manuel Antonio Madrid Zazueta	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2709	Inv_Vpro_alt_00191	\N	\N	Celular institucional	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2716	Inv_Vpro_alt_00198	\N	\N	monitores	\N	\N	\N	Manuel Antonio Madrid Zazueta	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2717	Inv_Vpro_alt_00199	\N	\N	baterias para camara 320	\N	\N	\N	Manuel Antonio Madrid Zazueta	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2182	VPRO_ALT_17836	\N	\N	Monitor de 65"	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-06-02 10:31:15.940205
+2168	VPRO_ALT_74716	\N	\N	Abanico	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-30 14:59:20.355648
+1880	Inv_Vpro_alt_00099	\N	\N	radios	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-26 17:34:48.755318
+1881	Inv_Vpro_alt_00100	\N	\N	balanceador	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-26 17:34:48.755318
+2710	Inv_Vpro_alt_00192	\N	\N	Access point tp-link omada	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2711	Inv_Vpro_alt_00193	\N	\N	Ipad	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
+2935	Inv_Vpro_alt_00235	\N	\N	KIT LUCES	\N	\N	\N	Jose Daniel Torres Arroyo	109	Buen Estado	BODEGA	None	2026-07-03 17:06:31.415674
 2630	Inv_Vpro_alt_00176	\N	\N	Distribuidor HDMI 1 a 4	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	\N	None	2026-06-24 10:58:22.619324
 2631	Inv_Vpro_alt_00177	\N	\N	Distribuidor HDMI 1 a 2	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	\N	None	2026-06-24 10:58:22.619324
 2632	Inv_Vpro_alt_00178	\N	\N	Bolsa de Arena	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	\N	None	2026-06-24 10:58:22.619324
@@ -1167,58 +1246,6 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 1598	Inv_Vpro_alt_00067	\N	\N	Cable SDI	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	BODEGA		2026-05-11 19:14:08.613472
 2271	VPRO_ALT_26703	\N	\N	HDMI splitter (1x2)	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
 1608	Inv_Vpro_alt_00077	\N	\N	Proyector	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
-1609	Inv_Vpro_alt_00078	\N	\N	Base de Proyector	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
-1610	Inv_Vpro_alt_00079	\N	\N	Pantalla Latex y Cuadro con Tripie	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
-1611	Inv_Vpro_alt_00080	\N	\N	Bolsa contra Peso	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
-1607	Inv_Vpro_alt_00076	\N	\N	Control Remoto Pantalla	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
-1658	Inv_Vpro_alt_00083	\N	\N	Carpa	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:20:41.219445
-2111	VPRO_ALT_16389	\N	\N	Cables SDI	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
-2113	VPRO_ALT_16445	\N	\N	HDMI	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
-1750	Inv_Vpro_alt_00087	\N	\N	Control Remoto Pantalla	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:37:25.948566
-1612	Inv_Vpro_alt_00081	\N	\N	Base de Madera Tv	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
-1613	Inv_Vpro_alt_00082	\N	\N	Dolly's	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:14:08.613472
-1725	Inv_Vpro_alt_00084	\N	\N	Pantalla de 40"	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:34:46.130221
-1726	Inv_Vpro_alt_00085	\N	\N	Tela de Base	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:34:46.130221
-1727	Inv_Vpro_alt_00086	\N	\N	Yellow Jake(pisacable)	\N	\N	\N	José Francisco Torres Sanchez	104	Buen Estado	\N		2026-05-11 19:34:46.130221
-1778	Inv_Vpro_alt_00088	\N	\N	vMix	\N	\N	\N	Osiel Cuauhtémoc Hernández Aldape	109	Buen Estado	\N	None	2026-05-20 18:44:02.78216
-1873	Inv_Vpro_alt_00095	\N	\N	IMPRESORA SAMSUNG EXPRESS M2022	\N	\N	\N	Manuel Eduardo Madrid	124	Buen Estado	\N	None	2026-05-26 14:24:37.090349
-1875	Inv_Vpro_alt_00096	\N	\N	TELEFONO PANASONIC	\N	\N	\N	Manuel Eduardo Madrid	124	Buen Estado	\N	no funcionaba la linea	2026-05-26 14:27:41.384826
-2702	Inv_Vpro_alt_00184	\N	\N	Switch 8 puertos	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2703	Inv_Vpro_alt_00185	\N	\N	Cableado UTP cortos	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2092	VPRO_ALT_14873	\N	\N	Accesorio extra	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	None	2026-05-28 18:35:41.937688
-2116	VPRO_ALT_16484	\N	\N	Carpa	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
-1899	Inv_Vpro_alt_00106	\N	\N	Silla1	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	El respaldo de la silla esta dañando por lo cual no se puede sostener solo.	2026-05-27 11:52:46.634474
-1900	Inv_Vpro_alt_00107	\N	\N	Silla2	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	El respaldo de la silla esta dañando por lo cual no se puede sostener solo.	2026-05-27 11:52:46.634474
-1901	Inv_Vpro_alt_00108	\N	\N	Silla3	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	La base donde están las llantas  esta quebrada y se extravió una llanta.	2026-05-27 11:52:46.634474
-1902	Inv_Vpro_alt_00109	\N	\N	Silla1 de tela	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	La base donde están las llantas  esta quebrada y se extravió una llanta.	2026-05-27 11:52:46.634474
-1903	Inv_Vpro_alt_00110	\N	\N	Silla2 de tela	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	La base donde están las llantas  esta quebrada y se extravió  dos llantas.	2026-05-27 11:52:46.634474
-2136	VPRO_ALT_75546	\N	\N	Lampara Techo 1	\N	\N	\N	Andrea Maria Vilarreal Lopez	200	Buen Estado	BODEGA	Lampara de techo cuadrada, luz led.	2026-05-29 11:27:01.503177
-2118	VPRO_ALT_16530	\N	\N	Multicontactos	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
-2119	VPRO_ALT_16540	\N	\N	Abanico	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
-2120	VPRO_ALT_16556	\N	\N	Grabadoras	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
-2180	VPRO_ALT_17725	\N	\N	base metal para monitor	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-06-02 10:31:15.940205
-2112	VPRO_ALT_16418	\N	\N	extensiones	\N	\N	\N	Jose Daniel Torres Arroyo	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
-2115	VPRO_ALT_16469	\N	\N	sillas	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
-1894	Inv_Vpro_alt_00101	\N	\N	dollys	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-26 19:09:20.517456
-1895	Inv_Vpro_alt_00102	\N	\N	monitor de ingeneria	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-26 19:09:20.517456
-1850	Inv_Vpro_alt_00090	\N	\N	bolsa de sinchos	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	None	2026-05-21 18:35:58.324156
-1851	Inv_Vpro_alt_00091	\N	\N	desarmador estrella	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	None	2026-05-21 18:35:58.324156
-2488	Inv_Vpro_alt_00157	\N	\N	Laptop HP	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-05 16:12:12.421551
-2712	Inv_Vpro_alt_00194	\N	\N	Tablet Android	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2713	Inv_Vpro_alt_00195	\N	\N	Tripie para bocina	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2714	Inv_Vpro_alt_00196	\N	\N	Desarmador de estrella	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2715	Inv_Vpro_alt_00197	\N	\N	Desarmador de pala	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2718	Inv_Vpro_alt_00200	\N	\N	fuentes de póder	\N	\N	\N	Manuel Antonio Madrid Zazueta	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2709	Inv_Vpro_alt_00191	\N	\N	Celular institucional	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2716	Inv_Vpro_alt_00198	\N	\N	monitores	\N	\N	\N	Manuel Antonio Madrid Zazueta	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2717	Inv_Vpro_alt_00199	\N	\N	baterias para camara 320	\N	\N	\N	Manuel Antonio Madrid Zazueta	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2182	VPRO_ALT_17836	\N	\N	Monitor de 65"	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-06-02 10:31:15.940205
-2168	VPRO_ALT_74716	\N	\N	Abanico	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-30 14:59:20.355648
-1880	Inv_Vpro_alt_00099	\N	\N	radios	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-26 17:34:48.755318
-1881	Inv_Vpro_alt_00100	\N	\N	balanceador	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-26 17:34:48.755318
-2710	Inv_Vpro_alt_00192	\N	\N	Access point tp-link omada	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2711	Inv_Vpro_alt_00193	\N	\N	Ipad	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-06-29 18:52:05.296436
-2935	Inv_Vpro_alt_00235	\N	\N	KIT LUCES	\N	\N	\N	Jose Daniel Torres Arroyo	109	Buen Estado	BODEGA	None	2026-07-03 17:06:31.415674
 2771	Inv_Vpro_alt_00210	\N	\N	Extensiones	\N	\N	\N	Jose Francisco Torres Sanchez	119	Buen Estado	BODEGA	None	2026-07-02 10:39:10.678835
 2041	VPRO_ALT_13165	\N	\N	miniblack	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-28 18:27:41.493889
 2042	VPRO_ALT_13273	\N	\N	baterias para monitor	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-28 18:27:41.493889
@@ -1239,9 +1266,7 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 2584	Inv_Vpro_alt_26705	\N	\N	UPS	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-20 10:17:53.895261
 2728	Inv_Vpro_alt_00205	\N	\N	escaladores decimator	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-06-29 18:57:01.349101
 2729	Inv_Vpro_alt_00206	\N	\N	convertidores blackmagic	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-06-29 18:57:01.349101
-2518	Inv_Vpro_alt_00138	\N	\N	telepronter	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA	None	2026-06-05 18:57:57.362458
 1869	Inv_Vpro_alt_00093	\N	\N	cable especial de 50 mts de starlink	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	None	2026-05-21 18:42:44.941739
-2936	Inv_Vpro_alt_00236	\N	\N	Laptop HP	\N	\N	\N	Edgar Javier Amarillas	109	BUEN ESTADO	BODEGA		2026-07-03 17:06:31.415674
 2254	VPRO_ALT_26284	\N	\N	laptop Vmix g7	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
 2553	Inv_Vpro_alt_00151	\N	\N	Cables HDMI	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-06-20 09:43:54.792002
 2554	Inv_Vpro_alt_00152	\N	\N	Cables de Corriente	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-06-20 09:43:54.792002
@@ -1277,6 +1302,7 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 2919	Inv_Vpro_alt_00225	\N	\N	Sillas	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-07-02 13:37:57.791634
 2920	Inv_Vpro_alt_00226	\N	\N	Grabadoras	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-07-02 13:37:57.791634
 2921	Inv_Vpro_alt_00227	\N	\N	Multicontactos	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-07-02 13:37:57.791634
+2518	Inv_Vpro_alt_00138	\N	\N	Kit de luces	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA	None	2026-06-05 18:57:57.362458
 2908	Inv_Vpro_alt_00214	\N	\N	Distribuidor HDMI "4"	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-07-02 13:37:57.791634
 2909	Inv_Vpro_alt_00215	\N	\N	Distribuidor HDMI "8"	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-07-02 13:37:57.791634
 2910	Inv_Vpro_alt_00216	\N	\N	Carpa	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-07-02 13:37:57.791634
@@ -1320,18 +1346,19 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 3371	Inv_alt_1130001	\N	\N	Camara Alpha VIII	\N	\N	\N	Carlos Jacobo Quezada Mendoza	113	Buen Estado	BODEGA	[CUST_EQ:Camara Alpha VIII] None	2026-07-28 12:34:54.671444
 3372	Inv_alt_1130002	\N	\N	Estabilizador	\N	\N	\N	Carlos Jacobo Quezada Mendoza	113	Buen Estado	BODEGA	[CUST_EQ:Estabilizador] None	2026-07-28 12:34:54.671444
 3373	Inv_alt_1130003	\N	\N	Cargador Sony Alpha	\N	\N	\N	Carlos Jacobo Quezada Mendoza	113	Buen Estado	BODEGA	[CUST_EQ:Cargador Sony Alpha] None	2026-07-28 12:34:54.671444
-3344	INV_VPRO_ALT_00236	\N	\N	TRIPIES	\N	\N	\N	Manuel Eduardo Madrid	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
 3357	INV_VPRO_ALT_00152	\N	\N	Cables de Corriente	\N	\N	\N	Jose Daniel Torres Arroyo	105	BUEN ESTADO	BODEGA		2026-07-28 12:22:52.919869
 3354	INV_ALT_1050001	\N	\N	Laptop con cargador y mouse para teleprompter	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA		2026-07-28 12:22:52.919869
 3022	Inv_Vpro_alt_00243	\N	\N	UPS (No break) Koblenz	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-07-07 17:19:18.190358
 3023	Inv_Vpro_alt_00244	\N	\N	Mesa pequeña	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-07-07 17:19:18.190358
 3343	INV_VPRO_ALT_00235	\N	\N	KIT LUCES	\N	\N	\N	Jose Daniel Torres Arroyo	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
 3024	Inv_Vpro_alt_00245	\N	\N	Desarmador de estrella	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-07-07 17:19:18.190358
-3080	Inv_Vpro_alt_00254	\N	\N	Pisa cables	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-07-07 17:47:56.7174
 3218	Inv_Vpro_alt_00255	\N	\N	Switch tp-link 8 puertos	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-07-22 18:16:36.689942
 3363	Inv_alt_1090001	\N	\N	Century	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Century] None	2026-07-28 12:30:23.673469
-2259	VPRO_ALT_26379	\N	\N	HUB USB	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
+2259	VPRO_ALT_26379	\N	\N	HUB USB	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
+3344	INV_VPRO_ALT_00236	\N	\N	Camara Alpha	\N	\N	\N	Carlos Jacobo Quezada Mendoza	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
+3080	Inv_Vpro_alt_00254	\N	\N	Estabilizador DJI	\N	\N	\N	Carlos Jacobo Quezada Mendoza	202	BUEN ESTADO	BODEGA		2026-07-07 17:47:56.7174
 3364	Inv_alt_1090002	\N	\N	Diadema Sony	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Diadema Sony] None	2026-07-28 12:30:23.673469
+3842	INV_VPRO_ALT_00244	\N	\N	Mesa pequeÃÂÃÂÃÂÃÂ±a	\N	\N	\N	Manuel Eduardo Madrid	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
 3365	Inv_alt_1090003	\N	\N	(4) Microfonos ambientales de camara	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:(4) Microfonos ambientales de camara]	2026-07-28 12:30:23.673469
 3366	Inv_alt_1090004	\N	\N	Grabadora TASCAM	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Grabadora TASCAM] None	2026-07-28 12:30:23.673469
 3367	Inv_alt_1090005	\N	\N	Body para microfono	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Body para microfono] None	2026-07-28 12:30:23.673469
@@ -1360,12 +1387,10 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 3428	Inv_alt_1020004	\N	\N	KIT DE LENTES	\N	\N	\N	Gerardo Villarreal Uribe	102	Buen Estado	BODEGA	[CUST_EQ:KIT DE LENTES] None	2026-08-02 19:36:04.543658
 118	Inv_Vpro_alt_00016	\N	\N	Access Point TP-Link modelo  AX3600	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-05-07 18:58:59.936589
 128	Inv_Vpro_alt_00017	\N	\N	Switch de 5 puertos metalico	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-05-07 19:02:14.85114
-3349	INV_VPRO_ALT_00230	\N	\N	Diablito	\N	\N	\N	Jose Francisco Torres Sanchez	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
 2258	VPRO_ALT_26361	\N	\N	Mac #3 Mac #4	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
 3396	INV_ALT_1090001	\N	\N	Century	\N	\N	\N	Jose Daniel Torres Arroyo	109	Buen Estado	BODEGA		2026-07-28 14:40:15.940233
 3370	INV_VPRO_ALT_00256	\N	\N	Baterias Sony Alpha	\N	\N	\N	Carlos Jacobo Quezada Mendoza	113	BUEN ESTADO	BODEGA		2026-07-28 12:34:54.671444
 3348	INV_VPRO_ALT_00101	\N	\N	dollys	\N	\N	\N	Manuel Antonio Madrid Zazueta	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
-3345	INV_VPRO_ALT_00237	\N	\N	Baterias Sony	\N	\N	\N	Jose Daniel Torres Arroyo	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
 2262	VPRO_ALT_26448	\N	\N	HDMI	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
 141	Inv_Vpro_alt_00018	\N	\N	Switch de 5 puertos de plastico negro	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-05-07 19:06:33.756905
 185	Inv_Vpro_alt_00021	\N	\N	Pinza para ponchar cables ethernet	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-05-07 19:52:03.242922
@@ -1381,13 +1406,14 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 1897	Inv_Vpro_alt_00104	\N	\N	bancos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	None	2026-05-26 19:09:20.517456
 3497	INV_VPRO_ALT_00053	\N	\N	Extensiones	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
 3498	INV_VPRO_ALT_00057	\N	\N	Distribuidor de HDMI de 4	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
-6423	INV_VPRO_ALT_00179	\N	\N	Pisa Cable	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-10-05 10:39:24.30999
+3345	INV_VPRO_ALT_00237	\N	\N	Baterias Sony	\N	\N	\N	Jose Daniel Torres Arroyo	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
+3349	INV_VPRO_ALT_00230	\N	\N	Diablito	\N	\N	\N	Jose Francisco Torres Sanchez	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
+6423	INV_VPRO_ALT_00179	\N	\N	Pisa Cable	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-10-05 10:39:24.30999
 3489	Inv_alt_1090014	\N	\N	Transmisor de audio SONY VPNAUD009	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Transmisor de audio SONY VPNAUD009] None	2026-08-03 14:02:15.415783
 3490	Inv_alt_1090015	\N	\N	Receptor de audio SONY VPNAUD008	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Receptor de audio SONY VPNAUD008] None	2026-08-03 14:02:15.415783
 3491	Inv_alt_1090016	\N	\N	Microfono de solapa SONY VPNAUD001	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Microfono de solapa SONY VPNAUD001] None	2026-08-03 14:02:15.415783
 3492	Inv_alt_1090017	\N	\N	Diademas de comunicación BEHRINGER VPNAUD065	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Diademas de comunicación BEHRINGER VPNAUD065] None	2026-08-03 14:02:15.415783
 3493	Inv_alt_1090018	\N	\N	Diadema de comunicación SONY VPNAUD019	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Diadema de comunicación SONY VPNAUD019] None	2026-08-03 14:02:15.415783
-3755	INV_ALT_1090025	\N	\N	bateria AA	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA		2026-08-04 17:46:09.06974
 3554	Inv_alt_1040001	\N	\N	kit de luces	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:kit de luces] None	2026-08-04 14:05:50.678728
 3556	Inv_alt_1040002	\N	\N	baterias zgzine	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:baterias zgzine] None	2026-08-04 14:05:50.678728
 3557	Inv_alt_1040003	\N	\N	cargador de pila	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:cargador de pila] None	2026-08-04 14:05:50.678728
@@ -1401,9 +1427,7 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 2256	VPRO_ALT_26326	\N	\N	Consola audio (mini vMix)	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
 3495	INV_VPRO_ALT_00042	\N	\N	Pantalla  55"	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
 3503	INV_VPRO_ALT_00084	\N	\N	Pantalla de 40"	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
-3496	INV_VPRO_ALT_00052	\N	\N	Cable HDMI	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
 3445	INV_VPRO_ALT_00015	\N	\N	Starklink con maleta, modem,soporte, adaptador a ethernet, cable especial ethernet-par starlink de 18 mts.	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
-3500	INV_VPRO_ALT_00065	\N	\N	Multicontacto	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
 2257	VPRO_ALT_26346	\N	\N	Capturadoras HDMI	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
 2267	VPRO_ALT_26591	\N	\N	Peavey	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
 3582	Inv_alt_2020001	\N	\N	Cable largo para starlink	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA	[CUST_EQ:Cable largo para starlink]	2026-08-04 16:48:59.867395
@@ -1429,20 +1453,19 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 3643	INV_ALT_1050004	\N	\N	hdmi 100 mts	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA		2026-08-04 17:17:26.254009
 3644	INV_ALT_1050005	\N	\N	dolly	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA		2026-08-04 17:17:26.254009
 3505	INV_VPRO_ALT_00086	\N	\N	Yellow Jake(pisacable)	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
-2270	VPRO_ALT_26673	\N	\N	Adaptador tipo C a HDMI	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
+2270	VPRO_ALT_26673	\N	\N	Adaptador tipo C a HDMI	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
+3496	INV_VPRO_ALT_00052	\N	\N	Cable HDMI	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
+3500	INV_VPRO_ALT_00065	\N	\N	Multicontacto	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
 3814	Inv_alt_1090026	\N	\N	transmisores sony	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:transmisores sony] None	2026-08-04 17:46:53.622346
 4052	Inv_alt_2020005	\N	\N	Swich de 8 puerto	\N	\N	\N	Manuel Eduardo Madrid	202	Buen Estado	BODEGA	[CUST_EQ:Swich de 8 puerto] None	2026-08-06 18:18:51.425966
 3840	INV_VPRO_ALT_00242	\N	\N	Antena starlink 03, 02	\N	\N	\N	Manuel Eduardo Madrid	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
-3747	INV_ALT_1090024	\N	\N	Baterias AA	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-08-04 17:42:27.190588
 3752	INV_ALT_1090022	\N	\N	cables xlr (5mts)	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-08-04 17:42:27.190588
-3842	INV_VPRO_ALT_00244	\N	\N	Mesa pequeÃÂÃÂÃÂÃÂ±a	\N	\N	\N	Manuel Eduardo Madrid	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
+6706	INV_ALT_1190081	\N	\N	camara go pro	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-09 11:15:30.436665
 3775	INV_ALT_1090016	\N	\N	Microfono de solapa SONY VPNAUD009	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	[CUST_EQ:Microfono de solapa SONY VPNAUD001] None	2026-08-04 17:46:09.06974
 3776	INV_ALT_1090017	\N	\N	Diademas de comunicación BEHRINGER VPNAUD065	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	[CUST_EQ:Diademas de comunicaciÃ³n BEHRINGER VPNAUD065] None	2026-08-04 17:46:09.06974
-3624	INV_VPRO_ALT_00173	\N	\N	cable sdi	\N	\N	\N	Jose Daniel Torres Arroyo	105	BUEN ESTADO	BODEGA		2026-08-04 17:13:45.193679
 3777	INV_ALT_1090018	\N	\N	Diadema de comunicación SONY VPNAUD019	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	[CUST_EQ:Diadema de comunicaciÃ³n SONY VPNAUD019] None	2026-08-04 17:46:09.06974
 3904	INV_ALT_1090026	\N	\N	TRANSMISORES SONY	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-08-05 11:31:27.429006
 3649	INV_ALT_1050006	\N	\N	Base de fierro	\N	\N	\N	Manuel Eduardo Madrid	105	Buen Estado	BODEGA		2026-08-04 17:17:26.254009
-3841	INV_VPRO_ALT_00243	\N	\N	UPS (No break) Koblenz CODIGO VPNRED099	\N	\N	\N	Cuauhtemoc Rivera Agundez	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
 3507	INV_ALT_1040001	\N	\N	Kit de luces	\N	\N	\N	Jose Daniel Torres Arroyo	104	Buen Estado	BODEGA		2026-08-03 14:08:18.075597
 3501	INV_VPRO_ALT_00081	\N	\N	Base de Madera Tv	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
 3504	INV_VPRO_ALT_00085	\N	\N	Tela de Base	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-03 14:08:18.075597
@@ -1466,19 +1489,21 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 3079	Inv_Vpro_alt_00253	\N	\N	Ups marca guia	\N	\N	\N	Cuauhtemoc Rivera Agundez	202	BUEN ESTADO	BODEGA		2026-07-07 17:47:56.7174
 3552	INV_VPRO_ALT_00104	\N	\N	Bancos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
 4101	Inv_alt_1190001	\N	\N	escaladores	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:escaladores] None	2026-08-18 10:56:04.961021
-3447	INV_VPRO_ALT_00017	\N	\N	Switch de 5 puertos metalico cod VPNRED051	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
 3551	INV_VPRO_ALT_00103	\N	\N	monitor lilliput	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
-3543	INV_VPRO_ALT_00045	\N	\N	camaras 320	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
-3843	INV_VPRO_ALT_00245	\N	\N	Desarmador de estrella	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
+3453	INV_VPRO_ALT_00024	\N	\N	tripie	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
 3615	INV_ALT_2020003	\N	\N	Cable ethernet largo	\N	\N	\N	Cuauhtemoc Rivera Agundez	202	Buen Estado	BODEGA		2026-08-04 17:10:23.357356
+3843	INV_VPRO_ALT_00245	\N	\N	Desarmador de estrella	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
+3447	INV_VPRO_ALT_00017	\N	\N	Switch de 5 puertos metalico cod VPNRED051	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
+3543	INV_VPRO_ALT_00045	\N	\N	CAMARAS 320	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
+3545	INV_VPRO_ALT_00097	\N	\N	baterías para cámara 320	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
+3747	INV_ALT_1090024	\N	\N	Baterias AA	\N	\N	\N	Manuel Antonio Madrid Zazueta	109	Buen Estado	BODEGA	None	2026-08-04 17:42:27.190588
 3448	INV_VPRO_ALT_00018	\N	\N	Switch de 5 puertos de plastico negro NCA TP-LINK	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
-3444	INV_VPRO_ALT_00013	\N	\N	Laptop Asus con adaptador de red y cable de corriente	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
-3545	INV_VPRO_ALT_00097	\N	\N	baterias	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
 3546	INV_VPRO_ALT_00098	\N	\N	fuentes de poder	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
 3548	INV_VPRO_ALT_00100	\N	\N	balanceador	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
+3444	INV_VPRO_ALT_00013	\N	\N	Laptop Asus con adaptador de red y cable de corriente	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
+3841	INV_VPRO_ALT_00243	\N	\N	UPS (No break) Koblenz CODIGO VPNRED099	\N	\N	\N	Cuauhtemoc Rivera Agundez	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
 3847	INV_VPRO_ALT_00252	\N	\N	Mesita plegable de 1 mts.	\N	\N	\N	Cuauhtemoc Rivera Agundez	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
 3550	INV_VPRO_ALT_00102	\N	\N	Monitor de ingeneria	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
-3544	INV_VPRO_ALT_00001	\N	\N	TRIPIES	\N	\N	\N	Jose Daniel Torres Arroyo	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
 4231	INV_ALT_1190001	\N	\N	escaladores	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:escaladores] None	2026-08-18 12:17:18.777231
 4232	INV_ALT_1190002	\N	\N	distribuidores SDI	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:distribuidores SDI] None	2026-08-18 12:17:18.777231
 4209	INV_VPRO_ALT_00184	\N	\N	Switch 8 puertos	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:11:03.486403
@@ -1487,9 +1512,7 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 4105	Inv_alt_1190005	\N	\N	mochila negra	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:mochila negra] None	2026-08-18 10:56:04.961021
 4106	Inv_alt_1190006	\N	\N	cinta gris	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:cinta gris] None	2026-08-18 10:56:04.961021
 4107	Inv_alt_1190007	\N	\N	bolsa de cinchos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:bolsa de cinchos] None	2026-08-18 10:56:04.961021
-4114	INV_VPRO_ALT_00181	\N	\N	Extension electrica	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-18 10:59:19.357
 4108	Inv_alt_1190008	\N	\N	microconverter bidireccional	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:microconverter bidireccional] None	2026-08-18 10:56:04.961021
-4109	Inv_alt_1190009	\N	\N	imperdecs	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:imperdecs] None	2026-08-18 10:56:04.961021
 4110	Inv_alt_1190010	\N	\N	memorias SD	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:memorias SD] None	2026-08-18 10:56:04.961021
 4233	INV_ALT_1190003	\N	\N	RACK con SW, grabadora SD, grabadora imperdec,	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:RACK con SW, grabadora SD, grabadora imperdec,] None	2026-08-18 12:17:18.777231
 4206	Inv_alt_2010002	\N	\N	cables largos azules	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	[CUST_EQ:cables largos azules] None	2026-08-18 11:37:38.372514
@@ -1515,6 +1538,8 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 4298	Inv_alt_1190014	\N	\N	lector de memorias para imperdec con su cable USB y A/C	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:lector de memorias para imperdec con su cable USB y A/C] None	2026-08-18 12:55:36.616297
 4241	INV_ALT_2020006	\N	\N	Portátil HP	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:21:05.617014
 4242	INV_ALT_2020007	\N	\N	Portátil ASUS	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:21:05.617014
+3544	INV_VPRO_ALT_00001	\N	\N	tripies	\N	\N	\N	Jose Daniel Torres Arroyo	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
+4114	INV_VPRO_ALT_00181	\N	\N	Extension electrica	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-18 10:59:19.357
 2181	VPRO_ALT_17765	\N	\N	base de guitarra	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-06-02 10:31:15.940205
 3547	INV_VPRO_ALT_00099	\N	\N	radios	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-08-04 13:56:50.098541
 4236	INV_ALT_1190006	\N	\N	cinta gris	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:cinta gris] None	2026-08-18 12:17:18.777231
@@ -1533,7 +1558,6 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 4339	INV_ALT_1190011	\N	\N	microconverter SDI A HDMI con su A/C	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-08-18 13:20:58.44271
 4340	INV_ALT_1190012	\N	\N	microconverter HDMI A SDI con su A/C	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-08-18 13:20:58.44271
 4341	INV_ALT_1190013	\N	\N	lector de memorias para SD con su cable USB	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-08-18 13:20:58.44271
-4262	INV_VPRO_ALT_00210	\N	\N	Extenciones	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-18 12:49:00.126422
 4271	INV_VPRO_ALT_00161	\N	\N	Distribuidor 1 a 4	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-18 12:49:00.126422
 4272	INV_VPRO_ALT_00177	\N	\N	Distribuidor HDMI 1 a 2	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-18 12:49:00.126422
 4274	INV_VPRO_ALT_00069	\N	\N	Cable de Fibra Optica	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-18 12:49:00.126422
@@ -1559,6 +1583,7 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 2261	VPRO_ALT_26433	\N	\N	Hub 1X6	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
 3392	INV_VPRO_ALT_00253	\N	\N	Receptor SONY VPNAUD001	\N	\N	\N	Manuel Eduardo Madrid	109	BUEN ESTADO	BODEGA		2026-07-28 14:40:15.940233
 3394	INV_VPRO_ALT_00255	\N	\N	Microfono Lavalier SONY VPNAUD001	\N	\N	\N	Manuel Eduardo Madrid	109	BUEN ESTADO	BODEGA		2026-07-28 14:40:15.940233
+4262	INV_VPRO_ALT_00210	\N	\N	Extenciones	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-08-18 12:49:00.126422
 4258	INV_VPRO_ALT_00153	\N	\N	Mesa grande	\N	\N	\N	Manuel Antonio Madrid Zazueta	104	BUEN ESTADO	BODEGA		2026-08-18 12:49:00.126422
 4455	Inv_alt_1090029	\N	\N	Laptop de audio	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	[CUST_EQ:Laptop de audio]	2026-08-18 14:06:47.98422
 2255	VPRO_ALT_26302	\N	\N	Atem SDI PRO ISO	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
@@ -1572,7 +1597,6 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 4569	Inv_alt_2010003	\N	\N	cables cortos	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	[CUST_EQ:cables cortos]	2026-08-18 18:05:18.017301
 4568	INV_VPRO_ALT_00166	\N	\N	UPS	\N	\N	\N	Jose Daniel Torres Arroyo	201	BUEN ESTADO	BODEGA		2026-08-18 18:05:18.017301
 4614	INV_ALT_1130013	\N	\N	CABLE XLR	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA		2026-08-20 18:24:37.877984
-4551	INV_ALT_2010002	\N	\N	cables largos azules cat 6	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-08-18 14:35:07.160033
 4571	Inv_alt_2010004	\N	\N	frasco con plugs cat 6	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	[CUST_EQ:frasco con plugs cat 6]	2026-08-18 18:05:18.017301
 4600	INV_ALT_1130004	\N	\N	Pilas AA	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA		2026-08-20 18:24:37.877984
 4584	Inv_alt_1130004	\N	\N	Pilas AA	\N	\N	\N	Carlos Jacobo Quezada Mendoza	113	Buen Estado	BODEGA	[CUST_EQ:Pilas AA]	2026-08-20 18:19:39.804972
@@ -1592,19 +1616,19 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 4602	INV_ALT_1130006	\N	\N	Camara x320	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA		2026-08-20 18:24:37.877984
 4609	INV_ALT_1130009	\N	\N	HDMI 50 MTS	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA		2026-08-20 18:24:37.877984
 4610	INV_ALT_1130010	\N	\N	SDI	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA		2026-08-20 18:24:37.877984
-4518	INV_VPRO_ALT_26708	\N	\N	APUNTADOR	\N	\N	\N	Manuel Eduardo Madrid	109	BUEN ESTADO	BODEGA		2026-08-18 14:10:19.069803
 4615	INV_ALT_1130014	\N	\N	Bocina de audio con cable de corriente	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA		2026-08-20 18:24:37.877984
 4516	INV_ALT_1090030	\N	\N	Maleta de laptop	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-08-18 14:10:19.069803
-4570	INV_VPRO_ALT_00168	\N	\N	pinza ponchadora	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-18 18:05:18.017301
 4454	INV_ALT_1090028	\N	\N	MONITOR STEREN	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-08-18 14:06:47.98422
 4540	INV_ALT_2020026	\N	\N	Switch tp-link 8 puertos VPNRED095	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 14:33:39.287465
 4611	INV_ALT_1130011	\N	\N	Sillas	\N	\N	\N	Jose Francisco Torres Sanchez	113	Buen Estado	BODEGA		2026-08-20 18:24:37.877984
 4541	INV_ALT_2020027	\N	\N	Switch tp-link 8 puertos VPNRED096	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 14:33:39.287465
-2260	VPRO_ALT_26418	\N	\N	HUB 1X7	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
-4613	INV_ALT_1130012	\N	\N	Microfono de mano	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	113	Buen Estado	BODEGA		2026-08-20 18:24:37.877984
+4570	INV_VPRO_ALT_00168	\N	\N	pinza ponchadora	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-18 18:05:18.017301
+4518	INV_VPRO_ALT_26708	\N	\N	Apuntador	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	BUEN ESTADO	BODEGA		2026-08-18 14:10:19.069803
+2260	VPRO_ALT_26418	\N	\N	HUB 1X7	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
+4613	INV_ALT_1130012	\N	\N	Microfono de mano	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA		2026-08-20 18:24:37.877984
+4551	INV_ALT_2010002	\N	\N	cables largos azules cat 6	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-08-18 14:35:07.160033
 4734	INV_ALT_1190021	\N	\N	cables de HDMI a MINI HDMI (NEGRO Y ROJO)	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-08-25 19:55:48.442458
 4664	Inv_alt_1130016	\N	\N	Distribuidores	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA	[CUST_EQ:Distribuidores]	2026-08-22 10:27:06.640334
-4677	INV_ALT_2010003	\N	\N	cables cortos ethernet cat 6	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-08-22 10:45:29.765678
 4681	INV_ALT_2010005	\N	\N	Laptop HP Elitebook 845 G7 Notebook con cargador y maletín CODIGO VPNPRO125	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-08-22 10:45:29.765678
 4735	INV_ALT_1190022	\N	\N	cajita naranja con conectores y coples (HDMI 6, SDI 7, TE SDI 3)	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-08-25 19:55:48.442458
 4644	INV_ALT_1130015	\N	\N	Cable XLR largo	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA		2026-08-22 10:23:36.433576
@@ -1644,14 +1668,14 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 5029	INV_ALT_1190024	\N	\N	escalador	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-08-31 18:35:31.663859
 5032	INV_ALT_1190027	\N	\N	MICROFONO PARA AMBIENTE	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA		2026-08-31 18:35:31.663859
 5033	INV_ALT_1190028	\N	\N	PEDESTAL	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA		2026-08-31 18:35:31.663859
-4679	INV_ALT_2010004	\N	\N	frasco con plugs cat 6	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-08-22 10:45:29.765678
 5035	INV_ALT_1190030	\N	\N	LINEAS DE AUDIO	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA		2026-08-31 18:35:31.663859
 5036	INV_ALT_1190031	\N	\N	CABLES HDMI (UNO DE 50 M Y UNO DE 7 M)	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA		2026-08-31 18:35:31.663859
 5038	INV_ALT_1190032	\N	\N	MICROFONO DE MARACA	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA		2026-08-31 18:35:31.663859
 5039	Inv_alt_1190035	\N	\N	Diademas de comunicación	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA	[CUST_EQ:Diademas de comunicación]	2026-08-31 18:35:31.663859
 5040	Inv_alt_1190036	\N	\N	Cable SDI LILA	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA	[CUST_EQ:Cable SDI LILA]	2026-08-31 18:35:31.663859
-5025	INV_ALT_1190034	\N	\N	BARRA D EENERGIA	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-08-31 18:35:31.663859
-4870	INV_ALT_1090031	\N	\N	Laptop G7	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA		2026-08-27 18:27:47.777376
+4677	INV_ALT_2010003	\N	\N	cables cortos ethernet cat 6	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-08-22 10:45:29.765678
+4870	INV_ALT_1090031	\N	\N	Laptop G7	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-08-27 18:27:47.777376
+5025	INV_ALT_1190034	\N	\N	BARRA DE ENERGIA	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-08-31 18:35:31.663859
 4592	INV_VPRO_ALT_00175	\N	\N	Extensiones	\N	\N	\N	Jose Francisco Torres Sanchez	113	BUEN ESTADO	BODEGA		2026-08-20 18:19:39.804972
 5061	Inv_alt_2010006	\N	\N	UPS (No break) Koblenz CODIGO VPNRED097	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	[CUST_EQ:UPS (No break) Koblenz CODIGO VPNRED097]	2026-09-02 17:43:16.055093
 5023	Inv_alt_2020034	\N	\N	Tripié para bocina sin tubo extersor	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA	[CUST_EQ:Tripié para bocina sin tubo extersor]	2026-08-31 18:21:49.457829
@@ -1675,7 +1699,6 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 5236	Inv_alt_2010007	\N	\N	Switch de 5 puertos metalico	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	[CUST_EQ:Switch de 5 puertos metalico]	2026-09-03 18:11:55.096798
 5324	Inv_alt_1190051	\N	\N	Trpies	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA	[CUST_EQ:Trpies]	2026-09-03 19:07:32.564943
 5325	Inv_alt_1190052	\N	\N	Diademas	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA	[CUST_EQ:Diademas]	2026-09-03 19:07:32.564943
-5071	INV_ALT_2010006	\N	\N	UPS (No break) Koblenz CODIGO VPNRED097	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-09-02 17:45:06.932722
 5481	Inv_alt_1190053	\N	\N	Cámara 320	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:Cámara 320]	2026-09-14 10:19:25.345903
 5482	Inv_alt_1190054	\N	\N	Sombrilla	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:Sombrilla]	2026-09-14 10:19:25.345903
 5485	Inv_alt_1190055	\N	\N	Baterías ZGCINE	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:Baterías ZGCINE]	2026-09-14 10:19:25.345903
@@ -1692,13 +1715,12 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 5398	Inv_alt_1130018	\N	\N	Alpha	\N	\N	\N	Carlos Jacobo Quezada Mendoza	113	Buen Estado	BODEGA	[CUST_EQ:Alpha]	2026-09-08 10:14:51.556756
 5400	INV_ALT_1050007	\N	\N	Baterias Z	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA		2026-09-09 10:49:41.631786
 2772	Inv_Vpro_alt_00211	\N	\N	Hdmi	\N	\N	\N	Jose Francisco Torres Sanchez	119	Buen Estado	BODEGA	None	2026-07-02 10:39:10.678835
-5302	INV_ALT_1190037	\N	\N	lampara portatil con una bateria	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+5385	INV_VPRO_ALT_00012	\N	\N	Computadora de escritorio con dos monitores	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-09-05 17:13:53.784014
 2773	Inv_Vpro_alt_00212	\N	\N	tabletas de corriente	\N	\N	\N	Jose Francisco Torres Sanchez	119	Buen Estado	BODEGA	None	2026-07-02 10:39:10.678835
 2777	Inv_Vpro_alt_00213	\N	\N	Distribuidor HDMI 1x2	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-07-02 10:51:20.317205
 6556	Inv_alt_1040023	\N	\N	Distribuidor HDMI 1x4	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:Distribuidor HDMI 1x4]	2026-10-08 16:20:52.279079
 5353	INV_ALT_1190052	\N	\N	Diademas camarografos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:27:22.684987
-5303	INV_ALT_1190038	\N	\N	micrófono de maraca	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
-5304	INV_ALT_1190039	\N	\N	atem sdi	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+5071	INV_ALT_2010006	\N	\N	UPS (No break) Koblenz CODIGO VPNRED097	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-09-02 17:45:06.932722
 6557	Inv_alt_1040024	\N	\N	Distribuidor HDMI 1x8	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:Distribuidor HDMI 1x8]	2026-10-08 16:20:52.279079
 6558	Inv_alt_1040025	\N	\N	tela negra	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:tela negra]	2026-10-08 16:20:52.279079
 5412	Inv_alt_2010008	\N	\N	Switch de 5 puertos de plastico negro	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	[CUST_EQ:Switch de 5 puertos de plastico negro]	2026-09-09 16:38:46.473641
@@ -1728,8 +1750,6 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 5642	Inv_alt_2010010	\N	\N	VPNPRO152 - Laptop Del #2 Inspiron G7 7700 Gaming 17.3" Intel Core i5 10300H Disco duro 512 GB SSD Ram 8GB Winsows 10 Home, Mause y cargador	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	[CUST_EQ:VPNPRO152 - Laptop Del #2 Inspiron G7 7700 Gaming 17.3" Intel Core i5 10300H Disco duro 512 GB SSD Ram 8GB Winsows 10 Home, Mause y cargador]	2026-09-14 10:47:16.726046
 5666	Inv_alt_2020038	\N	\N	Modem ZTE megacable 529640	\N	\N	\N	Manuel Eduardo Madrid	202	Buen Estado	BODEGA	[CUST_EQ:Modem ZTE megacable 529640]	2026-09-14 11:01:19.039659
 5508	INV_VPRO_ALT_00227	\N	\N	Multicontactos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-09-14 10:23:05.044909
-3457	INV_VPRO_ALT_00093	\N	\N	cable especial de 50 mts de starlink	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
-5408	INV_VPRO_ALT_00139	\N	\N	Cables ethernet cortos	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-09-09 16:38:46.473641
 5626	INV_ALT_2020037	\N	\N	VPNRED-SWITCH10/100 - Switch ethernet tp-link 10/100 tl-sf1016D (VPNRED-SWITCH10/100)	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-09-14 10:39:19.870566
 5697	Inv_alt_1190062	\N	\N	SDI varios tamaños	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA	[CUST_EQ:SDI varios tamaños]	2026-09-14 11:15:17.778584
 5698	Inv_alt_1190063	\N	\N	Corriente	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA	[CUST_EQ:Corriente]	2026-09-14 11:15:17.778584
@@ -1781,7 +1801,6 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 5755	INV_ALT_1190068	\N	\N	Rollo de alambre	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-14 11:16:44.949657
 5756	INV_ALT_1190069	\N	\N	Micro convertidor	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-14 11:16:44.949657
 5751	INV_ALT_1190065	\N	\N	USB-USB C	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-14 11:16:44.949657
-5752	INV_ALT_1190066	\N	\N	USB cables	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-14 11:16:44.949657
 5753	INV_ALT_1190067	\N	\N	USB tipo b	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-14 11:16:44.949657
 5911	Inv_alt_1190071	\N	\N	Cargador para baterias 320	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA	[CUST_EQ:Cargador para baterias 320]	2026-09-15 10:07:57.82351
 5915	INV_ALT_1090034	\N	\N	ADAPTADOR USBC-HDMI	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
@@ -1789,7 +1808,7 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 5918	INV_ALT_1090036	\N	\N	MINI CONSOLA STEREN	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
 5920	INV_ALT_1090037	\N	\N	STREAM DEACK	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
 5923	INV_ALT_1090040	\N	\N	CONVERTIDORES SDI-HDMI	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
-5922	INV_ALT_1090039	\N	\N	Capturadoras USB	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
+5922	INV_ALT_1090039	\N	\N	Capturadoras USB	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
 5667	INV_ALT_1040007	\N	\N	Caja azul con SDI	\N	\N	\N	Manuel Eduardo Madrid	104	Buen Estado	BODEGA		2026-09-14 11:03:49.576732
 5668	INV_ALT_1040008	\N	\N	Caja con Extensiones	\N	\N	\N	Manuel Eduardo Madrid	104	Buen Estado	BODEGA		2026-09-14 11:03:49.576732
 5669	INV_ALT_1040009	\N	\N	Caja de fibra	\N	\N	\N	Manuel Eduardo Madrid	104	Buen Estado	BODEGA		2026-09-14 11:03:49.576732
@@ -1824,7 +1843,6 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 5974	INV_ALT_2010009	\N	\N	INV_VPRO_ALT_00013 - Laptop Asus con adaptador de red y cable de corriente	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-09-17 13:28:07.558745
 5977	INV_ALT_2010010	\N	\N	VPNPRO152 - Laptop Del #2 Inspiron G7 7700 Gaming 17.3" Intel Core i5 10300H Disco duro 512 GB SSD Ram 8GB Winsows 10 Home, Mause y cargador	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-09-17 13:28:07.558745
 6002	Inv_alt_2020039	\N	\N	VPNRED060 - Modem de internet ZTE Megacable VPNRED060	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA	[CUST_EQ:VPNRED060 - Modem de internet ZTE Megacable VPNRED060]	2026-09-17 14:05:53.18048
-6003	INV_ALT_1050008	\N	\N	luces	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA		2026-09-17 18:11:36.961475
 6009	INV_ALT_1190071	\N	\N	Cargador para baterias 320	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-17 18:54:53.77961
 6038	Inv_alt_1040014	\N	\N	Distribuidor de 4"	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:Distribuidor de 4"]	2026-09-21 11:10:13.481647
 6039	Inv_alt_1040015	\N	\N	Distribuidor de 2"	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:Distribuidor de 2"]	2026-09-21 11:10:13.481647
@@ -1836,41 +1854,46 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 6059	Inv_alt_1090067	\N	\N	Decimator	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Decimator]	2026-09-21 11:16:49.422839
 6061	Inv_alt_1090068	\N	\N	Convertidores	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Convertidores]	2026-09-21 11:16:49.422839
 6062	Inv_alt_1090069	\N	\N	Bidireccional	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Bidireccional]	2026-09-21 11:16:49.422839
-6041	INV_VPRO_ALT_00220	\N	\N	Base metal para monitor	\N	\N	\N	Jose Francisco Torres Sanchez	104	BUEN ESTADO	BODEGA		2026-09-21 11:10:13.481647
-5921	INV_ALT_1090038	\N	\N	MAC	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
-5928	INV_ALT_1090044	\N	\N	cable SDI corto	\N	\N	\N	Manuel Antonio Madrid Zazueta	109	Buen Estado	BODEGA		2026-09-15 10:09:05.946333
-4423	INV_VPRO_ALT_00231	\N	\N	Cables SDI	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	BUEN ESTADO	BODEGA		2026-08-18 14:03:32.746627
-5022	INV_ALT_2020033	\N	\N	Cutter trupper	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-31 18:21:49.457829
+6003	INV_ALT_1050008	\N	\N	LUCES	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA		2026-09-17 18:11:36.961475
 6214	Inv_alt_1190074	\N	\N	cable SDI mediano	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:cable SDI mediano]	2026-10-02 13:11:16.088698
-3452	INV_VPRO_ALT_00023	\N	\N	Pisacables	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
+3456	INV_VPRO_ALT_00092	\N	\N	Escalera de tijera pequeña	\N	\N	\N	Edgar Javier Amarillas	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
+6341	INV_ALT_1190074	\N	\N	cable SDI mediano	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:21:29.741624
 6424	Inv_alt_2010011	\N	\N	Inv_Vpro_alt_00140 - Cables ethernet largos	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	[CUST_EQ:Inv_Vpro_alt_00140 - Cables ethernet largos]	2026-10-05 10:39:24.30999
 5132	INV_ALT_2020034	\N	\N	Tripié para bocina sin tubo extersor	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-09-03 17:39:50.742295
-4257	INV_VPRO_ALT_00026	\N	\N	Cable especial ethernet para StarLink (50 mts)	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-18 12:21:05.617014
+4904	INV_VPRO_ALT_00149	\N	\N	Bolsa con cinchos	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-31 18:09:49.190037
+6759	INV_ALT_1090071	\N	\N	Consola de audio	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-10-10 09:09:17.7781
+6777	Inv_alt_1050009	\N	\N	TRIPIES DE LUCES	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA	[CUST_EQ:TRIPIES DE LUCES]	2026-10-12 09:24:26.167719
+6779	Inv_alt_1050010	\N	\N	FUENTE DE PODER	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA	[CUST_EQ:FUENTE DE PODER]	2026-10-12 09:24:26.167719
 5161	INV_ALT_2020035	\N	\N	UPS (No-Break) Koblenz CODIGO VPNRED100	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-09-03 17:41:24.863142
+4679	INV_ALT_2010004	\N	\N	frasco con plugs cat 6	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-08-22 10:45:29.765678
+6788	INV_ALT_2020028	\N	\N	Escalera pegable	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA		2026-10-12 09:25:12.249611
+4423	INV_VPRO_ALT_00231	\N	\N	Cables SDI	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	BUEN ESTADO	BODEGA		2026-08-18 14:03:32.746627
 6277	Inv_alt_2020041	\N	\N	VPNRED022 - ROUTER GIGABIT MULTI-WAN VPN SAFESTREAM	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA	[CUST_EQ:VPNRED022 - ROUTER GIGABIT MULTI-WAN VPN SAFESTREAM]	2026-10-02 13:16:51.950034
 4253	INV_ALT_2020013	\N	\N	UPS/Nobreak HIKVISION VPNRED076	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:21:05.617014
-6341	INV_ALT_1190074	\N	\N	cable SDI mediano	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:21:29.741624
 6559	Inv_alt_1040026	\N	\N	sillas negras	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:sillas negras]	2026-10-08 16:20:52.279079
 6560	Inv_alt_1040027	\N	\N	mesa mediana	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:mesa mediana]	2026-10-08 16:20:52.279079
 6562	Inv_alt_1040028	\N	\N	monitores de 65	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:monitores de 65]	2026-10-08 16:20:52.279079
+3446	INV_VPRO_ALT_00016	\N	\N	Access Point TP-Link modelo  AX3600 VPNRED018	\N	\N	\N	Edgar Javier Amarillas	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
 4914	INV_ALT_2020030	\N	\N	Cables SDI 1mt	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-31 18:11:53.983874
-4904	INV_VPRO_ALT_00149	\N	\N	Bolsa con cinchos	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-31 18:09:49.190037
 4252	INV_ALT_2020012	\N	\N	Adaptadores SC/PC a SC/PC	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:21:05.617014
 4928	INV_ALT_2020031	\N	\N	Extension de USB	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-31 18:11:53.983874
-3446	INV_VPRO_ALT_00016	\N	\N	Access Point TP-Link modelo  AX3600 VPNRED018	\N	\N	\N	Edgar Javier Amarillas	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
 6342	Inv_alt_1190075	\N	\N	mini contactos de energía blancos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:mini contactos de energía blancos]	2026-10-02 17:21:29.741624
 6343	Inv_alt_1190076	\N	\N	mini converter blackmagig	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:mini converter blackmagig]	2026-10-02 17:21:29.741624
 6344	Inv_alt_1190077	\N	\N	escalador decimator	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:escalador decimator]	2026-10-02 17:21:29.741624
 6345	Inv_alt_1190078	\N	\N	convertidores de energia 400 w y 500 w	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:convertidores de energia 400 w y 500 w]	2026-10-02 17:21:29.741624
 6346	Inv_alt_1190079	\N	\N	abanicos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:abanicos]	2026-10-02 17:21:29.741624
-4388	INV_ALT_2020021	\N	\N	Starlink #2 CON TRIPIE, ROUTER, CABLES DE CORRIENTE Y ADAPTADOR ETHERNET EN MALETA	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 13:52:45.398156
 4251	INV_ALT_2020011	\N	\N	Cable de fibra óptica 120 mts completo con terminales SC/APC	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:21:05.617014
 4246	INV_ALT_2020010	\N	\N	Kit convertidor de medios ethernet a fibra VPNRED112	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:21:05.617014
 4955	INV_ALT_2020032	\N	\N	Teradek BOND PRO con estuche VPNRED012	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-31 18:14:18.04195
 4389	INV_ALT_2020022	\N	\N	Starlink #3 CON TRIPIE, ROUTER, CABLES DE CORRIENTE Y ADAPTADOR ETHERNET EN MALETA	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 13:52:45.398156
-3456	INV_VPRO_ALT_00092	\N	\N	Escalera de tijera pequeña	\N	\N	\N	Edgar Javier Amarillas	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
 6245	INV_ALT_2020040	\N	\N	HC200 - Audifonos behringer HC200	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-10-02 13:13:18.829744
+6879	Inv_alt_1190082	\N	\N	pedestales para lampara y gopro	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:pedestales para lampara y gopro]	2026-10-15 10:13:53.007791
+4388	INV_ALT_2020021	\N	\N	Starlink #1 CON TRIPIE, ROUTER, CABLES DE CORRIENTE Y ADAPTADOR ETHERNET EN MALETA	\N	\N	\N	Cuauhtemoc Rivera Agundez	202	Buen Estado	BODEGA		2026-08-18 13:52:45.398156
+3452	INV_VPRO_ALT_00023	\N	\N	pisacables	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
+4257	INV_VPRO_ALT_00026	\N	\N	Cable especial ethernet para StarLink (50 mts)	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-18 12:21:05.617014
 6093	Inv_alt_2020040	\N	\N	HC200 - Audifonos behringer HC200	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA	[CUST_EQ:HC200 - Audifonos behringer HC200]	2026-10-01 14:25:34.359994
+3457	INV_VPRO_ALT_00093	\N	\N	cable especial de 50 mts de starlink	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
+5408	INV_VPRO_ALT_00139	\N	\N	Cables ethernet cortos	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-09-09 16:38:46.473641
 6122	Inv_alt_1190072	\N	\N	Mesa chica	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:Mesa chica]	2026-10-02 12:43:14.22398
 4913	INV_ALT_2020029	\N	\N	Encoder kiloview E3	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-31 18:11:53.983874
 4391	INV_ALT_2020024	\N	\N	Laptop Asus Vivobook 15" D1502IA-BQ179W Ryzen 5 8GB RAM 256GB SSD con cargador VPNRED033	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 13:52:45.398156
@@ -1878,54 +1901,58 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 4365	INV_ALT_2020018	\N	\N	Adaptador ethernet USB tipo C a RJ45 Gigabit TP-LINK VPNRED056	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 13:35:02.845495
 4539	INV_ALT_2020025	\N	\N	Adaptador ethernet USB tipo C a RJ45 Gigabit TP-LINK VPNRED057	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 14:33:39.287465
 4363	INV_ALT_2020017	\N	\N	Equipo Celular Samsung SM-A307G #6672173818 VPNRED 027	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 13:35:02.845495
-5309	INV_ALT_1190041	\N	\N	monitor de ing.	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+3450	INV_VPRO_ALT_00021	\N	\N	Pinza para ponchar cables ethernet	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
 5310	INV_ALT_1190042	\N	\N	monitores liliput	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+5309	INV_ALT_1190041	\N	\N	monitor de ing.	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
 5313	INV_ALT_1190044	\N	\N	monitor 21.5 pulgadas	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
 5287	INV_VPRO_ALT_00202	\N	\N	2 Sistema de comunicación (6 bodis)	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	BUEN ESTADO	BODEGA		2026-09-03 18:45:01.908018
 5315	INV_ALT_1190045	\N	\N	memorias sxs	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
-5316	INV_ALT_1190046	\N	\N	cámaras miniblack	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
-5317	INV_ALT_1190047	\N	\N	cable SDI largo	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
-5318	INV_ALT_1190048	\N	\N	lineas de audio largas	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
-3844	INV_VPRO_ALT_00246	\N	\N	Desarmador de pala	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-04 17:56:45.729766
-4051	INV_VPRO_ALT_00189	\N	\N	Pinza ponchadora passthrough	\N	\N	\N	Edgar Javier Amarillas	202	BUEN ESTADO	BODEGA		2026-08-06 18:18:51.425966
-4312	INV_ALT_2020015	\N	\N	Frasco con terminales utp cat 6	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:56:46.246729
-4366	INV_ALT_2020019	\N	\N	Adaptadores eth a eth cat 6	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 13:35:02.845495
-4245	INV_ALT_2020009	\N	\N	Caja grande c/tapa azul con cables ethernet cortos y largos	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-08-18 12:21:05.617014
-6152	Inv_alt_1190073	\N	\N	Mochila azul	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:Mochila azul]	2026-10-02 12:45:17.666106
+3346	INV_VPRO_ALT_00254	\N	\N	Estabilizador DJI	\N	\N	\N	Carlos Jacobo Quezada Mendoza	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
 6467	Inv_alt_1040020	\N	\N	Monitor de 50	\N	\N	\N	Manuel Eduardo Madrid	104	Buen Estado	BODEGA	[CUST_EQ:Monitor de 50]	2026-10-05 14:01:28.875289
+6480	INV_VPRO_ALT_00190	\N	\N	Modem Quantum	\N	\N	\N	Manuel Eduardo Madrid	109	BUEN ESTADO	BODEGA		2026-10-05 16:15:36.139123
 6479	Inv_alt_1090070	\N	\N	Cable XLR 50 metros	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Cable XLR 50 metros]	2026-10-05 16:15:36.139123
-6471	INV_ALT_1090065	\N	\N	HDMI Splitter 1x2 OREI	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA		2026-10-05 16:15:36.139123
+6827	Inv_alt_1130019	\N	\N	Computadora	\N	\N	\N	Carlos Jacobo Quezada Mendoza	113	Buen Estado	BODEGA	[CUST_EQ:Computadora]	2026-10-14 10:35:46.873863
+6670	INV_ALT_1190080	\N	\N	Hielera	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-09 11:13:10.045752
+5319	INV_ALT_1190049	\N	\N	microfonos para ambiente	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+6832	Inv_alt_1130020	\N	\N	Estabilizador de celular	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA	[CUST_EQ:Estabilizador de celular]	2026-10-15 09:36:18.3495
+6833	Inv_alt_1130021	\N	\N	Microfonos hollyland	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA	[CUST_EQ:Microfonos hollyland]	2026-10-15 09:36:18.3495
+6836	Inv_alt_1130022	\N	\N	Cámara alpha	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA	[CUST_EQ:Cámara alpha]	2026-10-15 09:37:31.171507
+6837	Inv_alt_1130023	\N	\N	Estabilizador alpha	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA	[CUST_EQ:Estabilizador alpha]	2026-10-15 09:37:31.171507
+6839	Inv_alt_1130024	\N	\N	Lampara	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA	[CUST_EQ:Lampara]	2026-10-15 09:37:31.171507
+6840	Inv_alt_1130025	\N	\N	Bateria Sony	\N	\N	\N	Manuel Eduardo Madrid	113	Buen Estado	BODEGA	[CUST_EQ:Bateria Sony]	2026-10-15 09:37:31.171507
+6958	INV_ALT_1190083	\N	\N	memoria SD	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-15 16:26:40.798944
 5034	INV_ALT_1190029	\N	\N	lineas de energia	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-08-31 18:35:31.663859
-2268	VPRO_ALT_26607	\N	\N	Stream deck	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
+5323	INV_ALT_1190050	\N	\N	pizacables	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+6551	Inv_alt_1090071	\N	\N	Consola de audio	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Consola de audio]	2026-10-05 17:27:08.176549
 5352	INV_ALT_1190051	\N	\N	Trpies	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:27:22.684987
 5354	INV_ALT_2020036	\N	\N	Audifonos behringer HC200 (GERARDO)	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:27:22.684987
 6151	INV_ALT_1190072	\N	\N	Mesa chica	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 12:45:17.666106
-6182	INV_ALT_1190073	\N	\N	Mochila azul	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 12:45:19.455148
-6379	INV_ALT_1190075	\N	\N	mini contactos de energía blancos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
-6380	INV_ALT_1190076	\N	\N	mini converter blackmagig	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
-6381	INV_ALT_1190077	\N	\N	escalador decimator	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
-6382	INV_ALT_1190078	\N	\N	convertidores de energia 400 w y 500 w	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
-6383	INV_ALT_1190079	\N	\N	abanicos	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-02 17:29:57.221767
-6535	INV_ALT_1090070	\N	\N	Cable XLR 50 metros	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA		2026-10-05 16:37:28.798139
-6465	INV_ALT_1090067	\N	\N	Decimator	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	104	Buen Estado	BODEGA		2026-10-05 14:01:28.875289
-6551	Inv_alt_1090071	\N	\N	Consola de audio	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	Buen Estado	BODEGA	[CUST_EQ:Consola de audio]	2026-10-05 17:27:08.176549
-5828	INV_VPRO_ALT_00211	\N	\N	HDMI	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	BUEN ESTADO	BODEGA		2026-09-14 18:00:05.097918
-6480	INV_VPRO_ALT_00190	\N	\N	Modem Quantum	\N	\N	\N	Osiel Cuauhtemoc Hernandez Aldape	109	BUEN ESTADO	BODEGA		2026-10-05 16:15:36.139123
-5323	INV_ALT_1190050	\N	\N	pizacables	\N	\N	\N	Jose Francisco Torres Sanchez	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
 6309	INV_ALT_2020041	\N	\N	VPNRED022 - ROUTER GIGABIT MULTI-WAN VPN SAFESTREAM	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA		2026-10-02 16:49:47.262981
 6457	Inv_alt_2020042	\N	\N	VPNRED103 - Router WiFi AX2 - WiFi 6 1500Mbps Router	\N	\N	\N	Edgar Javier Amarillas	202	Buen Estado	BODEGA	[CUST_EQ:VPNRED103 - Router WiFi AX2 - WiFi 6 1500Mbps Router]	2026-10-05 12:00:31.362576
+6471	INV_ALT_1090065	\N	\N	HDMI Splitter 1x2 OREI	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-10-05 16:15:36.139123
+5303	INV_ALT_1190038	\N	\N	micrófono de maraca	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
 6421	INV_VPRO_ALT_00208	\N	\N	banco	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA		2026-10-02 17:55:59.893829
 6422	Inv_alt_1190080	\N	\N	Hielera	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA	[CUST_EQ:Hielera]	2026-10-02 17:55:59.893829
-3358	INV_VPRO_ALT_00151	\N	\N	cables hdmi	\N	\N	\N	Manuel Antonio Madrid Zazueta	105	BUEN ESTADO	BODEGA		2026-07-28 12:22:52.919869
-5319	INV_ALT_1190049	\N	\N	microfonos para ambiente	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
 6462	Inv_alt_1040019	\N	\N	base de metal	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:base de metal]	2026-10-05 14:01:28.875289
+2268	VPRO_ALT_26607	\N	\N	Stream deck	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA	None	2026-06-02 12:58:42.325288
 2114	VPRO_ALT_16456	\N	\N	Mesa	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	None	2026-05-28 19:03:18.717785
 6468	Inv_alt_1040021	\N	\N	Monitor de 65	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:Monitor de 65]	2026-10-05 14:01:28.875289
 6469	Inv_alt_1040022	\N	\N	Distribuidor HDMI 2"	\N	\N	\N	Jose Francisco Torres Sanchez	104	Buen Estado	BODEGA	[CUST_EQ:Distribuidor HDMI 2"]	2026-10-05 14:01:28.875289
-5385	INV_VPRO_ALT_00012	\N	\N	Computadora de escritorio con dos monitores	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	Buen Estado	BODEGA	⚠️ [LLEVA DAÑO REPORTADO]	2026-09-05 17:13:53.784014
-3450	INV_VPRO_ALT_00021	\N	\N	Pinza para ponchar cables ethernet	\N	\N	\N	Cuauhtemoc Rivera Agundez	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
-3453	INV_VPRO_ALT_00024	\N	\N	Tripie	\N	\N	\N	Manuel Antonio Madrid Zazueta	201	BUEN ESTADO	BODEGA		2026-08-03 13:41:37.988359
-3346	INV_VPRO_ALT_00254	\N	\N	Pisa cables	\N	\N	\N	Cuauhtemoc Rivera Agundez	105	BUEN ESTADO	BODEGA		2026-07-28 12:13:29.287264
+6535	INV_ALT_1090070	\N	\N	Cable XLR 50 metros	\N	\N	\N	Manuel Eduardo Madrid	109	Buen Estado	BODEGA		2026-10-05 16:37:28.798139
+6465	INV_ALT_1090067	\N	\N	Decimator	\N	\N	\N	Manuel Eduardo Madrid	104	Buen Estado	BODEGA		2026-10-05 14:01:28.875289
+6669	Inv_alt_1190081	\N	\N	camara go pro	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:camara go pro]	2026-10-09 11:13:10.045752
+6959	Inv_alt_1190084	\N	\N	Rack con vectorscopio	\N	\N	\N	Manuel Eduardo Madrid	119	Buen Estado	BODEGA	[CUST_EQ:Rack con vectorscopio]	2026-10-15 16:26:40.798944
+5304	INV_ALT_1190039	\N	\N	atem sdi	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+3358	INV_VPRO_ALT_00151	\N	\N	cables hdmi gris	\N	\N	\N	Manuel Antonio Madrid Zazueta	105	BUEN ESTADO	BODEGA		2026-07-28 12:22:52.919869
+6920	Inv_alt_1190083	\N	\N	memoria SD	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:memoria SD]	2026-10-15 13:26:36.706787
+7010	Inv_alt_1050011	\N	\N	Bateria zgcine	\N	\N	\N	Jose Daniel Torres Arroyo	105	Buen Estado	BODEGA	[CUST_EQ:Bateria zgcine]	2026-10-15 18:10:05.272314
+2936	Inv_Vpro_alt_00236	\N	\N	Camara Alpha Viii	\N	\N	\N	Carlos Jacobo Quezada Mendoza	109	BUEN ESTADO	BODEGA		2026-07-03 17:06:31.415674
+7057	Inv_alt_1190085	\N	\N	cable  HDMI de 50 metros	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:cable  HDMI de 50 metros]	2026-10-20 11:04:09.373266
+6970	INV_ALT_1190084	\N	\N	Rack con vectorscopio	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-15 16:56:19.649767
+5302	INV_ALT_1190037	\N	\N	lampara portatil	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-09-03 19:07:32.564943
+6901	INV_ALT_1190082	\N	\N	pedestales para lampara y gopro	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-15 13:26:36.706787
+7097	INV_ALT_1190085	\N	\N	cable  HDMI de 50 metros	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA		2026-10-20 11:10:06.88277
+7098	Inv_alt_1190086	\N	\N	micrófono de mano USB	\N	\N	\N	Manuel Antonio Madrid Zazueta	119	Buen Estado	BODEGA	[CUST_EQ:micrófono de mano USB]	2026-10-20 11:10:06.88277
 \.
 
 
@@ -1934,6 +1961,7 @@ COPY public.inventario_kits (id_inv_kits, codigo_inv_kits, responsiva_inv_kits, 
 --
 
 COPY public.reparaciones (num_d_servicio, fecha_d_reporte, equipo_n_reparacion, area_q_pertenece, marca, folio_vpro, modelo, responsiva, responsable_d_equipo, reportante, estado_actual, descripcion_del_dano, accion_a_seguir, detalles_de_reparacion, encargado_d_reparacion, recibe_equipo, fec_d_ent_a_reparacion, costo_d_reparacion, importe, fecha_d_entrega, proveedor1, proveedor2, proveedor3, cant1, cant2, cant3, costo1, costo2, costo3, importe1, importe2, importe3, plazo_de_entrega1, plazo_de_entrega2, plazo_de_entrega3, llegada1, llegada2, llegada3, fecha_d_pago1, fecha_d_pago2, fecha_d_pago3, firma_resp, firma_jefe_inmediato, firma_admon, firma_entrega_equipo, num_responsiva_nva) FROM stdin;
+REP-INT-1791419410	2026-10-07	INV_VPRO_ALT_00098	SISTEMAS	\N	MANTENIMIENTO_INTERNO	\N	\N	\N	Empleado ID: 201	⚙️ DAÑADO	Estaba trajando con actualizacioens y el diseño del sistema Integral Vpro, cuandio de repente se reinicia la pc, y aparece el mensaje que se anexa	\N	\N	\N	\N	\N	1000.00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
 REP-INT-1787853272	2026-08-27	MONITOR LCD, AOC,TECLADO ASSY P/697737-161 CT:BCYSTOAHH7132V. MOUSE 24GHZ WIRELESS OPTICAL	SISTEMAS	\N	MANTENIMIENTO_INTERNO	\N	\N	\N	Empleado ID: 201	RESUELTO	Se ve mal la imagen, Daña la vista lo tenia Geo Estrada.... Se acordó que se le instalará otro por mientras pero si hay evento se llevará al evento, quedandose el momentaneamente sin monitor.	\N	\N	\N	\N	\N	0.00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
 REP-INT-1787791104	2026-08-26	MONITOR LCD, AOC,TECLADO ASSY P/697737-161 CT:BCYSTOAHH7132V. MOUSE 24GHZ WIRELESS OPTICAL	SISTEMAS	\N	MANTENIMIENTO_INTERNO	\N	\N	\N	Empleado ID: 201	RESUELTO	Se ve mal la imagen, Daña la vista lo tenia Geo Estrada.... Se acordó que se le instalará otro por mientras pero si hay evento se llevará al evento, quedandose el momentaneamente sin monitor.	\N	\N	\N	\N	\N	0.00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
 REP-INT-1788212086	2026-08-31	A/ACONDICIOADO MARCA MIRAGE EN LA OFNA DEL DEPTO DE SISTEMAS	SISTEMAS	\N	MANTENIMIENTO_INTERNO	\N	\N	\N	Empleado ID: 201	RESUELTO	El AA tira agua sobre la estanteria	\N	\N	\N	\N	\N	0.00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
@@ -1948,7 +1976,7 @@ REP-INT-1790453342	2026-09-26	VPNRED076	SISTEMAS	\N	MANTENIMIENTO_INTERNO	\N	\N	
 REP-INT-1789166629	2026-09-11	TELMEX-SERCOMM-GN25L95	SISTEMAS	\N	MANTENIMIENTO_INTERNO	\N	\N	\N	Empleado ID: 202	BAJA DEFINITIVA	Se reportó a telmex el 11/09/2026 , reporte 11522457	\N	\N	\N	\N	\N	0.00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
 REP-INT-1790098000	2026-09-22	TELMEX-SERCOMM-GN25L95	SISTEMAS	\N	MANTENIMIENTO_INTERNO	\N	\N	\N	Empleado ID: 202	BAJA DEFINITIVA	Equipo dañado, fue reemplazado por telmex\ndatos de equipo nuevo:\nModem: Huawei EchoLife HG8145V5\nSerie: HWTC6EDEFBA2 \nModelo: HG8145V5	\N	\N	\N	\N	\N	0.00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
 REP-INT-1790097776	2026-09-22	TELMEX-SERCOMM-GN25L95	SISTEMAS	\N	MANTENIMIENTO_INTERNO	\N	\N	\N	Empleado ID: 202	BAJA DEFINITIVA	Equipo dañado, fue reemplazado por telmex\ndatos de equipo nuevo:\nModem: Huawei EchoLife HG8145V5\nSerie: HWTC6EDEFBA2 \nModelo: HG8145V5	\N	\N	\N	\N	\N	0.00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
-REP-INT-1791419410	2026-10-07	INV_VPRO_ALT_00098	SISTEMAS	\N	MANTENIMIENTO_INTERNO	\N	\N	\N	Empleado ID: 201	⚙️ DAÑADO	Estaba trajando con actualizacioens y el diseño del sistema Integral Vpro, cuandio de repente se reinicia la pc, y aparece el mensaje que se anexa	\N	\N	\N	\N	\N	1000.00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
+REP-INT-1792261577	2026-10-17	VPROCARTIIDA2	PRODUCCION	\N	MANTENIMIENTO_INTERNO	\N	\N	\N	Empleado ID: 124	⚙️ PENDIENTE	Al automovil tiida #2 en el estacionamiento de super ley, le robaron la copa de la llanta trasera del lado del copiloto	\N	\N	\N	\N	\N	343.00	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N
 \.
 
 
@@ -2010,5 +2038,5 @@ ALTER TABLE ONLY public.inventario_kits
 -- PostgreSQL database dump complete
 --
 
-\unrestrict vlclB2nIiyVKwC0tLxMDOUjs3jRts3YmctXssbkj3LVcVIahJfMhw9mFJbhm3GE
+\unrestrict agqKok9PhatyQ04OzPIWFiJYr0sUnugUVCBBACXA1xAJfEB2fefEmekAD4cf1tP
 

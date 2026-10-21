@@ -13046,7 +13046,6 @@ function renderizarListaArchivosSeleccionados() {
 
 // Compatibilidad con llamada singular y plural
 const CHUNK_SIZE_TRANSFERENCIA = 20 * 1024 * 1024; // 20 MB por bloque (100% amigable con Cloudflare)
-let peticionSubidaXHR = null;
 let peticionSubidaCancelada = false;
 let peticionSubidaActualUploadId = null;
 

@@ -18,3 +18,12 @@ Archivos_Compartidos/
 INFOR_ENVIADA_xALilia/
 __pycache__/
 *.pyc
+
+# Archivos de presentaciones y previews locales
+*.pptx
+generar_presentacion.py
+bg_portada.png
+bg_contenido.png
+slide_bg_test.png
+slides_preview/
+

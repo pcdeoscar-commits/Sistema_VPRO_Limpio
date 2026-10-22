@@ -276,14 +276,23 @@ function actualizarVisibilidadAgendaDrive() {
     }
 
     const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
-    const nombre = (usuarioLogueado.nombre || usuarioLogueado.nombre_completo || '').toUpperCase().trim();
+    const depto = (usuarioLogueado.depto || '').toUpperCase().trim();
+    const puesto = (usuarioLogueado.puesto || '').toUpperCase().trim();
+    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // FILTRO AUTORIZADO: Solo Villarreal, Agundez, Coordinador y Productores
+    // 1. Apellidos autorizados: Villarreal (y variantes) o Agundez
     const esVillarreal = nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL');
-    const esAgundez = nombre.includes('AGUNDEZ') || nombre.includes('AGÚNDEZ');
-    const esCoordinador = rol === 'COORDINADOR' || rol.includes('COORDINADOR') || rol.includes('COORDINACION');
-    // Productor: por rol 'PRODUCTOR' o nombre asignado como Productor (Manuel Antonio Madrid Zazueta / Madrid)
-    const esProductor = rol === 'PRODUCTOR' || nombre.includes('MADRID');
+    const esAgundez = nombre.includes('AGUNDEZ');
+
+    // 2. Rol / puesto Coordinador
+    const esCoordinador = rol === 'COORDINADOR' || rol.includes('COORDINADOR') || rol.includes('COORDINACION') ||
+                          puesto.includes('COORDINADOR') || puesto.includes('COORDINACION');
+
+    // 3. Rol / puesto Productor (incluye productores designados como Manuel Antonio Madrid Zazueta)
+    const esProductor = rol === 'PRODUCTOR' || rol.includes('PRODUCTOR') ||
+                        puesto.includes('PRODUCTOR') ||
+                        nombre.includes('MADRID');
 
     if (esVillarreal || esAgundez || esCoordinador || esProductor) {
         btnAgenda.style.display = "flex";

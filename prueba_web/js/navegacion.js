@@ -49,6 +49,20 @@ function cambiarVista(idVista) {
         } else if (idVista === 'vista-danados') {
             cargarModuloDanados();
         } else if (idVista === 'vista-gastos') {
+            if (typeof esUsuarioAutorizadoGastos === 'function' && !esUsuarioAutorizadoGastos()) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '⛔ Acceso Restringido',
+                        html: '<p style="color: #475569; font-size: 14px;">El módulo de Reporte de Gastos está reservado exclusivamente para Productores autorizados de Dirección.<br><strong style="color: #b91c1c;">(Apellidos Villarreal o Agundez)</strong></p>',
+                        confirmButtonColor: '#4f46e5'
+                    });
+                } else {
+                    alert("⛔ Acceso Restringido: El módulo de Reporte de Gastos está reservado exclusivamente para Productores autorizados de Dirección (apellidos Villarreal o Agundez).");
+                }
+                cambiarVista('vista-inicio');
+                return;
+            }
             cargarModuloGastos();
         } else if (idVista === 'vista-auditoria') {
             cambiarVista('vista-checador');

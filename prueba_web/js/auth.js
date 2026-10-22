@@ -237,8 +237,32 @@ function cerrarSesion() {
 
 function esUsuarioAutorizadoDireccion() {
     if (!usuarioLogueado) return false;
-    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim();
-    return nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ') || nombre.includes('AGÚNDEZ');
+    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ');
+}
+
+function esUsuarioAutorizadoGastos() {
+    if (!usuarioLogueado) return false;
+    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
+    const puesto = (usuarioLogueado.puesto || '').toUpperCase().trim();
+
+    // 1. Apellido obligatorio: Villarreal (o variantes) o Agundez
+    const esApellidoAutorizado = nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ');
+    if (!esApellidoAutorizado) return false;
+
+    // 2. Rol obligatorio: Productor (en el sistema los Productores Directivos tienen rol PRODUCTOR o ADMIN)
+    const esRolAutorizado = rol === 'PRODUCTOR' || rol.includes('PRODUCTOR') || puesto.includes('PRODUCTOR') || rol === 'ADMIN';
+    return esRolAutorizado;
+}
+
+function actualizarVisibilidadMenuGastos() {
+    const navGastos = document.getElementById("nav-item-gastos") || document.querySelector('.sidebar-menu .nav-item[onclick*="vista-gastos"]');
+    if (navGastos) {
+        navGastos.style.display = esUsuarioAutorizadoGastos() ? 'flex' : 'none';
+    }
 }
 
 function actualizarVisibilidadMenuIncidencias() {
@@ -264,6 +288,7 @@ function filtrarMenuPorRol(rolUsuario) {
     });
     actualizarVisibilidadMenuIncidencias();
     actualizarVisibilidadAgendaDrive();
+    actualizarVisibilidadMenuGastos();
 }
 
 function actualizarVisibilidadAgendaDrive() {

@@ -34,6 +34,10 @@ function cambiarPestanaGastos(tab) {
 }
 
 async function cargarModuloGastos() {
+    if (typeof esUsuarioAutorizadoGastos === 'function' && !esUsuarioAutorizadoGastos()) {
+        console.warn("Acceso denegado a cargarModuloGastos: Usuario no autorizado.");
+        return;
+    }
     try {
         const [resPend, resFolios, resInformes] = await Promise.all([
             fetch(`${API_URL}/api/gastos/pendientes/conteo`),
@@ -335,6 +339,10 @@ function recalcularTotalesGastos() {
 }
 
 async function guardarInformeGastosProductor() {
+    if (typeof esUsuarioAutorizadoGastos === 'function' && !esUsuarioAutorizadoGastos()) {
+        alert("⛔ Acceso Restringido: El módulo de Reporte de Gastos está reservado exclusivamente para Productores autorizados de Dirección (apellidos Villarreal o Agundez).");
+        return;
+    }
     const folioId = eventoSeleccionadoGasto?.id_evento;
     if (!folioId) {
         alert("⚠️ No hay un evento seleccionado.");
@@ -396,6 +404,7 @@ async function guardarInformeGastosProductor() {
         maestro: {
             folio_vpro: parseInt(folioId),
             id_empleado: userId,
+            nombre_usuario: usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || "",
             periodo_desde: fDesde,
             periodo_hasta: fHasta,
             vehiculo: vehiculoDetalle || "General",

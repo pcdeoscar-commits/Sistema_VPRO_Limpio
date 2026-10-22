@@ -1152,7 +1152,7 @@
                 <div class="nav-label"><i class="ph ph-flag"></i> <span class="nav-text">Equipos con Daño</span></div>
                 <span class="nav-badge alert" id="badge-danados">0</span>
             </div>
-            <div class="nav-item" data-roles="ADMIN,PRODUCCION,COORDINADOR" onclick="cambiarVista('vista-gastos')">
+            <div class="nav-item" id="nav-item-gastos" data-roles="ADMIN,PRODUCTOR" onclick="cambiarVista('vista-gastos')">
                 <div class="nav-label"><i class="ph ph-money"></i> <span class="nav-text">Reporte de Gastos</span></div>
                 <span class="nav-badge info" id="badge-gastos">0</span>
             </div>
@@ -1279,11 +1279,8 @@
                     </select>
                 </div>
 
-                <h3 style="color: #0f172a; margin-top: 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                    <span><i class="ph ph-bell-ringing"></i> Centro de Notificaciones</span>
-                    <span style="font-size: 12.5px; font-weight: 600; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; padding: 3px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
-                        ⚠️ <b>RECUERDA:</b> Los archivos permanecerán por solo 24 hrs. después que los has bajado.
-                    </span>
+                <h3 style="color: #0f172a; margin-top: 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                    <i class="ph ph-bell-ringing"></i> Centro de Notificaciones
                 </h3>
                 <div id="inicio-notificaciones">
                     <div class="alerta-card success"><i class="ph ph-check-circle"></i> Cargando notificaciones...</div>
@@ -5974,7 +5971,7 @@
     <script src="js/core.js"></script>
     <script src="js/auth.js?v=20261021_v3_agenda"></script>
     <script src="js/navegacion.js?v=20261021_v2_auth"></script>
-    <script src="js/inicio_asistencia.js"></script>
+    <script src="js/inicio_asistencia.js?v=20261021_v4_notif_buzon"></script>
     <script src="js/eventos_op.js"></script>
     <script src="js/eventos_impresion.js"></script>
     <script src="js/equipos_danados.js"></script>

@@ -116,6 +116,21 @@ def renderizar_modulo(API_URL):
     depto_usuario = str(st.session_state.get('depto') or 'OFICINA')
     rol_usuario = str(st.session_state.get('role') or st.session_state.get('rol') or '').upper()
     
+    import unicodedata
+    nombre_clean = ''.join(c for c in unicodedata.normalize('NFD', operador) if unicodedata.category(c) != 'Mn')
+    es_villarreal_o_agundez = (
+        "VILLARREAL" in nombre_clean or 
+        "VILLAREAL" in nombre_clean or 
+        "VILARREAL" in nombre_clean or 
+        "AGUNDEZ" in nombre_clean or 
+        any(x in nombre_clean for x in ["ANDREA", "SOFIA", "GERARDO", "PEDRO", "ANA LILIA"])
+    )
+    es_productor_o_dir = rol_usuario in ["ADMIN", "PRODUCTOR"]
+
+    if not (es_villarreal_o_agundez and es_productor_o_dir):
+        st.error("⛔ **Acceso Restringido:** El módulo de Rendición de Cuentas y Reporte de Gastos está reservado exclusivamente para Productores autorizados de Dirección (apellidos Villarreal o Agundez).")
+        st.stop()
+    
     es_auditor = rol_usuario in ["ADMIN", "COORDINADOR"] or "ANA" in operador or "LILIA" in operador
     es_ana_lilia_directiva = "ANA" in operador or "LILIA" in operador or rol_usuario in ["ADMIN", "COORDINADOR"]
     

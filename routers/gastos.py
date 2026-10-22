@@ -1,10 +1,18 @@
 import datetime
+import unicodedata
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 
 from core.database import engine_eventos, engine_personal
 from core.utils import safe_decode_hex
+
+def es_usuario_autorizado_gastos(nombre: str) -> bool:
+    """Verifica si el usuario es un Productor o Directivo autorizado (Villarreal o Agundez)."""
+    if not nombre:
+        return False
+    norm = ''.join(c for c in unicodedata.normalize('NFD', str(nombre).upper()) if unicodedata.category(c) != 'Mn')
+    return any(ap in norm for ap in ["VILLARREAL", "VILLAREAL", "VILARREAL", "AGUNDEZ"])
 
 router = APIRouter(prefix="/api/gastos", tags=["💸 Gastos Operativos"])
 
@@ -158,6 +166,41 @@ def guardar_informe_gastos_completo(payload: dict):
         if not emp_id:
             emp_id = "000"
 
+        # 🔒 Verificación estricta: Solo Productores de Dirección (Villarreal o Agundez)
+        nombres_candidatos = []
+        if maestro.get("nombre_usuario"):
+            nombres_candidatos.append(str(maestro.get("nombre_usuario")))
+
+        if emp_id and emp_id != "000":
+            try:
+                with engine_personal.connect() as p_conn:
+                    row_p = p_conn.execute(
+                        text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
+                        {"id": emp_id}
+                    ).first()
+                    if row_p and row_p[0]:
+                        nombres_candidatos.append(safe_decode_hex(row_p[0]))
+            except Exception:
+                pass
+
+        if folio_vpro:
+            try:
+                with engine_eventos.connect() as ev_conn:
+                    row_ev = ev_conn.execute(
+                        text("SELECT encode(resp_de_produccion::bytea, 'hex') FROM public.eventos WHERE id_evento = :id"),
+                        {"id": folio_vpro}
+                    ).first()
+                    if row_ev and row_ev[0]:
+                        nombres_candidatos.append(safe_decode_hex(row_ev[0]))
+            except Exception:
+                pass
+
+        if not any(es_usuario_autorizado_gastos(n) for n in nombres_candidatos):
+            raise HTTPException(
+                status_code=403,
+                detail="Acceso denegado: El módulo de Reporte de Gastos está reservado exclusivamente para Productores autorizados de Dirección (apellidos Villarreal o Agundez)."
+            )
+
         with engine_eventos.begin() as conn:
             sql_m = text("""
                 INSERT INTO public.informes_gastos_maestro (
@@ -206,6 +249,8 @@ def guardar_informe_gastos_completo(payload: dict):
                     "total_dia": float(d.get("total_dia", 0.0))
                 })
         return {"status": "SUCCESS", "id_informe": id_informe}
+    except HTTPException:
+        raise
     except Exception as e: 
         raise HTTPException(status_code=500, detail=str(e))
 

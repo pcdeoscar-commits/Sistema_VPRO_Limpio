@@ -659,39 +659,30 @@ async function cargarDatosInicio() {
             if (resTrans.ok) {
                 const dataTrans = await resTrans.json();
                 if (dataTrans && dataTrans.pendientes && dataTrans.pendientes.length > 0) {
-                    dataTrans.pendientes.forEach(t => {
-                        htmlCards.push(`
-                            <div class="alerta-card info" style="background: #eff6ff; border-left: 4px solid #3b82f6; display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
-                                <div style="width: 42px; height: 42px; border-radius: 8px; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    const cant = dataTrans.pendientes.length;
+                    htmlCards.push(`
+                        <div class="alerta-card info" style="background:#eff6ff; border-left:4px solid #3b82f6; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 18px; border-radius:10px; margin-bottom:12px; box-shadow:0 2px 6px rgba(0,0,0,0.06); flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:14px; flex:1; min-width:280px;">
+                                <div style="width:44px; height:44px; border-radius:8px; background:#2563eb; color:white; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; box-shadow:0 2px 6px rgba(37,99,235,0.3);">
                                     <i class="ph ph-cloud-arrow-down"></i>
                                 </div>
-                                <div style="flex: 1;">
-                                    <div style="font-size: 14px; color: #1e3a8a;">
-                                        <b>📦 Archivo compartido recibido:</b> <b>${t.nombre_archivo_original}</b> <span style="background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">${t.tamano_legible}</span>
+                                <div>
+                                    <div style="font-size:15px; font-weight:700; color:#1e3a8a;">
+                                        En buzón hay <span style="background:#2563eb; color:white; padding:2px 8px; border-radius:12px; font-size:13px; font-weight:800;">${cant}</span> archivo${cant !== 1 ? 's' : ''} por descargar
                                     </div>
-                                    <div style="font-size: 12.5px; color: #475569; margin-top: 2px;">
-                                        Enviado por: <b>${t.nombre_origen}</b> • ${t.fecha_subida_str || ''} ${t.mensaje ? `— <i>"${t.mensaje}"</i>` : ''}
+                                    <div style="font-size:12px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; margin-top:6px; font-weight:600;">
+                                        ⚠️ <b>RECUERDA:</b> Los archivos permanecerán por solo 24 hrs. después que los has bajado
                                     </div>
-                                    <div style="font-size: 11.5px; color: #0284c7; margin-top: 3px;">
-                                        ⏱️ <i>Al descargarlo, permanecerá disponible 24 horas en el servidor antes de ser eliminado automáticamente.</i>
-                                    </div>
-                                </div>
-                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                                    <button onclick="descargarArchivoTransferenciaDirecto(${t.id_transferencia}, '${(t.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(37,99,235,0.3);">
-                                        <i class="ph ph-download-simple"></i> Descargar
-                                    </button>
-                                    ${t.folio_paquete ? `
-                                    <button onclick="descargarPaqueteZip('${t.folio_paquete}')" style="background: #0284c7; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(2,132,199,0.3);" title="Descargar paquete completo en ZIP">
-                                        <i class="ph ph-file-zip"></i> Descargar ZIP
-                                    </button>
-                                    ` : ''}
-                                    <button onclick="cambiarVista('vista-transferencias'); cambiarPestanaTransferencias('recibidos');" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12.5px;">
-                                        Ver Todo
-                                    </button>
                                 </div>
                             </div>
-                        `);
-                    });
+                            <div>
+                                <button onclick="cambiarVista('vista-transferencias'); cambiarPestanaTransferencias('recibidos');" 
+                                        style="background:#2563eb; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:700; font-size:13.5px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 8px rgba(37,99,235,0.35); transition:all 0.2s ease;">
+                                    <i class="ph ph-tray" style="font-size:18px;"></i> Ir a buzón <i class="ph ph-arrow-right" style="font-size:15px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `);
                 }
             }
         } catch (e) { console.error("Error al consultar transferencias en inicio:", e); }

@@ -97,32 +97,32 @@ async function cargarDatosInicio() {
             if (resTrans.status === 'fulfilled' && resTrans.value.ok) {
                 const dataTrans = await resTrans.value.json();
                 const pendientes = dataTrans?.pendientes || [];
-                gruposHtml.push(buildDropdownCard({
-                    icon: 'ph-cloud-arrow-down',
-                    color: '#2563eb', bg: '#eff6ff', border: '#3b82f6',
-                    titulo: '📦 Archivos pendientes de descargar',
-                    badge: `${pendientes.length} archivo${pendientes.length !== 1 ? 's' : ''}`,
-                    badgeColor: '#2563eb',
-                    items: pendientes,
-                    renderItem: (t) => `
-                        <div onclick="cambiarVista('vista-transferencias'); cambiarPestanaTransferencias('recibidos');"
-                             style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
-                             onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='transparent'">
-                            <i class="ph ph-file-arrow-down" style="font-size:18px;color:#2563eb;flex-shrink:0;"></i>
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-size:13px;font-weight:600;color:#1e3a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                    ${t.nombre_archivo_original}
-                                    <span style="background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:700;margin-left:6px;">${t.tamano_legible}</span>
+                if (pendientes.length > 0) {
+                    const cant = pendientes.length;
+                    gruposHtml.push(`
+                        <div class="notif-card-transfer" style="background:#eff6ff; border-left:4px solid #3b82f6; border-radius:10px; margin-bottom:12px; box-shadow:0 2px 6px rgba(0,0,0,0.06); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:14px; flex:1; min-width:280px;">
+                                <div style="width:44px; height:44px; border-radius:8px; background:#2563eb; color:white; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; box-shadow:0 2px 6px rgba(37,99,235,0.3);">
+                                    <i class="ph ph-cloud-arrow-down"></i>
                                 </div>
-                                <div style="font-size:11.5px;color:#475569;">De: <b>${t.nombre_origen}</b> · ${t.fecha_subida_str || ''}</div>
-                                <div style="font-size:11px;color:#0284c7;">⏱️ Expira 24h después de descargarlo</div>
+                                <div>
+                                    <div style="font-size:15px; font-weight:700; color:#1e3a8a;">
+                                        En buzón hay <span style="background:#2563eb; color:white; padding:2px 8px; border-radius:12px; font-size:13px; font-weight:800;">${cant}</span> archivo${cant !== 1 ? 's' : ''} por descargar
+                                    </div>
+                                    <div style="font-size:12px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; margin-top:6px; font-weight:600;">
+                                        ⚠️ <b>RECUERDA:</b> Los archivos permanecerán por solo 24 hrs. después que los has bajado
+                                    </div>
+                                </div>
                             </div>
-                            <button onclick="event.stopPropagation(); descargarArchivoTransferenciaDirecto(${t.id_transferencia}, '${(t.nombre_archivo_original||'').replace(/'/g, "\'")}')"
-                                    style="background:#2563eb;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;flex-shrink:0;">
-                                <i class="ph ph-download-simple"></i> Bajar
-                            </button>
-                        </div>`
-                }));
+                            <div>
+                                <button onclick="cambiarVista('vista-transferencias'); cambiarPestanaTransferencias('recibidos');" 
+                                        style="background:#2563eb; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:700; font-size:13.5px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 3px 8px rgba(37,99,235,0.35); transition:all 0.2s ease;">
+                                    <i class="ph ph-tray" style="font-size:18px;"></i> Ir a buzón <i class="ph ph-arrow-right" style="font-size:15px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                }
             }
         } catch(e) { console.error('Transfer notif:', e); }
 
@@ -244,7 +244,7 @@ async function cargarDatosInicio() {
 
         // ── E. Gastos pendientes de comprobación ──────────────────────────
         try {
-            if (resGastos.status === 'fulfilled' && resGastos.value.ok) {
+            if (typeof esUsuarioAutorizadoGastos === 'function' && esUsuarioAutorizadoGastos() && resGastos.status === 'fulfilled' && resGastos.value.ok) {
                 const todosGastos = await resGastos.value.json();
                 const misGastos = (todosGastos || []).filter(g =>
                     String(g.id_empleado).trim() === String(idEmp).trim()

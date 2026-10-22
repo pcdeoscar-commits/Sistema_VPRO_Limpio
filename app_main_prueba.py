@@ -528,7 +528,7 @@ rol_actual = str(st.session_state.get("rol", "")).strip().upper()       # --- CO
 usuario_completo_menu = str(st.session_state.get("usuario_actual", "")).strip().upper()
 llave_menu_clean = ''.join(c for c in unicodedata.normalize('NFD', usuario_completo_menu) if unicodedata.category(c) != 'Mn')
 
-es_villarreal_menu = any(x in llave_menu_clean for x in ["ANDREA", "SOFIA", "GERARDO", "PEDRO", "ANA LILIA"]) or "VILLAREAL" in llave_menu_clean        # 👑 ADUANA DE DIRECCIÓN GENERAL: Identifica si el usuario logueado es un Villarreal
+es_villarreal_menu = any(x in llave_menu_clean for x in ["ANDREA", "SOFIA", "GERARDO", "PEDRO", "ANA LILIA", "VILLARREAL", "VILLAREAL", "VILARREAL"])        # 👑 ADUANA DE DIRECCIÓN GENERAL: Identifica si el usuario logueado es un Villarreal
 
 opciones_abc = []
 if es_kiosko:
@@ -573,12 +573,12 @@ else:
 
         menu_opciones.append("📦 Checkout [VPF-PSP-CHL]")
 
-        if rol_actual in ["ADMIN", "COORDINADOR"]:
+        if es_villarreal_menu or "AGUNDEZ" in llave_menu_clean:
             menu_opciones.append("📊 Incidencias")
 
         menu_opciones.append("🚩 Equipos con Daño")
 
-        if rol_actual in ["ADMIN", "COORDINADOR", "PRODUCTOR"]:
+        if rol_actual in ["ADMIN", "PRODUCTOR"] and (es_villarreal_menu or "AGUNDEZ" in llave_menu_clean):
             conteo_pendientes = contar_gastos_pendientes()
             etiqueta_gastos = f"💸 Reporte de Gastos ({conteo_pendientes})" if conteo_pendientes > 0 else "💸 Reporte de Gastos"
             menu_opciones.append(etiqueta_gastos)
@@ -609,12 +609,12 @@ else:
                 
         menu_opciones.append("📦 Checkout [VPF-PSP-CHL]")
         
-        if rol_actual in ["ADMIN", "COORDINADOR"]:
+        if es_villarreal_menu or "AGUNDEZ" in llave_menu_clean:
             menu_opciones.append("📊 Incidencias")
             
         menu_opciones.append("🚩 Equipos con Daño")
         
-        if rol_actual in ["ADMIN", "COORDINADOR", "PRODUCTOR"]:
+        if rol_actual in ["ADMIN", "PRODUCTOR"] and (es_villarreal_menu or "AGUNDEZ" in llave_menu_clean):
             conteo_pendientes = contar_gastos_pendientes()
             etiqueta_gastos = f"💸 Reporte de Gastos ({conteo_pendientes})" if conteo_pendientes > 0 else "💸 Reporte de Gastos"
             menu_opciones.append(etiqueta_gastos)

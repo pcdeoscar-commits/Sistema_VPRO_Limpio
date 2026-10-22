@@ -102,7 +102,7 @@ def ejecutar_limpieza_expirados():
         query_buscar = text("""
             SELECT id_transferencia, nombre_archivo_fisico, estatus, fecha_limite_borrado, fecha_subida
             FROM public.archivos_compartidos
-            WHERE estatus != 'EXPIRADO_BORRADO'
+            WHERE estatus NOT IN ('EXPIRADO_BORRADO', 'CANCELADO', 'DESCARTADO_RECEPTOR')
               AND (
                 (fecha_limite_borrado IS NOT NULL AND fecha_limite_borrado <= CURRENT_TIMESTAMP)
                 OR (descargado = FALSE AND fecha_subida <= CURRENT_TIMESTAMP - INTERVAL '72 hours')
@@ -516,6 +516,8 @@ def obtener_archivos_enviados(id_empleado: str):
                 item["estado_display"] = "🗑️ Eliminado por límite de 24h"
             elif item["estatus"] == "CANCELADO":
                 item["estado_display"] = "❌ Cancelado por remitente"
+            elif item["estatus"] == "DESCARTADO_RECEPTOR":
+                item["estado_display"] = "🚫 Descartado por destinatario"
             elif item["descargado"]:
                 if item["fecha_limite_borrado"]:
                     diff = item["fecha_limite_borrado"] - ahora
@@ -770,6 +772,170 @@ def cancelar_o_eliminar_paquete(folio_paquete: str):
             """), {"folio": folio_paquete})
 
         return {"status": "SUCCESS", "mensaje": "Paquete eliminado exitosamente."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/verificar/{id_transferencia}")
+def verificar_disponibilidad_transferencia(id_transferencia: int):
+    """
+    Verifica si un archivo está disponible antes de iniciar su descarga.
+    Previene errores en blanco si el archivo fue cancelado por el remitente.
+    """
+    try:
+        with engine_personal.connect() as conn:
+            reg = conn.execute(text("""
+                SELECT estatus, nombre_archivo_fisico
+                FROM public.archivos_compartidos 
+                WHERE id_transferencia = :id_trans
+            """), {"id_trans": id_transferencia}).mappings().first()
+
+        if not reg:
+            return {"disponible": False, "mensaje": "La transferencia no existe o fue eliminada."}
+
+        if reg["estatus"] == "CANCELADO":
+            return {"disponible": False, "mensaje": "Este archivo fue cancelado por el remitente antes de ser descargado."}
+
+        if reg["estatus"] == "EXPIRADO_BORRADO":
+            return {"disponible": False, "mensaje": "Este archivo ya cumplió su periodo de retención y fue eliminado automáticamente."}
+
+        if reg["estatus"] == "DESCARTADO_RECEPTOR":
+            return {"disponible": False, "mensaje": "Este archivo fue descartado del buzón."}
+
+        archivo_path = CARPETA_TRANSFERENCIAS / reg["nombre_archivo_fisico"]
+        if not archivo_path.exists():
+            return {"disponible": False, "mensaje": "El archivo físico ya no se encuentra disponible en el servidor."}
+
+        return {"disponible": True}
+    except Exception:
+        return {"disponible": True}
+
+@router.get("/verificar_paquete/{folio_paquete}")
+def verificar_disponibilidad_paquete(folio_paquete: str):
+    """
+    Verifica si los archivos de un paquete siguen disponibles antes de generar el ZIP.
+    """
+    try:
+        with engine_personal.connect() as conn:
+            regs = conn.execute(text("""
+                SELECT estatus, nombre_archivo_fisico
+                FROM public.archivos_compartidos 
+                WHERE folio_paquete = :folio
+            """), {"folio": folio_paquete}).mappings().all()
+
+        if not regs:
+            return {"disponible": False, "mensaje": "El paquete no existe o fue eliminado."}
+
+        activos = [r for r in regs if r["estatus"] in ("DISPONIBLE", "DESCARGADO")]
+        if not activos:
+            if any(r["estatus"] == "CANCELADO" for r in regs):
+                return {"disponible": False, "mensaje": "Este paquete de archivos fue cancelado por el remitente."}
+            return {"disponible": False, "mensaje": "Los archivos de este paquete ya no están disponibles en el servidor."}
+
+        return {"disponible": True}
+    except Exception:
+        return {"disponible": True}
+
+@router.post("/descartar/{id_transferencia}")
+def descartar_transferencia_recibida(id_transferencia: int):
+    """
+    Permite al destinatario descartar un archivo de su buzón sin descargarlo.
+    """
+    try:
+        with engine_personal.connect() as conn:
+            reg = conn.execute(text("""
+                SELECT id_transferencia, nombre_archivo_fisico 
+                FROM public.archivos_compartidos 
+                WHERE id_transferencia = :id_trans
+            """), {"id_trans": id_transferencia}).mappings().first()
+
+        if not reg:
+            raise HTTPException(status_code=404, detail="Transferencia no encontrada.")
+
+        archivo_path = CARPETA_TRANSFERENCIAS / reg["nombre_archivo_fisico"]
+        if archivo_path.exists():
+            try:
+                archivo_path.unlink()
+            except Exception:
+                pass
+
+        with engine_personal.begin() as conn:
+            conn.execute(text("""
+                UPDATE public.archivos_compartidos
+                SET estatus = 'DESCARTADO_RECEPTOR'
+                WHERE id_transferencia = :id_trans
+            """), {"id_trans": id_transferencia})
+
+        return {"status": "SUCCESS", "mensaje": "Archivo descartado de tu buzón."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/descartar_paquete/{folio_paquete}")
+def descartar_paquete_recibido(folio_paquete: str):
+    """
+    Permite al destinatario descartar un paquete completo de su buzón sin descargarlo.
+    """
+    try:
+        with engine_personal.connect() as conn:
+            regs = conn.execute(text("""
+                SELECT id_transferencia, nombre_archivo_fisico 
+                FROM public.archivos_compartidos 
+                WHERE folio_paquete = :folio
+            """), {"folio": folio_paquete}).mappings().all()
+
+        for reg in regs:
+            archivo_path = CARPETA_TRANSFERENCIAS / reg["nombre_archivo_fisico"]
+            if archivo_path.exists():
+                try:
+                    archivo_path.unlink()
+                except Exception:
+                    pass
+
+        with engine_personal.begin() as conn:
+            conn.execute(text("""
+                UPDATE public.archivos_compartidos
+                SET estatus = 'DESCARTADO_RECEPTOR'
+                WHERE folio_paquete = :folio
+            """), {"folio": folio_paquete})
+
+        return {"status": "SUCCESS", "mensaje": "Paquete descartado exitosamente."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/descartar_todos/{id_empleado}")
+def descartar_todos_recibidos(id_empleado: str):
+    """
+    Permite al destinatario descartar todos los archivos pendientes de descarga de su buzón.
+    """
+    try:
+        with engine_personal.connect() as conn:
+            regs = conn.execute(text("""
+                SELECT id_transferencia, nombre_archivo_fisico 
+                FROM public.archivos_compartidos 
+                WHERE (TRIM(id_empleado_destino) = TRIM(:id_emp) OR id_empleado_destino = :id_emp)
+                  AND descargado = FALSE
+                  AND estatus = 'DISPONIBLE'
+            """), {"id_emp": str(id_empleado).strip()}).mappings().all()
+
+        for reg in regs:
+            archivo_path = CARPETA_TRANSFERENCIAS / reg["nombre_archivo_fisico"]
+            if archivo_path.exists():
+                try:
+                    archivo_path.unlink()
+                except Exception:
+                    pass
+
+        with engine_personal.begin() as conn:
+            conn.execute(text("""
+                UPDATE public.archivos_compartidos
+                SET estatus = 'DESCARTADO_RECEPTOR'
+                WHERE (TRIM(id_empleado_destino) = TRIM(:id_emp) OR id_empleado_destino = :id_emp)
+                  AND descargado = FALSE
+                  AND estatus = 'DISPONIBLE'
+            """), {"id_emp": str(id_empleado).strip()})
+
+        return {"status": "SUCCESS", "total_descartados": len(regs)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

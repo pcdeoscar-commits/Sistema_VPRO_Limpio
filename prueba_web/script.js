@@ -14023,13 +14023,20 @@ function renderizarFilasTransferenciasRecibidos(recibidos) {
                 <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Se iniciará cuenta de 24h al descargar</div>
             `;
             btnDescarga = `
-                <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="descargarArchivoTransferenciaDirecto(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #2563eb; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px;">
                         <i class="ph ph-download-simple"></i> Descargar
                     </button>
                     ${item.folio_paquete ? `
-                    <button onclick="descargarPaqueteZip('${item.folio_paquete}')" style="background: #0284c7; color: white; border: none; padding: 8px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;" title="Descargar paquete completo en ZIP">
-                        <i class="ph ph-file-zip"></i> ZIP Paquete
+                    <button onclick="descargarPaqueteZip('${item.folio_paquete}')" style="background: #0284c7; color: white; border: none; padding: 7px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;" title="Descargar paquete completo en ZIP">
+                        <i class="ph ph-file-zip"></i> ZIP
+                    </button>` : ''}
+                    <button onclick="descartarTransferenciaRecibida(${item.id_transferencia}, '${(item.nombre_archivo_original || '').replace(/'/g, "\\'")}')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 7px 9px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 12px;" title="Descartar este archivo de mi buzón si no lo necesito o fue un error">
+                        <i class="ph ph-x"></i> Descartar
+                    </button>
+                    ${item.folio_paquete ? `
+                    <button onclick="descartarPaqueteRecibido('${item.folio_paquete}')" style="background: #fef2f2; color: #991c1c; border: 1px dashed #fca5a5; padding: 7px 8px; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font-size: 11px;" title="Descartar todos los archivos de este paquete">
+                        <i class="ph ph-trash"></i> Descartar Paquete
                     </button>` : ''}
                 </div>
             `;
@@ -14093,9 +14100,16 @@ function renderizarFilasTransferenciasEnviados(enviados) {
     tbody.innerHTML = enviados.map(item => {
         const puedeEliminar = item.estatus !== 'EXPIRADO_BORRADO' && item.estatus !== 'CANCELADO';
         const btnAccion = puedeEliminar ? `
-            <button onclick="eliminarTransferencia(${item.id_transferencia})" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 5px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;" title="Eliminar archivo del servidor">
-                <i class="ph ph-trash"></i> Cancelar / Borrar
-            </button>
+            <div style="display: flex; gap: 4px; flex-direction: column; align-items: stretch; max-width: 150px; margin: 0 auto;">
+                <button onclick="eliminarTransferencia(${item.id_transferencia})" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11.5px; white-space: nowrap;" title="Cancelar solo este archivo individual del servidor">
+                    <i class="ph ph-trash"></i> Cancelar archivo
+                </button>
+                ${item.folio_paquete ? `
+                <button onclick="eliminarPaqueteTransferencia('${item.folio_paquete}')" style="background: #fef2f2; color: #991b1b; border: 1px dashed #ef4444; padding: 4px 8px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 11px; white-space: nowrap;" title="Cancelar TODOS los archivos enviados en este mismo paquete">
+                    <i class="ph ph-x-circle"></i> Cancelar paquete
+                </button>
+                ` : ''}
+            </div>
         ` : `<span style="font-size: 12px; color: #94a3b8;">Finalizado</span>`;
 
         return `
@@ -14192,10 +14206,34 @@ function programarRecargaTransferencias(delay = 2000) {
     }, delay);
 }
 
-function descargarPaqueteZip(folioPaquete) {
+async function descargarPaqueteZip(folioPaquete) {
     if (!folioPaquete) return;
+    try {
+        const resCheck = await fetch(`${API_URL}/api/transferencias/verificar_paquete/${folioPaquete}`);
+        if (resCheck.ok) {
+            const dataCheck = await resCheck.json();
+            if (!dataCheck.disponible) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Paquete no disponible',
+                        text: dataCheck.mensaje || 'Este paquete ya no está disponible en el servidor.',
+                        confirmButtonColor: '#2563eb'
+                    });
+                } else {
+                    alert(dataCheck.mensaje || 'Este paquete ya no está disponible.');
+                }
+                cargarTransferenciasRecibidos();
+                cargarDatosInicio();
+                cargarBadges();
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('Verificación previa omitida por red:', e);
+    }
+
     const urlDescarga = `${API_URL}/api/transferencias/descargar_paquete/${folioPaquete}`;
-    
     const a = document.createElement("a");
     a.href = urlDescarga;
     a.setAttribute("download", `paquete_${folioPaquete}.zip`);
@@ -14206,9 +14244,33 @@ function descargarPaqueteZip(folioPaquete) {
     programarRecargaTransferencias(2000);
 }
 
-function descargarArchivoTransferenciaDirecto(idTransferencia, nombreArchivo = "") {
+async function descargarArchivoTransferenciaDirecto(idTransferencia, nombreArchivo = "") {
+    try {
+        const resCheck = await fetch(`${API_URL}/api/transferencias/verificar/${idTransferencia}`);
+        if (resCheck.ok) {
+            const dataCheck = await resCheck.json();
+            if (!dataCheck.disponible) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Archivo no disponible',
+                        text: dataCheck.mensaje || 'Este archivo ya no está disponible o fue cancelado por el remitente.',
+                        confirmButtonColor: '#2563eb'
+                    });
+                } else {
+                    alert(dataCheck.mensaje || 'Este archivo ya no está disponible.');
+                }
+                cargarTransferenciasRecibidos();
+                cargarDatosInicio();
+                cargarBadges();
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('Verificación previa omitida por red:', e);
+    }
+
     const urlDescarga = `${API_URL}/api/transferencias/descargar/${idTransferencia}`;
-    
     const a = document.createElement("a");
     a.href = urlDescarga;
     a.setAttribute("download", nombreArchivo || "archivo");
@@ -14220,14 +14282,30 @@ function descargarArchivoTransferenciaDirecto(idTransferencia, nombreArchivo = "
 }
 
 async function eliminarTransferencia(idTransferencia) {
-    if (!confirm("¿Deseas cancelar esta transferencia y borrar el archivo físico del servidor ahora mismo?")) {
-        return;
+    if (typeof Swal !== 'undefined') {
+        const confirmResult = await Swal.fire({
+            title: '¿Cancelar esta transferencia?',
+            text: 'Se cancelará el envío y el archivo físico se borrará del servidor para que el destinatario ya no lo descargue.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, cancelar y borrar',
+            cancelButtonText: 'Regresar'
+        });
+        if (!confirmResult.isConfirmed) return;
+    } else {
+        if (!confirm("¿Deseas cancelar esta transferencia y borrar el archivo físico del servidor ahora mismo?")) return;
     }
+
     try {
         const res = await fetch(`${API_URL}/api/transferencias/eliminar/${idTransferencia}`, {
             method: 'DELETE'
         });
         if (res.ok) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'success', title: 'Cancelado', text: 'El archivo fue cancelado y retirado del servidor.', timer: 1800, showConfirmButton: false });
+            }
             cargarTransferenciasEnviados();
             cargarTransferenciasRecibidos();
             cargarDatosInicio();
@@ -14237,6 +14315,155 @@ async function eliminarTransferencia(idTransferencia) {
         }
     } catch (e) {
         alert("Error de conexión al eliminar transferencia.");
+    }
+}
+
+async function eliminarPaqueteTransferencia(folioPaquete) {
+    if (!folioPaquete) return;
+    if (typeof Swal !== 'undefined') {
+        const confirmResult = await Swal.fire({
+            title: '¿Cancelar PAQUETE completo?',
+            text: `Se cancelarán TODOS los archivos enviados con el folio ${folioPaquete} y se borrarán del servidor.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, cancelar todo el paquete',
+            cancelButtonText: 'Regresar'
+        });
+        if (!confirmResult.isConfirmed) return;
+    } else {
+        if (!confirm(`¿Deseas cancelar TODOS los archivos enviados en el paquete ${folioPaquete}?`)) return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/transferencias/eliminar_paquete/${folioPaquete}`, {
+            method: 'DELETE'
+        });
+        if (res.ok) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'success', title: 'Paquete Cancelado', text: 'Todos los archivos del paquete fueron cancelados.', timer: 2000, showConfirmButton: false });
+            }
+            cargarTransferenciasEnviados();
+            cargarTransferenciasRecibidos();
+            cargarDatosInicio();
+            cargarBadges();
+        } else {
+            alert("No se pudo cancelar el paquete.");
+        }
+    } catch (e) {
+        alert("Error de conexión al cancelar paquete.");
+    }
+}
+
+async function descartarTransferenciaRecibida(idTransferencia, nombreArchivo = "") {
+    if (typeof Swal !== 'undefined') {
+        const confirmResult = await Swal.fire({
+            title: '¿Descartar archivo de tu buzón?',
+            text: `Si no requieres "${nombreArchivo || 'este archivo'}" o fue enviado por error, se quitará de tus pendientes.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, descartar',
+            cancelButtonText: 'Conservar'
+        });
+        if (!confirmResult.isConfirmed) return;
+    } else {
+        if (!confirm(`¿Deseas descartar este archivo de tu buzón?`)) return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/transferencias/descartar/${idTransferencia}`, {
+            method: 'POST'
+        });
+        if (res.ok) {
+            cargarTransferenciasRecibidos();
+            cargarDatosInicio();
+            cargarBadges();
+        } else {
+            alert("No se pudo descartar el archivo.");
+        }
+    } catch (e) {
+        alert("Error de conexión al descartar archivo.");
+    }
+}
+
+async function descartarPaqueteRecibido(folioPaquete) {
+    if (!folioPaquete) return;
+    if (typeof Swal !== 'undefined') {
+        const confirmResult = await Swal.fire({
+            title: '¿Descartar PAQUETE completo?',
+            text: `Se quitarán del buzón todos los archivos pendientes correspondientes al folio ${folioPaquete}.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, descartar paquete',
+            cancelButtonText: 'Conservar'
+        });
+        if (!confirmResult.isConfirmed) return;
+    } else {
+        if (!confirm(`¿Deseas descartar todos los archivos del paquete ${folioPaquete}?`)) return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/transferencias/descartar_paquete/${folioPaquete}`, {
+            method: 'POST'
+        });
+        if (res.ok) {
+            cargarTransferenciasRecibidos();
+            cargarDatosInicio();
+            cargarBadges();
+        } else {
+            alert("No se pudo descartar el paquete.");
+        }
+    } catch (e) {
+        alert("Error de conexión al descartar paquete.");
+    }
+}
+
+async function descartarTodoBuzon() {
+    if (!usuarioLogueado) return;
+    if (typeof Swal !== 'undefined') {
+        const confirmResult = await Swal.fire({
+            title: '¿Limpiar todo tu buzón?',
+            text: 'Se descartarán todos los archivos que tienes pendientes por descargar. Utiliza esto si te enviaron archivos por error.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, limpiar todo',
+            cancelButtonText: 'Cancelar'
+        });
+        if (!confirmResult.isConfirmed) return;
+    } else {
+        if (!confirm("¿Deseas descartar TODOS los archivos pendientes de tu buzón?")) return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/transferencias/descartar_todos/${usuarioLogueado.id_empleado}`, {
+            method: 'POST'
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Buzón limpio',
+                    text: `Se descartaron ${data.total_descartados || 0} archivo(s) de tu buzón.`,
+                    timer: 2200,
+                    showConfirmButton: false
+                });
+            }
+            cargarTransferenciasRecibidos();
+            cargarDatosInicio();
+            cargarBadges();
+        } else {
+            alert("No se pudo limpiar el buzón.");
+        }
+    } catch (e) {
+        alert("Error de conexión al limpiar el buzón.");
     }
 }
 

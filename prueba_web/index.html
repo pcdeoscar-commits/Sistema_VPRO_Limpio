@@ -5515,7 +5515,15 @@
                             <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px;"></i>
                             <input type="text" id="transfer-buscar-recibidos" oninput="filtrarTransferencias('recibidos')" placeholder="Buscar archivo o remitente..." style="width: 100%; padding: 8px 12px 8px 36px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; background: white; box-sizing: border-box;">
                         </div>
-                        <div id="transfer-contador-recibidos" style="font-size: 13px; color: #64748b; font-weight: 600;"></div>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <div id="transfer-contador-recibidos" style="font-size: 13px; color: #64748b; font-weight: 600;"></div>
+                            <button type="button" onclick="cargarTransferenciasRecibidos()" style="background: white; border: 1px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="ph ph-arrows-clockwise"></i> Refrescar
+                            </button>
+                            <button type="button" id="btn-descartar-todo-buzon" onclick="descartarTodoBuzon()" style="background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;" title="Descartar todos los archivos pendientes que están en el buzón">
+                                <i class="ph ph-broom"></i> Descartar Todo el Buzón
+                            </button>
+                        </div>
                     </div>
                     <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; max-height: calc(100vh - 270px); min-height: 480px; overflow-y: auto; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                         <table class="tabla-vpro">
@@ -5545,7 +5553,12 @@
                             <i class="ph ph-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px;"></i>
                             <input type="text" id="transfer-buscar-enviados" oninput="filtrarTransferencias('enviados')" placeholder="Buscar archivo o destinatario..." style="width: 100%; padding: 8px 12px 8px 36px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; background: white; box-sizing: border-box;">
                         </div>
-                        <div id="transfer-contador-enviados" style="font-size: 13px; color: #64748b; font-weight: 600;"></div>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <div id="transfer-contador-enviados" style="font-size: 13px; color: #64748b; font-weight: 600;"></div>
+                            <button type="button" onclick="cargarTransferenciasEnviados()" style="background: white; border: 1px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="ph ph-arrows-clockwise"></i> Refrescar
+                            </button>
+                        </div>
                     </div>
                     <div class="tabla-container" style="background: white; border-radius: 14px; border: 1px solid #e2e8f0; padding: 0; max-height: calc(100vh - 270px); min-height: 480px; overflow-y: auto; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                         <table class="tabla-vpro">
@@ -5985,7 +5998,7 @@
     <script src="js/analitica.js"></script>
     <script src="js/rh.js"></script>
     <script src="js/audio.js"></script>
-    <script src="js/transfer.js"></script>
+    <script src="js/transfer.js?v=20261021_v2_cancelar"></script>
     <script src="js/cotizaciones.js"></script>
 </body>
 </html>

@@ -1144,7 +1144,7 @@
             <div class="nav-item" data-roles="todos" onclick="cambiarVista('vista-checkout')">
                 <div class="nav-label"><i class="ph ph-package"></i> <span class="nav-text">Checkout [VPF]</span></div>
             </div>
-            <div class="nav-item" data-roles="ADMIN,PRODUCCION,COORDINADOR" onclick="cambiarVista('vista-incidencias')">
+            <div id="nav-item-incidencias" class="nav-item" style="display: none;" onclick="cambiarVista('vista-incidencias')">
                 <div class="nav-label"><i class="ph ph-warning-circle"></i> <span class="nav-text">Incidencias</span></div>
             </div>
     
@@ -5972,8 +5972,8 @@
      Para editar, modificar el módulo correspondiente en js/
      ════════════════════════════════════════════════════ -->
     <script src="js/core.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/navegacion.js"></script>
+    <script src="js/auth.js?v=20261021_v2_auth"></script>
+    <script src="js/navegacion.js?v=20261021_v2_auth"></script>
     <script src="js/inicio_asistencia.js"></script>
     <script src="js/eventos_op.js"></script>
     <script src="js/eventos_impresion.js"></script>
@@ -5984,7 +5984,7 @@
     <script src="js/catalogos.js"></script>
     <script src="js/app_init.js"></script>
     <script src="js/checkout.js"></script>
-    <script src="js/incidencias.js"></script>
+    <script src="js/incidencias.js?v=20261021_v2_auth"></script>
     <script src="js/analitica.js"></script>
     <script src="js/rh.js"></script>
     <script src="js/audio.js"></script>

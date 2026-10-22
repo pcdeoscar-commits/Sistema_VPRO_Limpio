@@ -244,6 +244,19 @@ function cerrarSesion() {
     empleadoSeleccionado = null;
 }
 
+function esUsuarioAutorizadoDireccion() {
+    if (!usuarioLogueado) return false;
+    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim();
+    return nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ') || nombre.includes('AGÚNDEZ');
+}
+
+function actualizarVisibilidadMenuIncidencias() {
+    const navInc = document.getElementById("nav-item-incidencias") || document.querySelector('.sidebar-menu .nav-item[onclick*="vista-incidencias"]');
+    if (navInc) {
+        navInc.style.display = esUsuarioAutorizadoDireccion() ? 'flex' : 'none';
+    }
+}
+
 function filtrarMenuPorRol(rolUsuario) {
     const itemsMenu = document.querySelectorAll('.sidebar-menu .nav-item');
     itemsMenu.forEach(item => {
@@ -258,6 +271,7 @@ function filtrarMenuPorRol(rolUsuario) {
             item.style.display = 'none';
         }
     });
+    actualizarVisibilidadMenuIncidencias();
     actualizarVisibilidadAgendaDrive();
 }
 
@@ -516,6 +530,20 @@ function cambiarVista(idVista) {
         } else if (idVista === 'vista-checkout') {
             inicializarModuloCheckout();
         } else if (idVista === 'vista-incidencias') {
+            if (typeof esUsuarioAutorizadoDireccion === 'function' && !esUsuarioAutorizadoDireccion()) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '⛔ Acceso Restringido',
+                        html: '<p style="color: #475569; font-size: 14px;">El módulo de auditoría de incidencias es estrictamente confidencial.<br><strong style="color: #b91c1c;">Solo personal de Dirección (Villarreal / Agundez) tiene autorización para revisarlo.</strong></p>',
+                        confirmButtonColor: '#4f46e5'
+                    });
+                } else {
+                    alert("⛔ Acceso Restringido: Solo personal de Dirección (Villarreal / Agundez) tiene autorización.");
+                }
+                cambiarVista('vista-inicio');
+                return;
+            }
             cargarModuloIncidencias();
         } else if (idVista === 'vista-analitica') {
             cargarModuloAnalitica();
@@ -9076,14 +9104,29 @@ let chartIncTendenciaInstance = null;
 let modoTendenciaActivo = null;
 
 async function cargarModuloIncidencias() {
+    if (typeof esUsuarioAutorizadoDireccion === 'function' && !esUsuarioAutorizadoDireccion()) {
+        console.warn("Intento de acceso no autorizado al módulo de incidencias.");
+        const tbody = document.getElementById('tbody-incidencias-detallada');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #dc2626; font-weight: 700;">⛔ Acceso denegado: Este módulo es confidencial y solo está disponible para Dirección (Villarreal / Agundez).</td></tr>`;
+        }
+        return;
+    }
+
     try {
         const tbody = document.getElementById('tbody-incidencias-detallada');
         if (tbody) {
             tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #64748b;"><i class="ph ph-spinner" style="font-size: 24px;"></i> Cargando evaluaciones de incidencias...</td></tr>`;
         }
 
-        const res = await fetch(`${API_URL}/api/incidencias/reporte`);
-        if (!res.ok) throw new Error("Error al obtener reporte de incidencias");
+        const nombreParam = encodeURIComponent(usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || '');
+        const res = await fetch(`${API_URL}/api/incidencias/reporte?usuario=${nombreParam}`);
+        if (!res.ok) {
+            if (res.status === 403) {
+                throw new Error("Acceso denegado por el servidor: No tienes permisos de Dirección.");
+            }
+            throw new Error("Error al obtener reporte de incidencias");
+        }
         const dataJson = await res.json();
 
         // Procesar evaluaciones

@@ -26,7 +26,7 @@ def renderizar_modulo(API_URL):
     df_raw = pd.DataFrame(columns=['id_maestro', 'folio_op', 'incidencias_generales', 'fecha', 'id_empleado', 'nombre_evento', 'para_q_cliente', 'nombre_empleado', 'depto_real'])
     
     try:
-        res_inc = requests.get(f"{API_URL}/api/incidencias/reporte", verify=False, timeout=8)
+        res_inc = requests.get(f"{API_URL}/api/incidencias/reporte", params={"usuario": nombre_raw}, verify=False, timeout=8)
         if res_inc.status_code == 200:
             data_json = res_inc.json()
             if data_json:

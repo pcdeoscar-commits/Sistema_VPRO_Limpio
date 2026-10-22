@@ -22,14 +22,29 @@ let chartIncTendenciaInstance = null;
 let modoTendenciaActivo = null;
 
 async function cargarModuloIncidencias() {
+    if (typeof esUsuarioAutorizadoDireccion === 'function' && !esUsuarioAutorizadoDireccion()) {
+        console.warn("Intento de acceso no autorizado al módulo de incidencias.");
+        const tbody = document.getElementById('tbody-incidencias-detallada');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #dc2626; font-weight: 700;">⛔ Acceso denegado: Este módulo es confidencial y solo está disponible para Dirección (Villarreal / Agundez).</td></tr>`;
+        }
+        return;
+    }
+
     try {
         const tbody = document.getElementById('tbody-incidencias-detallada');
         if (tbody) {
             tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: #64748b;"><i class="ph ph-spinner" style="font-size: 24px;"></i> Cargando evaluaciones de incidencias...</td></tr>`;
         }
 
-        const res = await fetch(`${API_URL}/api/incidencias/reporte`);
-        if (!res.ok) throw new Error("Error al obtener reporte de incidencias");
+        const nombreParam = encodeURIComponent(usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || '');
+        const res = await fetch(`${API_URL}/api/incidencias/reporte?usuario=${nombreParam}`);
+        if (!res.ok) {
+            if (res.status === 403) {
+                throw new Error("Acceso denegado por el servidor: No tienes permisos de Dirección.");
+            }
+            throw new Error("Error al obtener reporte de incidencias");
+        }
         const dataJson = await res.json();
 
         // Procesar evaluaciones

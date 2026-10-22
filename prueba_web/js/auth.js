@@ -235,6 +235,19 @@ function cerrarSesion() {
     empleadoSeleccionado = null;
 }
 
+function esUsuarioAutorizadoDireccion() {
+    if (!usuarioLogueado) return false;
+    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim();
+    return nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ') || nombre.includes('AGÚNDEZ');
+}
+
+function actualizarVisibilidadMenuIncidencias() {
+    const navInc = document.getElementById("nav-item-incidencias") || document.querySelector('.sidebar-menu .nav-item[onclick*="vista-incidencias"]');
+    if (navInc) {
+        navInc.style.display = esUsuarioAutorizadoDireccion() ? 'flex' : 'none';
+    }
+}
+
 function filtrarMenuPorRol(rolUsuario) {
     const itemsMenu = document.querySelectorAll('.sidebar-menu .nav-item');
     itemsMenu.forEach(item => {
@@ -249,6 +262,7 @@ function filtrarMenuPorRol(rolUsuario) {
             item.style.display = 'none';
         }
     });
+    actualizarVisibilidadMenuIncidencias();
     actualizarVisibilidadAgendaDrive();
 }
 

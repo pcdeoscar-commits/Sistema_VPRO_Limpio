@@ -59,6 +59,20 @@ function cambiarVista(idVista) {
         } else if (idVista === 'vista-checkout') {
             inicializarModuloCheckout();
         } else if (idVista === 'vista-incidencias') {
+            if (typeof esUsuarioAutorizadoDireccion === 'function' && !esUsuarioAutorizadoDireccion()) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '⛔ Acceso Restringido',
+                        html: '<p style="color: #475569; font-size: 14px;">El módulo de auditoría de incidencias es estrictamente confidencial.<br><strong style="color: #b91c1c;">Solo personal de Dirección (Villarreal / Agundez) tiene autorización para revisarlo.</strong></p>',
+                        confirmButtonColor: '#4f46e5'
+                    });
+                } else {
+                    alert("⛔ Acceso Restringido: Solo personal de Dirección (Villarreal / Agundez) tiene autorización.");
+                }
+                cambiarVista('vista-inicio');
+                return;
+            }
             cargarModuloIncidencias();
         } else if (idVista === 'vista-analitica') {
             cargarModuloAnalitica();

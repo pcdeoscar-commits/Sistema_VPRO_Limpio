@@ -140,9 +140,21 @@ def obtener_balance_ejecutivo_incidencias(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
+def _es_usuario_direccion(usuario: Optional[str]) -> bool:
+    if not usuario:
+        return False
+    u = str(usuario).upper().strip()
+    return any(p in u for p in ["VILLARREAL", "VILLAREAL", "VILARREAL", "AGUNDEZ", "AGÚNDEZ"])
+
 @router.get("/reporte")
-def obtener_reporte_incidencias_global():
-    """Obtiene la bitácora consolidada de incidencias cruzando base nueva y vieja."""
+def obtener_reporte_incidencias_global(usuario: Optional[str] = Query(None, description="Nombre del usuario consultante")):
+    """Obtiene la bitácora consolidada de incidencias cruzando base nueva y vieja.
+    Acceso restringido exclusivamente a Dirección (apellidos Villarreal o Agundez)."""
+    if not _es_usuario_direccion(usuario):
+        raise HTTPException(
+            status_code=403,
+            detail="Acceso restringido: Solo Dirección (apellidos Villarreal o Agundez) tiene autorización para auditar incidencias."
+        )
     try:
         query = text("""
             SELECT cm.id_maestro, 

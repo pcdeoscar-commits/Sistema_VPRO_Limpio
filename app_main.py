@@ -573,7 +573,7 @@ else:
 
         menu_opciones.append("📦 Checkout [VPF-PSP-CHL]")
 
-        if rol_actual in ["ADMIN", "COORDINADOR"]:
+        if es_villarreal_menu or "AGUNDEZ" in llave_menu_clean:
             menu_opciones.append("📊 Incidencias")
 
         menu_opciones.append("🚩 Equipos con Daño")
@@ -609,7 +609,7 @@ else:
                 
         menu_opciones.append("📦 Checkout [VPF-PSP-CHL]")
         
-        if rol_actual in ["ADMIN", "COORDINADOR"]:
+        if es_villarreal_menu or "AGUNDEZ" in llave_menu_clean:
             menu_opciones.append("📊 Incidencias")
             
         menu_opciones.append("🚩 Equipos con Daño")

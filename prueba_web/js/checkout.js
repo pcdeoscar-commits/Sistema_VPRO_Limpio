@@ -212,6 +212,9 @@ function limpiarModuloCheckout() {
     const incCheckin = document.getElementById('checkout-checkin-incidencias');
     if (incCheckin) incCheckin.value = "";
 
+    const btnCoord = document.getElementById('btn-autorizar-salida-coordinador');
+    if (btnCoord) btnCoord.style.display = 'none';
+
     renderTablaCheckoutSalida();
     renderTablaCheckoutCheckin();
 }
@@ -357,13 +360,15 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         renderTablaCheckoutSalida();
         renderTablaCheckoutCheckin();
 
-        // Control de botón de autorización de Coordinador
+        // Control de botón de autorización de Coordinador (EXCLUSIVO COORDINADOR)
         const btnCoord = document.getElementById('btn-autorizar-salida-coordinador');
-        const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase();
-        const esCoordinadorOAdmin = rolUsuario.includes('ADMIN') || rolUsuario.includes('PRODUCCION') || rolUsuario.includes('COORDINADOR');
+        const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase().trim();
+        const puestoUsuario = (usuarioLogueado?.puesto || '').toUpperCase().trim();
+        const esCoordinador = rolUsuario === 'COORDINADOR' || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') ||
+                              puestoUsuario.includes('COORDINADOR') || puestoUsuario.includes('COORDINACION');
         
         if (btnCoord) {
-            if (esCoordinadorOAdmin && idMaestroCheckoutActual && estadoBodegaCheckoutActual !== 'DESPACHADO' && estadoBodegaCheckoutActual !== 'RECIBIDO') {
+            if (esCoordinador && idMaestroCheckoutActual && estadoBodegaCheckoutActual !== 'DESPACHADO' && estadoBodegaCheckoutActual !== 'RECIBIDO') {
                 btnCoord.style.display = 'inline-flex';
             } else {
                 btnCoord.style.display = 'none';
@@ -750,6 +755,16 @@ async function finalizarSalidaCheckout() {
 }
 
 async function autorizarSalidaCoordinador() {
+    const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase().trim();
+    const puestoUsuario = (usuarioLogueado?.puesto || '').toUpperCase().trim();
+    const esCoordinador = rolUsuario === 'COORDINADOR' || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') ||
+                          puestoUsuario.includes('COORDINADOR') || puestoUsuario.includes('COORDINACION');
+
+    if (!esCoordinador) {
+        alert("⚠️ Acción restringida: Solo el personal con rol de Coordinador puede autorizar la salida.");
+        return;
+    }
+
     if (!idMaestroCheckoutActual) {
         alert("⚠️ No se puede autorizar: primero debe registrarse la salida base de la OP.");
         return;

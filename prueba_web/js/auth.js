@@ -35,54 +35,32 @@ async function cargarEmpleados() {
             });
         }
 
-        // Aseguramos que Kiosco (ID 529) aparezca al principio de la cuadrícula
-        activos.sort((a, b) => {
-            const esKioscoA = String(a.id_empleado).trim() === "529" || (a.depto || "").toUpperCase() === "KIOSKO" || (a.nombre || "").toUpperCase().includes("KIOSCO");
-            const esKioscoB = String(b.id_empleado).trim() === "529" || (b.depto || "").toUpperCase() === "KIOSKO" || (b.nombre || "").toUpperCase().includes("KIOSCO");
-            if (esKioscoA && !esKioscoB) return -1;
-            if (!esKioscoA && esKioscoB) return 1;
-            return (a.nombre || "").localeCompare(b.nombre || "");
-        });
-
         activos.forEach(emp => {
             const idE = String(emp.id_empleado || "").trim();
             const esKiosco = idE === "529" || (emp.depto || "").toUpperCase() === "KIOSKO" || (emp.nombre || "").toUpperCase().includes("KIOSCO");
             const tarjeta = document.createElement("div");
             tarjeta.className = "card";
 
+            const urlFoto = `${API_URL}/fotos/${emp.id_empleado}.jpg`;
+            const primerNombre = emp.nombre.split(' ')[0];
+            const nombreFormateado = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+
             if (esKiosco) {
-                // ACCESO DIRECTO AL KIOSCO SIN CONTRASEÑA
-                tarjeta.style.border = "2px solid #0284c7";
-                tarjeta.style.boxShadow = "0 6px 16px rgba(2, 132, 199, 0.18)";
+                // Entrada directa al Kiosco sin clave de acceso
                 tarjeta.onclick = () => entrarModoKioscoDirecto();
-
-                tarjeta.innerHTML = `
-                    <div style="position: relative; width: 100%; height: 180px; overflow: hidden; border-top-left-radius: 11px; border-top-right-radius: 11px;">
-                        <img src="${API_URL}/fotos/529.png" onerror="this.src='${API_URL}/fotos/529.jpg'" alt="Foto Kiosco" style="width: 100%; height: 100%; object-fit: cover;">
-                        <span style="position: absolute; top: 10px; right: 10px; background: #0284c7; color: white; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">TERMINAL KIOSCO</span>
-                    </div>
-                    <div class="card-info" style="padding: 12px 10px;">
-                        <h3 style="color: #0f172a; font-size: 15px; font-weight: 800; margin: 0 0 4px 0;">CHECADOR (KIOSCO)</h3>
-                        <p style="margin: 0; font-size: 11.5px; font-weight: 700; color: #059669; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                            <i class="ph ph-check-circle" style="font-size: 14px;"></i> ENTRADA DIRECTA SIN CLAVE
-                        </p>
-                    </div>
-                `;
             } else {
-                const urlFoto = `${API_URL}/fotos/${emp.id_empleado}.jpg`; 
                 tarjeta.onclick = () => abrirModal(emp, urlFoto);
-
-                const primerNombre = emp.nombre.split(' ')[0];
-                const nombreFormateado = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
-
-                tarjeta.innerHTML = `
-                    <img src="${urlFoto}" onerror="this.src='vendor/img/avatar_default.png'" alt="Foto">
-                    <div class="card-info">
-                        <h3>${nombreFormateado}</h3>
-                        <p>${emp.depto || 'SISTEMAS'}</p>
-                    </div>
-                `;
             }
+
+            const fallbackLocal = esKiosco ? "vendor/img/529.jpg" : "vendor/img/avatar_default.png";
+
+            tarjeta.innerHTML = `
+                <img src="${urlFoto}" onerror="if(!this.dataset.png){this.dataset.png='1';this.src='${API_URL}/fotos/${emp.id_empleado}.png';}else if(!this.dataset.local){this.dataset.local='1';this.src='${fallbackLocal}';}else{this.src='vendor/img/avatar_default.png';}" alt="Foto">
+                <div class="card-info">
+                    <h3>${nombreFormateado}</h3>
+                    <p>${emp.depto || 'KIOSKO'}</p>
+                </div>
+            `;
             contenedor.appendChild(tarjeta);
         });
     } catch (error) {

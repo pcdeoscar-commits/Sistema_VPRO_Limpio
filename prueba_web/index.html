@@ -1327,7 +1327,10 @@
                 <div id="subvista-checador-kiosco">
                     <div id="modulo-checador" class="modulo-card kiosco-ampliado" style="margin: 0 auto; max-width: 100%;">
                         <!-- CABECERA: Reloj y Escáner -->
-                        <div class="kiosco-header">
+                        <div class="kiosco-header" style="position: relative;">
+                            <button id="btn-salir-kiosco-pantalla" onclick="salirModoKiosco()" title="Salir del Kiosco y volver a selección de usuarios" style="display: none; position: absolute; top: 0; right: 0; background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                                <i class="ph ph-sign-out"></i> Salir del Kiosco
+                            </button>
                             <div class="reloj-kiosco" id="reloj-pantalla">00:00:00</div>
                             <div class="fecha-kiosco" id="fecha-pantalla">Cargando fecha...</div>
                             <div style="display: flex; justify-content: center; gap: 12px; max-width: 650px; margin: 0 auto;">
@@ -1362,18 +1365,25 @@
                                     <input type="text" id="filtro-kiosco-tabla" oninput="filtrarMatrizKiosco(this.value)" placeholder="🔍 Buscar empleado..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; width: 200px;">
                                 </div>
                                 <div class="tabla-container" style="min-height: 580px; max-height: 650px; overflow-y: auto;">
-                                    <table class="tabla-vpro" id="tabla-asistencia-kiosco">
+                                    <table class="tabla-vpro" id="tabla-asistencia-kiosco" style="font-size: 12.5px;">
                                         <thead>
-                                            <tr>
-                                                <th>Empleado</th>
-                                                <th>Entrada Mat.</th>
-                                                <th>Salida Mat.</th>
-                                                <th>Entrada Vesp.</th>
-                                                <th>Salida Vesp.</th>
+                                            <tr style="background: #0f172a; color: white;">
+                                                <th rowspan="2" style="vertical-align: middle; padding: 8px 12px; border-right: 1px solid #334155;">Empleado</th>
+                                                <th colspan="3" style="text-align: center; padding: 6px; background: #1e293b; border-right: 1px solid #334155; border-bottom: 1px solid #475569;">☀️ TURNO MATUTINO</th>
+                                                <th colspan="4" style="text-align: center; padding: 6px; background: #334155; border-bottom: 1px solid #475569;">⛅ TURNO VESPERTINO</th>
+                                            </tr>
+                                            <tr style="background: #1e293b; color: #e2e8f0; font-size: 11.5px;">
+                                                <th style="padding: 6px 8px;">Entrada</th>
+                                                <th style="padding: 6px 8px;">Estatus</th>
+                                                <th style="padding: 6px 8px; border-right: 1px solid #334155;">Salida (Comida)</th>
+                                                <th style="padding: 6px 8px;">Entrada</th>
+                                                <th style="padding: 6px 8px;">Estatus</th>
+                                                <th style="padding: 6px 8px;">Salida</th>
+                                                <th style="padding: 6px 8px;">Comentarios</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tabla-asistencia-body">
-                                            <tr><td colspan="5" style="text-align: center; padding: 20px;">Esperando datos del checador...</td></tr>
+                                            <tr><td colspan="8" style="text-align: center; padding: 20px;">Esperando datos del checador...</td></tr>
                                         </tbody>
                                     </table>
                                 </div>

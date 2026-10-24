@@ -449,6 +449,52 @@ function iniciarRelojKiosco() {
     intervaloReloj = setInterval(actualizar, 1000);
 }
 
+// ── HELPERS DE PUNTUALIDAD Y ESTATUS DEL KIOSCO ───────────────────────
+function calcularEstatusEntradaKiosco(horaStr, turno) {
+    if (!horaStr || horaStr === "--:--:--" || horaStr === "--:--") return "";
+    try {
+        const parts = horaStr.split(':').map(Number);
+        const h = parts[0] || 0;
+        const m = parts[1] || 0;
+        const s = parts[2] || 0;
+        const horaSecs = h * 3600 + m * 60 + s;
+        
+        const baseH = (turno === "Matutino") ? 9 : 16;
+        const baseSecs = baseH * 3600;
+        const limiteSecs = baseSecs + (5 * 60) + 59; // 5 minutos y 59 segundos de tolerancia
+        
+        if (horaSecs > limiteSecs) {
+            const retraso = horaSecs - baseSecs;
+            const mins = Math.floor(retraso / 60);
+            const secs = retraso % 60;
+            return `<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #fecaca; white-space: nowrap; display: inline-block;">🔴 TARDE (${mins}m ${secs}s)</span>`;
+        } else {
+            return `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #bbf7d0; white-space: nowrap; display: inline-block;">🟢 A TIEMPO</span>`;
+        }
+    } catch(e) {
+        return `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #bbf7d0;">🟢 A TIEMPO</span>`;
+    }
+}
+
+function calcularEstatusSalidaVespKiosco(horaStr, observaciones = "", estatus = "") {
+    if (!horaStr || horaStr === "--:--:--" || horaStr === "--:--") return "";
+    const obs = `${observaciones || ""} ${estatus || ""}`.toUpperCase();
+    if (obs.includes("OMISI")) {
+        return `<span style="background: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #fca5a5; white-space: nowrap; display: inline-block;">🚨 OMISIÓN COMIDA</span>`;
+    }
+    try {
+        const parts = horaStr.split(':').map(Number);
+        const h = parts[0] || 0;
+        const m = parts[1] || 0;
+        if ((h === 19 && m >= 50) || h >= 20) {
+            return `<span style="background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #fde68a; white-space: nowrap; display: inline-block;">🌙 Revisar T. Extra</span>`;
+        }
+        return `<span style="background: #f1f5f9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; border: 1px solid #cbd5e1; white-space: nowrap; display: inline-block;">🏠 Descansa</span>`;
+    } catch(e) {
+        return `<span style="background: #f1f5f9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 600; font-size: 11px;">🏠 Descansa</span>`;
+    }
+}
+
 async function cargarMatrizKiosco(idRecienRegistrado = null) {
     const tbody = document.getElementById("tabla-asistencia-body");
     if (!tbody) return;
@@ -486,7 +532,7 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
         });
 
         // 2. Determinar si un registro tiene checada real o incidencia RH
-        const esHoraValida = (h) => (h && h !== "None" && h !== "null" && h !== "--:--" && String(h).trim() !== "");
+        const esHoraValida = (h) => (h && h !== "None" && h !== "null" && h !== "--:--" && h !== "--:--:--" && String(h).trim() !== "");
         const tieneRegistroActivoHoy = (r) => {
             if (!r) return false;
             const est = String(r.estatus || '').toUpperCase();
@@ -504,7 +550,7 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
         if (registrosFiltrados.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 13.5px;">
+                    <td colspan="8" style="text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 13.5px;">
                         <i class="ph ph-clock-countdown" style="font-size: 28px; display: block; margin-bottom: 8px; color: #94a3b8;"></i>
                         <span>Esperando checadas del día de hoy. La lista se irá formando conforme el personal registre su asistencia.</span>
                     </td>
@@ -546,8 +592,8 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
 
                 tbody.innerHTML += `
                     <tr ${estiloFila}>
-                        <td style="font-weight: 600; color: var(--text-main);">${emp.nombre}</td>
-                        <td colspan="4" style="text-align: center; font-weight: 700; font-size: 12px; padding: 6px; ${bgStyle} border-radius: 6px;">
+                        <td style="font-weight: 600; color: var(--text-main); text-align: left;">${emp.nombre}</td>
+                        <td colspan="7" style="text-align: center; font-weight: 700; font-size: 12px; padding: 6px; ${bgStyle} border-radius: 6px;">
                             ${badgeTxt}
                         </td>
                     </tr>
@@ -555,27 +601,50 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
                 return;
             }
 
-            const limpiaHora = (h) => esHoraValida(h) ? String(h).substring(0, 5) : "--:--";
+            const limpiaHora = (h) => esHoraValida(h) ? String(h).substring(0, 8) : "--:--:--";
             const inMat = limpiaHora(reg.hora_entrada);
             const outMat = limpiaHora(reg.hora_salida);
             const inVesp = limpiaHora(reg.hora_entrada_v);
             const outVesp = limpiaHora(reg.hora_salida_v);
 
+            const estInMat = inMat !== "--:--:--" ? calcularEstatusEntradaKiosco(inMat, "Matutino") : `<span style="color: #94a3b8; font-size: 11px;">--</span>`;
+            const estInVesp = inVesp !== "--:--:--" ? calcularEstatusEntradaKiosco(inVesp, "Vespertino") : `<span style="color: #94a3b8; font-size: 11px;">--</span>`;
+            const estOutVesp = outVesp !== "--:--:--" ? calcularEstatusSalidaVespKiosco(outVesp, reg.observaciones, reg.estatus) : `<span style="color: #94a3b8; font-size: 11px;">--</span>`;
+
             const stError = "color: #9f1239; background: #ffe4e6; font-weight: bold;";
-            const tdOutMat = (outMat === "--:--" && inMat !== "--:--") ? `<td style="${stError}">--:--</td>` : `<td>${outMat}</td>`;
+            const tdOutMat = (outMat === "--:--:--" && inMat !== "--:--:--") ? `<td style="${stError}">--:--:--</td>` : `<td>${outMat}</td>`;
 
             tbody.innerHTML += `
                 <tr ${estiloFila}>
-                    <td style="font-weight: 600; color: var(--text-main);">${emp.nombre}</td>
-                    <td>${inMat}</td>
+                    <td style="font-weight: 600; color: var(--text-main); text-align: left;">${emp.nombre}</td>
+                    <td><b>${inMat}</b></td>
+                    <td>${estInMat}</td>
                     ${tdOutMat}
-                    <td>${inVesp}</td>
-                    <td>${outVesp}</td>
+                    <td><b>${inVesp}</b></td>
+                    <td>${estInVesp}</td>
+                    <td><b>${outVesp}</b></td>
+                    <td>${estOutVesp}</td>
                 </tr>
             `;
+
+            // Si es la persona recién registrada, actualizar detalles en la tarjeta izquierda
+            if (esReciente) {
+                const detTurno = document.getElementById("scan-detalles-turno");
+                const scanMatIn = document.getElementById("scan-mat-in");
+                const scanMatOut = document.getElementById("scan-mat-out");
+                const scanVespIn = document.getElementById("scan-vesp-in");
+                const scanVespOut = document.getElementById("scan-vesp-out");
+                if (detTurno && scanMatIn && scanMatOut && scanVespIn && scanVespOut) {
+                    scanMatIn.innerText = inMat;
+                    scanMatOut.innerText = outMat;
+                    scanVespIn.innerText = inVesp;
+                    scanVespOut.innerText = outVesp;
+                    detTurno.style.display = "block";
+                }
+            }
         });
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 16px;">Error cargando la matriz del kiosco.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #ef4444; padding: 16px;">Error cargando la matriz del kiosco.</td></tr>`;
     }
 }
 

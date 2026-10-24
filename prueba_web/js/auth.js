@@ -24,22 +24,65 @@ async function cargarEmpleados() {
             return rol !== 'BAJA' && rol !== 'INACTIVO' && rol !== 'PROVEEDOR';
         });
 
+        // Garantizar que la tarjeta de Kiosco exista siempre en el muro
+        const tieneKiosco = activos.some(e => String(e.id_empleado).trim() === "529" || (e.depto || "").toUpperCase() === "KIOSKO" || (e.nombre || "").toUpperCase().includes("KIOSCO"));
+        if (!tieneKiosco) {
+            activos.unshift({
+                id_empleado: "529",
+                nombre: "Kiosco Bodega",
+                depto: "KIOSKO",
+                rol: "KIOSKO"
+            });
+        }
+
+        // Aseguramos que Kiosco (ID 529) aparezca al principio de la cuadrícula
+        activos.sort((a, b) => {
+            const esKioscoA = String(a.id_empleado).trim() === "529" || (a.depto || "").toUpperCase() === "KIOSKO" || (a.nombre || "").toUpperCase().includes("KIOSCO");
+            const esKioscoB = String(b.id_empleado).trim() === "529" || (b.depto || "").toUpperCase() === "KIOSKO" || (b.nombre || "").toUpperCase().includes("KIOSCO");
+            if (esKioscoA && !esKioscoB) return -1;
+            if (!esKioscoA && esKioscoB) return 1;
+            return (a.nombre || "").localeCompare(b.nombre || "");
+        });
+
         activos.forEach(emp => {
-            const urlFoto = `${API_URL}/fotos/${emp.id_empleado}.jpg`; 
+            const idE = String(emp.id_empleado || "").trim();
+            const esKiosco = idE === "529" || (emp.depto || "").toUpperCase() === "KIOSKO" || (emp.nombre || "").toUpperCase().includes("KIOSCO");
             const tarjeta = document.createElement("div");
             tarjeta.className = "card";
-            tarjeta.onclick = () => abrirModal(emp, urlFoto);
 
-            const primerNombre = emp.nombre.split(' ')[0];
-            const nombreFormateado = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+            if (esKiosco) {
+                // ACCESO DIRECTO AL KIOSCO SIN CONTRASEÑA
+                tarjeta.style.border = "2px solid #0284c7";
+                tarjeta.style.boxShadow = "0 6px 16px rgba(2, 132, 199, 0.18)";
+                tarjeta.onclick = () => entrarModoKioscoDirecto();
 
-            tarjeta.innerHTML = `
-                <img src="${urlFoto}" onerror="this.src='vendor/img/avatar_default.png'" alt="Foto">
-                <div class="card-info">
-                    <h3>${nombreFormateado}</h3>
-                    <p>${emp.depto || 'SISTEMAS'}</p>
-                </div>
-            `;
+                tarjeta.innerHTML = `
+                    <div style="height: 140px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #38bdf8; border-top-left-radius: 11px; border-top-right-radius: 11px;">
+                        <i class="ph ph-fingerprint" style="font-size: 58px; color: #38bdf8; margin-bottom: 4px;"></i>
+                        <span style="background: #0284c7; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; letter-spacing: 0.5px;">TERMINAL DIGITAL</span>
+                    </div>
+                    <div class="card-info" style="padding: 12px 10px;">
+                        <h3 style="color: #0f172a; font-size: 15px; font-weight: 800; margin: 0 0 4px 0;">CHECADOR (KIOSCO)</h3>
+                        <p style="margin: 0; font-size: 11.5px; font-weight: 700; color: #059669; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            <i class="ph ph-check-circle" style="font-size: 14px;"></i> ENTRADA SIN CLAVE
+                        </p>
+                    </div>
+                `;
+            } else {
+                const urlFoto = `${API_URL}/fotos/${emp.id_empleado}.jpg`; 
+                tarjeta.onclick = () => abrirModal(emp, urlFoto);
+
+                const primerNombre = emp.nombre.split(' ')[0];
+                const nombreFormateado = primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
+
+                tarjeta.innerHTML = `
+                    <img src="${urlFoto}" onerror="this.src='vendor/img/avatar_default.png'" alt="Foto">
+                    <div class="card-info">
+                        <h3>${nombreFormateado}</h3>
+                        <p>${emp.depto || 'SISTEMAS'}</p>
+                    </div>
+                `;
+            }
             contenedor.appendChild(tarjeta);
         });
     } catch (error) {
@@ -52,6 +95,10 @@ async function cargarEmpleados() {
 }
 
 function abrirModal(empleado, fotoUrl) {
+    if (String(empleado?.id_empleado).trim() === "529" || (empleado?.depto || "").toUpperCase() === "KIOSKO" || (empleado?.nombre || "").toUpperCase().includes("KIOSCO")) {
+        entrarModoKioscoDirecto();
+        return;
+    }
     empleadoSeleccionado = empleado;
     document.getElementById("modal-nombre").innerText = empleado.nombre;
     document.getElementById("modal-depto").innerText = empleado.depto || "SISTEMAS";
@@ -231,8 +278,56 @@ function cerrarSesion() {
     if (btnAgenda) btnAgenda.style.display = "none";
     const contCEO = document.getElementById("contenedor-monitor-accesos-ceo");
     if (contCEO) contCEO.style.display = "none";
+    const btnSalirKiosco = document.getElementById("btn-salir-kiosco-pantalla");
+    if (btnSalirKiosco) btnSalirKiosco.style.display = "none";
     usuarioLogueado = null;
     empleadoSeleccionado = null;
+}
+
+function entrarModoKioscoDirecto() {
+    usuarioLogueado = {
+        id_empleado: "529",
+        nombre: "Kiosco Bodega",
+        nombre_completo: "Terminal Kiosco Checador",
+        rol: "KIOSKO",
+        depto: "KIOSKO"
+    };
+
+    document.getElementById("vista-login").style.display = "none";
+    document.getElementById("vista-dashboard").style.display = "block";
+
+    // Ocultar barra lateral en modo terminal kiosco físico para vista limpia
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar) sidebar.style.display = "none";
+
+    // Cambiar directo a vista checador y pestaña de terminal kiosco
+    if (typeof cambiarVista === "function") cambiarVista('vista-checador');
+    if (typeof cambiarPestanaChecador === "function") {
+        cambiarPestanaChecador('kiosco');
+    }
+
+    // Mostrar botón para salir del kiosco
+    const btnSalir = document.getElementById("btn-salir-kiosco-pantalla");
+    if (btnSalir) btnSalir.style.display = "inline-flex";
+
+    // Iniciar reloj, lector y refrescar la matriz en vivo
+    if (typeof iniciarRelojKiosco === "function") iniciarRelojKiosco();
+    if (typeof inicializarLectorKiosco === "function") inicializarLectorKiosco();
+    if (typeof cargarMatrizKiosco === "function") cargarMatrizKiosco();
+}
+
+function salirModoKiosco() {
+    usuarioLogueado = null;
+    empleadoSeleccionado = null;
+    document.getElementById("vista-dashboard").style.display = "none";
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar) sidebar.style.display = "none";
+    document.getElementById("vista-login").style.display = "block";
+
+    const btnSalir = document.getElementById("btn-salir-kiosco-pantalla");
+    if (btnSalir) btnSalir.style.display = "none";
+
+    cargarEmpleados();
 }
 
 function esUsuarioAutorizadoDireccion() {

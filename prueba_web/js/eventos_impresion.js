@@ -850,7 +850,9 @@ async function habilitarOPParaEdicion(folio) {
         return;
     }
     const rol = (usuarioLogueado?.rol || '').toUpperCase();
-    const esPermitido = rol.includes('ADMIN') || rol.includes('COORDINADOR') || rol.includes('COORDINACION') || rol.includes('PRODUCCION');
+    const esPermitido = (typeof esUsuarioAutorizadoOP === 'function') 
+        ? esUsuarioAutorizadoOP() 
+        : (rol.includes('ADMIN') || rol.includes('COORDINADOR') || rol.includes('COORDINACION') || rol.includes('PRODUCTOR'));
     if (!esPermitido) {
         alert("⛔ Solo el personal con rol de Coordinador o Administrador puede habilitar OPs del histórico.");
         return;
@@ -900,7 +902,9 @@ async function mandarOPAlHistorial(folio, mostrarConfirmacion = true) {
         return;
     }
     const rol = (usuarioLogueado?.rol || '').toUpperCase();
-    const esPermitido = rol.includes('ADMIN') || rol.includes('COORDINADOR') || rol.includes('COORDINACION') || rol.includes('PRODUCCION');
+    const esPermitido = (typeof esUsuarioAutorizadoOP === 'function') 
+        ? esUsuarioAutorizadoOP() 
+        : (rol.includes('ADMIN') || rol.includes('COORDINADOR') || rol.includes('COORDINACION') || rol.includes('PRODUCTOR'));
     if (!esPermitido) {
         alert("⛔ Solo el personal con rol de Coordinador o Administrador puede archivar OPs en el histórico.");
         return;

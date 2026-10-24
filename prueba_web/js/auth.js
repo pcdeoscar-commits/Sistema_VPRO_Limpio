@@ -345,15 +345,46 @@ function actualizarVisibilidadMenuIncidencias() {
     }
 }
 
+function esUsuarioAutorizadoOP() {
+    if (!usuarioLogueado) return false;
+    const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
+    const puesto = (usuarioLogueado.puesto || '').toUpperCase().trim();
+    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // 1. Rol Administrador
+    const esAdmin = rol === 'ADMIN' || rol.includes('ADMIN');
+
+    // 2. Rol o puesto Coordinador
+    const esCoordinador = rol === 'COORDINADOR' || rol.includes('COORDINADOR') || rol.includes('COORDINACION') ||
+                          puesto.includes('COORDINADOR') || puesto.includes('COORDINACION');
+
+    // 3. Rol o puesto Productor (incluye productores designados como Manuel Antonio Madrid Zazueta)
+    const esProductor = rol === 'PRODUCTOR' || rol.includes('PRODUCTOR') ||
+                        puesto.includes('PRODUCTOR') ||
+                        nombre.includes('MADRID');
+
+    return esAdmin || esCoordinador || esProductor;
+}
+
+function actualizarVisibilidadMenuOP() {
+    const navOP = document.getElementById("nav-item-ops") || document.querySelector('.sidebar-menu .nav-item[onclick*="vista-ops"]');
+    if (navOP) {
+        navOP.style.display = esUsuarioAutorizadoOP() ? 'flex' : 'none';
+    }
+}
+
 function filtrarMenuPorRol(rolUsuario) {
+    const rolNormalizado = (rolUsuario || '').toUpperCase().trim();
     const itemsMenu = document.querySelectorAll('.sidebar-menu .nav-item');
     itemsMenu.forEach(item => {
         const rolesPermitidos = item.getAttribute('data-roles');
-        if (!rolesPermitidos || rolesPermitidos.includes('todos')) {
+        if (!rolesPermitidos || rolesPermitidos.toLowerCase().includes('todos')) {
             item.style.display = 'flex';
             return;
         }
-        if (rolesPermitidos.toUpperCase().includes((rolUsuario || '').toUpperCase())) {
+        const listaRoles = rolesPermitidos.toUpperCase().split(',').map(r => r.trim());
+        if (rolNormalizado && listaRoles.includes(rolNormalizado)) {
             item.style.display = 'flex';
         } else {
             item.style.display = 'none';
@@ -362,6 +393,7 @@ function filtrarMenuPorRol(rolUsuario) {
     actualizarVisibilidadMenuIncidencias();
     actualizarVisibilidadAgendaDrive();
     actualizarVisibilidadMenuGastos();
+    actualizarVisibilidadMenuOP();
 }
 
 function actualizarVisibilidadAgendaDrive() {

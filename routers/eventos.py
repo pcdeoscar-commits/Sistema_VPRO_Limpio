@@ -549,12 +549,12 @@ def habilitar_edicion_op(payload: dict):
     usuario = payload.get("usuario", "COORDINADOR")
     rol = str(payload.get("rol", "")).upper()
     
-    # Validar permisos
-    roles_permitidos = ["ADMIN", "COORDINADOR", "COORDINACION", "PRODUCCION"]
+    # Validar permisos (Solo Admin, Coordinador o Productor)
+    roles_permitidos = ["ADMIN", "COORDINADOR", "COORDINACION", "PRODUCTOR"]
     if not any(r in rol for r in roles_permitidos):
         raise HTTPException(
             status_code=403, 
-            detail="Solo personal con rol de Coordinador o Administrador puede habilitar OPs del histórico."
+            detail="Solo personal con rol de Coordinador, Productor o Administrador puede habilitar OPs del histórico."
         )
     
     if not folio:
@@ -596,12 +596,12 @@ def mandar_al_historial_op(payload: dict):
     usuario = payload.get("usuario", "COORDINADOR")
     rol = str(payload.get("rol", "")).upper()
     
-    # Validar permisos
-    roles_permitidos = ["ADMIN", "COORDINADOR", "COORDINACION", "PRODUCCION"]
+    # Validar permisos (Solo Admin, Coordinador o Productor)
+    roles_permitidos = ["ADMIN", "COORDINADOR", "COORDINACION", "PRODUCTOR"]
     if not any(r in rol for r in roles_permitidos):
         raise HTTPException(
             status_code=403, 
-            detail="Solo personal con rol de Coordinador o Administrador puede archivar OPs en el histórico."
+            detail="Solo personal con rol de Coordinador, Productor o Administrador puede archivar OPs en el histórico."
         )
         
     if not folio:

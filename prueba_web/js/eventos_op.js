@@ -53,6 +53,20 @@ function cambiarPestanaOP(pestana) {
 }
 
 async function inicializarModuloOP() {
+    if (typeof esUsuarioAutorizadoOP === 'function' && !esUsuarioAutorizadoOP()) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: '⛔ Acceso Restringido',
+                html: '<p style="color: #475569; font-size: 14px;">El módulo de <b>Órdenes de Producción [VPF-PAGL-OP]</b> está reservado exclusivamente para <b>Administradores, Productores y el Coordinador</b>.</p>',
+                confirmButtonColor: '#4f46e5'
+            });
+        } else {
+            alert("⛔ Acceso Restringido: El módulo de Órdenes de Producción está reservado exclusivamente para Administradores, Productores y el Coordinador.");
+        }
+        if (typeof cambiarVista === 'function') cambiarVista('vista-inicio');
+        return;
+    }
     const selectFolios = document.getElementById('select-folios-op');
     const selectHistoricos = document.getElementById('select-folios-historicos');
     const container = document.getElementById('formulario-op-container');
@@ -277,7 +291,9 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     const dis = isReadOnly ? 'disabled' : '';
     const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase();
     const nombreUsuario = (usuarioLogueado?.nombre_completo || '').toUpperCase();
-    const esCoordinadorOAdmin = rolUsuario.includes('ADMIN') || rolUsuario.includes('PRODUCCION') || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION');
+    const esCoordinadorOAdmin = (typeof esUsuarioAutorizadoOP === 'function') 
+        ? esUsuarioAutorizadoOP() 
+        : (rolUsuario.includes('ADMIN') || rolUsuario.includes('PRODUCTOR') || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION'));
     // Estricto: Solo Coordinador o Villarreal o Agundez pueden integrar chats
     const esPuedeIntegrarChat = rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') || nombreUsuario.includes('VILLARREAL') || nombreUsuario.includes('AGUNDEZ');
     // Estricto: Solo Villarreal o Agundez pueden abrir el chat sellado

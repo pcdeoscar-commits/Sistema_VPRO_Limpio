@@ -45,6 +45,20 @@ function cambiarVista(idVista) {
             cargarMatrizKiosco();
             cargarCredencialPersonal();
         } else if (idVista === 'vista-ops') {
+            if (typeof esUsuarioAutorizadoOP === 'function' && !esUsuarioAutorizadoOP()) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '⛔ Acceso Restringido',
+                        html: '<p style="color: #475569; font-size: 14px;">El módulo de <b>Órdenes de Producción [VPF-PAGL-OP]</b> está reservado exclusivamente para <b>Administradores, Productores y el Coordinador</b>.</p>',
+                        confirmButtonColor: '#4f46e5'
+                    });
+                } else {
+                    alert("⛔ Acceso Restringido: El módulo de Órdenes de Producción está reservado exclusivamente para Administradores, Productores y el Coordinador.");
+                }
+                cambiarVista('vista-inicio');
+                return;
+            }
             inicializarModuloOP();
         } else if (idVista === 'vista-danados') {
             cargarModuloDanados();

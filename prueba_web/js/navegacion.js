@@ -41,6 +41,9 @@ function cambiarVista(idVista) {
         if (idVista === 'vista-inicio') {
             cargarDatosInicio();
         } else if (idVista === 'vista-checador') {
+            if (typeof actualizarVisibilidadPestanasChecador === 'function') {
+                actualizarVisibilidadPestanasChecador();
+            }
             iniciarRelojKiosco();
             cargarMatrizKiosco();
             cargarCredencialPersonal();

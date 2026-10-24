@@ -279,6 +279,9 @@ function entrarModoKioscoDirecto() {
     if (sidebar) sidebar.style.display = "none";
 
     // Cambiar directo a vista checador y pestaña de terminal kiosco
+    if (typeof actualizarVisibilidadPestanasChecador === "function") {
+        actualizarVisibilidadPestanasChecador();
+    }
     if (typeof cambiarVista === "function") cambiarVista('vista-checador');
     if (typeof cambiarPestanaChecador === "function") {
         cambiarPestanaChecador('kiosco');
@@ -352,6 +355,13 @@ function actualizarVisibilidadMenuIncidencias() {
     }
 }
 
+function actualizarVisibilidadPestanasChecador() {
+    const btnAuditoria = document.getElementById("tab-checador-btn-auditoria");
+    if (btnAuditoria) {
+        btnAuditoria.style.display = esUsuarioAutorizadoDireccion() ? 'flex' : 'none';
+    }
+}
+
 function esUsuarioAutorizadoOP() {
     if (!usuarioLogueado) return false;
     const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
@@ -401,6 +411,7 @@ function filtrarMenuPorRol(rolUsuario) {
     actualizarVisibilidadAgendaDrive();
     actualizarVisibilidadMenuGastos();
     actualizarVisibilidadMenuOP();
+    actualizarVisibilidadPestanasChecador();
 }
 
 function actualizarVisibilidadAgendaDrive() {

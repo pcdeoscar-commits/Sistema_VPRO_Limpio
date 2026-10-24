@@ -674,6 +674,18 @@ function reproducirBeepKiosco(tipo = 'ok') {
 }
 
 function cambiarPestanaChecador(tab) {
+    // Protección estricta: Auditoría de Asistencia solo permitida para Villarreal o Agundez
+    if (tab === 'auditoria') {
+        const autorizado = (typeof esUsuarioAutorizadoDireccion === 'function') ? esUsuarioAutorizadoDireccion() : false;
+        if (!autorizado) {
+            tab = 'kiosco';
+        }
+    }
+
+    if (typeof actualizarVisibilidadPestanasChecador === 'function') {
+        actualizarVisibilidadPestanasChecador();
+    }
+
     const tabs = ['kiosco', 'credencial', 'auditoria'];
     tabs.forEach(t => {
         const btn = document.getElementById(`tab-checador-btn-${t}`);

@@ -10,6 +10,14 @@
 let registrosAuditoriaCache = [];
 
 async function cargarAuditoriaAsistencia() {
+    // Candado estricto para Dirección (Villarreal / Agundez)
+    if (typeof esUsuarioAutorizadoDireccion === 'function' && !esUsuarioAutorizadoDireccion()) {
+        const view = document.getElementById("subvista-checador-auditoria");
+        if (view) view.style.display = "none";
+        if (typeof cambiarPestanaChecador === 'function') cambiarPestanaChecador('kiosco');
+        return;
+    }
+
     const fIniInput = document.getElementById("filtro-auditoria-inicio");
     const fFinInput = document.getElementById("filtro-auditoria-fin");
     const selectEmp = document.getElementById("filtro-auditoria-emp");

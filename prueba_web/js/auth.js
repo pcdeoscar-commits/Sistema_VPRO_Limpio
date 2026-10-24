@@ -57,14 +57,14 @@ async function cargarEmpleados() {
                 tarjeta.onclick = () => entrarModoKioscoDirecto();
 
                 tarjeta.innerHTML = `
-                    <div style="height: 140px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #38bdf8; border-top-left-radius: 11px; border-top-right-radius: 11px;">
-                        <i class="ph ph-fingerprint" style="font-size: 58px; color: #38bdf8; margin-bottom: 4px;"></i>
-                        <span style="background: #0284c7; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; letter-spacing: 0.5px;">TERMINAL DIGITAL</span>
+                    <div style="position: relative; width: 100%; height: 180px; overflow: hidden; border-top-left-radius: 11px; border-top-right-radius: 11px;">
+                        <img src="${API_URL}/fotos/529.png" onerror="this.src='${API_URL}/fotos/529.jpg'" alt="Foto Kiosco" style="width: 100%; height: 100%; object-fit: cover;">
+                        <span style="position: absolute; top: 10px; right: 10px; background: #0284c7; color: white; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">TERMINAL KIOSCO</span>
                     </div>
                     <div class="card-info" style="padding: 12px 10px;">
                         <h3 style="color: #0f172a; font-size: 15px; font-weight: 800; margin: 0 0 4px 0;">CHECADOR (KIOSCO)</h3>
                         <p style="margin: 0; font-size: 11.5px; font-weight: 700; color: #059669; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                            <i class="ph ph-check-circle" style="font-size: 14px;"></i> ENTRADA SIN CLAVE
+                            <i class="ph ph-check-circle" style="font-size: 14px;"></i> ENTRADA DIRECTA SIN CLAVE
                         </p>
                     </div>
                 `;

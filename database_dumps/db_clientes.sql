@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Eh3ubfLBFL0PEdHg8iesAuoPXwoLbhgO00TE71SrpYH6IHm3GgIEpPBu4dd8oxd
+\restrict YVMTdsnUezo2FeUabCS5I7oVnSJRwgWPXwMEMSDSMdVgzxdaSezOsd8LOB3aRhj
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -79,6 +79,11 @@ ALTER TABLE ONLY public.clientes ALTER COLUMN id_cliente SET DEFAULT nextval('pu
 --
 
 COPY public.clientes (cliente_empresa, gte_gral, estado, ciudad, tel_de_ofna, email_de_empresa, nombre_contacto_princ, cel_contact_princ, nombre_contacto_a, cel_contact_a, id_cliente) FROM stdin;
+H.AYUNTAMIENTO DE BADIRAGUATO		SINALOA	Badiraguato							33
+JAPAC										34
+ADECEM										35
+JULIO CESAR SILVA										36
+RICARDO RIOS QUEVEDO										37
 VPRO	Pedro Villarreal	\N	\N	\N	\N	\N	\N	\N	\N	28
 IEES	Nomeacuerdo	33333333	Culiacan	33333333	Iees_nolose@nolose.com	Crmen	44444444	NoloseIees	55555555	17
 ISDE	Tito	Sinaloa	Culiacan	0000000000	isdenolose@nolose.com	Tito	111111111	NoloseIsde	222222222	16
@@ -96,10 +101,6 @@ GOBIERNO FEDERAL	GFNolose	000000	CDMX	111111	GFnolose@nolose.com	GFNolose	222222
 GOBIERNO DEL ESTADO DE SINALOA	Eleazar(PapiRINGO)	Sinaloa	Culiacan	22222222222	nolose@nolose.com	Papi	3333333333	Angel	6674602906	13
 CESAVESIN										32
 COCA - COLA	ACTUALIZAR Please elnombr del Gte. Gral.	Sinaloa	Culiacan	000000000	ccolanolose@ccola	Eunice Hernandez	222222222	Alma D. Carrillo López	333333333	21
-H.AYUNTAMIENTO DE BADIRAGUATO		SINALOA	Badiraguato							33
-JAPAC										34
-ADECEM										35
-JULIO CESAR SILVA										36
 \.
 
 
@@ -130,5 +131,5 @@ ALTER TABLE ONLY public.clientes
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Eh3ubfLBFL0PEdHg8iesAuoPXwoLbhgO00TE71SrpYH6IHm3GgIEpPBu4dd8oxd
+\unrestrict YVMTdsnUezo2FeUabCS5I7oVnSJRwgWPXwMEMSDSMdVgzxdaSezOsd8LOB3aRhj
 

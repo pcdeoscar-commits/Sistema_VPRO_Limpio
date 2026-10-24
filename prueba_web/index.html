@@ -4397,16 +4397,16 @@
                 <div id="banner-rh-alertas" style="display: none; margin-bottom: 24px;"></div>
 
                 <!-- Selector de Colaborador con Búsqueda Inteligente -->
-                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                        <label style="font-size: 13px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px; margin: 0;">
+                <div id="contenedor-selector-rh" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                    <div id="header-selector-rh" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <label id="lbl-selector-rh" style="font-size: 13px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px; margin: 0;">
                             <i class="ph ph-user-focus" style="color: var(--accent-color); font-size: 18px;"></i>
-                            <span>SELECCIONA O BUSCA EL EMPLEADO A AUDITAR / EDITAR EXPEDIENTE:</span>
+                            <span id="texto-label-selector-rh">SELECCIONA O BUSCA EL EMPLEADO A AUDITAR / EDITAR EXPEDIENTE:</span>
                         </label>
-                        <span style="font-size: 12px; color: #64748b;">Teclea nombre, ID, departamento o puesto para filtrar rápidamente</span>
+                        <span id="subtexto-selector-rh" style="font-size: 12px; color: #64748b;">Teclea nombre, ID, departamento o puesto para filtrar rápidamente</span>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; position: relative; align-items: center;">
+                    <div id="grid-selector-rh" style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; position: relative; align-items: center;">
                         <!-- Input de Búsqueda Inteligente en Tiempo Real -->
                         <div style="position: relative;" id="contenedor-busqueda-rh-empleado">
                             <div style="display: flex; align-items: center; background: white; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; transition: border-color 0.2s, box-shadow 0.2s;">
@@ -6006,7 +6006,7 @@
     <script src="js/checkout.js"></script>
     <script src="js/incidencias.js?v=20261021_v2_auth"></script>
     <script src="js/analitica.js"></script>
-    <script src="js/rh.js"></script>
+    <script src="js/rh.js?v=20261024_edad_ant"></script>
     <script src="js/audio.js"></script>
     <script src="js/transfer.js?v=20261021_v2_cancelar"></script>
     <script src="js/cotizaciones.js"></script>

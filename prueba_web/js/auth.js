@@ -308,6 +308,13 @@ function salirModoKiosco() {
     cargarEmpleados();
 }
 
+function esUsuarioVillarreal() {
+    if (!usuarioLogueado) return false;
+    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL');
+}
+
 function esUsuarioAutorizadoDireccion() {
     if (!usuarioLogueado) return false;
     const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()

@@ -217,6 +217,7 @@ async function verificarAcceso() {
 
 function iniciarSesionExitosa(usuario) {
     usuarioLogueado = usuario;
+    try { localStorage.setItem("vpro_chat_usuario", JSON.stringify(usuario)); } catch(e) {}
     document.getElementById("vista-login").style.display = "none";
     document.getElementById("sidebar").style.display = "flex";
     document.getElementById("vista-dashboard").style.display = "block";
@@ -260,6 +261,7 @@ function cerrarSesion() {
     if (btnSalirKiosco) btnSalirKiosco.style.display = "none";
     usuarioLogueado = null;
     empleadoSeleccionado = null;
+    try { localStorage.removeItem("vpro_chat_usuario"); } catch(e) {}
 }
 
 function entrarModoKioscoDirecto() {

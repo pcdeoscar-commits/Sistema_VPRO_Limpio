@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#111b21">
+    <meta name="apple-mobile-web-app-title" content="VPRO Chat">
     <title>VPRO Workspace</title>
     <!-- Tipografía moderna Inter (100% Local Offline) -->
     <link rel="stylesheet" href="vendor/fonts/inter.css">
@@ -1129,6 +1132,12 @@
                 <div class="nav-label"><i class="ph ph-house"></i> <span class="nav-text">Inicio</span></div>
             </div>
     
+                        <!-- 💬 CHAT OPERATIVO DE OP (WHATSAPP ESTILO) -->
+            <div class="nav-item" id="nav-item-chat-op" data-roles="todos" onclick="window.open('chat.html', '_blank')">
+                <div class="nav-label"><i class="ph ph-chat-teardrop-dots" style="color: #10b981;"></i> <span class="nav-text">Chat de OP</span></div>
+                <span class="nav-badge info" style="background: #10b981; font-size: 10px; font-weight: 700;">EN VIVO</span>
+            </div>
+
             <!-- ✅ ORDEN DE PRODUCCIÓN -->
             <div class="nav-item" id="nav-item-ops" data-roles="ADMIN,PRODUCTOR,COORDINADOR" onclick="cambiarVista('vista-ops')">
                 <div class="nav-label"><i class="ph ph-clipboard-text"></i> <span class="nav-text">Orden de Producción [VPF-PAGL-OP]</span></div>
@@ -5992,10 +6001,11 @@
      Para editar, modificar el módulo correspondiente en js/
      ════════════════════════════════════════════════════ -->
     <script src="js/core.js"></script>
-    <script src="js/auth.js?v=20261023_admin_pass"></script>
+    <script src="js/auth.js?v=20261026_chat_v1?v=20261023_admin_pass"></script>
     <script src="js/navegacion.js?v=20261021_v2_auth"></script>
     <script src="js/inicio_asistencia.js?v=20261021_v4_notif_buzon"></script>
-    <script src="js/eventos_op.js?v=20261026_op_v2"></script>
+    <script src="js/chat_op.js?v=20261026_chat_v1"></script>
+    <script src="js/eventos_op.js?v=20261026_op_v3"></script>
     <script src="js/eventos_impresion.js?v=20261026_op_v2"></script>
     <script src="js/equipos_danados.js"></script>
     <script src="js/gastos.js?v=20261026_op_v2"></script>

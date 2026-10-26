@@ -353,9 +353,14 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
                     <h3 class="op-section-title" style="margin: 0;">📝 Datos de la Orden</h3>
                     ${data.folio ? `
-                        <button type="button" onclick="imprimirOrdenProduccionActual('${folioVal}')" style="background: #0078d4; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0, 120, 212, 0.25);">
-                            <i class="ph ph-printer" style="font-size: 17px;"></i> 🖨️ Imprimir esta OP
-                        </button>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" onclick="abrirChatOPParaFolio('${folioVal}')" style="background: #0f766e; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.3);" title="Abrir chat técnico de esta OP">
+                                <i class="ph ph-chat-teardrop-dots" style="font-size: 17px;"></i> 💬 Chat de la OP
+                            </button>
+                            <button type="button" onclick="imprimirOrdenProduccionActual('${folioVal}')" style="background: #0078d4; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0, 120, 212, 0.25);">
+                                <i class="ph ph-printer" style="font-size: 17px;"></i> 🖨️ Imprimir esta OP
+                            </button>
+                        </div>
                     ` : ''}
                 </div>
                 
@@ -782,3 +787,8 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     `;
 }
 
+
+function abrirChatOPParaFolio(folio) {
+    if (!folio) return;
+    window.open(`chat.html?folio=${folio}`, '_blank');
+}

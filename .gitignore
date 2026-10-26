@@ -22,6 +22,7 @@ __pycache__/
 # Archivos de presentaciones y previews locales
 *.pptx
 *.docx
+*.xlsx
 generar_presentacion.py
 generar_ppt_emails.py
 bg_portada.png

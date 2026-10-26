@@ -141,24 +141,23 @@ def renderizar_modulo(API_URL: str):
                 eve_op = c_ev1.text_input("🎉 NOMBRE DE EVENTO:", value=d.get('nombre_evento', ""), key=f"eve_{id_actual}")
                 sub_op = c_ev2.text_input("🏀 SUBTÍTULO / PARTIDO / ENCUENTRO:", value=d.get('subtitulo_evento', ""), key=f"sub_{id_actual}", placeholder="Ej. TEBACAS VS EL ROSARIO")
                 
-                c4, c5, c6 = st.columns([2, 1.5, 1.5])
+                c4, c5, c6 = st.columns([1.8, 1.8, 1.2])
                 loc_op = c4.text_input("📍 LOCACIÓN (Lugar):", value=d.get('locacion', ""), key=f"loc_{id_actual}")
-                
-                val_f_inst = datetime.date.fromisoformat(d.get('fec_de_instalacion')) if d.get('fec_de_instalacion') else datetime.date.today()
-                f_inst = c5.date_input("📅 FECHA INSTALACIÓN:", value=val_f_inst, key=f"finst_{id_actual}")
-                
-                val_h_inst = datetime.time.fromisoformat(d.get('hra_de_instalacion')) if d.get('hra_de_instalacion') else datetime.time(9, 0)
-                h_inst = c6.time_input("⏰ HORA INSTALACIÓN:", value=val_h_inst, key=f"hinst_{id_actual}")
+                det_llam_op = c5.text_input("⏱️ DETALLE DE LLAMADO:", value=d.get('detalle_llamado', ""), key=f"detllam_{id_actual}", placeholder="Ej. Manuel: 9:00 AM | Estudio: 4:00 PM")
+                val_est_gasto = float(d.get('estimado_gasto') or 0.0)
+                est_gasto = c6.number_input("💰 ESTIMADO GASTO ($):", min_value=0.0, value=val_est_gasto, step=500.0, key=f"gas_{id_actual}")
                 
                 # Fila de Solicitantes y Productor
-                c_dep, c_sol, c_prd = st.columns([1.5, 1.5, 1.5])
+                c_dep, c_sol, c_prd, c_gas_resp = st.columns([1.2, 1.3, 1.25, 1.25])
                 dep_op = c_dep.text_input("🏢 DEPENDENCIA O ÁREA SOLICITA:", value=d.get('dependencia_solicita', ""), key=f"dep_{id_actual}", placeholder="Ej. Presidencia, Comunicación Social...")
                 sol_op = c_sol.text_input("👤 PERSONA QUE SOLICITA:", value=d.get('quien_solicita', ""), key=f"sol_{id_actual}", placeholder="Nombre de contacto / responsable...")
                 idx_prd = (staff_vpro.index(d.get('resp_de_produccion'))+1) if d.get('resp_de_produccion') in staff_vpro else 0
                 prd_op = c_prd.selectbox("🎬 PRODUCTOR RESP.:", options=["---"] + staff_vpro, index=idx_prd, key=f"prd_{id_actual}")
+                idx_resp_gas = (staff_vpro.index(d.get('responsable_gastos'))+1) if d.get('responsable_gastos') in staff_vpro else 0
+                resp_gas_op = c_gas_resp.selectbox("💳 RESPONSABLE DE GASTOS:", options=["---"] + staff_vpro, index=idx_resp_gas, key=f"respgas_{id_actual}")
 
-                # Fila de Rango de Fechas, Horarios, Detalle Llamado y Estimado de Gasto
-                c_f1, c_f2, c_hi, c_hl, c_gas = st.columns([1.2, 1.2, 1, 1, 1.2])
+                # Fila de Fechas y Horarios Completos (Instalación, Evento y Llamado)
+                c_f1, c_f2, c_hi, c_hl, c_fi, c_hi_inst = st.columns([1.1, 1.1, 0.9, 0.9, 1.1, 0.9])
                 val_f_even = datetime.date.fromisoformat(d.get('fec_del_evento')) if d.get('fec_del_evento') else datetime.date.today()
                 f_even = c_f1.date_input("📅 FECHA INICIO EVENTO:", value=val_f_even, key=f"feve_{id_actual}")
                 val_f_fin = datetime.date.fromisoformat(d.get('fec_fin_evento')) if d.get('fec_fin_evento') else val_f_even
@@ -167,14 +166,15 @@ def renderizar_modulo(API_URL: str):
                 h_inic = c_hi.time_input("🚀 H. INICIO:", value=val_h_inic, key=f"hinic_{id_actual}")
                 val_h_llam = datetime.time.fromisoformat(d.get('hra_de_llamado')) if d.get('hra_de_llamado') else datetime.time(6, 0)
                 h_llam = c_hl.time_input("📞 H. LLAMADO:", value=val_h_llam, key=f"hllam_{id_actual}")
-                val_est_gasto = float(d.get('estimado_gasto') or 0.0)
-                est_gasto = c_gas.number_input("💰 ESTIMADO GASTO ($):", min_value=0.0, value=val_est_gasto, step=500.0, key=f"gas_{id_actual}")
-                
-                det_llam_op = st.text_input("⏱️ DETALLE DE LLAMADO (Horarios escalonados / áreas):", value=d.get('detalle_llamado', ""), key=f"detllam_{id_actual}", placeholder="Ej. Manuel: 9:00 AM | Estudio: 4:00 PM")
+                val_f_inst = datetime.date.fromisoformat(d.get('fec_de_instalacion')) if d.get('fec_de_instalacion') else datetime.date.today()
+                f_inst = c_fi.date_input("📅 FECHA INSTALACIÓN:", value=val_f_inst, key=f"finst_{id_actual}")
+                val_h_inst = datetime.time.fromisoformat(d.get('hra_de_instalacion')) if d.get('hra_de_instalacion') else datetime.time(9, 0)
+                h_inst = c_hi_inst.time_input("⏰ HORA INSTALACIÓN:", value=val_h_inst, key=f"hinst_{id_actual}")
 
-                c_ub1, c_ub2 = st.columns([2, 1.2])
+                c_ub1, c_ub2, c_chf = st.columns([1.6, 1.2, 1.2])
                 ubi_op = c_ub1.text_input("🗺️ UBICACIÓN EXACTA:", value=d.get('ubicacion', ""), key=f"ubi_{id_actual}")
                 dest_veh_op = c_ub2.text_input("🎯 DESTINO VEHICULAR / CIUDAD:", value=d.get('vehiculo_destino', ""), key=f"destveh_{id_actual}", placeholder="Ej. BADIRAGUATO, SIN")
+                chofer_op = c_chf.text_input("🚐 NOMBRE DEL CHOFER:", value=d.get('chofer', ""), key=f"chf_{id_actual}", placeholder="Nombre del chofer / conductor...")
                 
                 # ==============================================================
                 # 🤝 SECCIÓN NUEVA: MULTISELECT DE REUNIONES
@@ -475,6 +475,8 @@ def renderizar_modulo(API_URL: str):
                         "dependencia_solicita": str(dep_op).strip(),
                         "quien_solicita": str(sol_op).strip(),
                         "resp_de_produccion": str(prd_op), 
+                        "responsable_gastos": str(resp_gas_op if resp_gas_op != "---" else "").strip(),
+                        "chofer": str(chofer_op).strip(), 
                         "fec_del_evento": str(f_even), 
                         "fec_fin_evento": str(f_even_fin),
                         "estimado_gasto": float(est_gasto), 
@@ -546,7 +548,7 @@ def renderizar_modulo(API_URL: str):
                                     c2.text_input("👤 CLIENTE:", value=data_h.get('para_q_cliente', ''), disabled=True, key=f"h_cli_{folio_h}")
                                     c3.text_input("🎉 EVENTO:", value=data_h.get('nombre_evento', ''), disabled=True, key=f"h_eve_{folio_h}")
                                     
-                                    c4, c5, c6 = st.columns([2, 1.5, 1.5])
+                                    c4, c5, c6 = st.columns([1.8, 1.8, 1.2])
                                     c4.text_input("📍 LOCACIÓN (Lugar):", value=data_h.get('locacion', ''), disabled=True, key=f"h_loc_{folio_h}")
                                     c5.text_input("📅 FECHA INSTALACIÓN:", value=str(data_h.get('fec_de_instalacion', '')), disabled=True, key=f"h_finst_{folio_h}")
                                     c6.text_input("⏰ HORA INSTALACIÓN:", value=str(data_h.get('hra_de_instalacion', '')), disabled=True, key=f"h_hinst_{folio_h}")

@@ -90,7 +90,8 @@ def obtener_datos_evento_gasto(id_evento: int):
                fec_fin_evento,
                COALESCE(estimado_gasto, 0.0),
                quien_solicita,
-               dependencia_solicita
+               dependencia_solicita,
+               encode(COALESCE(responsable_gastos, '')::bytea, 'hex')
         FROM public.eventos WHERE id_evento = :id
     """)
     try:
@@ -119,6 +120,7 @@ def obtener_datos_evento_gasto(id_evento: int):
 
                 return {
                     "productor_responsable": safe_decode_hex(res[0]), 
+                    "responsable_gastos": safe_decode_hex(res[11]),
                     "fec_de_instalacion": str(res[1]) if res[1] else None, 
                     "carros_usados_op": autos_list, 
                     "personal_convocado_op": personal_list,
@@ -144,12 +146,12 @@ def guardar_informe_gastos_completo(payload: dict):
         folio_vpro = int(maestro.get("folio_vpro", 0))
         emp_id = str(maestro.get("id_empleado", "")).strip()[:3]
 
-        # Si no se pasó id_empleado o viene por defecto "000", resolverlo mediante el productor responsable
+        # Si no se pasó id_empleado o viene por defecto "000", resolverlo mediante el responsable de gastos o productor responsable
         if not emp_id or emp_id == "000":
             try:
                 with engine_eventos.connect() as ev_conn:
                     row_ev = ev_conn.execute(
-                        text("SELECT encode(resp_de_produccion::bytea, 'hex') FROM public.eventos WHERE id_evento = :id"),
+                        text("SELECT encode(COALESCE(NULLIF(responsable_gastos, ''), resp_de_produccion, '')::bytea, 'hex') FROM public.eventos WHERE id_evento = :id"),
                         {"id": folio_vpro}
                     ).first()
                     if row_ev:

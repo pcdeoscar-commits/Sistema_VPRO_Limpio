@@ -263,6 +263,8 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     const hLlamado = (data.hra_de_llamado ? String(data.hra_de_llamado).substring(0, 5) : "09:00");
     const depSolicitaVal = data.dependencia_solicita || '';
     const quienSolicitaVal = data.quien_solicita || '';
+    const respGastosVal = data.responsable_gastos || '';
+    const choferVal = data.chofer || '';
     const estimadoGastoVal = (data.estimado_gasto !== undefined && data.estimado_gasto !== null) ? Number(data.estimado_gasto) : 0;
 
     // Autorizaciones defaults
@@ -380,24 +382,27 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     </div>
                 </div>
 
-                <!-- Fila 2: Locación, Fecha Inst, Hora Inst -->
-                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <!-- Fila 2: Locación, Detalle Llamado y Estimado de Gasto -->
+                <div style="display: grid; grid-template-columns: 1.8fr 1.8fr 1.2fr; gap: 16px; margin-bottom: 16px;">
                     <div>
                         <label class="op-form-label">📍 LOCACIÓN (Lugar):</label>
                         <input type="text" id="op_locacion" value="${data.locacion || ''}" class="op-input" placeholder="Lugar o sede del evento..." ${dis}>
                     </div>
                     <div>
-                        <label class="op-form-label">📅 FECHA INSTALACIÓN:</label>
-                        <input type="date" id="op_fec_de_instalacion" value="${fInstalacion}" class="op-input" ${dis}>
+                        <label class="op-form-label">⏱️ DETALLE LLAMADO:</label>
+                        <input type="text" id="op_detalle_llamado" value="${data.detalle_llamado || ''}" class="op-input" placeholder="Ej. Manuel: 9:00 AM | Estudio: 4:00 PM..." ${dis}>
                     </div>
                     <div>
-                        <label class="op-form-label">⏰ HORA INSTALACIÓN:</label>
-                        <input type="time" id="op_hra_de_instalacion" value="${hInstalacion}" class="op-input" ${dis}>
+                        <label class="op-form-label">💰 ESTIMADO GASTO ($):</label>
+                        <div style="position: relative;">
+                            <input type="number" step="0.01" min="0" id="op_estimado_gasto" value="${estimadoGastoVal > 0 ? estimadoGastoVal : ''}" class="op-input" placeholder="0.00" style="font-weight: 700; color: #166534; padding-left: 20px;" ${dis}>
+                            <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #166534; pointer-events: none;">$</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Fila 3: Dependencia/Área, Persona que solicita (Contacto / Responsable), Productor Resp. -->
-                <div style="display: grid; grid-template-columns: 1.6fr 1.6fr 1.8fr; gap: 16px; margin-bottom: 16px;">
+                <!-- Fila 3: Dependencia/Área, Persona que solicita (Contacto / Responsable), Productor Resp. y Responsable de Gastos -->
+                <div style="display: grid; grid-template-columns: 1.2fr 1.3fr 1.25fr 1.25fr; gap: 14px; margin-bottom: 16px;">
                     <div>
                         <label class="op-form-label">🏢 DEPENDENCIA O ÁREA SOLICITA:</label>
                         <input type="text" id="op_dependencia_solicita" value="${depSolicitaVal}" class="op-input" placeholder="Ej. Presidencia, Comunicación Social, Giras..." ${dis}>
@@ -412,10 +417,17 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                             ${buildOptions(cats.staff_vpro, data.resp_de_produccion, true)}
                         </select>
                     </div>
+                    <div>
+                        <label class="op-form-label">💳 RESPONSABLE DE GASTOS:</label>
+                        <select id="op_responsable_gastos" class="op-select" ${dis}>
+                            <option value="">-> Mismo productor o asignar...</option>
+                            ${buildOptions(cats.staff_vpro, respGastosVal, true)}
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Fila 4: Rango de Fechas del Evento, Horarios, Detalle Llamado y Estimado de Gasto -->
-                <div style="display: grid; grid-template-columns: 1.1fr 1.1fr 0.9fr 0.9fr 1.6fr 1.2fr; gap: 12px; margin-bottom: 16px;">
+                <!-- Fila 4: Calendario Completo del Evento (Fechas y Horarios) -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 0.9fr 0.9fr 1fr 0.9fr; gap: 12px; margin-bottom: 16px;">
                     <div>
                         <label class="op-form-label">🗓️ FECHA INICIO:</label>
                         <input type="date" id="op_fec_del_evento" value="${fEvento}" class="op-input" ${dis} onchange="alCambiarFechaInicioEvento(this)">
@@ -433,20 +445,17 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                         <input type="time" id="op_hra_de_llamado" value="${hLlamado}" class="op-input" ${dis}>
                     </div>
                     <div>
-                        <label class="op-form-label">⏱️ DETALLE LLAMADO:</label>
-                        <input type="text" id="op_detalle_llamado" value="${data.detalle_llamado || ''}" class="op-input" placeholder="Ej. Manuel: 9:00 AM | Estudio: 4:00 PM..." ${dis}>
+                        <label class="op-form-label">📅 FECHA INSTALACIÓN:</label>
+                        <input type="date" id="op_fec_de_instalacion" value="${fInstalacion}" class="op-input" ${dis}>
                     </div>
                     <div>
-                        <label class="op-form-label">💰 ESTIMADO GASTO ($):</label>
-                        <div style="position: relative;">
-                            <input type="number" step="0.01" min="0" id="op_estimado_gasto" value="${estimadoGastoVal > 0 ? estimadoGastoVal : ''}" class="op-input" placeholder="0.00" style="font-weight: 700; color: #166534; padding-left: 20px;" ${dis}>
-                            <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #166534; pointer-events: none;">$</span>
-                        </div>
+                        <label class="op-form-label">⏰ HORA INSTALACIÓN:</label>
+                        <input type="time" id="op_hra_de_instalacion" value="${hInstalacion}" class="op-input" ${dis}>
                     </div>
                 </div>
 
-                <!-- Fila 5: Ubicación Exacta y Destino Vehicular -->
-                <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 16px; margin-bottom: 16px;">
+                <!-- Fila 5: Ubicación Exacta, Destino Vehicular y Nombre del Chofer -->
+                <div style="display: grid; grid-template-columns: 1.6fr 1.2fr 1.2fr; gap: 16px; margin-bottom: 16px;">
                     <div>
                         <label class="op-form-label">🗺️ UBICACIÓN EXACTA:</label>
                         <input type="text" id="op_ubicacion" value="${data.ubicacion || ''}" class="op-input" placeholder="Dirección precisa, salón, piso o referencias GPS..." ${dis}>
@@ -454,6 +463,13 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     <div>
                         <label class="op-form-label">🎯 DESTINO VEHICULAR / CIUDAD:</label>
                         <input type="text" id="op_vehiculo_destino" value="${data.vehiculo_destino || ''}" class="op-input" placeholder="Ej. BADIRAGUATO, SIN..." ${dis}>
+                    </div>
+                    <div>
+                        <label class="op-form-label">🚐 NOMBRE DEL CHOFER:</label>
+                        <input type="text" id="op_chofer" list="dl_choferes_op" value="${choferVal}" class="op-input" placeholder="Nombre del chofer / conductor..." ${dis}>
+                        <datalist id="dl_choferes_op">
+                            ${((cats.staff_vpro || []).concat(cats.apoyos_externos || [])).map(s => `<option value="${s}">`).join('')}
+                        </datalist>
                     </div>
                 </div>
 

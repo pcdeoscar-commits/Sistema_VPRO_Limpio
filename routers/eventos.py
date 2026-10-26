@@ -17,6 +17,17 @@ from core.utils import safe_decode_hex, serialize_row_dates, parse_pg_array, rep
 
 router = APIRouter(prefix="/api/eventos", tags=["📝 Órdenes Producción"])
 
+def _asegurar_columnas_op():
+    """Garantiza automáticamente que las columnas de OP existan en la tabla eventos."""
+    try:
+        with engine_eventos.begin() as conn:
+            conn.execute(text("ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS responsable_gastos character varying(255);"))
+            conn.execute(text("ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS chofer character varying(255);"))
+    except Exception as e:
+        print(f"⚠️ Nota de columnas OP en eventos: {e}")
+
+_asegurar_columnas_op()
+
 @router.get("/catalogos")
 def extraer_catalogos_de_apoyo():
     """Extrae catálogos de soporte para la creación de órdenes de producción."""
@@ -136,6 +147,8 @@ def buscar_op_por_folio(folio: str):
             data["locacion"] = reparar_mojibake(data.get("locacion") or "")
             data["ubicacion"] = reparar_mojibake(data.get("ubicacion") or "")
             data["resp_de_produccion"] = reparar_mojibake(data.get("resp_de_produccion") or "")
+            data["responsable_gastos"] = reparar_mojibake(data.get("responsable_gastos") or "")
+            data["chofer"] = reparar_mojibake(data.get("chofer") or "")
             data["tipo_de_servicio"] = reparar_mojibake(data.get("tipo_de_servicio") or "")
             data["produccion"] = reparar_mojibake(data.get("produccion") or "")
             data["internet_redes"] = reparar_mojibake(data.get("internet_redes") or "")
@@ -308,6 +321,8 @@ def guardar_o_actualizar_op(op: dict):
         payload["locacion"] = str(payload.get("locacion") or "").strip()
         payload["ubicacion"] = str(payload.get("ubicacion") or "").strip()
         payload["resp_de_produccion"] = str(payload.get("resp_de_produccion") or "").strip()
+        payload["responsable_gastos"] = str(payload.get("responsable_gastos") or "").strip()
+        payload["chofer"] = str(payload.get("chofer") or "").strip()
         payload["tipo_de_servicio"] = str(payload.get("tipo_de_servicio") or "").strip()
         payload["produccion"] = str(payload.get("produccion") or "").strip()
         payload["internet_redes"] = str(payload.get("internet_redes") or "").strip()
@@ -360,6 +375,7 @@ def guardar_o_actualizar_op(op: dict):
                     subtitulo_evento = :subtitulo_evento, locacion = :locacion, 
                     fec_de_instalacion = CAST(:fec_de_instalacion AS date), hra_de_instalacion = CAST(:hra_de_instalacion AS time), 
                     dependencia_solicita = :dependencia_solicita, quien_solicita = :quien_solicita, resp_de_produccion = :resp_de_produccion, 
+                    responsable_gastos = :responsable_gastos, chofer = :chofer,
                     fec_del_evento = CAST(:fec_del_evento AS date), fec_fin_evento = CAST(:fec_fin_evento AS date), 
                     inicio_del_evento = CAST(:inicio_del_evento AS time), hra_de_llamado = CAST(:hra_de_llamado AS time), 
                     detalle_llamado = :detalle_llamado,
@@ -382,14 +398,14 @@ def guardar_o_actualizar_op(op: dict):
             query_insert = text("""
                 INSERT INTO public.eventos (
                     id_evento, folio, para_q_cliente, nombre_evento, subtitulo_evento, locacion, fec_de_instalacion, hra_de_instalacion, 
-                    dependencia_solicita, quien_solicita, resp_de_produccion, fec_del_evento, fec_fin_evento, 
+                    dependencia_solicita, quien_solicita, resp_de_produccion, responsable_gastos, chofer, fec_del_evento, fec_fin_evento, 
                     inicio_del_evento, hra_de_llamado, detalle_llamado, estimado_gasto, ubicacion, tipo_de_servicio, produccion, 
                     internet_redes, actividades_de_proveedores, rol_juegos, vehiculo_destino, nota, elabora, organiza, coordina, 
                     vobo, proveedor_op, personal_convocado_op, carros_usados_op, externos_op, personal_roles_op, reuniones_vinculadas, 
                     cronogramas_vinculados, fotos_evidencia, empleado_que_creo_la_op, fec_de_elaboracion_de_op 
                 ) VALUES (
                     :id_evento, :folio, :para_q_cliente, :nombre_evento, :subtitulo_evento, :locacion, CAST(:fec_de_instalacion AS date), CAST(:hra_de_instalacion AS time), 
-                    :dependencia_solicita, :quien_solicita, :resp_de_produccion, CAST(:fec_del_evento AS date), CAST(:fec_fin_evento AS date), 
+                    :dependencia_solicita, :quien_solicita, :resp_de_produccion, :responsable_gastos, :chofer, CAST(:fec_del_evento AS date), CAST(:fec_fin_evento AS date), 
                     CAST(:inicio_del_evento AS time), CAST(:hra_de_llamado AS time), :detalle_llamado, CAST(:estimado_gasto AS numeric), :ubicacion, :tipo_de_servicio, :produccion, 
                     :internet_redes, :actividades_de_proveedores, :rol_juegos, :vehiculo_destino, :nota, :elabora, :organiza, :coordina, 
                     :vobo, CAST(:proveedor_op AS text[]), CAST(:personal_convocado_op AS text[]), CAST(:carros_usados_op AS text[]), CAST(:externos_op AS text[]), CAST(:personal_roles_op AS jsonb), CAST(:reuniones_vinculadas AS text[]), 
@@ -1058,6 +1074,8 @@ def generar_pdf_op_bytes(data: dict) -> bytes:
         solicita_html = "No especificado"
 
     resp_prod_val = reparar_mojibake(str(data.get("resp_de_produccion") or ""))
+    resp_gastos_val = reparar_mojibake(str(data.get("responsable_gastos") or ""))
+    chofer_val = reparar_mojibake(str(data.get("chofer") or ""))
 
     detalles_data = [
         [Paragraph('<b>Detalles de Evento:</b>', s_white_bold_7), '', Paragraph('<b>FECHA DE INSTALACION:</b>', s_white_bold_7), Paragraph(f'<b>{f_inst}</b>', s_cbold)],
@@ -1067,7 +1085,7 @@ def generar_pdf_op_bytes(data: dict) -> bytes:
         [Paragraph('<b>LOCACION:</b>', s_bold), Paragraph(f'<b>{locacion_val}</b>', s_cbold), Paragraph('<b>HORA DE LLAMADO:</b>', s_white_bold_7), Paragraph(f'<b>{det_llam_html}</b>', ParagraphStyle('HLLG', fontName='Helvetica-Bold', fontSize=6.5, leading=8, alignment=1, textColor=colors.white))],
         [Paragraph('<b>Solicita el servicio:</b>', s_white_bold_7), '', Paragraph('<b>UBICACIÓN:</b>', s_white_bold_7), Paragraph(f'<b>{ubicacion_val}</b>', s_cbold)],
         [Paragraph(f'{solicita_html}', s_cbold), '', Paragraph('<b>Responsable de Producción:</b>', s_white_bold_7), ''],
-        ['', '', Paragraph(f'<b>{resp_prod_val}</b>', s_cbold), '']
+        ['', '', Paragraph(f'<b>{resp_prod_val}</b>' + (f'<br/><font size=5 color="#0078d4">Resp. Gastos: {resp_gastos_val}</font>' if resp_gastos_val and resp_gastos_val != resp_prod_val else ''), s_cbold), '']
     ]
 
     t_detalles = Table(
@@ -1192,8 +1210,9 @@ def generar_pdf_op_bytes(data: dict) -> bytes:
     if not carros:
         carros = ["Sin vehículos asignados"]
 
+    veh_label_txt = f'<b>{veh_dest}</b>' + (f' <font size=5.5 color="#1e293b">(Chofer: {chofer_val})</font>' if chofer_val else '')
     sub_veh_data = [
-        [Paragraph('<b>VEHICULO A UTILIZAR:</b>', ParagraphStyle('VU', fontName='Helvetica-Bold', fontSize=6.5, leading=8)), Paragraph(f'<b>{veh_dest}</b>', s_cbold), '', '', '', ''],
+        [Paragraph('<b>VEHICULO A UTILIZAR:</b>', ParagraphStyle('VU', fontName='Helvetica-Bold', fontSize=6.5, leading=8)), Paragraph(veh_label_txt, s_cbold), '', '', '', ''],
         ['', '', Paragraph('km', s_cbold), Paragraph('gas', s_cbold), Paragraph('km', s_cbold), Paragraph('gas', s_cbold)]
     ]
     sub_veh_styles = [

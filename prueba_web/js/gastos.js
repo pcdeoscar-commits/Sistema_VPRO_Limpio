@@ -144,7 +144,7 @@ async function seleccionarFolioParaGastos(folioId) {
             const estNum = Number(evData.estimado_gasto || 0);
             elEstimado.innerText = `$ ${estNum.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
-        if (elEmpRinde) elEmpRinde.value = evData.productor_responsable || usuarioLogueado?.nombre_completo || "Productor VPRO";
+        if (elEmpRinde) elEmpRinde.value = evData.responsable_gastos || evData.productor_responsable || usuarioLogueado?.nombre_completo || "Productor VPRO";
         if (elDepto) elDepto.value = usuarioLogueado?.depto || "PRODUCCION";
 
         const hoy = new Date().toISOString().substring(0, 10);

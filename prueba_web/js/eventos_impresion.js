@@ -189,6 +189,8 @@ function generarHtmlOPInteligente(data) {
     const quienSolicitaVal = (data.quien_solicita || 'Sin contacto solicitante').trim();
     const ubicacionVal = (data.ubicacion || 'CULIACÁN, SIN').trim().toUpperCase();
     const respProduccionVal = (data.resp_de_produccion || 'Por asignar').trim();
+    const respGastosVal = (data.responsable_gastos || '').trim();
+    const choferVal = (data.chofer || '').trim();
 
     const fInstFmt = formatearFechaEspanolCorta(data.fec_de_instalacion || hoyStr);
     const hInstFmt = formatearHoraAmPm(data.hra_de_instalacion || '12:00');
@@ -401,8 +403,9 @@ function generarHtmlOPInteligente(data) {
                             <div style="background: #000000; color: #ffffff; font-weight: bold; font-size: 10px; padding: 3px 6px; text-align: center; border-bottom: 1px solid #000000;">
                                 Responsable de Producción:
                             </div>
-                            <div style="padding: 6px 8px; font-weight: 800; font-size: 11px; text-align: center;">
+                            <div style="padding: 4px 8px; font-weight: 800; font-size: 11px; text-align: center;">
                                 ${respProduccionVal}
+                                ${respGastosVal && respGastosVal !== respProduccionVal ? `<div style="font-size: 9.5px; font-weight: 700; color: #0078d4; margin-top: 2px;">💳 Resp. Gastos: ${respGastosVal}</div>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -498,7 +501,7 @@ function generarHtmlOPInteligente(data) {
                                         VEHICULO A UTILIZAR:
                                     </td>
                                     <td colspan="4" style="font-weight: 800; padding: 3px 6px; text-align: center; border-bottom: 1px solid #000000;">
-                                        ${vehDestVal}
+                                        ${vehDestVal}${choferVal ? ` <span style="font-weight: 700; font-size: 9px; color: #1e293b;">(Chofer: ${choferVal})</span>` : ''}
                                     </td>
                                 </tr>
                                 <tr style="text-align: center; font-size: 9px; background: #f8fafc; border-bottom: 1px solid #000000;">
@@ -587,6 +590,8 @@ async function imprimirOrdenProduccionActual(folio) {
         opData.dependencia_solicita = getVal('op_dependencia_solicita') || opData.dependencia_solicita || '';
         opData.quien_solicita = getVal('op_quien_solicita') || opData.quien_solicita || '';
         opData.resp_de_produccion = getVal('op_resp_de_produccion') || opData.resp_de_produccion || '';
+        opData.responsable_gastos = getVal('op_responsable_gastos') || opData.responsable_gastos || '';
+        opData.chofer = getVal('op_chofer') || opData.chofer || '';
         opData.fec_del_evento = getVal('op_fec_del_evento') || opData.fec_del_evento || '';
         opData.fec_fin_evento = getVal('op_fec_fin_evento') || opData.fec_fin_evento || opData.fec_del_evento;
         opData.inicio_del_evento = getVal('op_inicio_del_evento') || opData.inicio_del_evento || '';
@@ -1503,6 +1508,8 @@ async function guardarOrdenOP(event) {
     const dependencia_solicita = document.getElementById("op_dependencia_solicita")?.value;
     const quien_solicita = document.getElementById("op_quien_solicita")?.value;
     const resp_de_produccion = document.getElementById("op_resp_de_produccion")?.value;
+    const responsable_gastos = document.getElementById("op_responsable_gastos")?.value;
+    const chofer = document.getElementById("op_chofer")?.value;
     const fec_del_evento = document.getElementById("op_fec_del_evento")?.value;
     const fec_fin_evento = document.getElementById("op_fec_fin_evento")?.value;
     const estimado_gasto = document.getElementById("op_estimado_gasto")?.value;
@@ -1536,6 +1543,8 @@ async function guardarOrdenOP(event) {
         dependencia_solicita: (dependencia_solicita || "").trim(),
         quien_solicita: (quien_solicita || "").trim(),
         resp_de_produccion: resp_de_produccion || "",
+        responsable_gastos: (responsable_gastos || "").trim(),
+        chofer: (chofer || "").trim(),
         fec_del_evento: fec_del_evento || null,
         fec_fin_evento: fec_fin_evento || fec_del_evento || null,
         estimado_gasto: parseFloat(estimado_gasto) || 0.0,

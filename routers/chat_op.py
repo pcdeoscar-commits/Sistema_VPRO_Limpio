@@ -114,11 +114,11 @@ def es_usuario_privilegiado(nombre: str, rol: str) -> bool:
     return False
 
 def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, chofer: str, convocados: List[str]) -> bool:
-    if not usuario_nom:
-        return True
+    if not usuario_nom or not usuario_nom.strip():
+        return False
     norm_user = normalizar_texto(usuario_nom)
     if not norm_user:
-        return True
+        return False
     
     # Comprobar si coincide con alguno de los responsables
     for resp in [resp_prod, resp_gastos, chofer]:
@@ -150,7 +150,8 @@ def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, c
 def listar_ops_para_chat(
     usuario_nombre: Optional[str] = None,
     id_empleado: Optional[str] = None,
-    rol: Optional[str] = None
+    rol: Optional[str] = None,
+    ver_todas: Optional[bool] = False
 ):
     """
     Lista las Órdenes de Producción activas para el chat.
@@ -206,8 +207,9 @@ def listar_ops_para_chat(
             
             ultimo_msj = reparar_mojibake(safe_decode_hex(r.ultimo_mensaje_hex)) if r.ultimo_mensaje_hex else None
 
-            # Validación de pertenencia si no es administrador/directivo
-            if usuario_nombre and not es_privilegiado:
+            # Validación de pertenencia a la OP:
+            # Por defecto (ver_todas=False), TODO usuario (incluso Admin) SOLO ve las OPs donde está convocado o asignado
+            if usuario_nombre and (not ver_todas or not es_privilegiado):
                 pertenece = usuario_pertenece_a_op(usuario_nombre, resp_prod, resp_gastos, chofer, convocados)
                 if not pertenece:
                     continue

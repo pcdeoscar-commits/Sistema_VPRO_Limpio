@@ -14,7 +14,7 @@ const chatState = {
     ws: null,
     pollInterval: null,
     filtroBusqueda: '',
-    filtroSoloMias: true
+    verTodas: false
 };
 
 // Paleta de colores para nombres estilo WhatsApp
@@ -98,6 +98,7 @@ function guardarSesionChatUsuario(usuario) {
 function actualizarInfoUsuarioEnChat() {
     const elNom = document.getElementById("chat-usuario-nombre");
     const elFoto = document.getElementById("chat-usuario-foto");
+    const btnTodas = document.getElementById("tab-todas-ops");
     if (!chatState.usuario) return;
 
     const nombre = chatState.usuario.nombre_completo || chatState.usuario.nombre || "Usuario VPRO";
@@ -107,6 +108,23 @@ function actualizarInfoUsuarioEnChat() {
         elFoto.src = `${CHAT_API_URL}/fotos/${idE}.jpg`;
         elFoto.onerror = () => { elFoto.src = "vendor/img/avatar_default.png"; };
     }
+
+    // Si es directivo / admin / coordinador, habilitar el botón para ver todas si lo desea
+    const rol = (chatState.usuario.rol || '').toUpperCase();
+    const nomUpper = nombre.toUpperCase();
+    const esPriv = rol.includes('ADMIN') || rol.includes('COORD') || nomUpper.includes('VILLARREAL') || nomUpper.includes('AGUNDEZ');
+    if (btnTodas) {
+        btnTodas.style.display = esPriv ? 'inline-flex' : 'none';
+    }
+}
+
+function cambiarFiltroModoChat(verTodas) {
+    chatState.verTodas = verTodas;
+    const btnMis = document.getElementById("tab-mis-ops");
+    const btnTodas = document.getElementById("tab-todas-ops");
+    if (btnMis) btnMis.classList.toggle("active", !verTodas);
+    if (btnTodas) btnTodas.classList.toggle("active", verTodas);
+    cargarListaOPsChat();
 }
 
 // ==============================================================================
@@ -129,7 +147,8 @@ async function cargarListaOPsChat() {
         const rolParam = u ? encodeURIComponent(u.rol || '') : '';
         const idEmpParam = u ? encodeURIComponent(u.id_empleado || '') : '';
 
-        const resp = await fetch(`${CHAT_API_URL}/api/chat-op/ops?usuario_nombre=${nombreParam}&rol=${rolParam}&id_empleado=${idEmpParam}`);
+        const verTodasParam = chatState.verTodas ? '&ver_todas=true' : '&ver_todas=false';
+        const resp = await fetch(`${CHAT_API_URL}/api/chat-op/ops?usuario_nombre=${nombreParam}&rol=${rolParam}&id_empleado=${idEmpParam}${verTodasParam}`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
 

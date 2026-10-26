@@ -170,6 +170,30 @@
         }
 
         /* LISTA DE ITEMS */
+        .chat-tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--wa-text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .chat-tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--wa-text-primary);
+        }
+        .chat-tab-btn.active {
+            background: #00a884;
+            color: #0b141a;
+            border-color: #00a884;
+        }
+
         .chat-ops-list {
             flex: 1;
             overflow-y: auto;
@@ -807,6 +831,16 @@
             </div>
         </div>
 
+        <!-- TABS DE FILTRADO: MIS OPS VS TODAS -->
+        <div class="chat-tabs-bar" id="chat-tabs-bar" style="display: flex; gap: 8px; padding: 6px 14px; background: #111b21; border-bottom: 1px solid #222e35;">
+            <button class="chat-tab-btn active" id="tab-mis-ops" onclick="cambiarFiltroModoChat(false)">
+                <i class="ph ph-user-check"></i> Mis OPs Convocadas
+            </button>
+            <button class="chat-tab-btn" id="tab-todas-ops" onclick="cambiarFiltroModoChat(true)" style="display: none;">
+                <i class="ph ph-globe"></i> Todas las OPs
+            </button>
+        </div>
+
         <div class="chat-ops-list" id="chat-lista-ops">
             <!-- Renderizado dinámico desde chat_op.js -->
         </div>
@@ -866,7 +900,7 @@
 </div>
 
 <!-- Scripts -->
-<script src="js/chat_op.js?v=20261026_chat_v1"></script>
+<script src="js/chat_op.js?v=20261026_chat_v2"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         inicializarChatOP();
@@ -875,3 +909,4 @@
 
 </body>
 </html>
+

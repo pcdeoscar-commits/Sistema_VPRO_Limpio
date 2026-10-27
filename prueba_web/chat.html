@@ -811,10 +811,16 @@
                 <img src="vendor/img/avatar_default.png" id="chat-usuario-foto" class="chat-user-avatar" alt="Foto">
                 <div class="chat-user-meta">
                     <h4 id="chat-usuario-nombre">Cargando...</h4>
-                    <span>VPRO Producción</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span>VPRO Producción</span>
+                        <span id="chat-badge-global" style="display: none; background: #ef4444; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 800; box-shadow: 0 1px 4px rgba(239,68,68,0.5);">0</span>
+                    </div>
                 </div>
             </div>
             <div class="chat-header-actions">
+                <button class="chat-btn-icon" onclick="reproducirTimbreVPRO()" title="Probar sonido / timbre de notificación VPRO">
+                    <i class="ph ph-bell-simple-ringing" style="color: #fbbf24; font-size: 20px;"></i>
+                </button>
                 <button class="chat-btn-icon" id="btn-instalar-pwa" onclick="mostrarInstruccionesInstalacion()" title="Crear ícono en pantalla de celular">
                     <i class="ph ph-device-mobile" style="color: #00a884; font-size: 22px;"></i>
                 </button>
@@ -903,7 +909,7 @@
 </div>
 
 <!-- Scripts -->
-<script src="js/chat_op.js?v=20261026_chat_v3"></script>
+<script src="js/chat_op.js?v=20261026_chat_v4"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         inicializarChatOP();

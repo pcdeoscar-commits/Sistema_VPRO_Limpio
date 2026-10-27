@@ -18,6 +18,119 @@ const chatState = {
 };
 
 // Paleta de colores para nombres estilo WhatsApp
+
+// ==============================================================================
+// 🔔 MOTOR DE AUDIO: TIMBRE EXCLUSIVO VPRO (Arpegio 3 Tonos Cristalino)
+// ==============================================================================
+let audioCtx = null;
+
+function inicializarAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
+// Desbloquear audio con cualquier toque o clic
+window.addEventListener('click', inicializarAudioContext);
+window.addEventListener('touchstart', inicializarAudioContext);
+
+function reproducirTimbreVPRO() {
+    try {
+        inicializarAudioContext();
+        if (!audioCtx) return;
+
+        const ahora = audioCtx.currentTime;
+
+        // Tono 1: Nota E5 (659.25 Hz) - Entrada suave
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(659.25, ahora);
+        gain1.gain.setValueAtTime(0.3, ahora);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ahora + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(ahora);
+        osc1.stop(ahora + 0.35);
+
+        // Tono 2: Nota C6 (1046.50 Hz) - Brillo principal armónico
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = "triangle";
+        osc2.frequency.setValueAtTime(1046.50, ahora + 0.08);
+        gain2.gain.setValueAtTime(0, ahora);
+        gain2.gain.setValueAtTime(0.38, ahora + 0.08);
+        gain2.gain.exponentialRampToValueAtTime(0.001, ahora + 0.55);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(ahora + 0.08);
+        osc2.stop(ahora + 0.55);
+
+        // Tono 3: Nota E6 (1318.51 Hz) - Resonancia cristalina final
+        const osc3 = audioCtx.createOscillator();
+        const gain3 = audioCtx.createGain();
+        osc3.type = "sine";
+        osc3.frequency.setValueAtTime(1318.51, ahora + 0.16);
+        gain3.gain.setValueAtTime(0, ahora);
+        gain3.gain.setValueAtTime(0.22, ahora + 0.16);
+        gain3.gain.exponentialRampToValueAtTime(0.001, ahora + 0.7);
+        osc3.connect(gain3);
+        gain3.connect(audioCtx.destination);
+        osc3.start(ahora + 0.16);
+        osc3.stop(ahora + 0.7);
+
+    } catch (e) {
+        console.warn("Audio notification no disponible:", e);
+    }
+}
+
+// ==============================================================================
+// 🏷️ SISTEMA DE BADGES (NÚMERO EN ÍCONO Y TÍTULO DE VENTANA)
+// ==============================================================================
+function actualizarBadgeAppGlobal() {
+    let totalNoLeidos = 0;
+    if (chatState.ops && chatState.ops.length > 0) {
+        chatState.ops.forEach(op => {
+            const esActiva = chatState.opActual && chatState.opActual.id_evento === op.id_evento;
+        const leidoId = parseInt(localStorage.getItem('vpro_chat_leido_' + op.id_evento) || '0');
+        const countGuardado = parseInt(localStorage.getItem('vpro_chat_count_' + op.id_evento) || '0');
+        const tieneNuevos = op.ultimo_id_mensaje && op.ultimo_id_mensaje > leidoId && !esActiva;
+        const noLeidos = tieneNuevos ? Math.max(1, (op.total_mensajes || 0) - countGuardado) : 0;
+            if (!esActiva) {
+                const leidoId = parseInt(localStorage.getItem('vpro_chat_leido_' + op.id_evento) || '0');
+                const countGuardado = parseInt(localStorage.getItem('vpro_chat_count_' + op.id_evento) || '0');
+                if (op.ultimo_id_mensaje && op.ultimo_id_mensaje > leidoId) {
+                    const diff = Math.max(1, (op.total_mensajes || 0) - countGuardado);
+                    totalNoLeidos += diff;
+                }
+            }
+        });
+    }
+
+    // 1. Web App Badging API (ícono en escritorio / celular)
+    if ('setAppBadge' in navigator) {
+        if (totalNoLeidos > 0) {
+            navigator.setAppBadge(totalNoLeidos).catch(() => {});
+        } else {
+            navigator.clearAppBadge().catch(() => {});
+        }
+    }
+
+    // 2. Título de la pestaña / app
+    const tituloBase = "VPRO Chat";
+    document.title = totalNoLeidos > 0 ? `(${totalNoLeidos}) ${tituloBase}` : tituloBase;
+
+    // 3. Badge en la interfaz si existe
+    const badgeEl = document.getElementById("chat-badge-global");
+    if (badgeEl) {
+        badgeEl.innerText = totalNoLeidos;
+        badgeEl.style.display = totalNoLeidos > 0 ? "inline-flex" : "none";
+    }
+}
+
 const COLORES_NOMBRES = [
     "#25d366", "#34b7f1", "#e542a3", "#f59f00", "#7950f2", 
     "#20c997", "#ff6b6b", "#4dabf7", "#fab005", "#12b886"
@@ -153,6 +266,7 @@ async function cargarListaOPsChat() {
         const data = await resp.json();
 
         chatState.ops = data.ops || [];
+        actualizarBadgeAppGlobal();
         renderizarListaOPs();
 
         // Si se especificó folio en la URL (ej. chat.html?folio=43), abrirla directamente
@@ -230,7 +344,11 @@ function renderizarListaOPs() {
                     </div>
                     <div class="chat-op-row-last">
                         <span class="chat-op-preview">${ultimoTexto}</span>
-                        ${op.total_mensajes > 0 ? `<span class="chat-op-msg-count">${op.total_mensajes}</span>` : ''}
+                        ${noLeidos > 0 ? `
+                            <span class="chat-op-msg-count" style="background: #22c55e; color: white; font-weight: 800; box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4);">
+                                ${noLeidos}
+                            </span>
+                        ` : (op.total_mensajes > 0 ? `<span class="chat-op-msg-count" style="opacity: 0.6;">${op.total_mensajes}</span>` : '')}
                     </div>
                 </div>
             </div>
@@ -248,6 +366,10 @@ async function seleccionarOPParaChat(id_evento) {
     if (!op) return;
 
     chatState.opActual = op;
+    // Marcar como leído
+    localStorage.setItem('vpro_chat_leido_' + id_evento, op.ultimo_id_mensaje || 999999);
+    localStorage.setItem('vpro_chat_count_' + id_evento, op.total_mensajes || 0);
+    actualizarBadgeAppGlobal();
     renderizarListaOPs();
 
     // En móviles, ocultar la lista y mostrar la sala de chat
@@ -658,10 +780,28 @@ function conectarWebSocketChat(id_evento) {
             try {
                 const data = JSON.parse(event.data);
                 if (data.tipo === "NUEVO_MENSAJE" && data.mensaje) {
-                    if (!chatState.mensajes.some(m => m.id === data.mensaje.id)) {
-                        chatState.mensajes.push(data.mensaje);
+                    const msg = data.mensaje;
+                    const miNom = (chatState.usuario?.nombre_completo || chatState.usuario?.nombre || '').toUpperCase().trim();
+                    const esMio = miNom && msg.autor_nombre && miNom.includes(msg.autor_nombre.toUpperCase().trim());
+
+                    // 🎵 Reproducir timbre VPRO exclusivo cuando el mensaje viene de un compañero
+                    if (!esMio) {
+                        reproducirTimbreVPRO();
+                    }
+
+                    if (!chatState.mensajes.some(m => m.id === msg.id)) {
+                        chatState.mensajes.push(msg);
                         renderizarMensajes();
                     }
+
+                    // Si estoy viendo esta OP, actualizar contador de leído
+                    if (chatState.opActual && chatState.opActual.id_evento === msg.id_evento) {
+                        localStorage.setItem('vpro_chat_leido_' + msg.id_evento, msg.id);
+                        chatState.opActual.total_mensajes = (chatState.opActual.total_mensajes || 0) + 1;
+                        chatState.opActual.ultimo_id_mensaje = msg.id;
+                        localStorage.setItem('vpro_chat_count_' + msg.id_evento, chatState.opActual.total_mensajes);
+                    }
+                    actualizarBadgeAppGlobal();
                 } else if (data.tipo === "MENSAJE_FIJADO_CAMBIO") {
                     const m = chatState.mensajes.find(msj => msj.id === data.id_mensaje);
                     if (m) {

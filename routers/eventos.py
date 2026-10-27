@@ -1255,7 +1255,7 @@ def generar_pdf_op_bytes(data: dict) -> bytes:
 
     hrs_c = float(data.get("horas_manejo_chofer") or 0.0)
     hrs_str = f" - {hrs_c:g} hrs" if hrs_c > 0 else ""
-    veh_label_txt = f'<b>{veh_dest}</b>' + (f' <font size=5.5 color="#1e293b">(⭐ Chofer: {chofer_val}{hrs_str})</font>' if chofer_val else '')
+    veh_label_txt = f'<b>{veh_dest}</b>' + (f' <font size=5.5 color="#1e293b">(Chofer: {chofer_val})</font>' if chofer_val else '')
     sub_veh_data = [
         [Paragraph('<b>VEHICULO A UTILIZAR:</b>', ParagraphStyle('VU', fontName='Helvetica-Bold', fontSize=6.5, leading=8)), Paragraph(veh_label_txt, s_cbold), '', '', '', ''],
         ['', '', Paragraph('km', s_cbold), Paragraph('gas', s_cbold), Paragraph('km', s_cbold), Paragraph('gas', s_cbold)]

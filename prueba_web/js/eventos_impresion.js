@@ -499,7 +499,7 @@ function generarHtmlOPInteligente(data) {
                                         VEHICULO A UTILIZAR:
                                     </td>
                                     <td colspan="4" style="font-weight: 800; padding: 3px 6px; text-align: center; border-bottom: 1px solid #000000;">
-                                        ${vehDestVal}${choferVal ? ` <span style="font-weight: 700; font-size: 9px; color: #1e293b;">(⭐ Chofer: ${choferVal}${parseFloat(data.horas_manejo_chofer) > 0 ? ` - ${data.horas_manejo_chofer} hrs` : ''})</span>` : ''}
+                                        ${vehDestVal}${choferVal ? ` <span style="font-weight: 700; font-size: 9px; color: #1e293b;">(Chofer: ${choferVal})</span>` : ''}
                                     </td>
                                 </tr>
                                 <tr style="text-align: center; font-size: 9px; background: #f8fafc; border-bottom: 1px solid #000000;">

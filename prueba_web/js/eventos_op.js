@@ -237,11 +237,11 @@ function actualizarCrewGira(choferGuardado) {
             const nTrim = String(nombre).trim();
             const sel = (nTrim.toLowerCase() === actual.toLowerCase() && actual) ? 'selected' : '';
             if (sel) found = true;
-            html += `<option value="${nTrim}" ${sel}>⭐ ${nTrim}</option>`;
+            html += `<option value="${nTrim}" ${sel}>${nTrim}</option>`;
         });
         // Si viene un chofer asignado previamente desde la base de datos, incluirlo aunque no esté en el multiselect
         if (choferGuardado && actual && !found) {
-            html += `<option value="${actual}" selected>⭐ ${actual} (Convocado)</option>`;
+            html += `<option value="${actual}" selected>${actual}</option>`;
         }
         selectChofer.innerHTML = html;
         alCambiarChoferDesignado(selectChofer.value);
@@ -656,43 +656,30 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
 
                 <!-- Panel Oculto / Desplegable de Bitácora -->
                 <div id="contenedor-bitacora-gira" style="display: none; padding-top: 10px;">
-                    <!-- 🚐 DESIGNACIÓN DE CHOFER Y CONTROL DE INCENTIVOS FORÁNEOS -->
-                    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-left: 5px solid #f59e0b; border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 20px;">🚐</span>
-                                <h4 style="margin: 0; font-size: 14.5px; font-weight: 800; color: #0f172a;">DESIGNACIÓN DE CHOFER Y CONTROL DE CONDUCCIÓN FORÁNEA</h4>
-                            </div>
-                            <span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #fde68a;">
-                                ⭐ Aplica Incentivo Económico por Viaje
-                            </span>
+                    <!-- 🚐 LOGÍSTICA DE TRASLADO Y CONDUCTOR ASIGNADO (CONFIDENCIAL) -->
+                    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-left: 5px solid #0284c7; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                            <span style="font-size: 20px;">🚐</span>
+                            <h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0f172a;">Logística de Traslado y Conductor Asignado</h4>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 18px; align-items: flex-start;">
                             <div>
-                                <label class="op-form-label">⭐ CHOFER DESIGNADO (PERSONAL CONVOCADO AL EVENTO):</label>
-                                <select id="op_chofer" class="op-select" onchange="alCambiarChoferDesignado(this.value)" ${dis} style="font-weight: 700; color: #0f172a;">
-                                    <option value="">-- Selecciona chofer del personal convocado --</option>
+                                <label class="op-form-label">CONDUCTOR ASIGNADO (PERSONAL CONVOCADO):</label>
+                                <select id="op_chofer" class="op-select" onchange="alCambiarChoferDesignado(this.value)" ${dis} style="font-weight: 600; color: #0f172a;">
+                                    <option value="">-- Seleccionar conductor del personal convocado --</option>
                                 </select>
                                 <p style="font-size: 11.5px; color: #64748b; margin: 4px 0 0 0;">
-                                    💡 <em>Solo aparecen los colaboradores asignados arriba en <b>"SELECCIONAR PERSONAL VPRO"</b>.</em>
+                                    <em>Solo aparecen los colaboradores asignados arriba en <b>"SELECCIONAR PERSONAL VPRO"</b>.</em>
                                 </p>
                             </div>
                             <div>
-                                <label class="op-form-label">⏱️ HORAS DE MANEJO (CARRETERA IDA + VUELTA):</label>
+                                <label class="op-form-label">⏱️ HORAS ESTIMADAS DE CONDUCCIÓN (IDA + VUELTA):</label>
                                 <div style="position: relative;">
-                                    <input type="number" step="0.5" min="0" id="op_horas_manejo_chofer" value="${data.horas_manejo_chofer || ''}" class="op-input" placeholder="Ej. 6.0" style="font-weight: 800; color: #166534; padding-right: 40px;" ${dis}>
-                                    <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b; pointer-events: none; font-size: 12px;">hrs</span>
+                                    <input type="number" step="0.5" min="0" id="op_horas_manejo_chofer" value="${data.horas_manejo_chofer || ''}" class="op-input" placeholder="Ej. 6.0" style="font-weight: 700; color: #0f172a; padding-right: 40px;" ${dis}>
+                                    <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-weight: 600; color: #64748b; pointer-events: none; font-size: 12px;">hrs</span>
                                 </div>
-                                <p style="font-size: 11.5px; color: #64748b; margin: 4px 0 0 0;">
-                                    Tiempo total frente al volante para cálculo en Auditoría/Nómina.
-                                </p>
                             </div>
-                        </div>
-
-                        <div id="badge-chofer-info" style="margin-top: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #166534; display: ${choferVal ? 'flex' : 'none'}; align-items: center; gap: 8px;">
-                            <span style="font-size: 18px;">⭐</span>
-                            <span>Chofer oficial registrado: <strong id="texto-chofer-designado">${choferVal}</strong>. Aplica incentivo económico con distintivo de conductor en auditoría.</span>
                         </div>
                     </div>
 

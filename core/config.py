@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -47,6 +48,24 @@ DIR_EVIDENCIAS_REAL = str(FOTOS_EQUIPOS_DIR)
 FOTOS_EQUIPOS_DIR.mkdir(parents=True, exist_ok=True)
 FOTOS_PERSONAL_DIR.mkdir(parents=True, exist_ok=True)
 FOTOS_EVENTOS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Si se montó un volumen persistente externo (ej. /vpro-datos),
+# sembramos los archivos base del repositorio para que no queden vacías las fotos de personal o equipos.
+if DATA_DIR.resolve() != BASE_DIR.resolve():
+    for folder_name in ["Fotos_de_equipos", "Fotos_de_personal", "Fotos_de_eventos"]:
+        src_folder = BASE_DIR / folder_name
+        dst_folder = DATA_DIR / folder_name
+        if src_folder.exists() and src_folder.is_dir():
+            for item in src_folder.iterdir():
+                target_item = dst_folder / item.name
+                if not target_item.exists():
+                    try:
+                        if item.is_file():
+                            shutil.copy2(item, target_item)
+                        elif item.is_dir():
+                            shutil.copytree(item, target_item, dirs_exist_ok=True)
+                    except Exception as e:
+                        print(f"⚠️ Error al migrar {item.name} al volumen persistente: {e}")
 
 # Orígenes Permitidos para CORS
 CORS_ORIGINS = [

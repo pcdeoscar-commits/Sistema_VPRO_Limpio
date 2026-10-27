@@ -95,10 +95,6 @@ function actualizarBadgeAppGlobal() {
     if (chatState.ops && chatState.ops.length > 0) {
         chatState.ops.forEach(op => {
             const esActiva = chatState.opActual && chatState.opActual.id_evento === op.id_evento;
-        const leidoId = parseInt(localStorage.getItem('vpro_chat_leido_' + op.id_evento) || '0');
-        const countGuardado = parseInt(localStorage.getItem('vpro_chat_count_' + op.id_evento) || '0');
-        const tieneNuevos = op.ultimo_id_mensaje && op.ultimo_id_mensaje > leidoId && !esActiva;
-        const noLeidos = tieneNuevos ? Math.max(1, (op.total_mensajes || 0) - countGuardado) : 0;
             if (!esActiva) {
                 const leidoId = parseInt(localStorage.getItem('vpro_chat_leido_' + op.id_evento) || '0');
                 const countGuardado = parseInt(localStorage.getItem('vpro_chat_count_' + op.id_evento) || '0');
@@ -323,6 +319,10 @@ function renderizarListaOPs() {
     let html = "";
     filtradas.forEach(op => {
         const esActiva = chatState.opActual && chatState.opActual.id_evento === op.id_evento;
+        const leidoId = parseInt(localStorage.getItem('vpro_chat_leido_' + op.id_evento) || '0');
+        const countGuardado = parseInt(localStorage.getItem('vpro_chat_count_' + op.id_evento) || '0');
+        const tieneNuevos = op.ultimo_id_mensaje && op.ultimo_id_mensaje > leidoId && !esActiva;
+        const noLeidos = tieneNuevos ? Math.max(1, (op.total_mensajes || 0) - countGuardado) : 0;
         const horaStr = op.ultima_hora ? formatearHoraChat(op.ultima_hora) : (op.fec_del_evento ? op.fec_del_evento.split('-').reverse().slice(0,2).join('/') : '');
         const ultimoTexto = op.ultimo_mensaje 
             ? `${op.ultimo_autor ? op.ultimo_autor.split(' ')[0] + ': ' : ''}${op.ultimo_mensaje}`

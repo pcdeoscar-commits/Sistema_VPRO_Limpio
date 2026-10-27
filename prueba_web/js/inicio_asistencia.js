@@ -91,6 +91,34 @@ async function cargarDatosInicio() {
         }
 
         let gruposHtml = [];
+        // ── ⭐ ACCESO DESTACADO: Chat Operativo de OPs (WhatsApp) ─────────────
+        gruposHtml.push(`
+            <div class="notif-card-chat-op" style="background: linear-gradient(135deg, #064e3b 0%, #0f766e 100%); border-left: 5px solid #10b981; border-radius: 12px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25); padding: 14px 18px; color: white;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 220px;">
+                        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(255, 255, 255, 0.18); backdrop-filter: blur(4px); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                            <i class="ph ph-chat-teardrop-dots"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                                💬 Chat Operativo de OPs
+                                <span style="background: #10b981; color: #064e3b; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; letter-spacing: 0.5px;">WHATSAPP OP</span>
+                            </div>
+                            <div style="font-size: 12px; color: #a7f3d0; margin-top: 3px; line-height: 1.3;">
+                                Indicaciones técnicas, enlaces vMix y bitácora de tus eventos asignados
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="window.open('chat.html', '_blank')" 
+                                style="background: #ffffff; color: #065f46; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s ease;">
+                            <i class="ph ph-chats-circle" style="font-size: 18px; color: #059669;"></i> Entrar a mis Chats <i class="ph ph-arrow-right" style="font-size: 14px;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `);
+
 
         // ── A. VPRO Transfer — Archivos pendientes de bajar ──────────────
         try {
@@ -138,15 +166,17 @@ async function cargarDatosInicio() {
                     badgeColor: '#b45309',
                     items: ops,
                     renderItem: (op) => `
-                        <div onclick="abrirCheckoutConOP(${op.id_evento||0}, '${(op.label||'').replace(/'/g, "\'")}')"
-                             style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
-                             onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='transparent'">
-                            <i class="ph ph-warning-circle" style="font-size:18px;color:#d97706;flex-shrink:0;"></i>
-                            <div style="flex:1;">
-                                <div style="font-size:13px;font-weight:600;color:#78350f;">${op.label||op.folio||'Orden pendiente'}</div>
-                                <div style="font-size:11.5px;color:#92400e;">Estatus: <b>${op.estado||'PENDIENTE'}</b></div>
+                        <div style="display:flex;align-items:center;gap:10px;padding:8px 8px;border-radius:8px;margin-bottom:4px;background:#ffffff;border:1px solid #fef3c7;">
+                            <div onclick="abrirCheckoutConOP(${op.id_evento||0}, '${(op.label||'').replace(/'/g, "\'")}')" style="flex:1;cursor:pointer;">
+                                <div style="font-size:13px;font-weight:700;color:#78350f;display:flex;align-items:center;gap:6px;">
+                                    <i class="ph ph-clipboard-text" style="color:#d97706;"></i> ${op.label||op.folio||'Orden pendiente'}
+                                </div>
+                                <div style="font-size:11.5px;color:#92400e;margin-top:2px;">Estatus: <b>${op.estado||'PENDIENTE'}</b></div>
                             </div>
-                            <i class="ph ph-arrow-right" style="color:#b45309;font-size:16px;flex-shrink:0;"></i>
+                            <button type="button" onclick="event.stopPropagation(); window.open('chat.html?folio=${op.folio||op.id_evento}', '_blank');" 
+                                    style="background:#059669;color:white;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;flex-shrink:0;box-shadow:0 2px 4px rgba(5,150,105,0.25);">
+                                <i class="ph ph-chat-teardrop-dots" style="font-size:15px;"></i> Chat OP
+                            </button>
                         </div>`
                 }));
             }

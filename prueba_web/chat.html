@@ -815,6 +815,9 @@
                 </div>
             </div>
             <div class="chat-header-actions">
+                <button class="chat-btn-icon" id="btn-instalar-pwa" onclick="mostrarInstruccionesInstalacion()" title="Crear ícono en pantalla de celular">
+                    <i class="ph ph-device-mobile" style="color: #00a884; font-size: 22px;"></i>
+                </button>
                 <button class="chat-btn-icon" onclick="cargarListaOPsChat()" title="Actualizar OPs">
                     <i class="ph ph-arrow-clockwise"></i>
                 </button>
@@ -900,11 +903,78 @@
 </div>
 
 <!-- Scripts -->
-<script src="js/chat_op.js?v=20261026_chat_v2"></script>
+<script src="js/chat_op.js?v=20261026_chat_v3"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         inicializarChatOP();
     });
+
+    let deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btn = document.getElementById("btn-instalar-pwa");
+        if (btn) btn.style.display = "inline-flex";
+    });
+
+    function mostrarInstruccionesInstalacion() {
+        if (deferredInstallPrompt) {
+            deferredInstallPrompt.prompt();
+            deferredInstallPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('Usuario aceptó instalar la app');
+                }
+                deferredInstallPrompt = null;
+            });
+            return;
+        }
+
+        const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        let htmlInstrucciones = "";
+
+        if (esIOS) {
+            htmlInstrucciones = `
+                <div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #334155;">
+                    <p style="margin-bottom: 12px;">Para tener el <strong>ícono de VPRO Chat</strong> en tu pantalla de inicio como una App:</p>
+                    <ol style="padding-left: 20px; margin: 0 0 12px;">
+                        <li>Toca el botón <strong>Compartir</strong> <i class="ph ph-export" style="font-size: 18px; color: #0284c7;"></i> (el cuadrito con la flecha hacia arriba en Safari).</li>
+                        <li>Desplázate hacia abajo y selecciona <strong>"Agregar a pantalla de inicio"</strong> <i class="ph ph-plus-square" style="font-size: 18px; color: #16a34a;"></i>.</li>
+                        <li>Toca <strong>Agregar</strong> en la esquina superior derecha.</li>
+                    </ol>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; color: #15803d; font-size: 12px;">
+                        ✅ ¡Listo! Se creará el ícono con el logo de VPRO para entrar directo a tus chats sin pasar por el navegador.
+                    </div>
+                </div>
+            `;
+        } else {
+            htmlInstrucciones = `
+                <div style="text-align: left; font-size: 13.5px; line-height: 1.6; color: #334155;">
+                    <p style="margin-bottom: 12px;">Para tener el <strong>ícono de VPRO Chat</strong> en tu pantalla de celular (Android / PC):</p>
+                    <ol style="padding-left: 20px; margin: 0 0 12px;">
+                        <li>Toca el menú de opciones <i class="ph ph-dots-three-vertical" style="font-size: 18px; color: #0284c7;"></i> (los 3 puntos arriba a la derecha en Chrome).</li>
+                        <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a pantalla principal"</strong> <i class="ph ph-app-window" style="font-size: 18px; color: #16a34a;"></i>.</li>
+                        <li>Confirma pulsando <strong>Instalar</strong>.</li>
+                    </ol>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; color: #15803d; font-size: 12px;">
+                        ✅ ¡Listo! Se creará el ícono con el logo de VPRO para entrar directo a tus chats a pantalla completa.
+                    </div>
+                </div>
+            `;
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '📱 Instalar Ícono en el Celular',
+                html: htmlInstrucciones,
+                icon: 'info',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#00a884'
+            });
+        } else {
+            alert("Toca el menú de tu navegador y selecciona 'Agregar a pantalla de inicio' para crear el ícono directo.");
+        }
+    }
+
 </script>
 
 </body>

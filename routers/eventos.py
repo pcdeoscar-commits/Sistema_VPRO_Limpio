@@ -126,6 +126,55 @@ def obtener_folios_activos_e_historicos():
         return {"folios": [], "folios_historicos": [], "proximo_id": 1}
 
 
+@router.get("/auditoria-choferes")
+def obtener_auditoria_choferes():
+    """
+    Retorna el reporte gerencial de choferes designados a eventos foráneos,
+    con sus horas de manejo en carretera e información para pago de incentivo.
+    """
+    query = text("""
+        SELECT 
+            id_evento,
+            folio,
+            nombre_evento,
+            subtitulo_evento,
+            chofer,
+            COALESCE(horas_manejo_chofer, 0.0) AS horas_manejo,
+            vehiculo_destino,
+            locacion,
+            fec_del_evento,
+            fec_fin_evento,
+            carros_usados_op,
+            es_viaje_foraneo
+        FROM public.eventos
+        WHERE (chofer IS NOT NULL AND TRIM(chofer) <> '')
+           OR (horas_manejo_chofer > 0)
+           OR (es_viaje_foraneo IS TRUE)
+        ORDER BY id_evento DESC;
+    """)
+    try:
+        with engine_eventos.connect() as conn:
+            rows = conn.execute(query).fetchall()
+            resultado = []
+            for r in rows:
+                resultado.append({
+                    "id_evento": r.id_evento,
+                    "folio": r.folio or str(r.id_evento),
+                    "nombre_evento": reparar_mojibake(r.nombre_evento or ""),
+                    "subtitulo_evento": reparar_mojibake(r.subtitulo_evento or ""),
+                    "chofer": reparar_mojibake(r.chofer or ""),
+                    "horas_manejo": float(r.horas_manejo or 0.0),
+                    "destino": reparar_mojibake(r.vehiculo_destino or r.locacion or ""),
+                    "fec_del_evento": str(r.fec_del_evento) if r.fec_del_evento else "",
+                    "fec_fin_evento": str(r.fec_fin_evento) if r.fec_fin_evento else "",
+                    "vehiculos": parse_pg_array(r.carros_usados_op),
+                    "es_viaje_foraneo": bool(r.es_viaje_foraneo)
+                })
+            return {"total": len(resultado), "registros": resultado}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener auditoría de choferes: {e}")
+
+
 @router.get("/buscar/{folio}")
 @router.get("/folio/{folio}")
 @router.get("/op/{folio}")
@@ -153,6 +202,8 @@ def buscar_op_por_folio(folio: str):
             data["produccion"] = reparar_mojibake(data.get("produccion") or "")
             data["internet_redes"] = reparar_mojibake(data.get("internet_redes") or "")
             data["actividades_de_proveedores"] = reparar_mojibake(data.get("actividades_de_proveedores") or "")
+            data["horas_manejo_chofer"] = float(data.get("horas_manejo_chofer") or 0.0)
+            data["es_viaje_foraneo"] = bool(data.get("es_viaje_foraneo") or False)
             data["fec_del_evento"] = str(data["fec_del_evento"]) if data.get("fec_del_evento") else ""
             data["fec_fin_evento"] = str(data.get("fec_fin_evento") or data.get("fec_del_evento") or "")
             data["subtitulo_evento"] = reparar_mojibake(data.get("subtitulo_evento") or "")
@@ -343,6 +394,9 @@ def guardar_o_actualizar_op(op: dict):
         payload["detalle_llamado"] = str(payload.get("detalle_llamado") or "").strip()
         payload["rol_juegos"] = str(payload.get("rol_juegos") or "").strip()
         payload["vehiculo_destino"] = str(payload.get("vehiculo_destino") or "").strip()
+        payload["chofer"] = str(payload.get("chofer") or "").strip()
+        payload["horas_manejo_chofer"] = float(payload.get("horas_manejo_chofer") or 0.0)
+        payload["es_viaje_foraneo"] = bool(payload.get("es_viaje_foraneo") or False)
 
         import json
         roles_val = payload.get("personal_roles_op", [])
@@ -367,6 +421,7 @@ def guardar_o_actualizar_op(op: dict):
                     fec_de_instalacion = CAST(:fec_de_instalacion AS date), hra_de_instalacion = CAST(:hra_de_instalacion AS time), 
                     dependencia_solicita = :dependencia_solicita, quien_solicita = :quien_solicita, resp_de_produccion = :resp_de_produccion, 
                     responsable_gastos = :responsable_gastos, chofer = :chofer,
+                    horas_manejo_chofer = CAST(:horas_manejo_chofer AS numeric), es_viaje_foraneo = CAST(:es_viaje_foraneo AS boolean),
                     fec_del_evento = CAST(:fec_del_evento AS date), fec_fin_evento = CAST(:fec_fin_evento AS date), 
                     inicio_del_evento = CAST(:inicio_del_evento AS time), hra_de_llamado = CAST(:hra_de_llamado AS time), 
                     detalle_llamado = :detalle_llamado,
@@ -389,14 +444,14 @@ def guardar_o_actualizar_op(op: dict):
             query_insert = text("""
                 INSERT INTO public.eventos (
                     id_evento, folio, para_q_cliente, nombre_evento, subtitulo_evento, locacion, fec_de_instalacion, hra_de_instalacion, 
-                    dependencia_solicita, quien_solicita, resp_de_produccion, responsable_gastos, chofer, fec_del_evento, fec_fin_evento, 
+                    dependencia_solicita, quien_solicita, resp_de_produccion, responsable_gastos, chofer, horas_manejo_chofer, es_viaje_foraneo, fec_del_evento, fec_fin_evento, 
                     inicio_del_evento, hra_de_llamado, detalle_llamado, ubicacion, tipo_de_servicio, produccion, 
                     internet_redes, actividades_de_proveedores, rol_juegos, vehiculo_destino, nota, elabora, organiza, coordina, 
                     vobo, proveedor_op, personal_convocado_op, carros_usados_op, externos_op, personal_roles_op, reuniones_vinculadas, 
                     cronogramas_vinculados, fotos_evidencia, empleado_que_creo_la_op, fec_de_elaboracion_de_op 
                 ) VALUES (
                     :id_evento, :folio, :para_q_cliente, :nombre_evento, :subtitulo_evento, :locacion, CAST(:fec_de_instalacion AS date), CAST(:hra_de_instalacion AS time), 
-                    :dependencia_solicita, :quien_solicita, :resp_de_produccion, :responsable_gastos, :chofer, CAST(:fec_del_evento AS date), CAST(:fec_fin_evento AS date), 
+                    :dependencia_solicita, :quien_solicita, :resp_de_produccion, :responsable_gastos, :chofer, CAST(:horas_manejo_chofer AS numeric), CAST(:es_viaje_foraneo AS boolean), CAST(:fec_del_evento AS date), CAST(:fec_fin_evento AS date), 
                     CAST(:inicio_del_evento AS time), CAST(:hra_de_llamado AS time), :detalle_llamado, :ubicacion, :tipo_de_servicio, :produccion, 
                     :internet_redes, :actividades_de_proveedores, :rol_juegos, :vehiculo_destino, :nota, :elabora, :organiza, :coordina, 
                     :vobo, CAST(:proveedor_op AS text[]), CAST(:personal_convocado_op AS text[]), CAST(:carros_usados_op AS text[]), CAST(:externos_op AS text[]), CAST(:personal_roles_op AS jsonb), CAST(:reuniones_vinculadas AS text[]), 
@@ -1198,7 +1253,9 @@ def generar_pdf_op_bytes(data: dict) -> bytes:
     if not carros:
         carros = ["Sin vehículos asignados"]
 
-    veh_label_txt = f'<b>{veh_dest}</b>' + (f' <font size=5.5 color="#1e293b">(Chofer: {chofer_val})</font>' if chofer_val else '')
+    hrs_c = float(data.get("horas_manejo_chofer") or 0.0)
+    hrs_str = f" - {hrs_c:g} hrs" if hrs_c > 0 else ""
+    veh_label_txt = f'<b>{veh_dest}</b>' + (f' <font size=5.5 color="#1e293b">(⭐ Chofer: {chofer_val}{hrs_str})</font>' if chofer_val else '')
     sub_veh_data = [
         [Paragraph('<b>VEHICULO A UTILIZAR:</b>', ParagraphStyle('VU', fontName='Helvetica-Bold', fontSize=6.5, leading=8)), Paragraph(veh_label_txt, s_cbold), '', '', '', ''],
         ['', '', Paragraph('km', s_cbold), Paragraph('gas', s_cbold), Paragraph('km', s_cbold), Paragraph('gas', s_cbold)]

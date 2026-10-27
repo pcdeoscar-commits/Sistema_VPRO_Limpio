@@ -499,7 +499,7 @@ function generarHtmlOPInteligente(data) {
                                         VEHICULO A UTILIZAR:
                                     </td>
                                     <td colspan="4" style="font-weight: 800; padding: 3px 6px; text-align: center; border-bottom: 1px solid #000000;">
-                                        ${vehDestVal}${choferVal ? ` <span style="font-weight: 700; font-size: 9px; color: #1e293b;">(Chofer: ${choferVal})</span>` : ''}
+                                        ${vehDestVal}${choferVal ? ` <span style="font-weight: 700; font-size: 9px; color: #1e293b;">(⭐ Chofer: ${choferVal}${parseFloat(data.horas_manejo_chofer) > 0 ? ` - ${data.horas_manejo_chofer} hrs` : ''})</span>` : ''}
                                     </td>
                                 </tr>
                                 <tr style="text-align: center; font-size: 9px; background: #f8fafc; border-bottom: 1px solid #000000;">
@@ -1287,17 +1287,18 @@ async function solicitarDesellarChat(folio) {
 // -------------------------------------------------------------
 // Bitácora de Gira y Horas de Locación
 // -------------------------------------------------------------
-function toggleBitacoraGira() {
+function toggleBitacoraGira(forceOpen) {
     const contenedor = document.getElementById("contenedor-bitacora-gira");
     const switchBg = document.getElementById("toggle-switch-gira");
     const knob = document.getElementById("knob-switch-gira");
     if (!contenedor || !switchBg || !knob) return;
 
-    if (contenedor.style.display === "none") {
+    const shouldOpen = (forceOpen !== undefined) ? Boolean(forceOpen) : (contenedor.style.display === "none");
+    if (shouldOpen) {
         contenedor.style.display = "block";
-        switchBg.style.background = "#ef4444";
+        switchBg.style.background = "#16a34a";
         knob.style.left = "23px";
-        actualizarCrewGira();
+        if (typeof actualizarCrewGira === 'function') actualizarCrewGira();
     } else {
         contenedor.style.display = "none";
         switchBg.style.background = "#cbd5e1";
@@ -1507,6 +1508,8 @@ async function guardarOrdenOP(event) {
     const resp_de_produccion = document.getElementById("op_resp_de_produccion")?.value;
     const responsable_gastos = document.getElementById("op_responsable_gastos")?.value;
     const chofer = document.getElementById("op_chofer")?.value;
+    const horas_manejo_chofer = parseFloat(document.getElementById("op_horas_manejo_chofer")?.value) || 0.0;
+    const es_viaje_foraneo = document.getElementById("contenedor-bitacora-gira")?.style.display !== "none";
     const fec_del_evento = document.getElementById("op_fec_del_evento")?.value;
     const fec_fin_evento = document.getElementById("op_fec_fin_evento")?.value;
     const inicio_del_evento = document.getElementById("op_inicio_del_evento")?.value;
@@ -1541,6 +1544,8 @@ async function guardarOrdenOP(event) {
         resp_de_produccion: resp_de_produccion || "",
         responsable_gastos: (responsable_gastos || "").trim(),
         chofer: (chofer || "").trim(),
+        horas_manejo_chofer: horas_manejo_chofer,
+        es_viaje_foraneo: es_viaje_foraneo,
         fec_del_evento: fec_del_evento || null,
         fec_fin_evento: fec_fin_evento || fec_del_evento || null,
         inicio_del_evento: inicio_del_evento ? (inicio_del_evento.length === 5 ? inicio_del_evento + ":00" : inicio_del_evento) : null,

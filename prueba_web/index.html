@@ -1723,12 +1723,17 @@
                             <span style="color: #94a3b8; font-size: 14px;">🔗</span>
                         </div>
 
-                        <!-- SELECTOR DE FOLIOS ACTIVOS -->
+                        <!-- SELECTOR DE FOLIOS ACTIVOS Y ACCIONES -->
                         <div class="op-section-card" style="padding: 16px 20px; margin-bottom: 24px;">
-                            <label class="op-form-label">🔍 BUSCAR O SELECCIONAR FOLIO:</label>
-                            <select id="select-folios-op" onchange="cargarDetalleOP(this.value)" class="op-select" style="max-width: 600px;">
-                                <option value="">🆕 CREAR NUEVA ORDEN</option>
-                            </select>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+                                <div style="flex: 1; min-width: 280px; max-width: 650px;">
+                                    <label class="op-form-label">🔍 BUSCAR O SELECCIONAR FOLIO:</label>
+                                    <select id="select-folios-op" onchange="cargarDetalleOP(this.value)" class="op-select" style="width: 100%;">
+                                        <option value="">🆕 CREAR NUEVA ORDEN</option>
+                                    </select>
+                                </div>
+                                <div id="op-header-botones-accion" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;"></div>
+                            </div>
                         </div>
 
                         <!-- FORMULARIO OP ACTIVA -->
@@ -1744,10 +1749,15 @@
                         </div>
 
                         <div class="op-section-card" style="padding: 16px 20px; margin-bottom: 24px;">
-                            <label class="op-form-label">🔍 BUSCAR O SELECCIONAR FOLIO HISTÓRICO:</label>
-                            <select id="select-folios-historicos" onchange="cargarDetalleOPHistorico(this.value)" class="op-select" style="max-width: 600px;">
-                                <option value="">Selecciona un folio histórico para consultar...</option>
-                            </select>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+                                <div style="flex: 1; min-width: 280px; max-width: 650px;">
+                                    <label class="op-form-label">🔍 BUSCAR O SELECCIONAR FOLIO HISTÓRICO:</label>
+                                    <select id="select-folios-historicos" onchange="cargarDetalleOPHistorico(this.value)" class="op-select" style="width: 100%;">
+                                        <option value="">Selecciona un folio histórico para consultar...</option>
+                                    </select>
+                                </div>
+                                <div id="op-historico-header-botones-accion" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;"></div>
+                            </div>
                         </div>
 
                         <!-- DETALLE OP HISTÓRICA (READ-ONLY) -->
@@ -6004,8 +6014,8 @@
     <script src="js/auth.js?v=20261026_auth_v6"></script>
     <script src="js/navegacion.js?v=20261021_v2_auth"></script>
     <script src="js/inicio_asistencia.js?v=20261026_notif_v3"></script>
-    <script src="js/eventos_op.js?v=20261026_op_v3"></script>
-    <script src="js/eventos_impresion.js?v=20261026_op_v2"></script>
+    <script src="js/eventos_op.js?v=20261027_op_v4"></script>
+    <script src="js/eventos_impresion.js?v=20261027_op_v3"></script>
     <script src="js/equipos_danados.js"></script>
     <script src="js/gastos.js?v=20261026_op_v2"></script>
     <script src="js/asistencia.js"></script>

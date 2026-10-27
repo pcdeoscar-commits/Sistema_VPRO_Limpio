@@ -52,7 +52,7 @@ def listar_folios_pendientes_gastos():
                e.fec_del_evento,
                e.fec_de_instalacion,
                e.fec_fin_evento,
-               COALESCE(e.estimado_gasto, 0.0)
+               0.0 AS estimado_gasto
         FROM public.eventos e
         WHERE NOT EXISTS (
             SELECT 1 FROM public.informes_gastos_maestro m 
@@ -88,7 +88,7 @@ def obtener_datos_evento_gasto(id_evento: int):
                encode(para_q_cliente::bytea, 'hex'),
                fec_del_evento,
                fec_fin_evento,
-               COALESCE(estimado_gasto, 0.0),
+               0.0 AS estimado_gasto,
                quien_solicita,
                dependencia_solicita,
                encode(COALESCE(responsable_gastos, '')::bytea, 'hex')

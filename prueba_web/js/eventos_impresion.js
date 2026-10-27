@@ -237,7 +237,6 @@ function generarHtmlOPInteligente(data) {
         : ['Sin vehículos asignados'];
 
     const tipoServicioVal = (data.tipo_de_servicio || 'Producción de evento').trim();
-    const gastoVal = parseFloat(data.estimado_gasto) || 0;
     const rowsLedger = parsearLineasLedgerJS(data);
 
     // Firmas
@@ -425,7 +424,6 @@ function generarHtmlOPInteligente(data) {
                         <td style="width: 80%; font-size: 11px; font-weight: 700; color: #1d4ed8; padding: 5px 10px; background: #dbeafe;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                                 <span>${tipoServicioVal}</span>
-                                ${gastoVal > 0 ? `<span style="background: #1e293b; color: #a3e635; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; white-space: nowrap;">Presupuesto Est.: $${gastoVal.toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -597,7 +595,6 @@ async function imprimirOrdenProduccionActual(folio) {
         opData.inicio_del_evento = getVal('op_inicio_del_evento') || opData.inicio_del_evento || '';
         opData.hra_de_llamado = getVal('op_hra_de_llamado') || opData.hra_de_llamado || '';
         opData.detalle_llamado = getVal('op_detalle_llamado') || opData.detalle_llamado || '';
-        opData.estimado_gasto = getVal('op_estimado_gasto') || opData.estimado_gasto || 0;
         opData.ubicacion = getVal('op_ubicacion') || opData.ubicacion || '';
         opData.vehiculo_destino = getVal('op_vehiculo_destino') || opData.vehiculo_destino || '';
         opData.rol_juegos = getVal('op_rol_juegos') || opData.rol_juegos || '';
@@ -1512,7 +1509,6 @@ async function guardarOrdenOP(event) {
     const chofer = document.getElementById("op_chofer")?.value;
     const fec_del_evento = document.getElementById("op_fec_del_evento")?.value;
     const fec_fin_evento = document.getElementById("op_fec_fin_evento")?.value;
-    const estimado_gasto = document.getElementById("op_estimado_gasto")?.value;
     const inicio_del_evento = document.getElementById("op_inicio_del_evento")?.value;
     const hra_de_llamado = document.getElementById("op_hra_de_llamado")?.value;
     const ubicacion = document.getElementById("op_ubicacion")?.value;
@@ -1547,7 +1543,6 @@ async function guardarOrdenOP(event) {
         chofer: (chofer || "").trim(),
         fec_del_evento: fec_del_evento || null,
         fec_fin_evento: fec_fin_evento || fec_del_evento || null,
-        estimado_gasto: parseFloat(estimado_gasto) || 0.0,
         inicio_del_evento: inicio_del_evento ? (inicio_del_evento.length === 5 ? inicio_del_evento + ":00" : inicio_del_evento) : null,
         hra_de_llamado: hra_de_llamado ? (hra_de_llamado.length === 5 ? hra_de_llamado + ":00" : hra_de_llamado) : null,
         detalle_llamado: (detalle_llamado || "").trim(),

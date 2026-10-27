@@ -9,7 +9,9 @@ prueba_web/vpro_fondo_otro.mp4
 prueba_web/vpro_fondo_respaldo.mp4
 prueba_web/nuve_dumy.txt
 
-# Scratch y temporales
+# Fotos y adjuntos subidos en tiempo real
+Fotos_de_eventos/chat_op/
+
 scratch/
 scratch_avatar.png
 *.tmp

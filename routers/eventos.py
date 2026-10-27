@@ -155,7 +155,6 @@ def buscar_op_por_folio(folio: str):
             data["actividades_de_proveedores"] = reparar_mojibake(data.get("actividades_de_proveedores") or "")
             data["fec_del_evento"] = str(data["fec_del_evento"]) if data.get("fec_del_evento") else ""
             data["fec_fin_evento"] = str(data.get("fec_fin_evento") or data.get("fec_del_evento") or "")
-            data["estimado_gasto"] = float(data.get("estimado_gasto") or 0.0)
             data["subtitulo_evento"] = reparar_mojibake(data.get("subtitulo_evento") or "")
             data["detalle_llamado"] = reparar_mojibake(data.get("detalle_llamado") or "")
             data["rol_juegos"] = reparar_mojibake(data.get("rol_juegos") or "")
@@ -354,14 +353,6 @@ def guardar_o_actualizar_op(op: dict):
         else:
             payload["personal_roles_op"] = "[]"
 
-        try:
-            val_est = payload.get("estimado_gasto", 0.0)
-            if isinstance(val_est, str):
-                val_est = val_est.replace("$", "").replace(",", "").strip()
-            payload["estimado_gasto"] = float(val_est) if val_est else 0.0
-        except Exception:
-            payload["estimado_gasto"] = 0.0
-        
         if 'estatus' in payload:
             del payload['estatus']
 
@@ -379,7 +370,7 @@ def guardar_o_actualizar_op(op: dict):
                     fec_del_evento = CAST(:fec_del_evento AS date), fec_fin_evento = CAST(:fec_fin_evento AS date), 
                     inicio_del_evento = CAST(:inicio_del_evento AS time), hra_de_llamado = CAST(:hra_de_llamado AS time), 
                     detalle_llamado = :detalle_llamado,
-                    estimado_gasto = CAST(:estimado_gasto AS numeric), ubicacion = :ubicacion, tipo_de_servicio = :tipo_de_servicio, 
+                    ubicacion = :ubicacion, tipo_de_servicio = :tipo_de_servicio, 
                     produccion = :produccion, internet_redes = :internet_redes, actividades_de_proveedores = :actividades_de_proveedores, 
                     rol_juegos = :rol_juegos, vehiculo_destino = :vehiculo_destino,
                     nota = :nota, elabora = :elabora, organiza = :organiza, coordina = :coordina, vobo = :vobo, 
@@ -399,14 +390,14 @@ def guardar_o_actualizar_op(op: dict):
                 INSERT INTO public.eventos (
                     id_evento, folio, para_q_cliente, nombre_evento, subtitulo_evento, locacion, fec_de_instalacion, hra_de_instalacion, 
                     dependencia_solicita, quien_solicita, resp_de_produccion, responsable_gastos, chofer, fec_del_evento, fec_fin_evento, 
-                    inicio_del_evento, hra_de_llamado, detalle_llamado, estimado_gasto, ubicacion, tipo_de_servicio, produccion, 
+                    inicio_del_evento, hra_de_llamado, detalle_llamado, ubicacion, tipo_de_servicio, produccion, 
                     internet_redes, actividades_de_proveedores, rol_juegos, vehiculo_destino, nota, elabora, organiza, coordina, 
                     vobo, proveedor_op, personal_convocado_op, carros_usados_op, externos_op, personal_roles_op, reuniones_vinculadas, 
                     cronogramas_vinculados, fotos_evidencia, empleado_que_creo_la_op, fec_de_elaboracion_de_op 
                 ) VALUES (
                     :id_evento, :folio, :para_q_cliente, :nombre_evento, :subtitulo_evento, :locacion, CAST(:fec_de_instalacion AS date), CAST(:hra_de_instalacion AS time), 
                     :dependencia_solicita, :quien_solicita, :resp_de_produccion, :responsable_gastos, :chofer, CAST(:fec_del_evento AS date), CAST(:fec_fin_evento AS date), 
-                    CAST(:inicio_del_evento AS time), CAST(:hra_de_llamado AS time), :detalle_llamado, CAST(:estimado_gasto AS numeric), :ubicacion, :tipo_de_servicio, :produccion, 
+                    CAST(:inicio_del_evento AS time), CAST(:hra_de_llamado AS time), :detalle_llamado, :ubicacion, :tipo_de_servicio, :produccion, 
                     :internet_redes, :actividades_de_proveedores, :rol_juegos, :vehiculo_destino, :nota, :elabora, :organiza, :coordina, 
                     :vobo, CAST(:proveedor_op AS text[]), CAST(:personal_convocado_op AS text[]), CAST(:carros_usados_op AS text[]), CAST(:externos_op AS text[]), CAST(:personal_roles_op AS jsonb), CAST(:reuniones_vinculadas AS text[]), 
                     CAST(:cronogramas_vinculados AS text[]), CAST(:fotos_evidencia AS text[]), :empleado_que_creo_la_op, CURRENT_DATE 
@@ -1125,10 +1116,7 @@ def generar_pdf_op_bytes(data: dict) -> bytes:
 
     # 3. DESCRIPCIÓN DEL SERVICIO
     tipo_serv = reparar_mojibake(str(data.get("tipo_de_servicio") or "").strip())
-    est_gasto = float(data.get("estimado_gasto") or 0.0)
     txt_serv = f"<b>{tipo_serv}</b>"
-    if est_gasto > 0:
-        txt_serv += f" &nbsp;&nbsp;&nbsp; <b>[Presupuesto Est.: ${est_gasto:,.2f}]</b>"
 
     t_desc = Table([
         [Paragraph('<b>DESCRIPCIÓN DEL SERVICIO</b>', s_cbold_8), ''],

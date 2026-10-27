@@ -265,7 +265,6 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     const quienSolicitaVal = data.quien_solicita || '';
     const respGastosVal = data.responsable_gastos || '';
     const choferVal = data.chofer || '';
-    const estimadoGastoVal = (data.estimado_gasto !== undefined && data.estimado_gasto !== null) ? Number(data.estimado_gasto) : 0;
 
     // Autorizaciones defaults
     const defElabora = data.elabora || "Ana Lilia Villarreal Uribe";
@@ -274,6 +273,26 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     const defVobo = data.vobo || "Gerardo Villarreal Uribe";
 
     const defaultNota = "Toda orden de producción esta sujeta a supervisión permanente hasta el término del evento, por cambios generados de último minuto por el cliente, siendo reportado de inmediato a Administración y Coordinación para su debido llenado y actualización en cotización y agenda.";
+
+    // Inyectar botones de acción en el recuadro superior (a la misma altura que el dropdown)
+    setTimeout(() => {
+        const contBotonesId = isReadOnly ? 'op-historico-header-botones-accion' : 'op-header-botones-accion';
+        const contBotones = document.getElementById(contBotonesId);
+        if (contBotones) {
+            if (data && data.folio) {
+                contBotones.innerHTML = `
+                    <button type="button" onclick="abrirChatOPParaFolio('${folioVal}')" style="background: #0f766e; color: white; border: none; height: 38px; padding: 0 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.3); transition: all 0.2s;" title="Abrir chat técnico de esta OP">
+                        <i class="ph ph-chat-teardrop-dots" style="font-size: 17px;"></i> 💬 Chat de la OP
+                    </button>
+                    <button type="button" onclick="imprimirOrdenProduccionActual('${folioVal}')" style="background: #0078d4; color: white; border: none; height: 38px; padding: 0 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0, 120, 212, 0.25); transition: all 0.2s;">
+                        <i class="ph ph-printer" style="font-size: 17px;"></i> 🖨️ Imprimir esta OP
+                    </button>
+                `;
+            } else {
+                contBotones.innerHTML = '';
+            }
+        }
+    }, 10);
 
     // Select options helpers
     const buildOptions = (list, selectedVal, addEmpty = false) => {
@@ -350,18 +369,8 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
 
             <!-- 📝 1. DATOS DE LA ORDEN -->
             <div class="op-section-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <div style="margin-bottom: 16px;">
                     <h3 class="op-section-title" style="margin: 0;">📝 Datos de la Orden</h3>
-                    ${data.folio ? `
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button type="button" onclick="abrirChatOPParaFolio('${folioVal}')" style="background: #0f766e; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.3);" title="Abrir chat técnico de esta OP">
-                                <i class="ph ph-chat-teardrop-dots" style="font-size: 17px;"></i> 💬 Chat de la OP
-                            </button>
-                            <button type="button" onclick="imprimirOrdenProduccionActual('${folioVal}')" style="background: #0078d4; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0, 120, 212, 0.25);">
-                                <i class="ph ph-printer" style="font-size: 17px;"></i> 🖨️ Imprimir esta OP
-                            </button>
-                        </div>
-                    ` : ''}
                 </div>
                 
                 <!-- Fila 1: Folio, Cliente, Evento y Subtítulo -->
@@ -387,8 +396,8 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     </div>
                 </div>
 
-                <!-- Fila 2: Locación, Detalle Llamado y Estimado de Gasto -->
-                <div style="display: grid; grid-template-columns: 1.8fr 1.8fr 1.2fr; gap: 16px; margin-bottom: 16px;">
+                <!-- Fila 2: Locación y Detalle Llamado -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                     <div>
                         <label class="op-form-label">📍 LOCACIÓN (Lugar):</label>
                         <input type="text" id="op_locacion" value="${data.locacion || ''}" class="op-input" placeholder="Lugar o sede del evento..." ${dis}>
@@ -396,13 +405,6 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     <div>
                         <label class="op-form-label">⏱️ DETALLE LLAMADO:</label>
                         <input type="text" id="op_detalle_llamado" value="${data.detalle_llamado || ''}" class="op-input" placeholder="Ej. Manuel: 9:00 AM | Estudio: 4:00 PM..." ${dis}>
-                    </div>
-                    <div>
-                        <label class="op-form-label">💰 ESTIMADO GASTO ($):</label>
-                        <div style="position: relative;">
-                            <input type="number" step="0.01" min="0" id="op_estimado_gasto" value="${estimadoGastoVal > 0 ? estimadoGastoVal : ''}" class="op-input" placeholder="0.00" style="font-weight: 700; color: #166534; padding-left: 20px;" ${dis}>
-                            <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #166534; pointer-events: none;">$</span>
-                        </div>
                     </div>
                 </div>
 

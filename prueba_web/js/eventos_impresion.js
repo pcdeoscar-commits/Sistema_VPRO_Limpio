@@ -834,7 +834,7 @@ async function cargarDetalleOPHistorico(folioId) {
         renderMultiSelectComponent('ms-vehiculos-hist', 'vehiculos', cats.autos, "Sin vehículos", true);
         renderMultiSelectComponent('ms-proveedores-hist', 'proveedores', cats.proveedores, "Sin proveedores", true);
 
-        actualizarCrewGira();
+        actualizarCrewGira(data.chofer);
         cargarJornadasGira(data.id_evento, true);
 
     } catch (error) {

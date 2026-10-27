@@ -235,12 +235,13 @@ function actualizarCrewGira(choferGuardado) {
         let found = false;
         crew.forEach(nombre => {
             const nTrim = String(nombre).trim();
-            const sel = (nTrim === actual && actual) ? 'selected' : '';
+            const sel = (nTrim.toLowerCase() === actual.toLowerCase() && actual) ? 'selected' : '';
             if (sel) found = true;
             html += `<option value="${nTrim}" ${sel}>⭐ ${nTrim}</option>`;
         });
-        if (actual && !found) {
-            html += `<option value="${actual}" selected>⭐ ${actual} (Asignado)</option>`;
+        // Si viene un chofer asignado previamente desde la base de datos, incluirlo aunque no esté en el multiselect
+        if (choferGuardado && actual && !found) {
+            html += `<option value="${actual}" selected>⭐ ${actual} (Convocado)</option>`;
         }
         selectChofer.innerHTML = html;
         alCambiarChoferDesignado(selectChofer.value);
@@ -497,8 +498,8 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     </div>
                 </div>
 
-                <!-- Fila 5: Ubicación Exacta, Destino Vehicular y Nombre del Chofer -->
-                <div style="display: grid; grid-template-columns: 1.6fr 1.2fr 1.2fr; gap: 16px; margin-bottom: 16px;">
+                <!-- Fila 5: Ubicación Exacta y Destino Vehicular -->
+                <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 16px;">
                     <div>
                         <label class="op-form-label">🗺️ UBICACIÓN EXACTA:</label>
                         <input type="text" id="op_ubicacion" value="${data.ubicacion || ''}" class="op-input" placeholder="Dirección precisa, salón, piso o referencias GPS..." ${dis}>
@@ -506,13 +507,6 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     <div>
                         <label class="op-form-label">🎯 DESTINO VEHICULAR / CIUDAD:</label>
                         <input type="text" id="op_vehiculo_destino" value="${data.vehiculo_destino || ''}" class="op-input" placeholder="Ej. BADIRAGUATO, SIN..." ${dis}>
-                    </div>
-                    <div>
-                        <label class="op-form-label">🚐 NOMBRE DEL CHOFER:</label>
-                        <input type="text" id="op_chofer" list="dl_choferes_op" value="${choferVal}" class="op-input" placeholder="Nombre del chofer / conductor..." ${dis}>
-                        <datalist id="dl_choferes_op">
-                            ${((cats.staff_vpro || []).concat(cats.apoyos_externos || [])).map(s => `<option value="${s}">`).join('')}
-                        </datalist>
                     </div>
                 </div>
 

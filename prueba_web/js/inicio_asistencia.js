@@ -60,7 +60,7 @@ async function cargarDatosInicio() {
         // Lanzar todas las peticiones en paralelo
         const [resTrans, resCheck, resAlertas, resVac, resGastos] = await Promise.allSettled([
             fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${idEmp}`),
-            fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo)}`),
+            fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '')}`),
             fetch(`${API_URL}/api/rh/alertas?id_empleado=${idEmp}`),
             fetch(`${API_URL}/api/rh/vacaciones/${idEmp}`),
             fetch(`${API_URL}/api/gastos/pendientes-auditoria`)
@@ -330,7 +330,7 @@ async function cargarDatosInicio() {
             body: JSON.stringify({
                 fecha_inicio: semana.lunes.iso,
                 fecha_fin: semana.domingo.iso,
-                empleado: usuarioLogueado.nombre_completo
+                empleado: usuarioLogueado.nombre_completo || usuarioLogueado.nombre || ''
             })
         });
 
@@ -338,7 +338,8 @@ async function cargarDatosInicio() {
         const diasEspanol = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
         const hoyIso = formatearFechaLocal(new Date());
 
-        const esVillarreal = usuarioLogueado.nombre_completo.toUpperCase().includes("VILLARREAL");
+        const nombreUpper = String(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase();
+        const esVillarreal = nombreUpper.includes("VILLARREAL");
         let advertenciaConductaDetectada = false;
 
         const limpiaHora = (h) => (h && h !== "None" && h !== "null" && h !== "--:--") ? String(h).substring(0, 5) : "--:--";
@@ -401,7 +402,7 @@ async function cargarDatosInicio() {
                         <div style="flex: 1;">
                             <h4 style="margin: 0 0 6px 0; font-size: 16px; color: #991b1b; font-weight: 700;">🚨 ADVERTENCIA DE CONDUCTA LABORAL</h4>
                             <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #7f1d1d;">
-                                <b>Atención ${usuarioLogueado.nombre_completo}:</b> Se ha detectado una práctica incorrecta en tus registros de asistencia al registrar únicamente entrada matutina y salida vespertina omitiendo el registro de comida. El horario corrido continuo no está autorizado. Favor de pasar a Recursos Humanos para regularizar tu estatus.
+                                <b>Atención ${usuarioLogueado.nombre_completo || usuarioLogueado.nombre || ''}:</b> Se ha detectado una práctica incorrecta en tus registros de asistencia al registrar únicamente entrada matutina y salida vespertina omitiendo el registro de comida. El horario corrido continuo no está autorizado. Favor de pasar a Recursos Humanos para regularizar tu estatus.
                             </p>
                         </div>
                     </div>

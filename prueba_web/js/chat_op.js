@@ -70,45 +70,54 @@ function reproducirTimbreVPRO() {
         inicializarAudioContext();
         if (!audioCtx) return;
 
-        const ahora = audioCtx.currentTime;
+        const base = audioCtx.currentTime;
 
-        // Tono 1: Nota E5 (659.25 Hz) - Entrada suave
-        const osc1 = audioCtx.createOscillator();
-        const gain1 = audioCtx.createGain();
-        osc1.type = "sine";
-        osc1.frequency.setValueAtTime(659.25, ahora);
-        gain1.gain.setValueAtTime(0.3, ahora);
-        gain1.gain.exponentialRampToValueAtTime(0.001, ahora + 0.35);
-        osc1.connect(gain1);
-        gain1.connect(audioCtx.destination);
-        osc1.start(ahora);
-        osc1.stop(ahora + 0.35);
+        // Función auxiliar para emitir un repique de arpegio cristalino
+        const sonarArpegio = (tInicio, factorVolumen = 1.0) => {
+            // Tono 1: Nota E5 (659.25 Hz) - Entrada suave
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = "sine";
+            osc1.frequency.setValueAtTime(659.25, tInicio);
+            gain1.gain.setValueAtTime(0.32 * factorVolumen, tInicio);
+            gain1.gain.exponentialRampToValueAtTime(0.001, tInicio + 0.32);
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.start(tInicio);
+            osc1.stop(tInicio + 0.32);
 
-        // Tono 2: Nota C6 (1046.50 Hz) - Brillo principal armónico
-        const osc2 = audioCtx.createOscillator();
-        const gain2 = audioCtx.createGain();
-        osc2.type = "triangle";
-        osc2.frequency.setValueAtTime(1046.50, ahora + 0.08);
-        gain2.gain.setValueAtTime(0, ahora);
-        gain2.gain.setValueAtTime(0.38, ahora + 0.08);
-        gain2.gain.exponentialRampToValueAtTime(0.001, ahora + 0.55);
-        osc2.connect(gain2);
-        gain2.connect(audioCtx.destination);
-        osc2.start(ahora + 0.08);
-        osc2.stop(ahora + 0.55);
+            // Tono 2: Nota C6 (1046.50 Hz) - Brillo armónico
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = "triangle";
+            osc2.frequency.setValueAtTime(1046.50, tInicio + 0.07);
+            gain2.gain.setValueAtTime(0, tInicio);
+            gain2.gain.setValueAtTime(0.40 * factorVolumen, tInicio + 0.07);
+            gain2.gain.exponentialRampToValueAtTime(0.001, tInicio + 0.48);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start(tInicio + 0.07);
+            osc2.stop(tInicio + 0.48);
 
-        // Tono 3: Nota E6 (1318.51 Hz) - Resonancia cristalina final
-        const osc3 = audioCtx.createOscillator();
-        const gain3 = audioCtx.createGain();
-        osc3.type = "sine";
-        osc3.frequency.setValueAtTime(1318.51, ahora + 0.16);
-        gain3.gain.setValueAtTime(0, ahora);
-        gain3.gain.setValueAtTime(0.22, ahora + 0.16);
-        gain3.gain.exponentialRampToValueAtTime(0.001, ahora + 0.7);
-        osc3.connect(gain3);
-        gain3.connect(audioCtx.destination);
-        osc3.start(ahora + 0.16);
-        osc3.stop(ahora + 0.7);
+            // Tono 3: Nota E6 (1318.51 Hz) - Resonancia de campana final
+            const osc3 = audioCtx.createOscillator();
+            const gain3 = audioCtx.createGain();
+            osc3.type = "sine";
+            osc3.frequency.setValueAtTime(1318.51, tInicio + 0.14);
+            gain3.gain.setValueAtTime(0, tInicio);
+            gain3.gain.setValueAtTime(0.26 * factorVolumen, tInicio + 0.14);
+            gain3.gain.exponentialRampToValueAtTime(0.001, tInicio + 0.60);
+            osc3.connect(gain3);
+            gain3.connect(audioCtx.destination);
+            osc3.start(tInicio + 0.14);
+            osc3.stop(tInicio + 0.60);
+        };
+
+        // 🔔 1er Timbre
+        sonarArpegio(base, 1.0);
+
+        // 🔔 2do Timbre (Doble repique a los 0.45 segundos)
+        sonarArpegio(base + 0.45, 1.1);
 
     } catch (e) {
         console.warn("Audio notification no disponible:", e);

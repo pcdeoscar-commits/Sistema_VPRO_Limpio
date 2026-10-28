@@ -33,12 +33,27 @@ function inicializarAudioContext() {
     }
 }
 
-// Desbloquear audio con cualquier toque o clic
-window.addEventListener('click', inicializarAudioContext);
-window.addEventListener('touchstart', inicializarAudioContext);
+function solicitarPermisoNotificaciones() {
+    if ("Notification" in window && Notification.permission === "default") {
+        try { Notification.requestPermission(); } catch (e) {}
+    }
+}
+
+// Desbloquear audio y notificaciones con cualquier toque o clic
+window.addEventListener('click', () => {
+    inicializarAudioContext();
+    solicitarPermisoNotificaciones();
+});
+window.addEventListener('touchstart', () => {
+    inicializarAudioContext();
+    solicitarPermisoNotificaciones();
+});
 
 function reproducirTimbreVPRO() {
     try {
+        if ('vibrate' in navigator) {
+            try { navigator.vibrate([200, 100, 200]); } catch (e) {}
+        }
         inicializarAudioContext();
         if (!audioCtx) return;
 
@@ -1015,9 +1030,17 @@ function conectarWebSocketChat(id_evento) {
                     const miNom = (chatState.usuario?.nombre_completo || chatState.usuario?.nombre || '').toUpperCase().trim();
                     const esMio = miNom && msg.autor_nombre && miNom.includes(msg.autor_nombre.toUpperCase().trim());
 
-                    // 🎵 Reproducir timbre VPRO exclusivo cuando el mensaje viene de un compañero
+                    // 🎵 Reproducir timbre VPRO y vibrar cuando el mensaje viene de un compañero o del bot
                     if (!esMio) {
                         reproducirTimbreVPRO();
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            try {
+                                new Notification(msg.autor_nombre || "🤖 Alerta VPRO", {
+                                    body: (msg.mensaje || "Nuevo mensaje recibido").substring(0, 120),
+                                    icon: "vendor/img/logo.png"
+                                });
+                            } catch (e) {}
+                        }
                     }
 
                     if (!chatState.mensajes.some(m => m.id === msg.id)) {

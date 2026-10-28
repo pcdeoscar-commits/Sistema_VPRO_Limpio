@@ -565,15 +565,16 @@ def guardar_o_actualizar_op(op: dict):
                     alertas_detectadas.append(f"🚐 Logística de Chofer: Chofer designado -> {nue_chofer}.")
 
                 # E) Nuevo personal incorporado
-                ant_personal = [str(x).strip() for x in (row_ant.get("personal_convocado_op") or []) if str(x).strip()]
-                nue_personal = [str(x).strip() for x in (payload.get("personal_convocado_op") or []) if str(x).strip()]
+                from core.utils import parse_pg_array
+                ant_personal = [p for p in parse_pg_array(row_ant.get("personal_convocado_op")) if p and p != '{}']
+                nue_personal = [p for p in parse_pg_array(payload.get("personal_convocado_op")) if p and p != '{}']
                 agregados = [p for p in nue_personal if p not in ant_personal]
                 if agregados:
                     alertas_detectadas.append(f"👥 Actualización de Crew: Se incorporó a: {', '.join(agregados)}.")
 
                 # F) Cronograma vinculado
-                ant_crono = [str(x).strip() for x in (row_ant.get("cronogramas_vinculados") or []) if str(x).strip()]
-                nue_crono = [str(x).strip() for x in (payload.get("cronogramas_vinculados") or []) if str(x).strip()]
+                ant_crono = [c for c in parse_pg_array(row_ant.get("cronogramas_vinculados")) if c and c != '{}']
+                nue_crono = [c for c in parse_pg_array(payload.get("cronogramas_vinculados")) if c and c != '{}']
                 if nue_crono and ant_crono != nue_crono:
                     alertas_detectadas.append(f"📅 Cronograma Vinculado: Se asignó ({nue_crono[0]}).")
 

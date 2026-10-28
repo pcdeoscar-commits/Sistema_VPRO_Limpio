@@ -740,7 +740,8 @@ async def cerrar_chat_op(id_evento: int, payload: CerrarChatPayload):
                 "id_ev": id_evento,
                 "folio": folio,
                 "id_emp": payload.id_empleado or "",
-                "msj_sistema": f"🔒 El chat operativo de esta OP ha sido cerrado y sellado oficialmente por el Productor {user_nom}. La bitácora ha sido integrada al expediente histórico."
+                "msj_sistema": f"🔒 El chat operativo de esta OP ha sido cerrado y sellado oficialmente por el Productor {user_nom}. La bitácora ha sido integrada al expediente histórico.",
+                "fec_cierre": ahora_dt
             })
 
         fecha_cierre_final = up_row.fecha_cierre_str if up_row else ahora_str

@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import os
 import shutil
@@ -769,6 +770,76 @@ async def cerrar_chat_op(id_evento: int, payload: CerrarChatPayload):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al cerrar chat: {str(e)}")
+
+
+# ==============================================================================
+# MOTOR EMISOR DE ALERTAS AUTOMÁTICAS DEL SISTEMA VPRO
+# ==============================================================================
+def publicar_alerta_sistema(id_evento: int, folio: str, texto_mensaje: str):
+    """
+    Publica un mensaje automático de sistema/alerta en el canal de chat de la OP
+    y lo retransmite en tiempo real a todos los sockets conectados.
+    """
+    try:
+        ahora_dt = obtener_ahora_local()
+        query_insert = text("""
+            INSERT INTO public.chat_op_mensajes (
+                id_evento, folio, id_empleado, autor_nombre, autor_rol, mensaje, tipo_mensaje, fecha_hora
+            ) VALUES (
+                :id_ev, :folio, 'BOT', '🤖 SISTEMA VPRO', 'ALERTA OPERATIVA', :msj, 'SISTEMA', :fec_hora
+            )
+            RETURNING id, id_evento, folio, id_empleado, autor_nombre, autor_rol, mensaje, tipo_mensaje, archivo_url, 
+                      to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS fecha_hora_str, es_fijado, reacciones;
+        """)
+
+        with engine_eventos.begin() as conn:
+            row = conn.execute(query_insert, {
+                "id_ev": id_evento,
+                "folio": str(folio),
+                "msj": texto_mensaje.strip(),
+                "fec_hora": ahora_dt
+            }).fetchone()
+
+        if row:
+            mensaje_dict = {
+                "id": row.id,
+                "id_evento": row.id_evento,
+                "folio": row.folio,
+                "id_empleado": row.id_empleado,
+                "autor_nombre": row.autor_nombre,
+                "autor_rol": row.autor_rol,
+                "mensaje": row.mensaje,
+                "tipo_mensaje": row.tipo_mensaje,
+                "archivo_url": row.archivo_url,
+                "fecha_hora": row.fecha_hora_str,
+                "es_fijado": row.es_fijado,
+                "reacciones": row.reacciones or {}
+            }
+            # Difusión por WebSocket (segura para contextos síncronos o asíncronos)
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(ws_manager.broadcast_to_op(id_evento, {
+                    "tipo": "NUEVO_MENSAJE",
+                    "mensaje": mensaje_dict
+                }))
+            except RuntimeError:
+                pass
+            return mensaje_dict
+    except Exception as e:
+        print(f"⚠️ Error al publicar alerta de sistema en chat OP-{id_evento}: {e}")
+        return None
+
+class AlertaSistemaPayload(BaseModel):
+    mensaje: str
+    folio: Optional[str] = ""
+
+@router.post("/alerta-sistema/{id_evento}")
+async def emitir_alerta_sistema_endpoint(id_evento: int, payload: AlertaSistemaPayload):
+    """Permite disparar una alerta oficial de sistema hacia la sala de chat de la OP."""
+    res = publicar_alerta_sistema(id_evento, payload.folio, payload.mensaje)
+    if not res:
+        raise HTTPException(status_code=500, detail="No se pudo publicar la alerta de sistema.")
+    return {"status": "success", "alerta": res}
 
 
 # ==============================================================================

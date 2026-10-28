@@ -414,8 +414,17 @@ def guardar_o_actualizar_op(op: dict):
         if 'estatus' in payload:
             del payload['estatus']
 
+        row_ant = None
         with engine_eventos.connect() as conn:
             existe = conn.execute(text("SELECT 1 FROM public.eventos WHERE id_evento = :id_evento"), {"id_evento": id_ev}).scalar()
+            if existe:
+                row_ant = conn.execute(text("""
+                    SELECT folio, locacion, hra_de_llamado, inicio_del_evento, fec_del_evento,
+                           chofer, carros_usados_op, personal_convocado_op, cronogramas_vinculados,
+                           COALESCE(chat_cerrado, FALSE) AS chat_cerrado
+                    FROM public.eventos
+                    WHERE id_evento = :id_evento
+                """), {"id_evento": id_ev}).mappings().first()
             
         if existe:
             query_update = text("""
@@ -508,6 +517,71 @@ def guardar_o_actualizar_op(op: dict):
                     """), {"folio_op": folio_target, "firma": c_clean})
         except Exception as e:
             print(f"⚠️ SILENCED ERROR updating cronogramas folio_op: {e}")
+
+        # 🤖 Disparar Alertas Automáticas Inteligentes al Chat Operativo de la OP
+        try:
+            from routers.chat_op import publicar_alerta_sistema
+            folio_str = str(payload.get("folio") or id_ev)
+
+            if not existe:
+                # 1. Nueva OP Creada
+                nom_ev = payload.get("nombre_evento") or "Evento VPRO"
+                fec_ev = str(payload.get("fec_del_evento") or "--")[:10]
+                llamado_ev = str(payload.get("hra_de_llamado") or "--")[:5]
+                loc_ev = payload.get("locacion") or "Por definir"
+                msg_nuevo = (
+                    f"🚀 Canal operativo iniciado para la OP-{folio_str}: {nom_ev}.\n"
+                    f"📅 Fecha: {fec_ev} | ⏰ Llamado: {llamado_ev} hrs | 📍 Locación: {loc_ev}.\n"
+                    f"Todo reporte técnico, avisos de traslado y evidencias se registrarán en esta bitácora."
+                )
+                publicar_alerta_sistema(id_ev, folio_str, msg_nuevo)
+
+            elif row_ant and not row_ant.get("chat_cerrado"):
+                # 2. OP existente modificada (solo si el chat está activo)
+                alertas_detectadas = []
+
+                # A) Cambio de llamado
+                ant_llamado = str(row_ant.get("hra_de_llamado") or "")[:5]
+                nue_llamado = str(payload.get("hra_de_llamado") or "")[:5]
+                if ant_llamado and nue_llamado and ant_llamado != nue_llamado:
+                    alertas_detectadas.append(f"⏰ Cambio de Horario de Llamado: Modificado de las {ant_llamado} a las {nue_llamado} hrs.")
+
+                # B) Cambio de inicio de evento
+                ant_inicio = str(row_ant.get("inicio_del_evento") or "")[:5]
+                nue_inicio = str(payload.get("inicio_del_evento") or "")[:5]
+                if ant_inicio and nue_inicio and ant_inicio != nue_inicio:
+                    alertas_detectadas.append(f"⏱️ Cambio de Horario del Evento: Modificado de las {ant_inicio} a las {nue_inicio} hrs.")
+
+                # C) Cambio de locación
+                ant_loc = (row_ant.get("locacion") or "").strip()
+                nue_loc = (payload.get("locacion") or "").strip()
+                if ant_loc and nue_loc and ant_loc.upper() != nue_loc.upper():
+                    alertas_detectadas.append(f"📍 Actualización de Locación: Nueva sede asignada -> {nue_loc}.")
+
+                # D) Cambio de chofer
+                ant_chofer = (row_ant.get("chofer") or "").strip()
+                nue_chofer = (payload.get("chofer") or "").strip()
+                if nue_chofer and ant_chofer != nue_chofer:
+                    alertas_detectadas.append(f"🚐 Logística de Chofer: Chofer designado -> {nue_chofer}.")
+
+                # E) Nuevo personal incorporado
+                ant_personal = [str(x).strip() for x in (row_ant.get("personal_convocado_op") or []) if str(x).strip()]
+                nue_personal = [str(x).strip() for x in (payload.get("personal_convocado_op") or []) if str(x).strip()]
+                agregados = [p for p in nue_personal if p not in ant_personal]
+                if agregados:
+                    alertas_detectadas.append(f"👥 Actualización de Crew: Se incorporó a: {', '.join(agregados)}.")
+
+                # F) Cronograma vinculado
+                ant_crono = [str(x).strip() for x in (row_ant.get("cronogramas_vinculados") or []) if str(x).strip()]
+                nue_crono = [str(x).strip() for x in (payload.get("cronogramas_vinculados") or []) if str(x).strip()]
+                if nue_crono and ant_crono != nue_crono:
+                    alertas_detectadas.append(f"📅 Cronograma Vinculado: Se asignó ({nue_crono[0]}).")
+
+                for alerta in alertas_detectadas:
+                    publicar_alerta_sistema(id_ev, folio_str, alerta)
+
+        except Exception as e_alerta:
+            print(f"⚠️ Error al disparar alerta de sistema en chat OP: {e_alerta}")
 
         return {"status": "SUCCESS"}
     except Exception as e:

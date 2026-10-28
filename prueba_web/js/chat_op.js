@@ -675,9 +675,52 @@ function renderizarMensajes(mantenerScroll = false) {
             `;
         }
 
+        const hora = formatearHoraChat(m.fecha_hora);
+
+        // 🤖 RENDERIZADO ESPECIAL DE MENSAJES DE SISTEMA Y ALERTAS INTELIGENTES VPRO
+        if (m.tipo_mensaje === 'SISTEMA' || (m.autor_nombre && m.autor_nombre.includes('SISTEMA VPRO'))) {
+            const textoMsj = m.mensaje || '';
+            let estiloBorde = '#0284c7';
+            let iconoHeader = 'ph-robot';
+            let colorHeader = '#38bdf8';
+            if (textoMsj.includes('🔒')) {
+                estiloBorde = '#ef4444';
+                iconoHeader = 'ph-lock-key';
+                colorHeader = '#f87171';
+            } else if (textoMsj.includes('⚠️') || textoMsj.includes('⏰') || textoMsj.includes('⏱️')) {
+                estiloBorde = '#f59e0b';
+                iconoHeader = 'ph-clock-countdown';
+                colorHeader = '#fbbf24';
+            } else if (textoMsj.includes('🚐') || textoMsj.includes('👥')) {
+                estiloBorde = '#10b981';
+                iconoHeader = 'ph-users-three';
+                colorHeader = '#34d399';
+            } else if (textoMsj.includes('🚀')) {
+                estiloBorde = '#8b5cf6';
+                iconoHeader = 'ph-rocket-launch';
+                colorHeader = '#a78bfa';
+            }
+
+            html += `
+                <div class="chat-msg-wrapper sistema" id="msg-${m.id}" style="width: 100%; display: flex; justify-content: center; margin: 12px 0;">
+                    <div class="chat-bubble-sistema" style="background: rgba(15, 23, 42, 0.90); border: 1px solid #334155; border-left: 4px solid ${estiloBorde}; border-radius: 12px; padding: 12px 18px; max-width: 90%; box-shadow: 0 4px 16px rgba(0,0,0,0.35); text-align: left; backdrop-filter: blur(10px); color: #f1f5f9;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px;">
+                            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: ${colorHeader}; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="ph-fill ${iconoHeader}" style="font-size: 15px;"></i> ${m.autor_nombre || '🤖 SISTEMA VPRO'}
+                            </span>
+                            <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">${hora}</span>
+                        </div>
+                        <div style="margin: 0; font-size: 13px; color: #e2e8f0; line-height: 1.5; font-weight: 500; white-space: pre-line;">
+                            ${autolinkTexto(textoMsj)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
         const esMio = miNombre && m.autor_nombre && miNombre.includes(m.autor_nombre.toUpperCase().trim());
         const colorAutor = obtenerColorAutor(m.autor_nombre);
-        const hora = formatearHoraChat(m.fecha_hora);
         const fotoAutor = m.id_empleado ? `${CHAT_API_URL}/fotos/${m.id_empleado}.jpg` : "vendor/img/avatar_default.png";
 
         let contenidoHtml = "";

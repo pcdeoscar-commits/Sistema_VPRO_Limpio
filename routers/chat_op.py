@@ -111,9 +111,10 @@ def normalizar_texto(t: str) -> str:
 def es_usuario_privilegiado(nombre: str, rol: str) -> bool:
     norm_nom = normalizar_texto(nombre)
     norm_rol = normalizar_texto(rol)
+    # Regla estricta: Solo a los Villarreal, Agundez y Coordinador
     if any(k in norm_nom for k in ["VILLARREAL", "VILLAREAL", "AGUNDEZ"]):
         return True
-    if any(k in norm_rol for k in ["ADMIN", "COORDINADOR", "DIRECCION", "GERENCIA", "SUPERVISOR"]):
+    if "COORD" in norm_rol:
         return True
     return False
 
@@ -634,14 +635,13 @@ async def cerrar_chat_op(id_evento: int, payload: CerrarChatPayload):
         es_prod = bool(norm_user and norm_prod and (norm_user in norm_prod or norm_prod in norm_user))
         if not es_prod:
             tokens_u = [w for w in norm_user.split() if len(w) >= 3]
-            es_prod = sum(1 for w in tokens_u if w in norm_prod) >= 2
-            
-        es_dir = es_usuario_privilegiado(user_nom, "")
+            tokens_p = [w for w in norm_prod.split() if len(w) >= 3]
+            es_prod = sum(1 for w in tokens_u if w in tokens_p) >= 2
         
-        if not (es_prod or es_dir):
+        if not es_prod:
             raise HTTPException(
                 status_code=403, 
-                detail=f"Acceso denegado: Solo el Productor Responsable ({resp_prod}) o Dirección pueden cerrar y sellar el chat de esta OP."
+                detail=f"Acceso denegado: Solo el Productor Responsable ({resp_prod}) asignado en la OP puede cerrar y sellar este chat."
             )
 
         # 2. Obtener todos los mensajes en orden cronológico

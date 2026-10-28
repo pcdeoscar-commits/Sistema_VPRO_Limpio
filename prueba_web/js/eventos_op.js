@@ -857,5 +857,10 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
 
 function abrirChatOPParaFolio(folio) {
     if (!folio) return;
-    window.open(`chat.html?folio=${folio}`, '_blank');
+    let url = `chat.html?folio=${encodeURIComponent(folio)}`;
+    if (typeof usuarioLogueado !== 'undefined' && usuarioLogueado && usuarioLogueado.id_empleado) {
+        try { localStorage.setItem('vpro_chat_usuario', JSON.stringify(usuarioLogueado)); } catch (e) {}
+        url += `&u=${encodeURIComponent(usuarioLogueado.id_empleado)}`;
+    }
+    window.open(url, '_blank');
 }

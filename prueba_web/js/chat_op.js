@@ -142,9 +142,10 @@ function esProductorDeEstaOP(usuario, respProduccion) {
     const uNom = normalizarTexto(usuario.nombre_completo || usuario.nombre || '');
     const pNom = normalizarTexto(respProduccion);
     if (!uNom || !pNom) return false;
-    if (uNom === pNom || uNom.includes(pNom) || pNom.includes(uNom)) return true;
-    const tokens = uNom.split(/\s+/).filter(w => w.length >= 3);
-    const matches = tokens.filter(w => pNom.includes(w)).length;
+    if (uNom === pNom) return true;
+    const tokensU = uNom.split(/\s+/).filter(w => w.length >= 3);
+    const tokensP = pNom.split(/\s+/).filter(w => w.length >= 3);
+    const matches = tokensU.filter(w => tokensP.includes(w)).length;
     return matches >= 2;
 }
 
@@ -189,11 +190,30 @@ function autolinkTexto(texto) {
 async function inicializarChatOP() {
     // 1. Obtener usuario actual
     let user = null;
-    if (typeof usuarioLogueado !== 'undefined' && usuarioLogueado) {
-        user = usuarioLogueado;
-    } else {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramUid = urlParams.get("u") || urlParams.get("id_empleado");
+
+    if (paramUid) {
         try {
-            const guardado = localStorage.getItem("vpro_chat_usuario");
+            const resp = await fetch(`${CHAT_API_URL}/api/empleados`);
+            if (resp.ok) {
+                const emps = await resp.json();
+                const matched = emps.find(e => String(e.id_empleado).trim() === String(paramUid).trim());
+                if (matched) {
+                    user = matched;
+                    localStorage.setItem("vpro_chat_usuario", JSON.stringify(matched));
+                }
+            }
+        } catch (e) {
+            console.warn("Error al buscar usuario por URL param:", e);
+        }
+    }
+
+    if (!user && typeof usuarioLogueado !== 'undefined' && usuarioLogueado) {
+        user = usuarioLogueado;
+    } else if (!user) {
+        try {
+            const guardado = localStorage.getItem("vpro_chat_usuario") || localStorage.getItem("usuarioLogueado") || sessionStorage.getItem("usuarioLogueado");
             if (guardado) user = JSON.parse(guardado);
         } catch (e) {
             console.warn("No se pudo leer usuario local:", e);
@@ -234,12 +254,18 @@ function actualizarInfoUsuarioEnChat() {
         elFoto.onerror = () => { elFoto.src = "vendor/img/avatar_default.png"; };
     }
 
-    // Si es directivo / admin / coordinador, habilitar el botón para ver todas si lo desea
+    // Regla estricta: Solo a los Villarreal, Agundez y Coordinador
     const rol = (chatState.usuario.rol || '').toUpperCase();
     const nomUpper = nombre.toUpperCase();
-    const esPriv = rol.includes('ADMIN') || rol.includes('COORD') || nomUpper.includes('VILLARREAL') || nomUpper.includes('AGUNDEZ');
+    const esAutorizadoTodos = nomUpper.includes('VILLARREAL') || nomUpper.includes('AGUNDEZ') || rol.includes('COORD');
     if (btnTodas) {
-        btnTodas.style.display = esPriv ? 'inline-flex' : 'none';
+        btnTodas.style.display = esAutorizadoTodos ? 'inline-flex' : 'none';
+    }
+    if (!esAutorizadoTodos && chatState.verTodas) {
+        chatState.verTodas = false;
+        const btnMis = document.getElementById("tab-mis-ops");
+        if (btnMis) btnMis.classList.add("active");
+        if (btnTodas) btnTodas.classList.remove("active");
     }
 }
 
@@ -463,12 +489,9 @@ function actualizarCabeceraChat(op) {
         elLlamado.innerText = op.hra_de_llamado ? `Llamado: ${op.hra_de_llamado}` : (op.fec_del_evento || '');
     }
 
-    // Comprobar si el usuario actual es el productor indicado en la OP o Dirección
+    // Regla estricta: El botón "Cerrar Chat" solo es visible ÚNICA Y EXCLUSIVAMENTE para el productor indicado en la OP
     const esProductor = esProductorDeEstaOP(chatState.usuario, op.resp_de_produccion);
-    const nomUpper = (chatState.usuario?.nombre_completo || chatState.usuario?.nombre || '').toUpperCase();
-    const rolUpper = (chatState.usuario?.rol || '').toUpperCase();
-    const esDireccion = rolUpper.includes('ADMIN') || nomUpper.includes('VILLARREAL') || nomUpper.includes('AGUNDEZ');
-    const puedeCerrar = esProductor || esDireccion;
+    const puedeCerrar = esProductor; // Única y exclusivamente el productor de esta OP
 
     if (elAcciones) {
         if (op.chat_cerrado) {
@@ -1046,6 +1069,7 @@ async function mostrarSelectorUsuarioChat() {
         const activos = empleados.filter(e => e.rol !== 'BAJA' && e.rol !== 'PROVEEDOR');
 
         let selectHtml = `<select id="swal-user-select" class="swal2-input" style="font-size: 14px;">`;
+        selectHtml += `<option value="" disabled selected>-- Selecciona tu nombre --</option>`;
         activos.forEach(e => {
             selectHtml += `<option value="${e.id_empleado}">${e.nombre} (${e.puesto || e.depto || 'Staff'})</option>`;
         });

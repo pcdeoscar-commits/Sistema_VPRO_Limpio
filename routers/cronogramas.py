@@ -77,6 +77,49 @@ def listar_cronogramas():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/detalle/buscar")
+def buscar_detalle_cronograma(firma: str):
+    """Busca el detalle completo de un cronograma por su firma, folio o ID para desplegarlo en la OP."""
+    c_clean = str(firma).strip().strip('"').strip("'")
+    folio_extracted = ""
+    if "FOLIO:" in c_clean.upper():
+        try:
+            folio_extracted = c_clean.upper().split("FOLIO:")[1].split("|")[0].strip()
+        except Exception:
+            pass
+
+    query = text("""
+        SELECT 
+            id_cronograma,
+            folio,
+            fecha,
+            nombre_evento,
+            ubicacion_general,
+            folio_op,
+            actividades,
+            observaciones_generales,
+            creado_por,
+            fecha_creacion
+        FROM public.cronogramas_eventos
+        WHERE CONCAT('FOLIO: ', folio, ' | ', TO_CHAR(fecha, 'DD/MM/YYYY'), ' - ', COALESCE(nombre_evento, 'Sin título')) = :firma
+           OR folio = :firma
+           OR CAST(id_cronograma AS TEXT) = :firma
+           OR (folio = :folio_ext AND :folio_ext <> '')
+        LIMIT 1
+    """)
+    try:
+        with engine_eventos.connect() as conn:
+            row = conn.execute(query, {"firma": c_clean, "folio_ext": folio_extracted}).mappings().first()
+            if not row:
+                raise HTTPException(status_code=404, detail="Cronograma no encontrado.")
+            cd = dict(row)
+            cd["fecha"] = str(cd["fecha"]) if cd.get("fecha") else ""
+            return serialize_row_dates(cd)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/{id_cronograma}")
 def obtener_cronograma(id_cronograma: int):
     """Consulta el detalle completo de un cronograma con todas sus actividades."""

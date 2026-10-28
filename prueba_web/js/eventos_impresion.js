@@ -746,7 +746,8 @@ async function cargarDetalleOP(folioId) {
 
         // Renderizar multi-selects en blanco
         renderMultiSelectComponent('ms-reuniones-act', 'reuniones', cats.reuniones, "Despliega y selecciona una o varias reuniones...");
-        renderMultiSelectComponent('ms-cronogramas-act', 'cronogramas', cats.cronogramas, "Despliega y selecciona cronograma(s) de actividades...");
+        renderMultiSelectComponent('ms-cronogramas-act', 'cronogramas', cats.cronogramas, "Despliega y selecciona cronograma de actividades...");
+        if (typeof actualizarVistaCronogramaAccordion === 'function') actualizarVistaCronogramaAccordion(null, 'ms-cronogramas-act');
         renderMultiSelectComponent('ms-personal_vpro-act', 'personal_vpro', cats.staff_vpro, "Choose options");
         renderMultiSelectComponent('ms-personal_externo-act', 'personal_externo', cats.apoyos_externos, "Choose options");
         renderMultiSelectComponent('ms-vehiculos-act', 'vehiculos', cats.autos, "Choose options");
@@ -780,7 +781,10 @@ async function cargarDetalleOP(folioId) {
 
         // Renderizar los componentes multiselect poblados
         renderMultiSelectComponent('ms-reuniones-act', 'reuniones', cats.reuniones, "Despliega y selecciona una o varias reuniones...");
-        renderMultiSelectComponent('ms-cronogramas-act', 'cronogramas', cats.cronogramas, "Despliega y selecciona cronograma(s) de actividades...");
+        renderMultiSelectComponent('ms-cronogramas-act', 'cronogramas', cats.cronogramas, "Despliega y selecciona cronograma de actividades...");
+        const cronFirmaAct = (window.opMultiSelects.cronogramas && window.opMultiSelects.cronogramas.length > 0) ? window.opMultiSelects.cronogramas[0] : null;
+        const detallePreAct = (data.detalle_cronogramas && data.detalle_cronogramas.length > 0) ? data.detalle_cronogramas[0] : null;
+        if (typeof actualizarVistaCronogramaAccordion === 'function') actualizarVistaCronogramaAccordion(cronFirmaAct, 'ms-cronogramas-act', detallePreAct, false);
         renderMultiSelectComponent('ms-personal_vpro-act', 'personal_vpro', cats.staff_vpro, "Choose options");
         renderMultiSelectComponent('ms-personal_externo-act', 'personal_externo', cats.apoyos_externos, "Choose options");
         renderMultiSelectComponent('ms-vehiculos-act', 'vehiculos', cats.autos, "Choose options");
@@ -830,7 +834,10 @@ async function cargarDetalleOPHistorico(folioId) {
         container.innerHTML = generarHtmlFormularioOP(data, true);
 
         renderMultiSelectComponent('ms-reuniones-hist', 'reuniones', cats.reuniones, "Sin reuniones", true);
-        renderMultiSelectComponent('ms-cronogramas-hist', 'cronogramas', cats.cronogramas, "Sin cronogramas", true);
+        renderMultiSelectComponent('ms-cronogramas-hist', 'cronogramas', cats.cronogramas, "Sin cronograma", true);
+        const cronFirmaHist = (window.opMultiSelects.cronogramas && window.opMultiSelects.cronogramas.length > 0) ? window.opMultiSelects.cronogramas[0] : null;
+        const detallePreHist = (data.detalle_cronogramas && data.detalle_cronogramas.length > 0) ? data.detalle_cronogramas[0] : null;
+        if (typeof actualizarVistaCronogramaAccordion === 'function') actualizarVistaCronogramaAccordion(cronFirmaHist, 'ms-cronogramas-hist', detallePreHist, true);
         renderMultiSelectComponent('ms-personal_vpro-hist', 'personal_vpro', cats.staff_vpro, "Sin personal", true);
         renderMultiSelectComponent('ms-personal_externo-hist', 'personal_externo', cats.apoyos_externos, "Sin externos", true);
         renderMultiSelectComponent('ms-vehiculos-hist', 'vehiculos', cats.autos, "Sin vehículos", true);

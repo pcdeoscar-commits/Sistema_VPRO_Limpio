@@ -158,9 +158,13 @@ function renderMultiSelectComponent(containerId, stateKey, allOptions, placehold
 
     let selectHtml = '';
     if (!isReadOnly) {
+        const defaultOptionLabel = selectedList.length === 0
+            ? placeholder
+            : (stateKey === 'cronogramas' ? '🔄 Cambiar cronograma...' : '+ Agregar...');
+
         selectHtml = `
             <select class="multiselect-select" onchange="addMultiTag('${stateKey}', this.value, '${containerId}'); this.value='';">
-                <option value="">${selectedList.length === 0 ? placeholder : '+ Agregar...'}</option>
+                <option value="">${defaultOptionLabel}</option>
                 ${availableOptions.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
             </select>
             ${selectedList.length > 0 ? `<span class="multiselect-clear" title="Limpiar todos" onclick="clearMultiTags('${stateKey}', '${containerId}')">✖</span>` : ''}
@@ -179,8 +183,13 @@ function renderMultiSelectComponent(containerId, stateKey, allOptions, placehold
 function addMultiTag(stateKey, val, containerId) {
     if (!val) return;
     if (!window.opMultiSelects[stateKey]) window.opMultiSelects[stateKey] = [];
-    if (!window.opMultiSelects[stateKey].includes(val)) {
-        window.opMultiSelects[stateKey].push(val);
+    
+    if (stateKey === 'cronogramas') {
+        window.opMultiSelects[stateKey] = [val];
+    } else {
+        if (!window.opMultiSelects[stateKey].includes(val)) {
+            window.opMultiSelects[stateKey].push(val);
+        }
     }
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
@@ -189,8 +198,12 @@ function addMultiTag(stateKey, val, containerId) {
     else if (stateKey === 'personal_externo') optionsList = cats.apoyos_externos;
     else if (stateKey === 'proveedores') optionsList = cats.proveedores;
     else if (stateKey === 'reuniones') optionsList = cats.reuniones;
+    else if (stateKey === 'cronogramas') {
+        optionsList = cats.cronogramas;
+        actualizarVistaCronogramaAccordion(val, containerId, null, false);
+    }
 
-    renderMultiSelectComponent(containerId, stateKey, optionsList, "Seleccionar...");
+    renderMultiSelectComponent(containerId, stateKey, optionsList, stateKey === 'cronogramas' ? "Despliega y selecciona cronograma de actividades..." : "Seleccionar...");
 }
 
 function removeMultiTag(stateKey, val, containerId) {
@@ -204,8 +217,12 @@ function removeMultiTag(stateKey, val, containerId) {
     else if (stateKey === 'personal_externo') optionsList = cats.apoyos_externos;
     else if (stateKey === 'proveedores') optionsList = cats.proveedores;
     else if (stateKey === 'reuniones') optionsList = cats.reuniones;
+    else if (stateKey === 'cronogramas') {
+        optionsList = cats.cronogramas;
+        actualizarVistaCronogramaAccordion(null, containerId, null, false);
+    }
 
-    renderMultiSelectComponent(containerId, stateKey, optionsList, "Seleccionar...");
+    renderMultiSelectComponent(containerId, stateKey, optionsList, stateKey === 'cronogramas' ? "Despliega y selecciona cronograma de actividades..." : "Seleccionar...");
 }
 
 function clearMultiTags(stateKey, containerId) {
@@ -217,9 +234,158 @@ function clearMultiTags(stateKey, containerId) {
     else if (stateKey === 'personal_externo') optionsList = cats.apoyos_externos;
     else if (stateKey === 'proveedores') optionsList = cats.proveedores;
     else if (stateKey === 'reuniones') optionsList = cats.reuniones;
+    else if (stateKey === 'cronogramas') {
+        optionsList = cats.cronogramas;
+        actualizarVistaCronogramaAccordion(null, containerId, null, false);
+    }
 
-    renderMultiSelectComponent(containerId, stateKey, optionsList, "Seleccionar...");
+    renderMultiSelectComponent(containerId, stateKey, optionsList, stateKey === 'cronogramas' ? "Despliega y selecciona cronograma de actividades..." : "Seleccionar...");
 }
+
+// -------------------------------------------------------------
+// Componente Acordeón para Cronograma Vinculado (Estilo Auditoría)
+// -------------------------------------------------------------
+function generarHtmlCronogramaAccordion(cron, isReadOnly = false) {
+    if (!cron) return '';
+    const folio = cron.folio || cron.id_cronograma || '--';
+    const fecha = cron.fecha || '--';
+    const ubicacion = cron.ubicacion_general || 'Estudio / Por definir';
+    const nombre = cron.nombre_evento || 'Sin título';
+    const idCronograma = cron.id_cronograma;
+    const actividades = Array.isArray(cron.actividades) ? cron.actividades : [];
+    const totalActividades = actividades.length;
+
+    return `
+        <details class="cronograma-op-accordion" style="background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-top: 10px; margin-bottom: 12px; border-left: 5px solid #0284c7; overflow: hidden; transition: all 0.2s ease;">
+            <summary style="padding: 13px 18px; cursor: pointer; user-select: none; font-weight: 700; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fafafa; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fafafa'">
+                <span style="display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <i class="ph ph-calendar-check" style="color: #0284c7; font-size: 20px;"></i>
+                    <span style="color: #0f172a; font-weight: 700;">Cronograma de Actividades Vinculado (Folio: ${folio})</span>
+                    <span style="font-size: 13px; color: #64748b; font-weight: 500;">
+                        📅 ${fecha} &nbsp;|&nbsp; 📍 ${ubicacion}
+                    </span>
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 10px;">
+                    ${idCronograma ? `
+                        <button type="button" onclick="event.stopPropagation(); imprimirCronogramaDirecto(${idCronograma})" style="background: #0284c7; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(2,132,199,0.3); transition: background 0.2s;" onmouseover="this.style.background='#0369a1'" onmouseout="this.style.background='#0284c7'" title="Imprimir Hoja Oficial">
+                            <i class="ph ph-printer"></i> 🖨️ Imprimir Hoja Oficial
+                        </button>
+                    ` : ''}
+                    <span style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; font-size: 11.5px; font-weight: 700; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.3px; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="ph ph-list-dashes"></i> ${totalActividades} Actividades &nbsp;▾
+                    </span>
+                </span>
+            </summary>
+            <div style="padding: 16px 20px; border-top: 1px solid #f1f5f9; background: #ffffff;">
+                ${cron.observaciones_generales ? `
+                    <div style="margin-bottom: 12px; padding: 10px 14px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; font-size: 12.5px; color: #92400e;">
+                        <strong>⚠️ Observaciones Generales:</strong> ${cron.observaciones_generales}
+                    </div>
+                ` : ''}
+                <div class="cat-table-wrap" style="max-height: 340px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <table class="tabla-vpro" style="font-size: 12px; width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #0f172a; color: white;">
+                                <th style="padding: 8px 10px; text-align: left;">Horario</th>
+                                <th style="padding: 8px 10px; text-align: left;">Actividad</th>
+                                <th style="padding: 8px 10px; text-align: left;">Ubicación</th>
+                                <th style="padding: 8px 10px; text-align: left;">Evento</th>
+                                <th style="padding: 8px 10px; text-align: left;">Personal Convocado</th>
+                                <th style="padding: 8px 10px; text-align: left;">Vehículo</th>
+                                <th style="padding: 8px 10px; text-align: left;">Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${actividades.length > 0 ? actividades.map(act => `
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 8px 10px; font-weight: 700; color: #0284c7; white-space: nowrap;">${act.horario || '--'}</td>
+                                    <td style="padding: 8px 10px; font-weight: 600; color: #1e293b;">${act.actividad || '--'}</td>
+                                    <td style="padding: 8px 10px; color: #475569;">${act.ubicacion || '--'}</td>
+                                    <td style="padding: 8px 10px; color: #475569;">${act.evento || '--'}</td>
+                                    <td style="padding: 8px 10px; color: #334155; font-weight: 500;">${act.personal_convocado || '--'}</td>
+                                    <td style="padding: 8px 10px; color: #475569;">${act.vehiculo || '--'}</td>
+                                    <td style="padding: 8px 10px; color: #64748b; font-style: italic;">${act.observaciones || '--'}</td>
+                                </tr>
+                            `).join('') : `
+                                <tr>
+                                    <td colspan="7" style="padding: 16px; text-align: center; color: #94a3b8; font-style: italic;">
+                                        Sin actividades desglosadas registradas en este cronograma.
+                                    </td>
+                                </tr>
+                            `}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </details>
+    `;
+}
+window.generarHtmlCronogramaAccordion = generarHtmlCronogramaAccordion;
+
+async function actualizarVistaCronogramaAccordion(firma, containerId, detallePreexistente = null, isReadOnly = false) {
+    const sufijo = (containerId && containerId.includes('hist')) ? 'hist' : 'act';
+    const contAccordion = document.getElementById(`contenedor-cronograma-accordion-${sufijo}`);
+    if (!contAccordion) return;
+
+    if (!firma || !String(firma).trim()) {
+        contAccordion.innerHTML = '';
+        contAccordion.style.display = 'none';
+        return;
+    }
+
+    const firmaStr = String(firma).trim();
+
+    // 1. Verificar si viene detalle preexistente
+    if (detallePreexistente && typeof detallePreexistente === 'object') {
+        const fol = String(detallePreexistente.folio || detallePreexistente.id_cronograma || '').trim();
+        if (fol && (firmaStr.includes(fol) || String(detallePreexistente.id_cronograma) === firmaStr)) {
+            contAccordion.innerHTML = generarHtmlCronogramaAccordion(detallePreexistente, isReadOnly);
+            contAccordion.style.display = 'block';
+            return;
+        }
+    }
+
+    // 2. Verificar si está en memoria window.currentOPData.detalle_cronogramas
+    if (window.currentOPData && Array.isArray(window.currentOPData.detalle_cronogramas)) {
+        const encontrado = window.currentOPData.detalle_cronogramas.find(c => {
+            const fol = String(c.folio || c.id_cronograma || '').trim();
+            return fol && (firmaStr.includes(fol) || String(c.id_cronograma) === firmaStr);
+        });
+        if (encontrado) {
+            contAccordion.innerHTML = generarHtmlCronogramaAccordion(encontrado, isReadOnly);
+            contAccordion.style.display = 'block';
+            return;
+        }
+    }
+
+    // 3. Consultar vía API al endpoint /api/cronogramas/detalle/buscar
+    contAccordion.innerHTML = `
+        <div style="background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 14px 18px; margin-top: 10px; border-left: 5px solid #0284c7; color: #64748b; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+            <i class="ph ph-spinner ph-spin" style="font-size: 18px; color: #0284c7;"></i>
+            <span>Cargando actividades del cronograma seleccionado...</span>
+        </div>
+    `;
+    contAccordion.style.display = 'block';
+
+    try {
+        const res = await fetch(`${API_URL}/api/cronogramas/detalle/buscar?firma=${encodeURIComponent(firmaStr)}`);
+        if (!res.ok) throw new Error("No encontrado");
+        const cron = await res.json();
+        
+        if (!window.currentOPData) window.currentOPData = {};
+        if (!Array.isArray(window.currentOPData.detalle_cronogramas)) window.currentOPData.detalle_cronogramas = [];
+        window.currentOPData.detalle_cronogramas = [cron];
+
+        contAccordion.innerHTML = generarHtmlCronogramaAccordion(cron, isReadOnly);
+    } catch (e) {
+        contAccordion.innerHTML = `
+            <div style="background: #fff1f2; border-radius: 12px; border: 1px solid #fecdd3; padding: 12px 16px; margin-top: 10px; border-left: 5px solid #e11d48; color: #be123c; font-size: 13px;">
+                ⚠️ No se pudo obtener el desglose de actividades para el cronograma seleccionado (${firmaStr}).
+            </div>
+        `;
+    }
+}
+window.actualizarVistaCronogramaAccordion = actualizarVistaCronogramaAccordion;
 
 function actualizarCrewGira(choferGuardado) {
     const el = document.getElementById("texto-crew-gira");
@@ -538,10 +704,11 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     ` : ''}
                 </div>
 
-                <!-- Fila 5.1: Vincular Cronograma(s) de Actividades -->
+                <!-- Fila 5.1: Vincular Cronograma de Actividades (con Acordeón Integrado) -->
                 <div style="margin-bottom: 16px;">
-                    <label class="op-form-label">📅 VINCULAR CRONOGRAMA(S) DE ACTIVIDADES:</label>
+                    <label class="op-form-label">📅 VINCULAR CRONOGRAMA DE ACTIVIDADES:</label>
                     <div id="ms-cronogramas-${isReadOnly ? 'hist' : 'act'}"></div>
+                    <div id="contenedor-cronograma-accordion-${isReadOnly ? 'hist' : 'act'}" style="display: none; margin-top: 10px;"></div>
                 </div>
 
                 <!-- Fila 5.2: Evidencias Multimedia del Evento (Fotos y Videos MP4) -->
@@ -712,58 +879,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 </div>
             </div>
 
-            <!-- 📅 DETALLE DE CRONOGRAMAS VINCULADOS -->
-            ${(data.detalle_cronogramas && data.detalle_cronogramas.length > 0) ? `
-                <div class="op-section-card" style="border-left: 4px solid #0284c7;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                        <h3 class="op-section-title" style="margin: 0; color: #0369a1;">
-                            <i class="ph ph-calendar-check"></i> 📅 Cronograma(s) de Actividades Vinculado(s) a esta OP
-                        </h3>
-                    </div>
-                    ${data.detalle_cronogramas.map(cron => `
-                        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                                <div>
-                                    <span style="font-weight: 800; font-size: 15px; color: #0f172a;">FOLIO: ${cron.folio || cron.id_cronograma}</span>
-                                    <span style="margin-left: 12px; font-weight: 600; color: #0284c7;">📅 FECHA: ${cron.fecha || '--'}</span>
-                                    <span style="margin-left: 12px; color: #475569;">📍 ${cron.ubicacion_general || '--'}</span>
-                                </div>
-                                <button type="button" onclick="imprimirCronogramaDirecto(${cron.id_cronograma})" style="background: #0284c7; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                                    <i class="ph ph-printer"></i> 🖨️ Imprimir Hoja Oficial
-                                </button>
-                            </div>
-                            <div class="cat-table-wrap" style="max-height: 280px; overflow-y: auto;">
-                                <table class="tabla-vpro" style="font-size: 11.5px;">
-                                    <thead>
-                                        <tr>
-                                            <th>Horario</th>
-                                            <th>Actividad</th>
-                                            <th>Ubicación</th>
-                                            <th>Evento</th>
-                                            <th>Personal Convocado</th>
-                                            <th>Vehículo</th>
-                                            <th>Observaciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${(Array.isArray(cron.actividades) && cron.actividades.length > 0) ? cron.actividades.map(act => `
-                                            <tr>
-                                                <td style="font-weight: 600;">${act.horario || ''}</td>
-                                                <td>${act.actividad || ''}</td>
-                                                <td>${act.ubicacion || ''}</td>
-                                                <td>${act.evento || ''}</td>
-                                                <td>${act.personal_convocado || ''}</td>
-                                                <td>${act.vehiculo || ''}</td>
-                                                <td>${act.observaciones || ''}</td>
-                                            </tr>
-                                        `).join('') : '<tr><td colspan="7" style="text-align: center;">Sin actividades desglosadas.</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            ` : ''}
+
 
             <!-- 🖊️ 4. AUTORIZACIONES -->
             <div class="op-section-card">

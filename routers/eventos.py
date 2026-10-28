@@ -482,24 +482,32 @@ def guardar_o_actualizar_op(op: dict):
             except Exception as e:
                 print(f"⚠️ SILENCED ERROR in eventos.py: {e}")
 
-        # Si hay cronogramas vinculados, sincronizar folio_op en cronogramas_eventos
-        if op.get("cronogramas_vinculados"):
-            try:
-                raw_c = op.get("cronogramas_vinculados")
-                lista_c = raw_c if isinstance(raw_c, list) else [str(raw_c)]
-                folio_target = str(op.get("folio") or id_ev)
-                with engine_eventos.begin() as conn_c:
-                    for c_firma in lista_c:
-                        c_clean = str(c_firma).strip().strip('"').strip("'")
-                        conn_c.execute(text("""
-                            UPDATE public.cronogramas_eventos
-                            SET folio_op = :folio_op
-                            WHERE CONCAT('FOLIO: ', folio, ' | ', TO_CHAR(fecha, 'DD/MM/YYYY'), ' - ', COALESCE(nombre_evento, 'Sin título')) = :firma
-                               OR folio = :firma
-                               OR CAST(id_cronograma AS TEXT) = :firma
-                        """), {"folio_op": folio_target, "firma": c_clean})
-            except Exception as e:
-                print(f"⚠️ SILENCED ERROR updating cronogramas folio_op: {e}")
+        # Sincronizar folio_op en cronogramas_eventos
+        try:
+            folio_target = str(op.get("folio") or id_ev)
+            raw_c = op.get("cronogramas_vinculados") or []
+            lista_c = raw_c if isinstance(raw_c, list) else [str(raw_c)] if raw_c else []
+            with engine_eventos.begin() as conn_c:
+                # Desvincular cualquier cronograma que estuviera asociado previamente a esta OP
+                conn_c.execute(text("""
+                    UPDATE public.cronogramas_eventos
+                    SET folio_op = NULL
+                    WHERE folio_op = :folio_op
+                """), {"folio_op": folio_target})
+                # Vincular el cronograma actual si existe
+                for c_firma in lista_c:
+                    c_clean = str(c_firma).strip().strip('"').strip("'")
+                    if not c_clean:
+                        continue
+                    conn_c.execute(text("""
+                        UPDATE public.cronogramas_eventos
+                        SET folio_op = :folio_op
+                        WHERE CONCAT('FOLIO: ', folio, ' | ', TO_CHAR(fecha, 'DD/MM/YYYY'), ' - ', COALESCE(nombre_evento, 'Sin título')) = :firma
+                           OR folio = :firma
+                           OR CAST(id_cronograma AS TEXT) = :firma
+                    """), {"folio_op": folio_target, "firma": c_clean})
+        except Exception as e:
+            print(f"⚠️ SILENCED ERROR updating cronogramas folio_op: {e}")
 
         return {"status": "SUCCESS"}
     except Exception as e:

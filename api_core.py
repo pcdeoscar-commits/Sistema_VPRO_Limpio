@@ -110,7 +110,7 @@ app.include_router(chat_op.router)
 @app.get("/health", tags=["Sistema"])
 def health_check():
     """Endpoint de verificación de salud del sistema."""
-    return {"status": "ONLINE", "service": "VPRO Core API Engine", "version": "8.1.0"}
+    return {"status": "ONLINE", "service": "VPRO Core API Engine", "version": "8.2.0"}
 
 # 5️⃣ MONTAJE DEL FRONTEND WEB INTEGRADO (SPA)
 app.mount("/", StaticFiles(directory="prueba_web", html=True), name="frontend")

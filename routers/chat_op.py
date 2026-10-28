@@ -100,6 +100,10 @@ class CerrarChatPayload(BaseModel):
 # ==============================================================================
 # UTILIDADES DE AUTORIZACIÓN Y FILTRADO
 # ==============================================================================
+def obtener_ahora_local() -> datetime.datetime:
+    """Devuelve la fecha y hora actual en la zona horaria operativa de VPRO (UTC-7 / Sinaloa)."""
+    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(hours=7)
+
 def normalizar_texto(t: str) -> str:
     import unicodedata
     if not t:
@@ -382,7 +386,7 @@ async def enviar_mensaje_op(id_evento: int, payload: MensajeNuevoPayload):
             ) VALUES (
                 :id_ev, 
                 (SELECT COALESCE(folio, CAST(:id_ev AS VARCHAR)) FROM public.eventos WHERE id_evento = :id_ev),
-                :id_emp, :autor_nom, :autor_rol, :msj, :tipo, :fijado, CURRENT_TIMESTAMP
+                :id_emp, :autor_nom, :autor_rol, :msj, :tipo, :fijado, :fec_hora
             )
             RETURNING id, id_evento, folio, id_empleado, autor_nombre, autor_rol, mensaje, tipo_mensaje, archivo_url, 
                       to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS fecha_hora_str, es_fijado, reacciones;
@@ -396,7 +400,8 @@ async def enviar_mensaje_op(id_evento: int, payload: MensajeNuevoPayload):
                 "autor_rol": payload.autor_rol or "STAFF",
                 "msj": texto_limpio,
                 "tipo": tipo,
-                "fijado": payload.es_fijado or False
+                "fijado": payload.es_fijado or False,
+                "fec_hora": obtener_ahora_local()
             }).fetchone()
 
         mensaje_dict = {
@@ -471,7 +476,7 @@ async def subir_adjunto_chat_op(
             ) VALUES (
                 :id_ev, 
                 (SELECT COALESCE(folio, CAST(:id_ev AS VARCHAR)) FROM public.eventos WHERE id_evento = :id_ev),
-                :id_emp, :autor_nom, :autor_rol, :msj, :tipo, :url, CURRENT_TIMESTAMP
+                :id_emp, :autor_nom, :autor_rol, :msj, :tipo, :url, :fec_hora
             )
             RETURNING id, id_evento, folio, id_empleado, autor_nombre, autor_rol, mensaje, tipo_mensaje, archivo_url, 
                       to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS fecha_hora_str, es_fijado, reacciones;
@@ -485,7 +490,8 @@ async def subir_adjunto_chat_op(
                 "autor_rol": autor_rol,
                 "msj": mensaje_texto,
                 "tipo": tipo_msg,
-                "url": url_archivo
+                "url": url_archivo,
+                "fec_hora": obtener_ahora_local()
             }).fetchone()
 
         mensaje_dict = {
@@ -661,7 +667,8 @@ async def cerrar_chat_op(id_evento: int, payload: CerrarChatPayload):
         with engine_eventos.connect() as conn:
             msjs = conn.execute(query_msjs, {"id_ev": id_evento}).fetchall()
 
-        ahora_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ahora_dt = obtener_ahora_local()
+        ahora_str = ahora_dt.strftime("%Y-%m-%d %H:%M:%S")
 
         # 3. Compilar el historial oficial sellado
         lineas_bitacora = [
@@ -708,7 +715,7 @@ async def cerrar_chat_op(id_evento: int, payload: CerrarChatPayload):
             SET chat_historial = :historial,
                 chat_cerrado = TRUE,
                 chat_cerrado_por = :cerrador,
-                chat_fecha_cierre = CURRENT_TIMESTAMP
+                chat_fecha_cierre = :fec_cierre
             WHERE id_evento = :id_ev
             RETURNING folio, to_char(chat_fecha_cierre, 'YYYY-MM-DD HH24:MI:SS') AS fecha_cierre_str;
         """)
@@ -717,7 +724,8 @@ async def cerrar_chat_op(id_evento: int, payload: CerrarChatPayload):
             up_row = conn.execute(update_op, {
                 "id_ev": id_evento,
                 "historial": bitacora_completa,
-                "cerrador": user_nom
+                "cerrador": user_nom,
+                "fec_cierre": ahora_dt
             }).fetchone()
 
             # Insertar mensaje de sistema en el chat
@@ -726,7 +734,7 @@ async def cerrar_chat_op(id_evento: int, payload: CerrarChatPayload):
                     id_evento, folio, id_empleado, autor_nombre, autor_rol, mensaje, tipo_mensaje, fecha_hora
                 ) VALUES (
                     :id_ev, :folio, :id_emp, 'SISTEMA VPRO', 'AUDITORÍA',
-                    :msj_sistema, 'SISTEMA', CURRENT_TIMESTAMP
+                    :msj_sistema, 'SISTEMA', :fec_cierre
                 )
             """), {
                 "id_ev": id_evento,

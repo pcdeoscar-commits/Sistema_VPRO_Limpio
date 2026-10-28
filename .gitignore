@@ -14,6 +14,7 @@ Fotos_de_eventos/chat_op/
 Fotos_de_eventos/evidencia_*
 
 scratch/
+tmp_data/
 scratch_avatar.png
 *.tmp
 *.zip

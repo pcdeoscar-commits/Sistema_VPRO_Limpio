@@ -25,11 +25,24 @@ const chatState = {
 let audioCtx = null;
 
 function inicializarAudioContext() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        // Desbloqueo forzado con buffer silencioso para iOS Safari / iPhone
+        if (audioCtx && !window._iosAudioDesbloqueado) {
+            const buffer = audioCtx.createBuffer(1, 1, 22050);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            source.start(0);
+            window._iosAudioDesbloqueado = true;
+        }
+    } catch (e) {
+        console.warn("AudioContext init error:", e);
     }
 }
 

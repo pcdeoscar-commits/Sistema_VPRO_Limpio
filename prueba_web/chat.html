@@ -874,6 +874,9 @@
                     <!-- Hora de llamado -->
                 </div>
                 <div id="chat-header-acciones" style="display: flex; align-items: center; gap: 8px;">
+                    <button class="chat-btn-icon" onclick="reproducirTimbreVPRO()" title="Probar sonido VPRO" style="background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 8px; cursor: pointer; padding: 5px 10px; display: inline-flex; align-items: center; gap: 5px; color: #fbbf24; font-size: 11px; font-weight: 700;">
+                        <i class="ph-fill ph-bell-ringing" style="font-size: 15px;"></i> Sonido
+                    </button>
                     <!-- Botón Cerrar Chat visible solo para el productor -->
                 </div>
             </div>
@@ -914,7 +917,7 @@
 </div>
 
 <!-- Scripts -->
-<script src="js/chat_op.js?v=20261028_chat_bot_v2"></script>
+<script src="js/chat_op.js?v=20261028_chat_bot_v3"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         inicializarChatOP();

@@ -509,8 +509,8 @@ def guardar_o_actualizar_op(op: dict):
 async def subir_foto_evidencia(id_evento: int, file: UploadFile = File(...)):
     """Sube una fotografía de evidencia (máx 1MB) o video MP4 (máx 5MB) para la Orden de Producción."""
     try:
-        from core.config import BASE_DIR
-        carpeta_evidencias = BASE_DIR / "Fotos_de_eventos"
+        from core.config import FOTOS_EVENTOS_DIR
+        carpeta_evidencias = FOTOS_EVENTOS_DIR
         carpeta_evidencias.mkdir(parents=True, exist_ok=True)
         
         nombre_original = os.path.basename(file.filename or "evidencia")
@@ -595,9 +595,9 @@ def eliminar_foto_evidencia(id_evento: int, url: str):
             
         # Intentar remover el archivo físico
         try:
-            from core.config import BASE_DIR
+            from core.config import FOTOS_EVENTOS_DIR
             nombre_archivo = os.path.basename(url_clean)
-            archivo_fisico = BASE_DIR / "Fotos_de_eventos" / nombre_archivo
+            archivo_fisico = FOTOS_EVENTOS_DIR / nombre_archivo
             if archivo_fisico.exists():
                 archivo_fisico.unlink()
         except Exception:

@@ -132,6 +132,22 @@ const COLORES_NOMBRES = [
     "#20c997", "#ff6b6b", "#4dabf7", "#fab005", "#12b886"
 ];
 
+function normalizarTexto(t) {
+    if (!t) return "";
+    return t.toString().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+}
+
+function esProductorDeEstaOP(usuario, respProduccion) {
+    if (!usuario || !respProduccion) return false;
+    const uNom = normalizarTexto(usuario.nombre_completo || usuario.nombre || '');
+    const pNom = normalizarTexto(respProduccion);
+    if (!uNom || !pNom) return false;
+    if (uNom === pNom || uNom.includes(pNom) || pNom.includes(uNom)) return true;
+    const tokens = uNom.split(/\s+/).filter(w => w.length >= 3);
+    const matches = tokens.filter(w => pNom.includes(w)).length;
+    return matches >= 2;
+}
+
 function obtenerColorAutor(nombre) {
     if (!nombre) return "#10b981";
     let hash = 0;
@@ -331,11 +347,14 @@ function renderizarListaOPs() {
         html += `
             <div class="chat-op-item ${esActiva ? 'active' : ''}" onclick="seleccionarOPParaChat(${op.id_evento})">
                 <div class="chat-op-avatar">
-                    <span class="chat-op-folio-badge">OP-${op.folio}</span>
+                    <span class="chat-op-folio-badge" style="${op.chat_cerrado ? 'background: linear-gradient(135deg, #475569, #334155);' : ''}">OP-${op.folio}</span>
                 </div>
                 <div class="chat-op-info">
                     <div class="chat-op-row-top">
-                        <span class="chat-op-titulo" title="${op.nombre_evento}">${op.nombre_evento}</span>
+                        <span class="chat-op-titulo" title="${op.nombre_evento}">
+                            ${op.nombre_evento}
+                            ${op.chat_cerrado ? '<span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; margin-left: 5px;"><i class="ph ph-lock-key"></i> SELLADO</span>' : ''}
+                        </span>
                         <span class="chat-op-hora">${horaStr}</span>
                     </div>
                     <div class="chat-op-row-sub">
@@ -421,8 +440,19 @@ function actualizarCabeceraChat(op) {
     const elTitulo = document.getElementById("chat-header-titulo");
     const elSub = document.getElementById("chat-header-detalles");
     const elLlamado = document.getElementById("chat-header-llamado");
+    const elAcciones = document.getElementById("chat-header-acciones");
+    const inputMensaje = document.getElementById("chat-input-mensaje");
+    const btnSend = document.querySelector(".chat-btn-send");
+    const btnAdjunto = document.getElementById("btn-chat-adjunto");
 
-    if (elFolio) elFolio.innerText = `OP-${op.folio}`;
+    if (elFolio) {
+        elFolio.innerText = `OP-${op.folio}`;
+        if (op.chat_cerrado) {
+            elFolio.style.background = "linear-gradient(135deg, #ef4444, #991b1b)";
+        } else {
+            elFolio.style.background = "linear-gradient(135deg, #10b981, #047857)";
+        }
+    }
     if (elTitulo) elTitulo.innerText = op.nombre_evento;
     if (elSub) {
         const prod = op.resp_de_produccion ? `Resp: ${op.resp_de_produccion}` : '';
@@ -431,6 +461,141 @@ function actualizarCabeceraChat(op) {
     }
     if (elLlamado) {
         elLlamado.innerText = op.hra_de_llamado ? `Llamado: ${op.hra_de_llamado}` : (op.fec_del_evento || '');
+    }
+
+    // Comprobar si el usuario actual es el productor indicado en la OP o Dirección
+    const esProductor = esProductorDeEstaOP(chatState.usuario, op.resp_de_produccion);
+    const nomUpper = (chatState.usuario?.nombre_completo || chatState.usuario?.nombre || '').toUpperCase();
+    const rolUpper = (chatState.usuario?.rol || '').toUpperCase();
+    const esDireccion = rolUpper.includes('ADMIN') || nomUpper.includes('VILLARREAL') || nomUpper.includes('AGUNDEZ');
+    const puedeCerrar = esProductor || esDireccion;
+
+    if (elAcciones) {
+        if (op.chat_cerrado) {
+            elAcciones.innerHTML = `
+                <span title="Chat cerrado y sellado en el expediente oficial de la OP" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 16px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-lock-key" style="color: #f87171; font-size: 14px;"></i> Chat Cerrado
+                </span>
+            `;
+        } else if (puedeCerrar) {
+            elAcciones.innerHTML = `
+                <button type="button" onclick="confirmarCerrarChatOP(${op.id_evento})" style="background: #dc2626; color: white; border: none; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4); transition: all 0.2s;" title="Cerrar chat e integrar toda la conversación al historial de la OP">
+                    <i class="ph ph-lock-key" style="font-size: 14px;"></i> Cerrar Chat
+                </button>
+            `;
+        } else {
+            elAcciones.innerHTML = '';
+        }
+    }
+
+    // Si el chat está cerrado, bloquear la entrada de mensajes
+    if (inputMensaje) {
+        if (op.chat_cerrado) {
+            inputMensaje.disabled = true;
+            inputMensaje.placeholder = "🔒 Chat cerrado por el Productor. Sellado en el historial de la OP.";
+            inputMensaje.style.opacity = "0.6";
+            if (btnSend) {
+                btnSend.disabled = true;
+                btnSend.style.opacity = "0.5";
+                btnSend.style.cursor = "not-allowed";
+            }
+            if (btnAdjunto) {
+                btnAdjunto.disabled = true;
+                btnAdjunto.style.opacity = "0.5";
+                btnAdjunto.style.cursor = "not-allowed";
+            }
+        } else {
+            inputMensaje.disabled = false;
+            inputMensaje.placeholder = "Escribe un mensaje técnico de la OP...";
+            inputMensaje.style.opacity = "1";
+            if (btnSend) {
+                btnSend.disabled = false;
+                btnSend.style.opacity = "1";
+                btnSend.style.cursor = "pointer";
+            }
+            if (btnAdjunto) {
+                btnAdjunto.disabled = false;
+                btnAdjunto.style.opacity = "1";
+                btnAdjunto.style.cursor = "pointer";
+            }
+        }
+    }
+}
+
+async function confirmarCerrarChatOP(id_evento) {
+    const op = chatState.opActual;
+    if (!op || op.id_evento !== id_evento) return;
+
+    const nombreUser = chatState.usuario?.nombre_completo || chatState.usuario?.nombre || 'Productor';
+
+    const result = await Swal.fire({
+        title: `🔒 ¿Cerrar Chat de la OP-${op.folio}?`,
+        html: `
+            <div style="text-align: left; font-size: 13.5px; color: #334155; line-height: 1.5;">
+                <p>Hola <strong>${nombreUser}</strong>,</p>
+                <p style="margin-top: 8px;">
+                    Al presionar <strong>"Cerrar Chat"</strong>, todo el historial de mensajes, notas y fotos operativas de este canal se compilará y se <strong>integrará al expediente histórico oficial de la OP-${op.folio}</strong>.
+                </p>
+                <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px 14px; border-radius: 6px; margin-top: 12px; color: #991b1b; font-size: 12.5px;">
+                    ⚠️ <b>Aviso:</b> El canal operativo se sellará de forma definitiva para auditoría y aclaraciones.
+                </div>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '🔒 Sí, Cerrar Chat',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    });
+
+    if (result.isConfirmed) {
+        Swal.fire({
+            title: 'Sellando chat en expediente...',
+            text: 'Compilando mensajes e integrando al historial de la OP.',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        try {
+            const resp = await fetch(`${CHAT_API_URL}/api/chat-op/cerrar-chat/${id_evento}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productor_nombre: nombreUser,
+                    id_empleado: chatState.usuario?.id_empleado || ''
+                })
+            });
+
+            const data = await resp.json();
+            if (!resp.ok || !data.ok) {
+                throw new Error(data.detail || data.mensaje || 'Error al cerrar el chat');
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: '¡Chat Cerrado con Éxito!',
+                html: `Todo el chat se ha integrado al historial de la <strong>OP-${op.folio}</strong> y la bitácora técnica ha quedado sellada.`,
+                confirmButtonColor: '#0f766e'
+            });
+
+            // Actualizar datos locales
+            op.chat_cerrado = true;
+            op.chat_cerrado_por = nombreUser;
+            op.chat_fecha_cierre = data.chat_fecha_cierre;
+            actualizarCabeceraChat(op);
+            await cargarMensajesOP(id_evento);
+            await cargarListaOPsChat();
+
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'No se pudo cerrar el chat',
+                text: err.message,
+                confirmButtonColor: '#ef4444'
+            });
+        }
     }
 }
 
@@ -813,6 +978,19 @@ function conectarWebSocketChat(id_evento) {
                     if (m) {
                         m.reacciones = data.reacciones;
                         renderizarMensajes(true);
+                    }
+                } else if (data.tipo === "CHAT_CERRADO") {
+                    if (chatState.opActual && chatState.opActual.id_evento === data.id_evento) {
+                        chatState.opActual.chat_cerrado = true;
+                        chatState.opActual.chat_cerrado_por = data.cerrado_por;
+                        chatState.opActual.chat_fecha_cierre = data.fecha_cierre;
+                        actualizarCabeceraChat(chatState.opActual);
+                        cargarMensajesOP(data.id_evento);
+                    }
+                    const opLista = chatState.ops.find(o => o.id_evento === data.id_evento);
+                    if (opLista) {
+                        opLista.chat_cerrado = true;
+                        renderizarListaOPs();
                     }
                 }
             } catch (err) {

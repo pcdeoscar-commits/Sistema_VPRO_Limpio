@@ -762,6 +762,7 @@ async function cargarDetalleOP(folioId) {
         const response = await fetch(`${API_URL}/api/eventos/buscar/${encodeURIComponent(folioId)}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
+        window.currentOPData = data;
 
         // Inicializar estado de multiselects con lo guardado en base de datos
         window.opMultiSelects = {
@@ -824,6 +825,7 @@ async function cargarDetalleOPHistorico(folioId) {
         };
         window.opFotosEvidenciaActuales = Array.isArray(data.fotos_evidencia) ? data.fotos_evidencia : [];
 
+        window.currentOPData = data;
         const cats = window.vproCatalogosOP || {};
         container.innerHTML = generarHtmlFormularioOP(data, true);
 
@@ -1148,7 +1150,12 @@ async function solicitarDesellarChat(folio) {
     }
 
     const nombreUsuario = (usuarioLogueado?.nombre_completo || '').toUpperCase();
-    const esAutorizado = nombreUsuario.includes('VILLARREAL') || nombreUsuario.includes('AGUNDEZ');
+    const respProd = (window.currentOPData?.resp_de_produccion || '').toUpperCase();
+    const cerrador = (window.currentOPData?.chat_cerrado_por || '').toUpperCase();
+
+    const esDireccion = nombreUsuario.includes('VILLARREAL') || nombreUsuario.includes('AGUNDEZ');
+    const esProductor = Boolean(nombreUsuario && ((respProd && (nombreUsuario.includes(respProd) || respProd.includes(nombreUsuario))) || (cerrador && (nombreUsuario.includes(cerrador) || cerrador.includes(nombreUsuario)))));
+    const esAutorizado = esDireccion || esProductor;
 
     if (!esAutorizado) {
         Swal.fire({
@@ -1156,9 +1163,9 @@ async function solicitarDesellarChat(folio) {
             title: 'Acceso Restringido',
             html: `
                 <div style="font-size: 14px; color: #475569; text-align: center;">
-                    <p>🔒 Este registro de chat se encuentra <strong>sellado bajo custodia</strong> para fines de aclaraciones y auditoría.</p>
+                    <p>🔒 Esta bitácora técnica se encuentra <strong>sellada bajo custodia</strong> para fines de aclaraciones y auditoría.</p>
                     <p style="margin-top: 8px; color: #b91c1c; font-weight: 600;">
-                        Solo personal de Dirección con apellido <u>Villarreal</u> o <u>Agundez</u> tiene autorización para abrirlo.
+                        Solo personal de Dirección (apellidos Villarreal o Agundez) o el Productor Responsable de esta OP tienen autorización para abrirla.
                     </p>
                 </div>
             `,
@@ -1234,7 +1241,7 @@ async function solicitarDesellarChat(folio) {
                     .replace(/>/g, '&gt;');
 
                 Swal.fire({
-                    title: `📜 Chat WhatsApp Sellado - OP ${folio}`,
+                    title: `📜 Bitácora Oficial de Chat Operativo (Sellada) - OP ${folio}`,
                     html: `
                         <div style="text-align: left; font-size: 13px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #f1f5f9; padding: 8px 12px; border-radius: 6px;">

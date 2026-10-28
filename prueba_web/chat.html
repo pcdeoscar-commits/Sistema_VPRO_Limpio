@@ -869,8 +869,13 @@
                     <p id="chat-header-detalles">Canal de comunicación técnica</p>
                 </div>
             </div>
-            <div style="font-size: 11px; color: var(--wa-accent); font-weight: 600;" id="chat-header-llamado">
-                <!-- Hora de llamado -->
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div style="font-size: 11px; color: var(--wa-accent); font-weight: 600;" id="chat-header-llamado">
+                    <!-- Hora de llamado -->
+                </div>
+                <div id="chat-header-acciones" style="display: flex; align-items: center; gap: 8px;">
+                    <!-- Botón Cerrar Chat visible solo para el productor -->
+                </div>
             </div>
         </div>
 
@@ -909,7 +914,7 @@
 </div>
 
 <!-- Scripts -->
-<script src="js/chat_op.js?v=20261026_chat_v5"></script>
+<script src="js/chat_op.js?v=20261027_chat_v8"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         inicializarChatOP();

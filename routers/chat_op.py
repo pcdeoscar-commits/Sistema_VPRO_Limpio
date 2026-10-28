@@ -92,6 +92,10 @@ class MensajeNuevoPayload(BaseModel):
     tipo_mensaje: Optional[str] = "TEXTO"
     es_fijado: Optional[bool] = False
 
+class CerrarChatPayload(BaseModel):
+    productor_nombre: str
+    id_empleado: Optional[str] = ""
+
 
 # ==============================================================================
 # UTILIDADES DE AUTORIZACIÓN Y FILTRADO
@@ -175,6 +179,9 @@ def listar_ops_para_chat(
                 encode(e.chofer::bytea, 'hex') AS chofer_hex,
                 e.personal_convocado_op,
                 e.estatus,
+                COALESCE(e.chat_cerrado, FALSE) AS chat_cerrado,
+                encode(COALESCE(e.chat_cerrado_por, '')::bytea, 'hex') AS chat_cerrado_por_hex,
+                to_char(e.chat_fecha_cierre, 'YYYY-MM-DD HH24:MI:SS') AS chat_fecha_cierre_str,
                 (SELECT COUNT(*) FROM public.chat_op_mensajes m WHERE m.id_evento = e.id_evento) AS total_mensajes,
                 (SELECT MAX(m.id) FROM public.chat_op_mensajes m WHERE m.id_evento = e.id_evento) AS ultimo_id_mensaje,
                 (SELECT COUNT(*) FROM public.chat_op_mensajes m WHERE m.id_evento = e.id_evento AND m.es_fijado = TRUE) AS fijados_count,
@@ -234,7 +241,10 @@ def listar_ops_para_chat(
                 "fijados_count": r.fijados_count or 0,
                 "ultimo_mensaje": ultimo_msj,
                 "ultimo_autor": r.ultimo_autor,
-                "ultima_hora": r.ultima_hora
+                "ultima_hora": r.ultima_hora,
+                "chat_cerrado": bool(r.chat_cerrado),
+                "chat_cerrado_por": reparar_mojibake(safe_decode_hex(r.chat_cerrado_por_hex)) if r.chat_cerrado_por_hex else "",
+                "chat_fecha_cierre": r.chat_fecha_cierre_str or ""
             })
 
         return {"status": "success", "total": len(resultado), "ops": resultado}
@@ -261,7 +271,10 @@ def obtener_mensajes_op(id_evento: int):
                 encode(resp_de_produccion::bytea, 'hex') AS resp_prod_hex,
                 encode(responsable_gastos::bytea, 'hex') AS resp_gastos_hex,
                 encode(chofer::bytea, 'hex') AS chofer_hex,
-                personal_convocado_op
+                personal_convocado_op,
+                COALESCE(chat_cerrado, FALSE) AS chat_cerrado,
+                encode(COALESCE(chat_cerrado_por, '')::bytea, 'hex') AS chat_cerrado_por_hex,
+                to_char(chat_fecha_cierre, 'YYYY-MM-DD HH24:MI:SS') AS chat_fecha_cierre_str
             FROM public.eventos
             WHERE id_evento = :id_ev
         """)
@@ -301,7 +314,10 @@ def obtener_mensajes_op(id_evento: int):
             "resp_de_produccion": reparar_mojibake(safe_decode_hex(op_row.resp_prod_hex)),
             "responsable_gastos": reparar_mojibake(safe_decode_hex(op_row.resp_gastos_hex)),
             "chofer": reparar_mojibake(safe_decode_hex(op_row.chofer_hex)),
-            "personal_convocado_op": convocados
+            "personal_convocado_op": convocados,
+            "chat_cerrado": bool(op_row.chat_cerrado),
+            "chat_cerrado_por": reparar_mojibake(safe_decode_hex(op_row.chat_cerrado_por_hex)) if op_row.chat_cerrado_por_hex else "",
+            "chat_fecha_cierre": op_row.chat_fecha_cierre_str or ""
         }
 
         # Construir lista de mensajes
@@ -345,6 +361,15 @@ async def enviar_mensaje_op(id_evento: int, payload: MensajeNuevoPayload):
         raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío")
 
     try:
+        # Verificar si el chat ya está cerrado
+        with engine_eventos.connect() as conn:
+            chk_cerrado = conn.execute(
+                text("SELECT COALESCE(chat_cerrado, FALSE) AS cerrado FROM public.eventos WHERE id_evento = :id_ev"),
+                {"id_ev": id_evento}
+            ).fetchone()
+            if chk_cerrado and chk_cerrado.cerrado:
+                raise HTTPException(status_code=400, detail="Este chat operativo ha sido cerrado y sellado por el Productor.")
+
         # Detectar enlaces en el mensaje automáticamente
         tipo = payload.tipo_mensaje or "TEXTO"
         if tipo == "TEXTO" and ("http://" in texto_limpio.lower() or "https://" in texto_limpio.lower()):
@@ -413,6 +438,14 @@ async def subir_adjunto_chat_op(
     Sube una fotografía o archivo tomada desde el celular o PC y la registra de inmediato en el chat.
     """
     try:
+        with engine_eventos.connect() as conn:
+            chk_cerrado = conn.execute(
+                text("SELECT COALESCE(chat_cerrado, FALSE) AS cerrado FROM public.eventos WHERE id_evento = :id_ev"),
+                {"id_ev": id_evento}
+            ).fetchone()
+            if chk_cerrado and chk_cerrado.cerrado:
+                raise HTTPException(status_code=400, detail="Este chat operativo ha sido cerrado y sellado por el Productor.")
+
         # Generar nombre único seguro
         timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         ext = os.path.splitext(archivo.filename or "")[1].lower()
@@ -558,6 +591,175 @@ async def toggle_reaccion_mensaje(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al reaccionar: {str(e)}")
+
+
+# ==============================================================================
+# CIERRE Y SELLADO OFICIAL DE CHAT OPERATIVO
+# ==============================================================================
+@router.post("/cerrar-chat/{id_evento}")
+async def cerrar_chat_op(id_evento: int, payload: CerrarChatPayload):
+    """
+    Cierra oficialmente la sala de chat de la OP, compila todos los mensajes y notas,
+    y los sella en el expediente histórico (chat_historial) de la OP.
+    Exclusivo para el Productor asignado a la OP o Dirección.
+    """
+    try:
+        # 1. Obtener datos de la OP
+        query_op = text("""
+            SELECT id_evento, folio,
+                   encode(nombre_evento::bytea, 'hex') AS nombre_evento_hex,
+                   encode(locacion::bytea, 'hex') AS locacion_hex,
+                   encode(resp_de_produccion::bytea, 'hex') AS resp_prod_hex,
+                   fec_del_evento, hra_de_llamado,
+                   COALESCE(chat_cerrado, FALSE) AS chat_cerrado
+            FROM public.eventos
+            WHERE id_evento = :id_ev
+        """)
+        
+        with engine_eventos.connect() as conn:
+            op_row = conn.execute(query_op, {"id_ev": id_evento}).fetchone()
+            if not op_row:
+                raise HTTPException(status_code=404, detail="Orden de Producción no encontrada")
+                
+        folio = op_row.folio or str(op_row.id_evento)
+        nombre_evento = reparar_mojibake(safe_decode_hex(op_row.nombre_evento_hex))
+        locacion = reparar_mojibake(safe_decode_hex(op_row.locacion_hex))
+        resp_prod = reparar_mojibake(safe_decode_hex(op_row.resp_prod_hex))
+        
+        # Validar si el usuario que intenta cerrar es el productor asignado o dirección
+        user_nom = (payload.productor_nombre or "").strip()
+        norm_user = normalizar_texto(user_nom)
+        norm_prod = normalizar_texto(resp_prod)
+        
+        es_prod = bool(norm_user and norm_prod and (norm_user in norm_prod or norm_prod in norm_user))
+        if not es_prod:
+            tokens_u = [w for w in norm_user.split() if len(w) >= 3]
+            es_prod = sum(1 for w in tokens_u if w in norm_prod) >= 2
+            
+        es_dir = es_usuario_privilegiado(user_nom, "")
+        
+        if not (es_prod or es_dir):
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Acceso denegado: Solo el Productor Responsable ({resp_prod}) o Dirección pueden cerrar y sellar el chat de esta OP."
+            )
+
+        # 2. Obtener todos los mensajes en orden cronológico
+        query_msjs = text("""
+            SELECT 
+                id,
+                encode(autor_nombre::bytea, 'hex') AS autor_nombre_hex,
+                autor_rol,
+                encode(mensaje::bytea, 'hex') AS mensaje_hex,
+                tipo_mensaje, archivo_url,
+                to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS fecha_hora_str
+            FROM public.chat_op_mensajes
+            WHERE id_evento = :id_ev
+            ORDER BY fecha_hora ASC, id ASC
+        """)
+        
+        with engine_eventos.connect() as conn:
+            msjs = conn.execute(query_msjs, {"id_ev": id_evento}).fetchall()
+
+        ahora_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # 3. Compilar el historial oficial sellado
+        lineas_bitacora = [
+            "=" * 80,
+            f"BITÁCORA OFICIAL DE CHAT OPERATIVO - VPRO WORKSPACE",
+            f"ORDEN DE PRODUCCIÓN: OP-{folio} | EVENTO: {nombre_evento}",
+            f"LOCACIÓN: {locacion}",
+            f"FECHA DEL EVENTO: {op_row.fec_del_evento or 'N/A'} | HORA LLAMADO: {op_row.hra_de_llamado or 'N/A'}",
+            f"PRODUCTOR RESPONSABLE: {resp_prod}",
+            "-" * 80,
+            f"ESTADO: CERRADO Y SELLADO",
+            f"SELLADO POR PRODUCTOR: {user_nom}",
+            f"FECHA Y HORA DE CIERRE: {ahora_str}",
+            f"TOTAL REGISTROS INTEGRADOS: {len(msjs)} MENSAJES Y EVIDENCIAS",
+            "=" * 80,
+            ""
+        ]
+
+        if not msjs:
+            lineas_bitacora.append("[Sin mensajes registrados durante la cobertura]")
+        else:
+            for m in msjs:
+                m_autor = reparar_mojibake(safe_decode_hex(m.autor_nombre_hex))
+                m_msj = reparar_mojibake(safe_decode_hex(m.mensaje_hex))
+                m_rol = m.autor_rol or "STAFF"
+                m_hora = m.fecha_hora_str or ""
+                m_adjunto = f" | [Adjunto: {m.archivo_url}]" if m.archivo_url else ""
+                
+                lineas_bitacora.append(f"[{m_hora}] [{m_rol}] {m_autor}:{m_adjunto}")
+                lineas_bitacora.append(f"  {m_msj}")
+                lineas_bitacora.append("")
+
+        lineas_bitacora.extend([
+            "-" * 80,
+            "FIN DE LA BITÁCORA - EXPEDIENTE SELLADO PARA AUDITORÍA Y ACLARACIONES",
+            "=" * 80
+        ])
+
+        bitacora_completa = "\n".join(lineas_bitacora)
+
+        # 4. Actualizar tabla public.eventos
+        update_op = text("""
+            UPDATE public.eventos
+            SET chat_historial = :historial,
+                chat_cerrado = TRUE,
+                chat_cerrado_por = :cerrador,
+                chat_fecha_cierre = CURRENT_TIMESTAMP
+            WHERE id_evento = :id_ev
+            RETURNING folio, to_char(chat_fecha_cierre, 'YYYY-MM-DD HH24:MI:SS') AS fecha_cierre_str;
+        """)
+
+        with engine_eventos.begin() as conn:
+            up_row = conn.execute(update_op, {
+                "id_ev": id_evento,
+                "historial": bitacora_completa,
+                "cerrador": user_nom
+            }).fetchone()
+
+            # Insertar mensaje de sistema en el chat
+            conn.execute(text("""
+                INSERT INTO public.chat_op_mensajes (
+                    id_evento, folio, id_empleado, autor_nombre, autor_rol, mensaje, tipo_mensaje, fecha_hora
+                ) VALUES (
+                    :id_ev, :folio, :id_emp, 'SISTEMA VPRO', 'AUDITORÍA',
+                    :msj_sistema, 'SISTEMA', CURRENT_TIMESTAMP
+                )
+            """), {
+                "id_ev": id_evento,
+                "folio": folio,
+                "id_emp": payload.id_empleado or "",
+                "msj_sistema": f"🔒 El chat operativo de esta OP ha sido cerrado y sellado oficialmente por el Productor {user_nom}. La bitácora ha sido integrada al expediente histórico."
+            })
+
+        fecha_cierre_final = up_row.fecha_cierre_str if up_row else ahora_str
+
+        # 5. Notificar a todas las conexiones WebSocket activas
+        await ws_manager.broadcast_to_op(id_evento, {
+            "tipo": "CHAT_CERRADO",
+            "id_evento": id_evento,
+            "folio": folio,
+            "cerrado_por": user_nom,
+            "fecha_cierre": fecha_cierre_final
+        })
+
+        return {
+            "ok": True,
+            "status": "success",
+            "mensaje": f"Chat de la OP-{folio} cerrado y sellado con éxito.",
+            "folio": folio,
+            "chat_cerrado": True,
+            "chat_cerrado_por": user_nom,
+            "chat_fecha_cierre": fecha_cierre_final
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al cerrar chat: {str(e)}")
 
 
 # ==============================================================================

@@ -204,6 +204,10 @@ def buscar_op_por_folio(folio: str):
             data["actividades_de_proveedores"] = reparar_mojibake(data.get("actividades_de_proveedores") or "")
             data["horas_manejo_chofer"] = float(data.get("horas_manejo_chofer") or 0.0)
             data["es_viaje_foraneo"] = bool(data.get("es_viaje_foraneo") or False)
+            data["chat_cerrado"] = bool(data.get("chat_cerrado") or False)
+            data["chat_cerrado_por"] = reparar_mojibake(data.get("chat_cerrado_por") or "")
+            data["chat_fecha_cierre"] = str(data["chat_fecha_cierre"]) if data.get("chat_fecha_cierre") else ""
+            data["tiene_chat_historial"] = bool(data.get("chat_historial") and str(data["chat_historial"]).strip())
             data["fec_del_evento"] = str(data["fec_del_evento"]) if data.get("fec_del_evento") else ""
             data["fec_fin_evento"] = str(data.get("fec_fin_evento") or data.get("fec_del_evento") or "")
             data["subtitulo_evento"] = reparar_mojibake(data.get("subtitulo_evento") or "")
@@ -783,11 +787,9 @@ def consultar_chat_op(payload: dict):
     usuario = str(payload.get("usuario", "")).strip().upper()
     password = str(payload.get("password", "")).strip()
     
-    if "VILLARREAL" not in usuario and "AGUNDEZ" not in usuario:
-        raise HTTPException(
-            status_code=403, 
-            detail="Acceso restringido: Solo Dirección (apellidos Villarreal o Agundez) puede abrir el chat sellado."
-        )
+    # Permitir a Dirección o al Productor de la OP
+    es_direccion = "VILLARREAL" in usuario or "AGUNDEZ" in usuario
+    # Se validará tras obtener la OP si no es Dirección
         
     if not password:
         raise HTTPException(status_code=400, detail="Debe ingresar su contraseña personal para abrir este chat sellado.")
@@ -822,12 +824,23 @@ def consultar_chat_op(payload: dict):
             
         with engine_eventos.connect() as conn:
             res_chat = conn.execute(
-                text("SELECT chat_historial FROM public.eventos WHERE folio = :folio OR CAST(id_evento AS text) = :folio"),
+                text("SELECT chat_historial, encode(resp_de_produccion::bytea, 'hex') AS resp_prod_hex, encode(COALESCE(chat_cerrado_por, '')::bytea, 'hex') AS cerrador_hex FROM public.eventos WHERE folio = :folio OR CAST(id_evento AS text) = :folio"),
                 {"folio": folio}
             ).mappings().first()
             
             if not res_chat:
                 raise HTTPException(status_code=404, detail=f"No se encontró la OP '{folio}'.")
+
+            resp_prod = reparar_mojibake(safe_decode_hex(res_chat["resp_prod_hex"])).upper()
+            cerrador = reparar_mojibake(safe_decode_hex(res_chat["cerrador_hex"])).upper()
+            
+            if not es_direccion:
+                es_autorizado = bool(usuario and (usuario in resp_prod or resp_prod in usuario or usuario in cerrador or cerrador in usuario))
+                if not es_autorizado:
+                    raise HTTPException(
+                        status_code=403, 
+                        detail=f"Acceso restringido: Solo Dirección (apellidos Villarreal o Agundez) o el Productor Responsable ({resp_prod}) pueden abrir esta bitácora sellada."
+                    )
                 
             return {
                 "ok": True,

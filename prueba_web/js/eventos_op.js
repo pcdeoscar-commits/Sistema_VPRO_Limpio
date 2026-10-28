@@ -797,28 +797,36 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 </div>
             </div>
 
-            <!-- 💬 BITÁCORA Y CHAT DE WHATSAPP (SELLADO / AUDITORÍA) -->
+            <!-- 💬 BITÁCORA DEL CHAT OPERATIVO DE LA OP (SELLADA) -->
             ${data.folio ? `
-                <div class="op-section-card" style="border-left: 5px solid #25D366; background: #f8fafc; margin-top: 14px; margin-bottom: 20px; padding: 18px 22px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div class="op-section-card" style="border-left: 5px solid ${data.chat_cerrado ? '#0f766e' : '#2563eb'}; background: #f8fafc; margin-top: 14px; margin-bottom: 20px; padding: 18px 22px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
                         <div>
                             <div style="font-weight: 700; color: #0f172a; font-size: 15px; display: flex; align-items: center; gap: 8px;">
-                                <i class="ph ph-whatsapp-logo" style="font-size: 24px; color: #25D366;"></i>
-                                <span>Bitácora de Chat WhatsApp de la OP (Sellada)</span>
+                                <i class="${data.chat_cerrado ? 'ph ph-shield-check' : 'ph ph-chat-circle-dots'}" style="font-size: 24px; color: ${data.chat_cerrado ? '#0f766e' : '#2563eb'};"></i>
+                                <span>Bitácora de Chat Operativo de la OP ${data.chat_cerrado ? '(Sellada por Productor)' : '(Canal Activo)'}</span>
+                                ${data.chat_cerrado ? `
+                                    <span style="background: #ccfbf1; color: #0f766e; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid #99f6e4;">SELLADO</span>
+                                ` : `
+                                    <span style="background: #dbeafe; color: #1e40af; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid #bfdbfe;">EN CURSO</span>
+                                `}
                             </div>
                             <div style="font-size: 13px; color: #64748b; margin-top: 4px; line-height: 1.4;">
-                                Registro para aclaraciones y auditoría operativa. Solo personal autorizado (Villarreal / Agundez) con clave puede abrirlo.
+                                ${data.chat_cerrado ? 
+                                    `Expediente técnico sellado e integrado al historial por el Productor <strong>${data.chat_cerrado_por || data.resp_de_produccion || 'Asignado'}</strong>${data.chat_fecha_cierre ? ` el ${data.chat_fecha_cierre}` : ''}. Registro oficial para auditoría técnica.` :
+                                    `Canal técnico operativo activo. Al concluir la cobertura, el Productor Responsable (<strong>${data.resp_de_produccion || 'Asignado'}</strong>) cerrará el chat desde la sala operativa para sellar automáticamente la bitácora.`
+                                }
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            ${esPuedeIntegrarChat ? `
-                                <button type="button" onclick="abrirModalCapturaChat('${folioVal}')" style="background: #25D366; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(37,211,102,0.3); transition: all 0.2s;">
-                                    <i class="ph ph-chat-centered-text" style="font-size: 17px;"></i> 📥 Integrar / Capturar Chat
+                            <button type="button" onclick="abrirChatOPParaFolio('${folioVal}')" style="background: #0f766e; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(15,118,110,0.25); transition: all 0.2s;" title="Abrir sala del chat técnico de esta OP">
+                                <i class="ph ph-chat-centered-text" style="font-size: 17px;"></i> 💬 Abrir Chat de la OP
+                            </button>
+                            ${(data.chat_cerrado || data.tiene_chat_historial || data.chat_historial) ? `
+                                <button type="button" onclick="solicitarDesellarChat('${folioVal}')" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: all 0.2s;" title="Consultar bitácora oficial sellada">
+                                    <i class="ph ph-lock-key" style="font-size: 17px; color: #fbbf24;"></i> 🔒 Abrir Chat Sellado
                                 </button>
                             ` : ''}
-                            <button type="button" onclick="solicitarDesellarChat('${folioVal}')" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: all 0.2s;">
-                                <i class="ph ph-lock-key" style="font-size: 17px; color: #fbbf24;"></i> 🔒 Abrir Chat Sellado
-                            </button>
                         </div>
                     </div>
                 </div>

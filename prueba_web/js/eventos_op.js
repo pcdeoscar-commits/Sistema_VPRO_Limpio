@@ -484,9 +484,6 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
         if (contBotones) {
             if (data && data.folio) {
                 contBotones.innerHTML = `
-                    <button type="button" onclick="abrirChatOPParaFolio('${folioVal}')" style="background: #0f766e; color: white; border: none; height: 38px; padding: 0 16px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(15, 118, 110, 0.3); transition: all 0.2s;" title="Abrir chat técnico de esta OP">
-                        <i class="ph ph-chat-teardrop-dots" style="font-size: 17px;"></i> 💬 Chat de la OP
-                    </button>
                     <button type="button" onclick="imprimirOrdenProduccionActual('${folioVal}')" style="background: #0078d4; color: white; border: none; height: 38px; padding: 0 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0, 120, 212, 0.25); transition: all 0.2s;">
                         <i class="ph ph-printer" style="font-size: 17px;"></i> 🖨️ Imprimir esta OP
                     </button>
@@ -935,9 +932,11 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            <button type="button" onclick="abrirChatOPParaFolio('${folioVal}')" style="background: #0f766e; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(15,118,110,0.25); transition: all 0.2s;" title="Abrir sala del chat técnico de esta OP">
-                                <i class="ph ph-chat-centered-text" style="font-size: 17px;"></i> 💬 Abrir Chat de la OP
-                            </button>
+                            ${(!isReadOnly && !data.chat_cerrado) ? `
+                                <button type="button" onclick="abrirChatOPParaFolio('${folioVal}')" style="background: #0f766e; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(15,118,110,0.25); transition: all 0.2s;" title="Abrir sala del chat técnico de esta OP">
+                                    <i class="ph ph-chat-centered-text" style="font-size: 17px;"></i> 💬 Abrir Chat de la OP
+                                </button>
+                            ` : ''}
                             ${(data.chat_cerrado || data.tiene_chat_historial || data.chat_historial) ? `
                                 <button type="button" onclick="solicitarDesellarChat('${folioVal}')" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: all 0.2s;" title="Consultar bitácora oficial sellada">
                                     <i class="ph ph-lock-key" style="font-size: 17px; color: #fbbf24;"></i> 🔒 Abrir Chat Sellado

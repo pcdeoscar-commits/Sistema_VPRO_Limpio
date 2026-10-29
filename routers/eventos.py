@@ -51,6 +51,10 @@ def extraer_catalogos_de_apoyo():
         for s in staff_rows:
             nom = safe_decode_hex(s[0])
             rol = safe_decode_hex(s[1]).strip().upper()
+            nom_u = nom.upper()
+            # 🛡️ Excluir dispositivos compartidos/central de los selectores de crew
+            if 'CELULAR' in nom_u or 'LIVE STREAM' in nom_u or 'DISPOSITIVO' in rol:
+                continue
             if rol in ['EXTERNO', 'PROVEEDOR', 'PROV'] and rol != 'BAJA':
                 apoyos_externos.append(nom)
             elif rol != 'BAJA':

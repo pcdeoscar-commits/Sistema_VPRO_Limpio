@@ -18,10 +18,12 @@ async function cargarEmpleados() {
         const empleados = await respuesta.json();
         contenedor.innerHTML = "";
 
-        // Filtro para excluir bajas y proveedores
+        // Filtro para excluir bajas, proveedores y dispositivos centrales del reloj checador
         const activos = empleados.filter(emp => {
             const rol = emp.rol ? emp.rol.toUpperCase() : "";
-            return rol !== 'BAJA' && rol !== 'INACTIVO' && rol !== 'PROVEEDOR';
+            const id = String(emp.id_empleado || "").trim();
+            const nom = String(emp.nombre || "").toUpperCase();
+            return rol !== 'BAJA' && rol !== 'INACTIVO' && rol !== 'PROVEEDOR' && id !== '000' && !nom.includes('CELULAR') && !nom.includes('LIVE STREAM');
         });
 
         // Garantizar que la tarjeta de Kiosco exista siempre en el muro

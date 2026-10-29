@@ -78,6 +78,9 @@ def autenticar_usuario(datos: LoginRequest):
                     requiere_cambio = True
                 
                 db_id_emp = safe_decode_hex(row[4]).strip()
+                # 🔒 Blindaje: Dispositivo central (000 / Celular) tiene contraseña fija permanente (1344) y nunca exige cambio
+                if db_id_emp == "000" or "CELULAR" in db_nombre.upper() or "LIVE STREAM" in db_nombre.upper():
+                    requiere_cambio = False
                 try:
                     with get_db_cursor("db_personal", commit=True) as cur_log:
                         cur_log.execute("""
@@ -116,6 +119,9 @@ def cambiar_password(payload: dict):
         
         if not id_emp or not nueva_pass:
             raise HTTPException(status_code=400, detail="Faltan datos obligatorios para el cambio.")
+            
+        if id_emp == "000":
+            raise HTTPException(status_code=403, detail="Este dispositivo central tiene contraseña permanente e inmutable (1344). No se permite modificarla.")
             
         pass_encriptada = encriptar_password(nueva_pass)
         
@@ -260,4 +266,4 @@ def obtener_accesos_recientes_empleado(id_empleado: str, dias: int = 7):
             "historial": historial
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))

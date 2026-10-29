@@ -844,6 +844,17 @@
             </div>
         </div>
 
+        <!-- SELECTOR DE ARISTA DE CHAT: OPS VS ADMINISTRACIÓN & RH -->
+        <div class="chat-arista-selector" style="display: flex; background: #182229; padding: 6px 10px; gap: 6px; border-bottom: 1px solid #222e35;">
+            <button id="btn-arista-ops" class="chat-arista-btn active" onclick="cambiarAristaChat('ops')" style="flex: 1; padding: 8px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; background: #00a884; color: white;">
+                <i class="ph ph-film-strip" style="font-size: 16px;"></i> 🎬 OPs Producción
+            </button>
+            <button id="btn-arista-admin" class="chat-arista-btn" onclick="cambiarAristaChat('admin')" style="flex: 1; padding: 8px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; background: #111b21; color: #8696a0;">
+                <i class="ph ph-buildings" style="font-size: 16px;"></i> 🏢 Admon & RH
+                <span id="badge-admin-no-leidos" style="display: none; background: #ef4444; color: white; border-radius: 10px; padding: 1px 7px; font-size: 10px; font-weight: 800;">0</span>
+            </button>
+        </div>
+
         <div class="chat-search-bar">
             <div class="chat-search-inner">
                 <i class="ph ph-magnifying-glass"></i>
@@ -863,6 +874,9 @@
 
         <div class="chat-ops-list" id="chat-lista-ops">
             <!-- Renderizado dinámico desde chat_op.js -->
+        </div>
+        <div class="chat-ops-list" id="chat-lista-admin" style="display: none;">
+            <!-- Renderizado dinámico de colaboradores / administración -->
         </div>
     </div>
 
@@ -932,6 +946,7 @@
 
 <!-- Scripts -->
 <script src="js/chat_op.js?v=20261028_chat_bot_v5"></script>
+<script src="js/chat_admin_ui.js?v=20261029_v1"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         inicializarChatOP();

@@ -65,6 +65,18 @@ async function cargarEmpleados() {
             `;
             contenedor.appendChild(tarjeta);
         });
+
+        // Atajo directo para abrir modal de PIN por parámetro: ?u=... o ?login_emp=...
+        try {
+            const p = new URLSearchParams(window.location.search);
+            const targetId = p.get('u') || p.get('login_emp');
+            if (targetId) {
+                const empTarget = empleados.find(e => String(e.id_empleado).trim() === String(targetId).trim());
+                if (empTarget) {
+                    setTimeout(() => abrirModal(empTarget, `${API_URL}/fotos/${empTarget.id_empleado}.jpg`), 300);
+                }
+            }
+        } catch(e) {}
     } catch (error) {
         console.error("Fallo la conexión con FastAPI:", error);
         contenedor.innerHTML = `

@@ -14,7 +14,8 @@ const chatState = {
     ws: null,
     pollInterval: null,
     filtroBusqueda: '',
-    verTodas: false
+    verTodas: false,
+    arista: 'ops'
 };
 
 // Paleta de colores para nombres estilo WhatsApp
@@ -265,7 +266,19 @@ async function inicializarChatOP() {
 
     chatState.usuario = user;
     actualizarInfoUsuarioEnChat();
-    await cargarListaOPsChat();
+
+    // Determinar arista inicial (Admon & RH vs OPs de Producción)
+    const aristaParam = urlParams.get("arista");
+    const esAdmin = typeof esUsuarioAdminChat === 'function' ? esUsuarioAdminChat() : false;
+
+    if (aristaParam === 'admin' || (esAdmin && !urlParams.get("op"))) {
+        cambiarAristaChat('admin');
+    } else {
+        await cargarListaOPsChat();
+        if (typeof actualizarBadgeAdminGlobal === 'function') {
+            actualizarBadgeAdminGlobal();
+        }
+    }
 }
 
 function guardarSesionChatUsuario(usuario) {
@@ -494,8 +507,17 @@ function regresarAListaOPsMovil() {
         try { chatState.ws.close(); } catch(e){}
         chatState.ws = null;
     }
-    chatState.opActual = null;
-    renderizarListaOPs();
+    if (typeof adminChatState !== 'undefined' && adminChatState.ws) {
+        try { adminChatState.ws.close(); } catch(e){}
+        adminChatState.ws = null;
+    }
+    if (chatState.arista === 'admin') {
+        if (typeof adminChatState !== 'undefined') adminChatState.chatActual = null;
+        if (typeof renderizarListaAdmin === 'function') renderizarListaAdmin();
+    } else {
+        chatState.opActual = null;
+        renderizarListaOPs();
+    }
 }
 
 function actualizarCabeceraChat(op) {
@@ -885,6 +907,12 @@ function actualizarBannerFijados(fijados) {
 // ENVIAR MENSAJE
 // ==============================================================================
 async function enviarMensajeChat() {
+    if (chatState.arista === 'admin') {
+        if (typeof enviarMensajeAdmin === 'function') {
+            await enviarMensajeAdmin();
+        }
+        return;
+    }
     if (!chatState.opActual) return;
     const input = document.getElementById("chat-input-mensaje");
     if (!input) return;
@@ -938,8 +966,18 @@ async function seleccionarYSubirAdjunto() {
 }
 
 async function procesarAdjuntoSeleccionado(inputEl) {
-    if (!inputEl || !inputEl.files || !inputEl.files[0] || !chatState.opActual) return;
+    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
     const archivo = inputEl.files[0];
+
+    if (chatState.arista === 'admin') {
+        if (typeof subirArchivoAdmin === 'function') {
+            await subirArchivoAdmin(archivo);
+        }
+        inputEl.value = "";
+        return;
+    }
+
+    if (!chatState.opActual) return;
     const u = chatState.usuario || {};
 
     const formData = new FormData();

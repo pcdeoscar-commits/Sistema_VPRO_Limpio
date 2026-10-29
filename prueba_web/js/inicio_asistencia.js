@@ -36,6 +36,21 @@ function obtenerRangoSemanaActual() {
 
 async function cargarDatosInicio() {
     if (!usuarioLogueado) return;
+
+    // Auto-apertura si se proviene de una alerta del Chat de Administración
+    try {
+        const urlP = new URLSearchParams(window.location.search);
+        const urlEmp = urlP.get('dictaminar_emp');
+        const urlPer = urlP.get('dictaminar_permiso');
+        if (urlEmp && urlPer && !window._dictamenUrlProcesado) {
+            window._dictamenUrlProcesado = true;
+            setTimeout(() => {
+                if (typeof abrirDictamenPermisoDesdeNotif === 'function') {
+                    abrirDictamenPermisoDesdeNotif(urlEmp, parseInt(urlPer));
+                }
+            }, 600);
+        }
+    } catch(e) {}
     actualizarVisibilidadAgendaDrive();
     actualizarMonitorAccesosCEO();
 
@@ -57,13 +72,19 @@ async function cargarDatosInicio() {
 
         const idEmp = usuarioLogueado.id_empleado;
 
+        // Determinar si el usuario tiene rol administrativo o directivo
+        const esAdminRH = (typeof esUsuarioAutorizadoDireccion === 'function' && esUsuarioAutorizadoDireccion()) || 
+                          ((usuarioLogueado?.rol || '').toUpperCase().includes('ADMIN')) ||
+                          ((usuarioLogueado?.puesto || '').toUpperCase().includes('ADMIN'));
+
         // Lanzar todas las peticiones en paralelo
-        const [resTrans, resCheck, resAlertas, resVac, resGastos] = await Promise.allSettled([
+        const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend] = await Promise.allSettled([
             fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${idEmp}`),
             fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '')}`),
             fetch(`${API_URL}/api/rh/alertas?id_empleado=${idEmp}`),
             fetch(`${API_URL}/api/rh/vacaciones/${idEmp}`),
-            fetch(`${API_URL}/api/gastos/pendientes-auditoria`)
+            fetch(`${API_URL}/api/gastos/pendientes-auditoria`),
+            esAdminRH ? fetch(`${API_URL}/api/rh/permisos/pendientes`) : Promise.resolve({ ok: false })
         ]);
 
         // ── Helper: construir tarjeta-grupo tipo accordion/dropdown ──────
@@ -305,7 +326,51 @@ async function cargarDatosInicio() {
         } catch(e) { console.error('Gastos notif:', e); }
 
         // ── Render final ───────────────────────────────────────────────────
-        const gruposFiltrados = gruposHtml.filter(Boolean);
+                // ─── F. Permisos Laborales Pendientes de Revisión (Para Administración) ───
+        try {
+            if (resPermisosPend && resPermisosPend.status === 'fulfilled' && resPermisosPend.value.ok) {
+                const pendientesPermisos = await resPermisosPend.value.json();
+                if (Array.isArray(pendientesPermisos) && pendientesPermisos.length > 0) {
+                    gruposHtml.push(buildDropdownCard({
+                        icon: 'ph-clipboard-text',
+                        color: '#6366f1', bg: '#f5f3ff', border: '#818cf8',
+                        titulo: '📋 Solicitudes de Permisos Laborales Pendientes',
+                        badge: `${pendientesPermisos.length} pendiente${pendientesPermisos.length !== 1 ? 's' : ''}`,
+                        badgeColor: '#6366f1',
+                        items: pendientesPermisos,
+                        renderItem: (p) => `
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border-bottom:1px solid #e0e7ff; background:white; border-radius:8px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05); flex-wrap:wrap;">
+                                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:240px;">
+                                    <img src="${p.empleado_foto || 'vendor/img/avatar_default.png'}" 
+                                         onerror="this.src='vendor/img/avatar_default.png'" 
+                                         style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid #c7d2fe; flex-shrink:0;">
+                                    <div>
+                                        <div style="font-size:13.5px; font-weight:700; color:#1e1b4b;">
+                                            ${p.empleado_nombre || 'Colaborador'} 
+                                            <span style="font-size:11px; font-weight:700; color:#4338ca; background:#e0e7ff; padding:2px 8px; border-radius:10px; margin-left:4px;">${p.folio_permiso}</span>
+                                        </div>
+                                        <div style="font-size:12px; color:#475569; margin-top:2px;">
+                                            <b>${p.tipo_permiso}</b> • Del <b>${p.fecha_inicio}</b> al <b>${p.fecha_fin}</b> (${p.dias_solicitados} día${p.dias_solicitados !== 1 ? 's' : ''})
+                                        </div>
+                                        <div style="font-size:11.5px; color:#6b7280; font-style:italic; margin-top:2px;">
+                                            "${p.justificacion || 'Sin motivo especificado'}"
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <button onclick="abrirDictamenPermisoDesdeNotif('${p.id_empleado}', ${p.id_permiso})" 
+                                            style="background:#6366f1; color:white; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:700; font-size:12px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(99,102,241,0.25); transition:all .15s;"
+                                            onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
+                                        <i class="ph ph-magnifying-glass" style="font-size:15px;"></i> Revisar Solicitud en RH
+                                    </button>
+                                </div>
+                            </div>`
+                    }));
+                }
+            }
+        } catch(e) { console.error('Error al renderizar permisos pendientes:', e); }
+
+const gruposFiltrados = gruposHtml.filter(Boolean);
         if (gruposFiltrados.length > 0) {
             contenedorNotif.innerHTML = gruposFiltrados.join('');
         } else {
@@ -955,5 +1020,27 @@ function activarPestanaRH(pestana) {
     const tabVal = tabMap[pestana] || pestana;
     if (typeof cambiarPestanaRH === 'function') {
         cambiarPestanaRH(tabVal);
+    }
+}
+
+// ─── Helper de Enlace Directo: Notificación -> Dictamen de Permiso en RH ────
+async function abrirDictamenPermisoDesdeNotif(idEmpleado, idPermiso) {
+    try {
+        if (typeof cambiarVista === 'function') {
+            cambiarVista('vista-rh');
+        }
+        if (typeof seleccionarEmpleadoRH === 'function') {
+            await seleccionarEmpleadoRH(idEmpleado);
+        }
+        if (typeof cambiarPestanaRH === 'function') {
+            cambiarPestanaRH('permisos');
+        }
+        setTimeout(() => {
+            if (typeof abrirModalDictamenPermiso === 'function') {
+                abrirModalDictamenPermiso(idPermiso);
+            }
+        }, 350);
+    } catch (e) {
+        console.error('Error al abrir dictamen desde notificación:', e);
     }
 }

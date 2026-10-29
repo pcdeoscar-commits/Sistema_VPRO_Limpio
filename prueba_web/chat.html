@@ -70,9 +70,13 @@
         }
 
         .chat-sidebar-header {
-            height: 60px;
+            min-height: 60px;
+            height: auto;
             background-color: var(--wa-header-bg);
-            padding: 10px 16px;
+            padding-top: max(10px, env(safe-area-inset-top));
+            padding-bottom: 10px;
+            padding-left: 16px;
+            padding-right: 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -328,9 +332,13 @@
         }
 
         .chat-main-header {
-            height: 60px;
+            min-height: 60px;
+            height: auto;
             background-color: var(--wa-header-bg);
-            padding: 10px 16px;
+            padding-top: max(10px, env(safe-area-inset-top));
+            padding-bottom: 10px;
+            padding-left: 16px;
+            padding-right: 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -347,12 +355,15 @@
 
         .chat-btn-volver-movil {
             display: none;
-            background: transparent;
-            border: none;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
             color: var(--wa-text-primary);
-            font-size: 22px;
+            font-size: 20px;
             cursor: pointer;
-            padding: 4px;
+            padding: 6px 10px;
+            touch-action: manipulation;
+            margin-right: 4px;
         }
 
         .chat-main-header-meta h3 {
@@ -874,6 +885,9 @@
                     <!-- Hora de llamado -->
                 </div>
                 <div id="chat-header-acciones" style="display: flex; align-items: center; gap: 8px;">
+                    <button class="chat-btn-icon" onclick="mostrarSelectorUsuarioChat()" title="Cambiar usuario" style="background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.35); border-radius: 8px; cursor: pointer; padding: 5px 10px; display: inline-flex; align-items: center; gap: 5px; color: #38bdf8; font-size: 11px; font-weight: 700;">
+                        <i class="ph-fill ph-user-circle" style="font-size: 15px;"></i> Perfil
+                    </button>
                     <button class="chat-btn-icon" onclick="reproducirTimbreVPRO()" title="Probar sonido VPRO" style="background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 8px; cursor: pointer; padding: 5px 10px; display: inline-flex; align-items: center; gap: 5px; color: #fbbf24; font-size: 11px; font-weight: 700;">
                         <i class="ph-fill ph-bell-ringing" style="font-size: 15px;"></i> Sonido
                     </button>
@@ -917,7 +931,7 @@
 </div>
 
 <!-- Scripts -->
-<script src="js/chat_op.js?v=20261028_chat_bot_v4"></script>
+<script src="js/chat_op.js?v=20261028_chat_bot_v5"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         inicializarChatOP();

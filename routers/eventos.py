@@ -675,27 +675,32 @@ def eliminar_op_por_completo(id_evento: int):
     y desvincula cualquier cronograma asociado.
     """
     try:
-        with engine_eventos.begin() as conn:
-            # 1. Obtener folio para desvincular cronogramas
+        folio_val = None
+        with engine_eventos.connect() as conn:
             folio_val = conn.execute(text("SELECT folio FROM public.eventos WHERE id_evento = :id"), {"id": id_evento}).scalar()
 
-            # 2. Eliminar mensajes de chat asociados
-            try:
-                conn.execute(text("DELETE FROM public.chat_op_mensajes WHERE id_evento = :id"), {"id": id_evento})
-            except Exception as e_chat:
-                print(f"Nota al borrar chat de OP: {e_chat}")
+        if folio_val is None:
+            raise HTTPException(status_code=404, detail="No se encontró la OP especificada.")
 
-            # 3. Desvincular cronogramas asociados
-            if folio_val:
-                try:
-                    conn.execute(text("UPDATE public.cronogramas SET folio_op = NULL WHERE folio_op = :folio"), {"folio": str(folio_val)})
-                except Exception as e_crono:
-                    print(f"Nota al desvincular cronogramas: {e_crono}")
+        # 1. Desvincular cronogramas asociados
+        try:
+            with engine_eventos.begin() as conn_c:
+                conn_c.execute(text("UPDATE public.cronogramas_eventos SET folio_op = NULL WHERE folio_op = :folio"), {"folio": str(folio_val)})
+        except Exception as e_c:
+            print(f"Nota al desvincular cronogramas: {e_c}")
 
-            # 4. Eliminar el registro del evento
-            res = conn.execute(text("DELETE FROM public.eventos WHERE id_evento = :id"), {"id": id_evento})
+        # 2. Eliminar mensajes de chat asociados
+        try:
+            with engine_eventos.begin() as conn_chat:
+                conn_chat.execute(text("DELETE FROM public.chat_op_mensajes WHERE id_evento = :id"), {"id": id_evento})
+        except Exception as e_ch:
+            print(f"Nota al borrar chat de OP: {e_ch}")
+
+        # 3. Eliminar el registro del evento
+        with engine_eventos.begin() as conn_ev:
+            res = conn_ev.execute(text("DELETE FROM public.eventos WHERE id_evento = :id"), {"id": id_evento})
             if res.rowcount == 0:
-                raise HTTPException(status_code=404, detail="No se encontró la OP especificada.")
+                raise HTTPException(status_code=404, detail="No se encontró la OP especificada al borrar.")
 
         return {"status": "SUCCESS", "mensaje": f"OP-{id_evento} eliminada por completo y de forma limpia."}
     except HTTPException:

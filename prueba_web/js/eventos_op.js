@@ -910,42 +910,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 </div>
             </div>
 
-            <!-- 💬 BITÁCORA DEL CHAT OPERATIVO DE LA OP (SELLADA) -->
-            ${data.folio ? `
-                <div class="op-section-card" style="border-left: 5px solid ${data.chat_cerrado ? '#0f766e' : '#2563eb'}; background: #f8fafc; margin-top: 14px; margin-bottom: 20px; padding: 18px 22px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-                        <div>
-                            <div style="font-weight: 700; color: #0f172a; font-size: 15px; display: flex; align-items: center; gap: 8px;">
-                                <i class="${data.chat_cerrado ? 'ph ph-shield-check' : 'ph ph-chat-circle-dots'}" style="font-size: 24px; color: ${data.chat_cerrado ? '#0f766e' : '#2563eb'};"></i>
-                                <span>Bitácora de Chat Operativo de la OP ${data.chat_cerrado ? '(Sellada por Productor)' : '(Canal Activo)'}</span>
-                                ${data.chat_cerrado ? `
-                                    <span style="background: #ccfbf1; color: #0f766e; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid #99f6e4;">SELLADO</span>
-                                ` : `
-                                    <span style="background: #dbeafe; color: #1e40af; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid #bfdbfe;">EN CURSO</span>
-                                `}
-                            </div>
-                            <div style="font-size: 13px; color: #64748b; margin-top: 4px; line-height: 1.4;">
-                                ${data.chat_cerrado ? 
-                                    `Expediente técnico sellado e integrado al historial por el Productor <strong>${data.chat_cerrado_por || data.resp_de_produccion || 'Asignado'}</strong>${data.chat_fecha_cierre ? ` el ${data.chat_fecha_cierre}` : ''}. Registro oficial para auditoría técnica.` :
-                                    `Canal técnico operativo activo. Al concluir la cobertura, el Productor Responsable (<strong>${data.resp_de_produccion || 'Asignado'}</strong>) cerrará el chat desde la sala operativa para sellar automáticamente la bitácora.`
-                                }
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            ${(!isReadOnly && !data.chat_cerrado) ? `
-                                <button type="button" onclick="abrirChatOPParaFolio('${folioVal}')" style="background: #0f766e; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(15,118,110,0.25); transition: all 0.2s;" title="Abrir sala del chat técnico de esta OP">
-                                    <i class="ph ph-chat-centered-text" style="font-size: 17px;"></i> 💬 Abrir Chat de la OP
-                                </button>
-                            ` : ''}
-                            ${(data.chat_cerrado || data.tiene_chat_historial || data.chat_historial) ? `
-                                <button type="button" onclick="solicitarDesellarChat('${folioVal}')" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: all 0.2s;" title="Consultar bitácora oficial sellada">
-                                    <i class="ph ph-lock-key" style="font-size: 17px; color: #fbbf24;"></i> 🔒 Abrir Chat Sellado
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            ` : ''}
+
 
             <!-- 💾 BOTÓN GUARDAR MAESTRO, ACCIÓN DE HISTORIAL E IMPRESIÓN OFICIAL -->
             <div style="margin-top: 14px; margin-bottom: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
@@ -963,6 +928,17 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     <button type="button" onclick="imprimirOrdenProduccionActual('${folioVal}')" style="flex: 1; min-width: 200px; background: #0078d4; color: white; border: none; padding: 16px 22px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(0, 120, 212, 0.3); transition: background 0.2s;">
                         <i class="ph ph-printer" style="font-size: 20px;"></i> 🖨️ Imprimir esta OP
                     </button>
+                ` : ''}
+                ${isReadOnly ? `
+                    ${(data.chat_cerrado || data.tiene_chat || data.tiene_chat_historial || data.chat_historial || (data.total_mensajes_chat && data.total_mensajes_chat > 0)) ? `
+                        <button type="button" onclick="solicitarDesellarChat('${folioVal}')" style="flex: 1; min-width: 220px; background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 16px 22px; border-radius: 8px; font-weight: 700; font-size: 14.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: background 0.2s;" title="Consultar bitácora oficial sellada (Solo lectura)">
+                            <i class="ph ph-lock-key" style="font-size: 19px; color: #fbbf24;"></i> 🔒 Abrir Chat Sellado
+                        </button>
+                    ` : `
+                        <div style="flex: 1; min-width: 220px; background: #f8fafc; color: #94a3b8; border: 1.5px dashed #cbd5e1; padding: 16px 20px; border-radius: 8px; font-weight: 600; font-size: 13.5px; display: flex; align-items: center; justify-content: center; gap: 8px; user-select: none;" title="Esta orden de producción no cuenta con mensajes de chat registrados">
+                            <i class="ph ph-chat-slash" style="font-size: 18px; color: #94a3b8;"></i> Chat sin contenido en esta OP
+                        </div>
+                    `}
                 ` : ''}
             </div>
         </form>

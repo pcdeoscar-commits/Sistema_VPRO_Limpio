@@ -212,6 +212,19 @@ def buscar_op_por_folio(folio: str):
             data["chat_cerrado_por"] = reparar_mojibake(data.get("chat_cerrado_por") or "")
             data["chat_fecha_cierre"] = str(data["chat_fecha_cierre"]) if data.get("chat_fecha_cierre") else ""
             data["tiene_chat_historial"] = bool(data.get("chat_historial") and str(data["chat_historial"]).strip())
+            
+            # Verificar si existen mensajes registrados en la sala de chat de esta OP
+            total_msjs_chat = 0
+            try:
+                with engine_eventos.connect() as conn_msj:
+                    total_msjs_chat = conn_msj.execute(
+                        text("SELECT COUNT(*) FROM public.chat_op_mensajes WHERE id_evento = :id OR folio = :folio"),
+                        {"id": data.get("id_evento"), "folio": str(data.get("folio") or "")}
+                    ).scalar() or 0
+            except Exception:
+                total_msjs_chat = 0
+            data["total_mensajes_chat"] = int(total_msjs_chat)
+            data["tiene_chat"] = bool(data["tiene_chat_historial"] or total_msjs_chat > 0)
             data["fec_del_evento"] = str(data["fec_del_evento"]) if data.get("fec_del_evento") else ""
             data["fec_fin_evento"] = str(data.get("fec_fin_evento") or data.get("fec_del_evento") or "")
             data["subtitulo_evento"] = reparar_mojibake(data.get("subtitulo_evento") or "")

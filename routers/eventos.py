@@ -668,6 +668,41 @@ async def subir_foto_evidencia(id_evento: int, file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.delete("/op/{id_evento}")
+def eliminar_op_por_completo(id_evento: int):
+    """
+    Elimina limpiamente una orden de producción, sus mensajes de chat asociados,
+    y desvincula cualquier cronograma asociado.
+    """
+    try:
+        with engine_eventos.begin() as conn:
+            # 1. Obtener folio para desvincular cronogramas
+            folio_val = conn.execute(text("SELECT folio FROM public.eventos WHERE id_evento = :id"), {"id": id_evento}).scalar()
+
+            # 2. Eliminar mensajes de chat asociados
+            try:
+                conn.execute(text("DELETE FROM public.chat_op_mensajes WHERE id_evento = :id"), {"id": id_evento})
+            except Exception as e_chat:
+                print(f"Nota al borrar chat de OP: {e_chat}")
+
+            # 3. Desvincular cronogramas asociados
+            if folio_val:
+                try:
+                    conn.execute(text("UPDATE public.cronogramas SET folio_op = NULL WHERE folio_op = :folio"), {"folio": str(folio_val)})
+                except Exception as e_crono:
+                    print(f"Nota al desvincular cronogramas: {e_crono}")
+
+            # 4. Eliminar el registro del evento
+            res = conn.execute(text("DELETE FROM public.eventos WHERE id_evento = :id"), {"id": id_evento})
+            if res.rowcount == 0:
+                raise HTTPException(status_code=404, detail="No se encontró la OP especificada.")
+
+        return {"status": "SUCCESS", "mensaje": f"OP-{id_evento} eliminada por completo y de forma limpia."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.delete("/eliminar_foto_evidencia/{id_evento}")
 def eliminar_foto_evidencia(id_evento: int, url: str):
     """Elimina una fotografía o video de evidencia vinculado a la OP."""

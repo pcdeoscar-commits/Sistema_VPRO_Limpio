@@ -208,7 +208,19 @@ def buscar_op_por_folio(folio: str):
             data["actividades_de_proveedores"] = reparar_mojibake(data.get("actividades_de_proveedores") or "")
             data["horas_manejo_chofer"] = float(data.get("horas_manejo_chofer") or 0.0)
             data["es_viaje_foraneo"] = bool(data.get("es_viaje_foraneo") or False)
-            data["chat_cerrado"] = bool(data.get("chat_cerrado") or False)
+            # Verificar si ya cuenta con reporte de gastos registrado
+            tiene_gastos = False
+            try:
+                with engine_eventos.connect() as conn_gasto:
+                    tiene_gastos = bool(conn_gasto.execute(
+                        text("SELECT 1 FROM public.informes_gastos_maestro WHERE folio_vpro = :id OR CAST(folio_vpro AS TEXT) = :folio LIMIT 1"),
+                        {"id": data.get("id_evento"), "folio": str(data.get("folio") or "")}
+                    ).first())
+            except Exception:
+                tiene_gastos = False
+
+            data["tiene_reporte_gastos"] = tiene_gastos
+            data["chat_cerrado"] = bool(data.get("chat_cerrado") or tiene_gastos)
             data["chat_cerrado_por"] = reparar_mojibake(data.get("chat_cerrado_por") or "")
             data["chat_fecha_cierre"] = str(data["chat_fecha_cierre"]) if data.get("chat_fecha_cierre") else ""
             data["tiene_chat_historial"] = bool(data.get("chat_historial") and str(data["chat_historial"]).strip())
@@ -223,8 +235,16 @@ def buscar_op_por_folio(folio: str):
                     ).scalar() or 0
             except Exception:
                 total_msjs_chat = 0
+            
+            # Detectar si el historial contiene mensajes reales o sólo encabezado vacío
+            tiene_contenido_real = False
+            if data.get("chat_historial"):
+                h_str = str(data["chat_historial"])
+                if "[Sin mensajes registrados" not in h_str and any(line.strip().startswith("[") for line in h_str.split("\n")):
+                    tiene_contenido_real = True
+
             data["total_mensajes_chat"] = int(total_msjs_chat)
-            data["tiene_chat"] = bool(data["tiene_chat_historial"] or total_msjs_chat > 0)
+            data["tiene_chat"] = bool(tiene_contenido_real or total_msjs_chat > 0)
             data["fec_del_evento"] = str(data["fec_del_evento"]) if data.get("fec_del_evento") else ""
             data["fec_fin_evento"] = str(data.get("fec_fin_evento") or data.get("fec_del_evento") or "")
             data["subtitulo_evento"] = reparar_mojibake(data.get("subtitulo_evento") or "")

@@ -250,6 +250,92 @@ def guardar_informe_gastos_completo(payload: dict):
                     "varios": float(d.get("varios", 0.0)), 
                     "total_dia": float(d.get("total_dia", 0.0))
                 })
+
+        # Sellar y archivar automáticamente el chat operativo de la OP relacionada al rendir gastos
+        if folio_vpro:
+            try:
+                with engine_eventos.begin() as conn_seal:
+                    msjs_op = conn_seal.execute(text("""
+                        SELECT encode(autor_nombre::bytea, 'hex') AS aut_hex,
+                               autor_rol,
+                               encode(mensaje::bytea, 'hex') AS msj_hex,
+                               archivo_url,
+                               to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS fec_hora
+                        FROM public.chat_op_mensajes
+                        WHERE id_evento = :id_ev OR folio = CAST(:id_ev AS text)
+                        ORDER BY fecha_hora ASC, id ASC
+                    """), {"id_ev": folio_vpro}).fetchall()
+
+                    op_info = conn_seal.execute(text("""
+                        SELECT id_evento, folio,
+                               encode(nombre_evento::bytea, 'hex') AS nombre_hex,
+                               encode(locacion::bytea, 'hex') AS loc_hex,
+                               encode(resp_de_produccion::bytea, 'hex') AS resp_hex,
+                               fec_del_evento, hra_de_llamado,
+                               chat_historial
+                        FROM public.eventos
+                        WHERE id_evento = :id_ev OR folio = CAST(:id_ev AS text)
+                    """), {"id_ev": folio_vpro}).mappings().first()
+
+                    if op_info and not (op_info["chat_historial"] and str(op_info["chat_historial"]).strip()):
+                        nom_ev = safe_decode_hex(op_info["nombre_hex"])
+                        loc_ev = safe_decode_hex(op_info["loc_hex"])
+                        resp_prod = safe_decode_hex(op_info["resp_hex"])
+                        folio_str = op_info["folio"] or str(op_info["id_evento"])
+                        ahora_cierre = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                        lineas = [
+                            "=" * 80,
+                            f"BITÁCORA OFICIAL DE CHAT OPERATIVO - VPRO WORKSPACE",
+                            f"ORDEN DE PRODUCCIÓN: OP-{folio_str} | EVENTO: {nom_ev}",
+                            f"LOCACIÓN: {loc_ev}",
+                            f"FECHA DEL EVENTO: {op_info['fec_del_evento'] or 'N/A'} | HORA LLAMADO: {op_info['hra_de_llamado'] or 'N/A'}",
+                            f"PRODUCTOR RESPONSABLE: {resp_prod}",
+                            "-" * 80,
+                            f"ESTADO: CERRADO Y SELLADO AL RENDIR REPORTE DE GASTOS",
+                            f"SELLADO POR: {emp_nombre or resp_prod}",
+                            f"FECHA Y HORA DE CIERRE: {ahora_cierre}",
+                            f"TOTAL REGISTROS INTEGRADOS: {len(msjs_op)} MENSAJES Y EVIDENCIAS",
+                            "=" * 80,
+                            ""
+                        ]
+                        if not msjs_op:
+                            lineas.append("[Sin mensajes registrados durante la cobertura]")
+                        else:
+                            for m in msjs_op:
+                                m_aut = safe_decode_hex(m.aut_hex)
+                                m_txt = safe_decode_hex(m.msj_hex)
+                                m_adj = f" | [Adjunto: {m.archivo_url}]" if m.archivo_url else ""
+                                lineas.append(f"[{m.fec_hora}] [{m.autor_rol or 'STAFF'}] {m_aut}:{m_adj}")
+                                lineas.append(f"  {m_txt}\n")
+                        lineas.extend([
+                            "-" * 80,
+                            "FIN DE LA BITÁCORA - EXPEDIENTE SELLADO PARA AUDITORÍA Y ACLARACIONES",
+                            "=" * 80
+                        ])
+                        bitacora_txt = "\n".join(lineas)
+
+                        conn_seal.execute(text("""
+                            UPDATE public.eventos
+                            SET chat_cerrado = TRUE,
+                                chat_cerrado_por = :cerrador,
+                                chat_fecha_cierre = NOW(),
+                                chat_historial = :hist
+                            WHERE id_evento = :id_ev OR folio = CAST(:id_ev AS text)
+                        """), {
+                            "cerrador": emp_nombre or resp_prod,
+                            "hist": bitacora_txt,
+                            "id_ev": folio_vpro
+                        })
+                    else:
+                        conn_seal.execute(text("""
+                            UPDATE public.eventos
+                            SET chat_cerrado = TRUE
+                            WHERE id_evento = :id_ev OR folio = CAST(:id_ev AS text)
+                        """), {"id_ev": folio_vpro})
+            except Exception as e_seal:
+                print(f"Aviso al autosellar chat OP-{folio_vpro}: {e_seal}")
+
         return {"status": "SUCCESS", "id_informe": id_informe}
     except HTTPException:
         raise

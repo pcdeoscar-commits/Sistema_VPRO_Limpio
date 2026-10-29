@@ -930,7 +930,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     </button>
                 ` : ''}
                 ${isReadOnly ? `
-                    ${(data.chat_cerrado || data.tiene_chat || data.tiene_chat_historial || data.chat_historial || (data.total_mensajes_chat && data.total_mensajes_chat > 0)) ? `
+                    ${data.tiene_chat ? `
                         <button type="button" onclick="solicitarDesellarChat('${folioVal}')" style="flex: 1; min-width: 220px; background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 16px 22px; border-radius: 8px; font-weight: 700; font-size: 14.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: background 0.2s;" title="Consultar bitácora oficial sellada (Solo lectura)">
                             <i class="ph ph-lock-key" style="font-size: 19px; color: #fbbf24;"></i> 🔒 Abrir Chat Sellado
                         </button>

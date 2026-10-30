@@ -1,6 +1,8 @@
 import json
 import csv
 import time
+import re
+import unicodedata
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
@@ -12,13 +14,74 @@ from core.utils import safe_decode_hex, reparar_mojibake
 
 router = APIRouter(tags=["📦 Checkout & Logística"])
 
+def normalizar_texto(t: str) -> str:
+    """Normaliza texto removiendo tildes, caracteres especiales y convirtiendo a mayúsculas."""
+    if not t:
+        return ""
+    nfkd = unicodedata.normalize('NFKD', str(t))
+    sin_tildes = "".join([c for c in nfkd if not unicodedata.combining(c)])
+    return re.sub(r'[^a-zA-Z0-9]', '', sin_tildes).upper()
+
+def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, chofer: str, convocados: Any) -> bool:
+    """Verifica si un usuario es responsable o está convocado en una OP."""
+    if not usuario_nom or not str(usuario_nom).strip():
+        return False
+    norm_user = normalizar_texto(usuario_nom)
+    if not norm_user:
+        return False
+    
+    # Responsables directos (producción, gastos, chofer)
+    for resp in [resp_prod, resp_gastos, chofer]:
+        if resp:
+            norm_r = normalizar_texto(resp)
+            if norm_user in norm_r or norm_r in norm_user:
+                return True
+                
+    # Convocados lista o string
+    conv_list = []
+    if isinstance(convocados, list):
+        conv_list = [str(c) for c in convocados]
+    elif isinstance(convocados, str):
+        conv_list = [c.strip() for c in re.split(r'[,;{}\[\]"]+', convocados) if c.strip()]
+    
+    for conv in conv_list:
+        norm_c = normalizar_texto(conv)
+        if norm_user in norm_c or norm_c in norm_user:
+            return True
+            
+    # Token matching de 2 o más palabras (por ejemplo nombres compuestos)
+    tokens = [w for w in re.split(r'\s+', str(usuario_nom).upper()) if len(w) >= 3]
+    for conv in conv_list:
+        c_u = conv.upper()
+        matches = sum(1 for w in tokens if w in c_u)
+        if matches >= 2:
+            return True
+
+    return False
+
 @router.get("/api/checkout/init-data/{id_empleado}")
-def inicializar_modulo_checkout(id_empleado: str):
-    """Carga los datos iniciales de órdenes, kits y alertas de checkout para el empleado."""
+def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] = None):
+    """Carga los datos iniciales de órdenes, kits y alertas de checkout exclusivamente para el empleado convocado."""
     try:
+        nom_usuario = (usuario_nombre or "").strip()
+        with engine_personal.connect() as conn_p:
+            if not nom_usuario:
+                row_u = conn_p.execute(
+                    text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
+                    {"id": id_empleado.strip()}
+                ).fetchone()
+                if row_u and row_u[0]:
+                    nom_usuario = safe_decode_hex(row_u[0])
+
         with engine_eventos.connect() as conn:
             evs_query = text("""
-               SELECT DISTINCT e.id_evento, encode(e.para_q_cliente::bytea,'hex'), encode(e.nombre_evento::bytea,'hex') 
+               SELECT DISTINCT e.id_evento, 
+                      encode(e.para_q_cliente::bytea,'hex'), 
+                      encode(e.nombre_evento::bytea,'hex'),
+                      encode(COALESCE(e.resp_de_produccion, '')::bytea, 'hex'),
+                      encode(COALESCE(e.responsable_gastos, '')::bytea, 'hex'),
+                      encode(COALESCE(e.chofer, '')::bytea, 'hex'),
+                      encode(COALESCE(e.personal_convocado_op::text, '[]')::bytea, 'hex')
                FROM public.eventos e
                WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
                  AND NOT EXISTS (
@@ -38,7 +101,19 @@ def inicializar_modulo_checkout(id_empleado: str):
                 text("SELECT id_empleado, folio_op FROM public.checkouts_maestro WHERE (incidencias_generales IS NULL OR incidencias_generales = '') AND estado_bodega = 'RECIBIDO'")
             ).fetchall()
         
-        ordenes = [f"OP-{str(r[0]).zfill(3)} | {safe_decode_hex(r[1])} - {safe_decode_hex(r[2])}" for r in evs]
+        ordenes = []
+        for r in evs:
+            id_ev = r[0]
+            cli = safe_decode_hex(r[1])
+            nom = safe_decode_hex(r[2])
+            resp_p = safe_decode_hex(r[3])
+            resp_g = safe_decode_hex(r[4])
+            chof = safe_decode_hex(r[5])
+            conv_raw = safe_decode_hex(r[6])
+            
+            if usuario_pertenece_a_op(nom_usuario, resp_p, resp_g, chof, conv_raw):
+                ordenes.append(f"OP-{str(id_ev).zfill(3)} | {cli} - {nom}")
+
         lista_kits = [safe_decode_hex(k[0]) for k in kits_rows]
         
         alertas_lista = []
@@ -122,16 +197,38 @@ def buscar_kit_operador(nombre_kit: str, id_empleado: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/checkout/status/{id_evento}/{id_empleado}")
-def extraer_estado_checkout(id_evento: int, id_empleado: str):
+def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Optional[str] = None):
     """Consulta el estado del checkout de una OP para un empleado específico."""
     try:
+        nom_usuario = (usuario_nombre or "").strip()
+        with engine_personal.connect() as conn_p:
+            if not nom_usuario:
+                row_u = conn_p.execute(
+                    text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
+                    {"id": id_empleado.strip()}
+                ).fetchone()
+                if row_u and row_u[0]:
+                    nom_usuario = safe_decode_hex(row_u[0])
+
         with engine_eventos.connect() as conn:
             conv_row = conn.execute(
-                text("SELECT encode(personal_convocado_op::text::bytea, 'hex'), encode(proveedor_op::text::bytea, 'hex') FROM public.eventos WHERE id_evento = :id"), 
+                text("""
+                    SELECT encode(COALESCE(personal_convocado_op::text, '[]')::bytea, 'hex'), 
+                           encode(COALESCE(proveedor_op::text, '[]')::bytea, 'hex'),
+                           encode(COALESCE(resp_de_produccion, '')::bytea, 'hex'),
+                           encode(COALESCE(responsable_gastos, '')::bytea, 'hex'),
+                           encode(COALESCE(chofer, '')::bytea, 'hex')
+                    FROM public.eventos WHERE id_evento = :id
+                """), 
                 {"id": id_evento}
             ).fetchone()
             convocados = safe_decode_hex(conv_row[0]) if conv_row and conv_row[0] else "[]"
             proveedores_op = safe_decode_hex(conv_row[1]) if conv_row and len(conv_row) > 1 and conv_row[1] else "[]"
+            resp_prod = safe_decode_hex(conv_row[2]) if conv_row and len(conv_row) > 2 and conv_row[2] else ""
+            resp_gast = safe_decode_hex(conv_row[3]) if conv_row and len(conv_row) > 3 and conv_row[3] else ""
+            chofer = safe_decode_hex(conv_row[4]) if conv_row and len(conv_row) > 4 and conv_row[4] else ""
+
+            es_convocado = usuario_pertenece_a_op(nom_usuario, resp_prod, resp_gast, chofer, convocados)
             
             m_row = conn.execute(
                 text("SELECT id_maestro, encode(incidencias_generales::text::bytea, 'hex'), estado_bodega, encode(nombre_kit::text::bytea, 'hex') FROM public.checkouts_maestro WHERE folio_op = :id AND TRIM(id_empleado) = :emp"), 
@@ -195,6 +292,8 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str):
         return {
             "convocados": convocados, 
             "proveedores_op": proveedores_op, 
+            "resp_de_produccion": resp_prod,
+            "es_convocado": es_convocado,
             "id_maestro": m_row[0] if m_row else None, 
             "incidencias_generales": reparar_mojibake(safe_decode_hex(m_row[1]).strip()) if m_row and m_row[1] else "", 
             "estado_bodega": m_row[2] if m_row else "NUEVO", 
@@ -267,14 +366,53 @@ def guardar_plantilla_kit_operador(payload: dict):
 
 @router.post("/api/checkout/finalizar-salida")
 def registrar_finalizacion_checkout(payload: dict):
-    """Registra la salida física de hardware para una OP."""
+    """Registra la salida física de hardware para una OP previa validación de pertenencia."""
     try:
         items = payload.get("items", [])
         id_op = int(payload["id_evento"])
         id_sujeto = str(payload["id_sujeto_a_revisar"]).strip()
-        incidencias_gen = str(payload["incidencias_generales"])
+        incidencias_gen = str(payload.get("incidencias_generales", ""))
         nombre_kit = str(payload.get("nombre_kit", "--- Sin plantilla ---")).strip() 
         
+        # Validar pertenencia a la OP
+        with engine_eventos.connect() as conn_check:
+            ev_row = conn_check.execute(
+                text("""
+                    SELECT encode(COALESCE(resp_de_produccion, '')::bytea, 'hex'), 
+                           encode(COALESCE(responsable_gastos, '')::bytea, 'hex'), 
+                           encode(COALESCE(chofer, '')::bytea, 'hex'), 
+                           encode(COALESCE(personal_convocado_op::text, '[]')::bytea, 'hex') 
+                    FROM public.eventos WHERE id_evento = :id
+                """),
+                {"id": id_op}
+            ).fetchone()
+
+        if not ev_row:
+            raise HTTPException(status_code=404, detail="Orden de Producción no encontrada.")
+
+        resp_prod = safe_decode_hex(ev_row[0])
+        resp_gast = safe_decode_hex(ev_row[1])
+        chofer = safe_decode_hex(ev_row[2])
+        conv_raw = safe_decode_hex(ev_row[3])
+
+        nombre_sujeto = ""
+        with engine_personal.connect() as conn_p:
+            row_p = conn_p.execute(
+                text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
+                {"id": id_sujeto}
+            ).fetchone()
+            if row_p and row_p[0]:
+                nombre_sujeto = safe_decode_hex(row_p[0])
+
+        if not nombre_sujeto:
+            nombre_sujeto = id_sujeto
+
+        if not usuario_pertenece_a_op(nombre_sujeto, resp_prod, resp_gast, chofer, conv_raw):
+            raise HTTPException(
+                status_code=403, 
+                detail=f"El operador '{nombre_sujeto}' no está convocado en la OP-{id_op}."
+            )
+
         with engine_eventos.begin() as conn:
             m_id = conn.execute(
                 text("SELECT id_maestro FROM public.checkouts_maestro WHERE folio_op = :id AND TRIM(id_empleado) = :emp"), 
@@ -300,6 +438,8 @@ def registrar_finalizacion_checkout(payload: dict):
                         {"id_m": int(m_id), "cod": str(item.get("ID","")), "cant": int(item.get("CANT", 1)), "obs": str(item.get("OBSERVACIONES",""))}
                     )
         return {"status": "SUCCESS"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

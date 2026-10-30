@@ -11,6 +11,7 @@
 let opPreseleccionadaCheckout = null;
 let ordenesCheckoutDisponibles = [];
 let empleadoActivoCheckout = null;
+let esConvocadoActual = true;
 let mapaEmpleadosNombreAId = {};
 let itemsCheckoutSalida = [];
 let itemsCheckoutCheckin = [];
@@ -112,7 +113,8 @@ async function inicializarModuloCheckout() {
     // 2. Cargar lista de OPs disponibles para este empleado
     try {
         const idEmp = usuarioLogueado.id_empleado || "001";
-        const resInit = await fetch(`${API_URL}/api/checkout/init-data/${idEmp}`);
+        const nomEmp = usuarioLogueado.nombre_completo || usuarioLogueado.nombre || "";
+        const resInit = await fetch(`${API_URL}/api/checkout/init-data/${encodeURIComponent(idEmp)}?usuario_nombre=${encodeURIComponent(nomEmp)}`);
         if (resInit.ok) {
             const pack = await resInit.json();
             ordenesCheckoutDisponibles = pack.ordenes || [];
@@ -120,7 +122,9 @@ async function inicializarModuloCheckout() {
             const selOP = document.getElementById('checkout-sel-op');
             if (selOP) {
                 if (ordenesCheckoutDisponibles.length === 0) {
-                    selOP.innerHTML = `<option value="">--- No hay OPs activas pendientes ---</option>`;
+                    selOP.innerHTML = `<option value="">--- No tienes OPs activas donde estés convocado ---</option>`;
+                    limpiarModuloCheckout();
+                    return;
                 } else {
                     selOP.innerHTML = `<option value="">--- Seleccione una Orden de Producción ---</option>` +
                         ordenesCheckoutDisponibles.map(op => `<option value="${op}">${op}</option>`).join('');
@@ -248,7 +252,8 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
     empleadoActivoCheckout = empId;
 
     try {
-        const resStatus = await fetch(`${API_URL}/api/checkout/status/${idEvento}/${empId}`);
+        const nomUser = usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || "";
+        const resStatus = await fetch(`${API_URL}/api/checkout/status/${idEvento}/${empId}?usuario_nombre=${encodeURIComponent(nomUser)}`);
         if (!resStatus.ok) throw new Error("Error consultando status de checkout");
         const statusPack = await resStatus.json();
 
@@ -261,6 +266,10 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         const proveedores = desglosarArrayPostgres(statusPack.proveedores_op);
         proveedoresAsignadosOPCheckout = proveedores;
 
+        // Determinar si el usuario logueado está convocado en esta OP
+        const esConvocado = statusPack.hasOwnProperty('es_convocado') ? Boolean(statusPack.es_convocado) : true;
+        esConvocadoActual = esConvocado;
+
         // Actualizar resumen en pantalla
         const txtConv = document.getElementById('checkout-txt-convocados');
         if (txtConv) txtConv.innerText = convocados.length > 0 ? convocados.join(", ") : "Ninguno asignado";
@@ -269,11 +278,21 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         const txtPlan = document.getElementById('checkout-txt-plantilla');
         if (txtPlan) txtPlan.innerText = statusPack.nombre_kit || "--- Sin plantilla ---";
 
+        // Mostrar / Ocultar banner de restricción si no está convocado
+        const alertaNoConv = document.getElementById('checkout-alerta-no-convocado');
+        if (alertaNoConv) {
+            alertaNoConv.style.display = esConvocado ? 'none' : 'flex';
+        }
+
         // Poblar selector de personal convocado
         const selEmp = document.getElementById('checkout-sel-empleado');
         if (selEmp) {
             if (convocados.length === 0) {
-                selEmp.innerHTML = `<option value="${empId}">${usuarioLogueado?.nombre_completo || 'Operador Actual'}</option>`;
+                if (esConvocado) {
+                    selEmp.innerHTML = `<option value="${empId}">${usuarioLogueado?.nombre_completo || 'Operador Actual'}</option>`;
+                } else {
+                    selEmp.innerHTML = `<option value="" disabled selected>⚠️ No convocado en esta OP</option>`;
+                }
             } else {
                 let optionsHtml = '';
                 convocados.forEach(nombreNom => {
@@ -281,14 +300,72 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
                     const idConvocado = mapaEmpleadosNombreAId[norm] || empId;
                     optionsHtml += `<option value="${idConvocado}">${nombreNom}</option>`;
                 });
-                selEmp.innerHTML = optionsHtml;
-                if ([...selEmp.options].some(o => o.value === empId)) {
-                    selEmp.value = empId;
-                } else if (selEmp.options.length > 0) {
-                    selEmp.selectedIndex = 0;
-                    empleadoActivoCheckout = selEmp.value;
+
+                if (!esConvocado) {
+                    selEmp.innerHTML = `<option value="" disabled selected>⚠️ No estás convocado en esta OP</option>` + optionsHtml;
+                    empleadoActivoCheckout = null;
+                } else {
+                    selEmp.innerHTML = optionsHtml;
+                    const normUser = nomUser.toUpperCase().trim();
+                    const userOpt = [...selEmp.options].find(o => {
+                        const optText = o.textContent.toUpperCase().trim();
+                        return o.value === empId || 
+                               optText === normUser ||
+                               optText.includes(normUser) ||
+                               normUser.includes(optText);
+                    });
+                    if (userOpt) {
+                        selEmp.value = userOpt.value;
+                        empleadoActivoCheckout = userOpt.value;
+                    } else if ([...selEmp.options].some(o => o.value === empId)) {
+                        selEmp.value = empId;
+                        empleadoActivoCheckout = empId;
+                    } else if (selEmp.options.length > 0) {
+                        selEmp.selectedIndex = 0;
+                        empleadoActivoCheckout = selEmp.value;
+                    }
                 }
             }
+        }
+
+        // Habilitar o deshabilitar controles de checkout según autorización
+        const btnFinalizarSalida = document.getElementById('btn-finalizar-salida');
+        const btnAgregarHw = document.querySelector('button[onclick="inyectarHardwareCheckout()"]');
+        const inputBuscarHw = document.getElementById('checkout-buscar-hw');
+        const inputCantHw = document.getElementById('checkout-cant-hw');
+        const btnFilaVacia = document.querySelector('button[onclick="agregarFilaVaciaCheckout()"]');
+        const btnVaciarLista = document.querySelector('button[onclick="limpiarTablaSalidaCheckout()"]');
+        const btnGrabarPlantilla = document.querySelector('button[onclick="guardarComoPlantillaKit()"]');
+        const selKit = document.getElementById('checkout-sel-kit');
+
+        if (!esConvocado) {
+            if (btnFinalizarSalida) {
+                btnFinalizarSalida.disabled = true;
+                btnFinalizarSalida.style.opacity = '0.5';
+                btnFinalizarSalida.style.cursor = 'not-allowed';
+                btnFinalizarSalida.title = "No puedes realizar salida de hardware porque no estás convocado en esta OP.";
+            }
+            if (btnAgregarHw) btnAgregarHw.disabled = true;
+            if (inputBuscarHw) inputBuscarHw.disabled = true;
+            if (inputCantHw) inputCantHw.disabled = true;
+            if (btnFilaVacia) btnFilaVacia.disabled = true;
+            if (btnVaciarLista) btnVaciarLista.disabled = true;
+            if (btnGrabarPlantilla) btnGrabarPlantilla.disabled = true;
+            if (selKit) selKit.disabled = true;
+        } else {
+            if (btnFinalizarSalida) {
+                btnFinalizarSalida.disabled = false;
+                btnFinalizarSalida.style.opacity = '1';
+                btnFinalizarSalida.style.cursor = 'pointer';
+                btnFinalizarSalida.title = "Finalizar y registrar salida de bodega";
+            }
+            if (btnAgregarHw) btnAgregarHw.disabled = false;
+            if (inputBuscarHw) inputBuscarHw.disabled = false;
+            if (inputCantHw) inputCantHw.disabled = false;
+            if (btnFilaVacia) btnFilaVacia.disabled = false;
+            if (btnVaciarLista) btnVaciarLista.disabled = false;
+            if (btnGrabarPlantilla) btnGrabarPlantilla.disabled = false;
+            if (selKit) selKit.disabled = false;
         }
 
         // Cargar kits del empleado activo
@@ -687,6 +764,11 @@ async function finalizarSalidaCheckout() {
     const match = selOP.value.match(/OP-(\d+)/i);
     if (!match) return;
     const idEvento = parseInt(match[1]);
+
+    if (!esConvocadoActual) {
+        alert("⚠️ No formas parte del personal convocado en esta Orden de Producción. No tienes autorización para realizar checkouts de hardware en este evento.");
+        return;
+    }
 
     if (itemsCheckoutSalida.length === 0) {
         alert("⚠️ La lista de equipos a salir está vacía. Carga un kit o inyecta hardware.");

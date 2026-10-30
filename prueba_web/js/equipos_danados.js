@@ -1233,6 +1233,24 @@ async function cargarChatTicketDesdeHistorial(folioTicket, codId) {
     cargarChatTaller(folioTicket, codId);
 }
 
+function obtenerUsuarioActualSeguro() {
+    if (typeof usuarioLogueado !== 'undefined' && usuarioLogueado && usuarioLogueado.id_empleado) {
+        return usuarioLogueado;
+    }
+    if (typeof chatState !== 'undefined' && chatState && chatState.usuario && chatState.usuario.id_empleado) {
+        return chatState.usuario;
+    }
+    try {
+        const u = JSON.parse(localStorage.getItem("vpro_chat_usuario") || "{}");
+        if (u && u.id_empleado) return u;
+    } catch(e) {}
+    try {
+        const u2 = JSON.parse(localStorage.getItem("usuario") || "{}");
+        if (u2 && u2.id_empleado) return u2;
+    } catch(e) {}
+    return { id_empleado: "201", nombre: "Cuauhtémoc Rivera Agúndez" };
+}
+
 let ultimoEnvioTyping = 0;
 function alTeclearMensajeChatTaller() {
     const ahora = Date.now();
@@ -1242,8 +1260,9 @@ function alTeclearMensajeChatTaller() {
     const ticket = chatTallerActivo.ticket;
     if (!ticket || chatTallerActivo.estaCerrado) return;
 
-    const idAutor = String(window.usuarioLogueado?.id_empleado || "201").trim();
-    const nomAutor = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
+    const uAct = obtenerUsuarioActualSeguro();
+    const idAutor = String(uAct.id_empleado || "201").trim();
+    const nomAutor = String(uAct.nombre_completo || uAct.nombre || "Técnico Taller").trim();
 
     fetch(`${API_URL}/api/inventario/mantenimiento/chat/escribiendo`, {
         method: "POST",
@@ -1395,51 +1414,76 @@ function renderizarMensajesChatTaller(mensajes) {
         return;
     }
 
-    const miId = String(window.usuarioLogueado?.id_empleado || "201").trim();
+    const uAct = obtenerUsuarioActualSeguro();
+    const miId = String(uAct.id_empleado || "201").trim();
+    const repIdTicket = String(chatTallerActivo.reportanteId || "").trim();
 
     lista.innerHTML = mensajes.map(m => {
         const idAutor = String(m.id_empleado || "").trim();
         const rol = String(m.rol_autor || "OPERATIVO").toUpperCase();
         const texto = escaparHTMLSeguro(m.mensaje || "");
-        const fechaHora = m.fecha_hora ? String(m.fecha_hora).substring(11, 16) : "";
+        const nombre = escaparHTMLSeguro(m.nombre_autor || "Usuario");
+        
+        // Formatear hora: viene formateada en Culiacán (America/Mazatlan) ej: "2026-10-30 12:24 PM"
+        let horaCuliacan = "";
+        if (m.fecha_hora) {
+            const strF = String(m.fecha_hora).trim();
+            horaCuliacan = strF.length > 11 ? strF.substring(11) : strF;
+        }
 
-        // Mensaje del Sistema / Cierre
+        // 1. Mensaje del Sistema / Cierre
         if (rol === "SISTEMA" || idAutor === "SISTEMA") {
             return `
-                <div style="display: flex; justify-content: center; margin: 6px 0;">
-                    <div style="background: #f1f5f9; border: 1px solid #e2e8f0; color: #334155; font-size: 11px; padding: 5px 12px; border-radius: 14px; max-width: 92%; text-align: center; line-height: 1.35;">
+                <div style="display: flex; justify-content: center; margin: 8px 0;">
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; font-size: 11px; padding: 6px 14px; border-radius: 14px; max-width: 92%; text-align: center; line-height: 1.35; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
                         <i class="ph ph-lock-key" style="color: #64748b; margin-right: 4px;"></i>${texto}
                     </div>
                 </div>
             `;
         }
 
-        // Mensaje Propio (Derecha)
-        const esMio = (idAutor === miId);
-        if (esMio) {
+        // 2. Determinar si es del REPORTANTE (Verde • Izquierda) o del TALLER (Azul • Derecha)
+        // Se considera REPORTANTE si:
+        // - El autor coincide con el ID que reportó la falla del ticket
+        // - O su rol registrado es REPORTANTE
+        // - O quien lo ve es el técnico (201/202) y el autor no es 201/202
+        const esReportante = (repIdTicket && idAutor === repIdTicket) || 
+                             rol.includes("REPORT") || 
+                             (idAutor !== "201" && idAutor !== "202" && idAutor !== miId);
+
+        if (esReportante) {
+            // ========================================================
+            // 🟢 MENSAJE DEL REPORTANTE (VERDE ESMERALDA • IZQUIERDA)
+            // ========================================================
             return `
-                <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 6px;">
-                    <div style="font-size: 10.5px; color: #64748b; margin-bottom: 2px;">
-                        <b>Tú</b> <span style="font-size: 10px; color: #94a3b8;">(${rol})</span> • ${fechaHora}
+                <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 8px;">
+                    <div style="font-size: 11px; color: #065f46; margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">
+                        <span style="background: #d1fae5; color: #047857; font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 4px; border: 1px solid #a7f3d0;">REPORTÓ ACTIVO</span>
+                        <b style="color: #047857;">${nombre}</b>
+                        <span style="color: #64748b; font-size: 10px;">• ${horaCuliacan}</span>
                     </div>
-                    <div style="background: #2563eb; color: #ffffff; padding: 8px 12px; border-radius: 12px 12px 2px 12px; max-width: 82%; font-size: 12.5px; line-height: 1.35; word-break: break-word; box-shadow: 0 1px 3px rgba(37,99,235,0.18);">
+                    <div style="background: #ecfdf5; color: #064e3b; border: 1px solid #10b981; padding: 8px 13px; border-radius: 12px 12px 12px 2px; max-width: 82%; font-size: 13px; line-height: 1.35; word-break: break-word; box-shadow: 0 1px 3px rgba(16,185,129,0.12);">
+                        ${texto}
+                    </div>
+                </div>
+            `;
+        } else {
+            // ========================================================
+            // 🔵 MENSAJE DEL TALLER / TÉCNICO (AZUL VPRO • DERECHA)
+            // ========================================================
+            return `
+                <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 8px;">
+                    <div style="font-size: 11px; color: #1e40af; margin-bottom: 3px; display: flex; align-items: center; gap: 5px;">
+                        <span style="color: #64748b; font-size: 10px;">${horaCuliacan} •</span>
+                        <b style="color: #1d4ed8;">${nombre}</b>
+                        <span style="background: #dbeafe; color: #1d4ed8; font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 4px; border: 1px solid #bfdbfe;">TALLER VPRO</span>
+                    </div>
+                    <div style="background: #2563eb; color: #ffffff; padding: 8px 13px; border-radius: 12px 12px 2px 12px; max-width: 82%; font-size: 13px; line-height: 1.35; word-break: break-word; box-shadow: 0 1px 3px rgba(37,99,235,0.2);">
                         ${texto}
                     </div>
                 </div>
             `;
         }
-
-        // Mensaje del Compañero / Reportante (Izquierda)
-        return `
-            <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 6px;">
-                <div style="font-size: 10.5px; color: #64748b; margin-bottom: 2px;">
-                    <b style="color: #0284c7;">${escaparHTMLSeguro(m.nombre_autor || 'Compañero')}</b> <span style="font-size: 10px; color: #94a3b8;">(${rol})</span> • ${fechaHora}
-                </div>
-                <div style="background: #ffffff; color: #0f172a; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 12px 12px 12px 2px; max-width: 82%; font-size: 12.5px; line-height: 1.35; word-break: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                    ${texto}
-                </div>
-            </div>
-        `;
     }).join("");
 
     // Auto-scroll al fondo
@@ -1457,10 +1501,19 @@ async function enviarMensajeChatTaller(event) {
 
     if (!texto || !chatTallerActivo.ticket) return;
 
-    const miId = String(window.usuarioLogueado?.id_empleado || "201").trim();
-    const miNombre = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
-    const esTecnico = (miId === "201" || miId === "202");
-    const rolAutor = esTecnico ? "SUPERVISOR TALLER" : "REPORTANTE";
+    const uAct = obtenerUsuarioActualSeguro();
+    const miId = String(uAct.id_empleado || "201").trim();
+    const miNombre = String(uAct.nombre_completo || uAct.nombre || "Técnico Taller").trim();
+    const repIdTicket = String(chatTallerActivo.reportanteId || "").trim();
+
+    // Si quien escribe es quien reportó este ticket, su rol es REPORTANTE.
+    // De lo contrario, si es 201 o 202 es SUPERVISOR TALLER.
+    let rolAutor = "TÉCNICO TALLER";
+    if (repIdTicket && miId === repIdTicket) {
+        rolAutor = "REPORTANTE";
+    } else if (miId === "201" || miId === "202") {
+        rolAutor = "SUPERVISOR TALLER";
+    }
 
     if (input) input.disabled = true;
     if (btn) btn.disabled = true;

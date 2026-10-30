@@ -2693,7 +2693,7 @@ def _sellar_chat_taller(cursor, num_servicio: str, cerrador_nombre: str = "TÉCN
 
         cursor.execute("""
             SELECT id, num_servicio, codigo_equipo, id_empleado, nombre_autor, rol_autor, mensaje, adjunto_url, 
-                   to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') as fecha_hora
+                   to_char(fecha_hora AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') as fecha_hora
             FROM public.chat_taller_mensajes
             WHERE num_servicio = %s
             ORDER BY fecha_hora ASC, id ASC;
@@ -2715,7 +2715,7 @@ def _sellar_chat_taller(cursor, num_servicio: str, cerrador_nombre: str = "TÉCN
 
             cursor.execute("""
                 SELECT id, num_servicio, codigo_equipo, id_empleado, nombre_autor, rol_autor, mensaje, adjunto_url, 
-                       to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') as fecha_hora
+                       to_char(fecha_hora AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') as fecha_hora
                 FROM public.chat_taller_mensajes
                 WHERE num_servicio = %s
                 ORDER BY fecha_hora ASC, id ASC;
@@ -2826,7 +2826,7 @@ def obtener_chat_taller(num_servicio: str, id_lector: Optional[str] = None):
                     rol_autor,
                     mensaje,
                     adjunto_url,
-                    to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS fecha_hora
+                    to_char(fecha_hora AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') AS fecha_hora
                 FROM public.chat_taller_mensajes
                 WHERE num_servicio = %s
                 ORDER BY fecha_hora ASC, id ASC;
@@ -2923,7 +2923,7 @@ def enviar_mensaje_chat_taller(payload: dict):
                 (num_servicio, codigo_equipo, id_empleado, nombre_autor, rol_autor, mensaje, adjunto_url)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id, num_servicio, codigo_equipo, id_empleado, nombre_autor, rol_autor, mensaje, adjunto_url,
-                          to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') AS fecha_hora;
+                          to_char(fecha_hora AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') AS fecha_hora;
             """, (
                 num_servicio,
                 codigo_equipo,

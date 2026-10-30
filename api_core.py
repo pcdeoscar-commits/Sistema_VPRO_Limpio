@@ -1,118 +1,120 @@
-"""
-🎬 VPRO SYSTEM - BACKEND CORE API ENGINE
-Motor central unificado refactorizado bajo arquitectura modular FastAPI con Piloto Automático de Asistencias.
-"""
-
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-
-from core.config import (
-    CORS_ORIGINS, 
-    FOTOS_EQUIPOS_DIR,
-    FOTOS_PERSONAL_DIR, 
-    DIR_EVIDENCIAS_REAL,
-    FOTOS_EVENTOS_DIR
-)
-
-# 3️⃣ SERVIR ARCHIVOS ESTÁTICOS (FOTOGRAFÍAS)
-
-from core.scheduler import init_scheduler, shutdown_scheduler
-
-# Exportaciones para compatibilidad retroactiva
-from core.database import (
-    get_db_connection, get_db_cursor,
-    engine_autos,
-    engine_eventos,
-    engine_personal,
-    engine_clientes,
-    engine_inventario,
-    engine_proveedores
-)
-from core.security import verificar_password, encriptar_password
-from core.utils import safe_decode_hex, reparar_mojibake
-
-# Importación de Routers Modulares
-from routers import (
-    auth,
-    asistencia,
-    eventos,
-    checkout,
-    inventario,
-    gastos,
-    empleados,
-    clientes,
-    proveedores,
-    autos,
-    incidencias,
-    reuniones,
-    dashboard,
-    rh,
-    cronogramas,
-    transferencias,
-    cotizaciones,
-    chat_op,
-    chat_admin
-)
-
-# 🔄 CICLO DE VIDA DE LA APLICACIÓN (Lifespan Context Manager)
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Inicio: Arrancar el scheduler en segundo plano
-    init_scheduler()
-    yield
-    # Apagado: Detener el scheduler limpiamente
-    shutdown_scheduler()
-
-# 1️⃣ INICIALIZACIÓN DE FASTAPI
-app = FastAPI(
-    title="🎬 VPRO Core API Engine",
-    description="Motor central unificado con arquitectura modular y Piloto Automático de Asistencias.",
-    version="8.1.0",
-    lifespan=lifespan
-)
-
-# 2️⃣ CONFIGURACIÓN DE SEGURIDAD (CORS)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# 3️⃣ MONTAJE DE DIRECTORIOS ESTÁTICOS
-app.mount("/fotos", StaticFiles(directory=str(FOTOS_PERSONAL_DIR)), name="fotos")
-app.mount("/Fotos_de_equipos", StaticFiles(directory=str(FOTOS_EQUIPOS_DIR)), name="fotos_equipos")
-app.mount("/Fotos_de_eventos", StaticFiles(directory=str(FOTOS_EVENTOS_DIR)), name="fotos_eventos")
-app.mount("/evidencias_web", StaticFiles(directory=str(DIR_EVIDENCIAS_REAL)), name="evidencias")
-
-# 4️⃣ REGISTRO DE ROUTERS MODULARES
-app.include_router(auth.router)
-app.include_router(asistencia.router)
-app.include_router(eventos.router)
-app.include_router(checkout.router)
-app.include_router(inventario.router)
-app.include_router(gastos.router)
-app.include_router(empleados.router)
-app.include_router(clientes.router)
-app.include_router(proveedores.router)
-app.include_router(autos.router)
-app.include_router(incidencias.router)
-app.include_router(reuniones.router)
-app.include_router(dashboard.router)
-app.include_router(rh.router)
-app.include_router(cronogramas.router)
-app.include_router(transferencias.router)
-app.include_router(cotizaciones.router)
-app.include_router(chat_op.router)
-app.include_router(chat_admin.router)
-
-@app.get("/health", tags=["Sistema"])
-def health_check():
-    """Endpoint de verificación de salud del sistema."""
-    return {"status": "ONLINE", "service": "VPRO Core API Engine", "version": "8.2.0"}
-
-# 5️⃣ MONTAJE DEL FRONTEND WEB INTEGRADO (SPA)
+"""
+🎬 VPRO SYSTEM - BACKEND CORE API ENGINE
+Motor central unificado refactorizado bajo arquitectura modular FastAPI con Piloto Automático de Asistencias.
+"""
+
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from core.config import (
+    CORS_ORIGINS, 
+    FOTOS_EQUIPOS_DIR,
+    FOTOS_PERSONAL_DIR, 
+    DIR_EVIDENCIAS_REAL,
+    FOTOS_EVENTOS_DIR
+)
+
+# 3️⃣ SERVIR ARCHIVOS ESTÁTICOS (FOTOGRAFÍAS)
+
+from core.scheduler import init_scheduler, shutdown_scheduler
+from core.migrations import aplicar_migraciones_automaticas
+
+# Exportaciones para compatibilidad retroactiva
+from core.database import (
+    get_db_connection, get_db_cursor,
+    engine_autos,
+    engine_eventos,
+    engine_personal,
+    engine_clientes,
+    engine_inventario,
+    engine_proveedores
+)
+from core.security import verificar_password, encriptar_password
+from core.utils import safe_decode_hex, reparar_mojibake
+
+# Importación de Routers Modulares
+from routers import (
+    auth,
+    asistencia,
+    eventos,
+    checkout,
+    inventario,
+    gastos,
+    empleados,
+    clientes,
+    proveedores,
+    autos,
+    incidencias,
+    reuniones,
+    dashboard,
+    rh,
+    cronogramas,
+    transferencias,
+    cotizaciones,
+    chat_op,
+    chat_admin
+)
+
+# 🔄 CICLO DE VIDA DE LA APLICACIÓN (Lifespan Context Manager)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Inicio: Sincronizar esquemas de BD y arrancar el scheduler en segundo plano
+    aplicar_migraciones_automaticas()
+    init_scheduler()
+    yield
+    # Apagado: Detener el scheduler limpiamente
+    shutdown_scheduler()
+
+# 1️⃣ INICIALIZACIÓN DE FASTAPI
+app = FastAPI(
+    title="🎬 VPRO Core API Engine",
+    description="Motor central unificado con arquitectura modular y Piloto Automático de Asistencias.",
+    version="8.1.0",
+    lifespan=lifespan
+)
+
+# 2️⃣ CONFIGURACIÓN DE SEGURIDAD (CORS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 3️⃣ MONTAJE DE DIRECTORIOS ESTÁTICOS
+app.mount("/fotos", StaticFiles(directory=str(FOTOS_PERSONAL_DIR)), name="fotos")
+app.mount("/Fotos_de_equipos", StaticFiles(directory=str(FOTOS_EQUIPOS_DIR)), name="fotos_equipos")
+app.mount("/Fotos_de_eventos", StaticFiles(directory=str(FOTOS_EVENTOS_DIR)), name="fotos_eventos")
+app.mount("/evidencias_web", StaticFiles(directory=str(DIR_EVIDENCIAS_REAL)), name="evidencias")
+
+# 4️⃣ REGISTRO DE ROUTERS MODULARES
+app.include_router(auth.router)
+app.include_router(asistencia.router)
+app.include_router(eventos.router)
+app.include_router(checkout.router)
+app.include_router(inventario.router)
+app.include_router(gastos.router)
+app.include_router(empleados.router)
+app.include_router(clientes.router)
+app.include_router(proveedores.router)
+app.include_router(autos.router)
+app.include_router(incidencias.router)
+app.include_router(reuniones.router)
+app.include_router(dashboard.router)
+app.include_router(rh.router)
+app.include_router(cronogramas.router)
+app.include_router(transferencias.router)
+app.include_router(cotizaciones.router)
+app.include_router(chat_op.router)
+app.include_router(chat_admin.router)
+
+@app.get("/health", tags=["Sistema"])
+def health_check():
+    """Endpoint de verificación de salud del sistema."""
+    return {"status": "ONLINE", "service": "VPRO Core API Engine", "version": "8.2.0"}
+
+# 5️⃣ MONTAJE DEL FRONTEND WEB INTEGRADO (SPA)
 app.mount("/", StaticFiles(directory="prueba_web", html=True), name="frontend")

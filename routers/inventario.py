@@ -2894,6 +2894,21 @@ def obtener_chat_taller(num_servicio: str, id_lector: Optional[str] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.delete("/api/inventario/mantenimiento/chat/{num_servicio}/limpiar")
+def limpiar_mensajes_chat_taller(num_servicio: str):
+    """Limpia el historial de chat de un ticket específico para reiniciarlo en blanco."""
+    num_clean = str(num_servicio or "").strip()
+    if not num_clean:
+        raise HTTPException(status_code=400, detail="Falta num_servicio")
+    try:
+        with get_db_cursor("db_inventario", commit=True) as cursor:
+            cursor.execute("DELETE FROM public.chat_taller_mensajes WHERE num_servicio = %s;", (num_clean,))
+            cursor.execute("UPDATE public.reparaciones SET chat_historial = NULL, chat_cerrado = FALSE WHERE num_d_servicio = %s;", (num_clean,))
+        return {"status": "ok", "mensaje": f"Chat de {num_clean} reiniciado exitosamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/api/inventario/mantenimiento/chat/enviar")
 def enviar_mensaje_chat_taller(payload: dict):
     """Envía un mensaje entre el técnico y el reportante en el ticket de taller."""

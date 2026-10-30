@@ -1046,7 +1046,6 @@ let chatTallerActivo = {
     codigoEquipo: null,
     reportanteId: null,
     reportanteNombre: null,
-    modoSimulacionReportante: false,
     estaCerrado: false,
     intervaloPoller: null,
     totalMensajes: 0
@@ -1238,64 +1237,38 @@ function obtenerUsuarioActualSeguro() {
     if (typeof usuarioLogueado !== 'undefined' && usuarioLogueado && usuarioLogueado.id_empleado) {
         return {
             ...usuarioLogueado,
-            nombre_completo: usuarioLogueado.nombre_completo || usuarioLogueado.nombre || "Cuauhtémoc Rivera Agúndez"
+            id_empleado: String(usuarioLogueado.id_empleado).trim(),
+            nombre_completo: usuarioLogueado.nombre_completo || usuarioLogueado.nombre || ""
         };
     }
     if (typeof chatState !== 'undefined' && chatState && chatState.usuario && chatState.usuario.id_empleado) {
         return {
             ...chatState.usuario,
-            nombre_completo: chatState.usuario.nombre_completo || chatState.usuario.nombre || "Cuauhtémoc Rivera Agúndez"
+            id_empleado: String(chatState.usuario.id_empleado).trim(),
+            nombre_completo: chatState.usuario.nombre_completo || chatState.usuario.nombre || ""
         };
     }
     try {
         const u = JSON.parse(localStorage.getItem("vpro_chat_usuario") || "{}");
-        if (u && u.id_empleado) return u;
+        if (u && u.id_empleado) {
+            return {
+                ...u,
+                id_empleado: String(u.id_empleado).trim(),
+                nombre_completo: u.nombre_completo || u.nombre || ""
+            };
+        }
     } catch(e) {}
     try {
         const u2 = JSON.parse(localStorage.getItem("usuario") || "{}");
-        if (u2 && u2.id_empleado) return u2;
+        if (u2 && u2.id_empleado) {
+            return {
+                ...u2,
+                id_empleado: String(u2.id_empleado).trim(),
+                nombre_completo: u2.nombre_completo || u2.nombre || ""
+            };
+        }
     } catch(e) {}
     return { id_empleado: "201", nombre: "Cuauhtémoc Rivera Agúndez", nombre_completo: "Cuauhtémoc Rivera Agúndez" };
-}
-
-function alternarModoSimulacionReportante() {
-    chatTallerActivo.modoSimulacionReportante = !chatTallerActivo.modoSimulacionReportante;
-    actualizarBarraAutorChat();
-}
-
-function actualizarBarraAutorChat() {
-    const lbl = document.getElementById("chat-taller-autor-label");
-    const input = document.getElementById("chat-taller-input-texto");
-    const btn = document.getElementById("btn-toggle-simular-reportante");
-    const repNom = chatTallerActivo.reportanteNombre || "Reportante";
-    const uAct = obtenerUsuarioActualSeguro();
-    let miNombre = (String(uAct.id_empleado || "201").trim() === "201") ? "Cuauhtémoc Rivera Agúndez" : (uAct.nombre_completo || uAct.nombre || "Técnico Taller");
-
-    if (chatTallerActivo.modoSimulacionReportante) {
-        if (lbl) {
-            lbl.style.color = "#047857";
-            lbl.innerText = `${repNom} (Reportó Activo)`;
-        }
-        if (input) input.placeholder = `Escribe respuesta como ${repNom}...`;
-        if (btn) {
-            btn.style.background = "#d1fae5";
-            btn.style.color = "#065f46";
-            btn.style.borderColor = "#10b981";
-            btn.innerHTML = `<i class="ph ph-arrows-left-right"></i> <span>⇄ Cambiar a Técnico (${miNombre.split(" ")[0]})</span>`;
-        }
-    } else {
-        if (lbl) {
-            lbl.style.color = "#1d4ed8";
-            lbl.innerText = `${miNombre} (Taller VPRO)`;
-        }
-        if (input) input.placeholder = `Escribe un mensaje al reportante...`;
-        if (btn) {
-            btn.style.background = "#f1f5f9";
-            btn.style.color = "#475569";
-            btn.style.borderColor = "#cbd5e1";
-            btn.innerHTML = `<i class="ph ph-arrows-left-right"></i> <span>⇄ Responder como Reportante (Prueba)</span>`;
-        }
-    }
 }
 
 let ultimoEnvioTyping = 0;
@@ -1384,9 +1357,7 @@ async function cargarChatTaller(numServicio, codId) {
             if (avisoCerrado) avisoCerrado.style.display = "none";
         }
 
-        // Actualizar barra de autor
-        chatTallerActivo.modoSimulacionReportante = false;
-        if (typeof actualizarBarraAutorChat === "function") actualizarBarraAutorChat();
+
 
         // Render mensajes
         renderizarMensajesChatTaller(data.mensajes || []);
@@ -1459,34 +1430,35 @@ function renderizarMensajesChatTaller(mensajes) {
         lista.innerHTML = `
             <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 35px 12px;">
                 <i class="ph ph-chat-centered-dots" style="font-size: 32px; display: block; margin-bottom: 6px; color: #cbd5e1;"></i>
-                No hay mensajes aún en este ticket. Envía un mensaje para coordinar la revisión del equipo.
+                No hay mensajes aún en este ticket. Envía un mensaje para iniciar la conversación.
             </div>
         `;
         return;
     }
 
-    const uAct = obtenerUsuarioActualSeguro();
-    const miId = String(uAct.id_empleado || "201").trim();
     const repIdTicket = String(chatTallerActivo.reportanteId || "").trim();
-    const repNomTicket = String(chatTallerActivo.reportanteNombre || "").trim();
+    const repNomTicket = String(chatTallerActivo.reportanteNombre || "").trim().toUpperCase();
 
     lista.innerHTML = mensajes.map(m => {
         const idAutor = String(m.id_empleado || "").trim();
         const rol = String(m.rol_autor || "OPERATIVO").toUpperCase();
         const texto = escaparHTMLSeguro(m.mensaje || "");
         
-        // 1. Resolver nombre real oficial (NUNCA mostrar genéricos ni "Tú")
+        // 1. Resolver nombre real oficial
         let nombre = (m.nombre_autor || "").trim();
         if (idAutor === "201") {
             nombre = "Cuauhtémoc Rivera Agúndez";
-        } else if (idAutor === "202" && (rol.includes("TALLER") || rol.includes("SUPERVISOR"))) {
+        } else if (idAutor === "202") {
             nombre = "Edgar Javier Amarillas";
-        } else if (rol.includes("REPORT") || (repIdTicket && idAutor === repIdTicket)) {
-            nombre = repNomTicket || nombre || "Reportante";
         } else if (!nombre || nombre === "Usuario" || nombre === "Técnico Taller") {
-            nombre = (idAutor === "201") ? "Cuauhtémoc Rivera Agúndez" : ((idAutor === "202") ? "Edgar Javier Amarillas" : "Usuario");
+            if (chatTallerActivo.reportanteNombre && (idAutor === repIdTicket || rol.includes("REPORT"))) {
+                nombre = chatTallerActivo.reportanteNombre;
+            } else {
+                nombre = "Usuario";
+            }
         }
         const nombreLimpio = escaparHTMLSeguro(nombre);
+        const nombreUpper = nombre.toUpperCase();
 
         // 2. Formatear hora MZT Mazatlán / Culiacán (12 horas AM/PM)
         let horaMZT = "";
@@ -1507,9 +1479,13 @@ function renderizarMensajesChatTaller(mensajes) {
         }
 
         // 4. Determinar si es del REPORTANTE (Verde • Izquierda) o del TALLER (Azul • Derecha)
+        // Se considera REPORTANTE si:
+        // - El rol registrado es REPORTANTE
+        // - O coincide con el ID que reportó la falla del ticket
+        // - O el nombre del autor coincide con el nombre de quien reportó
         const esReportante = rol.includes("REPORT") || 
-                             (repIdTicket && idAutor === repIdTicket && !rol.includes("TALLER") && !rol.includes("SUPERVISOR")) ||
-                             (idAutor !== "201" && idAutor !== "202");
+                             (repIdTicket && idAutor === repIdTicket) ||
+                             (repNomTicket && (nombreUpper.includes(repNomTicket) || repNomTicket.includes(nombreUpper)));
 
         if (esReportante) {
             // ========================================================
@@ -1562,18 +1538,18 @@ async function enviarMensajeChatTaller(event) {
 
     const uAct = obtenerUsuarioActualSeguro();
     const repIdTicket = String(chatTallerActivo.reportanteId || "").trim();
-    const repNomTicket = String(chatTallerActivo.reportanteNombre || "Reportante").trim();
+    const repNomTicket = String(chatTallerActivo.reportanteNombre || "").trim().toUpperCase();
 
     let miId = String(uAct.id_empleado || "201").trim();
-    let miNombre = (miId === "201") ? "Cuauhtémoc Rivera Agúndez" : ((miId === "202") ? "Edgar Javier Amarillas" : (uAct.nombre_completo || uAct.nombre || "Técnico Taller"));
-    let rolAutor = "SUPERVISOR TALLER";
+    let miNombre = (miId === "201") ? "Cuauhtémoc Rivera Agúndez" : ((miId === "202") ? "Edgar Javier Amarillas" : (uAct.nombre_completo || uAct.nombre || "Usuario"));
+    const miNombreUpper = miNombre.toUpperCase();
 
-    // Si el técnico activó la simulación de respuesta del reportante para pruebas:
-    if (chatTallerActivo.modoSimulacionReportante) {
-        miId = repIdTicket || "REP";
-        miNombre = repNomTicket || "Reportante";
-        rolAutor = "REPORTANTE";
-    } else if (repIdTicket && miId === repIdTicket) {
+    // Determinar rol: si el usuario logueado es quien reportó el equipo, su rol es REPORTANTE
+    let rolAutor = "SUPERVISOR TALLER";
+    const esReportante = (repIdTicket && miId === repIdTicket) ||
+                         (repNomTicket && (miNombreUpper.includes(repNomTicket) || repNomTicket.includes(miNombreUpper)));
+
+    if (esReportante) {
         rolAutor = "REPORTANTE";
     }
 

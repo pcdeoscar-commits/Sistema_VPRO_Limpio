@@ -67,6 +67,16 @@ def aplicar_migraciones_automaticas():
                 CREATE INDEX IF NOT EXISTS idx_chat_taller_equipo ON public.chat_taller_mensajes (codigo_equipo, fecha_hora ASC);
             """)
 
+                        # 6. Limpieza de mensajes de prueba previos para reiniciar chat limpio
+            cursor.execute("""
+                DELETE FROM public.chat_taller_mensajes 
+                WHERE num_servicio LIKE '%1790190469%' 
+                   OR mensaje IN ('9', '10', 'Que crees?', 'grax', 'Ya quedó?', 'a ver', 'Esta', 'jsdhkjsdh', 'ads', 'Weps', 'nop', 'hggh');
+                UPDATE public.reparaciones 
+                SET chat_historial = NULL, chat_cerrado = FALSE 
+                WHERE num_d_servicio LIKE '%1790190469%';
+            """)
+
             logger.info("[Auto-Migraciones] Esquemas de db_inventario, taller y chat sincronizados al 100%.")
     except Exception as e:
         logger.warning(f"[Auto-Migraciones] Advertencia al sincronizar esquemas: {e}")

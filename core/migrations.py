@@ -78,5 +78,48 @@ def aplicar_migraciones_automaticas():
             """)
 
             logger.info("[Auto-Migraciones] Esquemas de db_inventario, taller y chat sincronizados al 100%.")
+
+        # 7. Limpieza definitiva de OP-42 y resincronización de secuencia en db_eventos
+        try:
+            with get_db_cursor("db_eventos", commit=True) as cursor_ev:
+                cursor_ev.execute("""
+                    DELETE FROM public.checkouts_detalle 
+                    WHERE id_maestro IN (SELECT id_maestro FROM public.checkouts_maestro WHERE folio_op = 42);
+
+                    DELETE FROM public.checkouts_maestro WHERE folio_op = 42;
+
+                    DELETE FROM public.chat_op_mensajes WHERE id_evento = 42 OR folio IN ('42', 'OP-42');
+
+                    DELETE FROM public.asistencia_locacion WHERE id_evento = 42;
+
+                    DELETE FROM public.informes_gastos_detalle 
+                    WHERE id_informe IN (SELECT id_informe FROM public.informes_gastos_maestro WHERE folio_vpro = 42);
+
+                    DELETE FROM public.informes_gastos_maestro WHERE folio_vpro = 42;
+
+                    UPDATE public.reuniones_previas 
+                    SET folio_op_generado = NULL, estatus_proyecto = 'PENDIENTE' 
+                    WHERE folio_op_generado = 42;
+
+                    DELETE FROM public.eventos WHERE id_evento = 42 OR folio = '42';
+
+                    SELECT setval('public.eventos_id_evento_seq', (SELECT COALESCE(MAX(id_evento), 1) FROM public.eventos));
+                """)
+                logger.info("[Auto-Migraciones] OP-42 purgada de db_eventos y secuencia resincronizada con éxito.")
+        except Exception as e_ev:
+            logger.warning(f"[Auto-Migraciones] Nota en purga OP-42: {e_ev}")
+
+        # 8. Reindexar tablas de eventos de forma segura
+        try:
+            with get_db_cursor("db_eventos", commit=False) as cur_reindex:
+                cur_reindex.connection.autocommit = True
+                cur_reindex.execute("REINDEX TABLE public.eventos;")
+                cur_reindex.execute("REINDEX TABLE public.checkouts_maestro;")
+                cur_reindex.execute("REINDEX TABLE public.checkouts_detalle;")
+                cur_reindex.connection.autocommit = False
+                logger.info("[Auto-Migraciones] Tablas de eventos reindexadas al 100%.")
+        except Exception as e_reindex:
+            logger.warning(f"[Auto-Migraciones] Reindex opcional: {e_reindex}")
+
     except Exception as e:
         logger.warning(f"[Auto-Migraciones] Advertencia al sincronizar esquemas: {e}")

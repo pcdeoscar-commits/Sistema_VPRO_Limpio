@@ -738,18 +738,62 @@ def eliminar_op_por_completo(id_evento: int):
         except Exception as e_c:
             print(f"Nota al desvincular cronogramas: {e_c}")
 
-        # 2. Eliminar mensajes de chat asociados
+        # 2. Eliminar checkouts vinculados (detalle y maestro)
+        try:
+            with engine_eventos.begin() as conn_chk:
+                conn_chk.execute(text("""
+                    DELETE FROM public.checkouts_detalle 
+                    WHERE id_maestro IN (SELECT id_maestro FROM public.checkouts_maestro WHERE folio_op = :id);
+                    DELETE FROM public.checkouts_maestro WHERE folio_op = :id;
+                """), {"id": id_evento})
+        except Exception as e_chk:
+            print(f"Nota al borrar checkouts de OP: {e_chk}")
+
+        # 3. Eliminar informes de gastos asociados si existen
+        try:
+            with engine_eventos.begin() as conn_g:
+                conn_g.execute(text("""
+                    DELETE FROM public.informes_gastos_detalle 
+                    WHERE id_informe IN (SELECT id_informe FROM public.informes_gastos_maestro WHERE folio_vpro = :id);
+                    DELETE FROM public.informes_gastos_maestro WHERE folio_vpro = :id;
+                """), {"id": id_evento})
+        except Exception as e_g:
+            print(f"Nota al borrar gastos de OP: {e_g}")
+
+        # 4. Desvincular reuniones previas
+        try:
+            with engine_eventos.begin() as conn_r:
+                conn_r.execute(text("UPDATE public.reuniones_previas SET folio_op_generado = NULL, estatus_proyecto = 'PENDIENTE' WHERE folio_op_generado = :id"), {"id": id_evento})
+        except Exception as e_r:
+            print(f"Nota al desvincular reuniones previas: {e_r}")
+
+        # 5. Eliminar mensajes de chat asociados
         try:
             with engine_eventos.begin() as conn_chat:
-                conn_chat.execute(text("DELETE FROM public.chat_op_mensajes WHERE id_evento = :id"), {"id": id_evento})
+                conn_chat.execute(text("DELETE FROM public.chat_op_mensajes WHERE id_evento = :id OR folio = :folio"), {"id": id_evento, "folio": str(folio_val)})
         except Exception as e_ch:
             print(f"Nota al borrar chat de OP: {e_ch}")
 
-        # 3. Eliminar el registro del evento
+        # 6. Eliminar el registro del evento
         with engine_eventos.begin() as conn_ev:
             res = conn_ev.execute(text("DELETE FROM public.eventos WHERE id_evento = :id"), {"id": id_evento})
             if res.rowcount == 0:
                 raise HTTPException(status_code=404, detail="No se encontró la OP especificada al borrar.")
+
+        # 7. Sincronizar secuencia de autoincremento
+        try:
+            with engine_eventos.begin() as conn_seq:
+                conn_seq.execute(text("SELECT setval('public.eventos_id_evento_seq', (SELECT COALESCE(MAX(id_evento), 1) FROM public.eventos))"))
+        except Exception as e_s:
+            print(f"Nota al sincronizar secuencia: {e_s}")
+
+        # 8. Reindexar tabla eventos
+        try:
+            with engine_eventos.connect().execution_options(isolation_level="AUTOCOMMIT") as conn_rx:
+                conn_rx.execute(text("REINDEX TABLE public.eventos;"))
+                conn_rx.execute(text("REINDEX TABLE public.checkouts_maestro;"))
+        except Exception as e_rx:
+            print(f"Nota al reindexar: {e_rx}")
 
         return {"status": "SUCCESS", "mensaje": f"OP-{id_evento} eliminada por completo y de forma limpia."}
     except HTTPException:

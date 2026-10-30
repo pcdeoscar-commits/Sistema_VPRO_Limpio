@@ -1158,7 +1158,7 @@
             </div>
     
             <div class="nav-item" data-roles="ADMIN,PRODUCCION,ALMACEN,COORDINADOR" onclick="cambiarVista('vista-danados')">
-                <div class="nav-label"><i class="ph ph-flag"></i> <span class="nav-text">Equipos con Daño</span></div>
+                <div class="nav-label"><i class="ph ph-wrench"></i> <span class="nav-text">Mantenimiento & Taller</span></div>
                 <span class="nav-badge alert" id="badge-danados">0</span>
             </div>
             <div class="nav-item" id="nav-item-gastos" data-roles="ADMIN,PRODUCTOR" onclick="cambiarVista('vista-gastos')">
@@ -1770,225 +1770,348 @@
             </div>
 
             <!-- 📦 CAJA 4: EQUIPOS CON DAÑO -->
-            <div id="vista-danados" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1250px; margin: 0 auto;">
+            <div id="vista-danados" class="vista-modulo" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 32px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.65); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 8px 24px -4px rgba(0, 0, 0, 0.12); width: 100%; max-width: 1320px; margin: 0 auto;">
                 
-                <!-- Encabezado -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">
+                <!-- Encabezado Institucional -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; flex-wrap: wrap; gap: 12px;">
                     <div>
-                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                            <i class="ph ph-flag" style="color: #ef4444;"></i> Control de Equipos y Hardware en Taller / Falla
+                        <h2 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 800;">
+                            <i class="ph ph-wrench" style="color: #2563eb;"></i> Centro de Mantenimiento & Taller VPRO
                         </h2>
-                        <p style="color: var(--text-muted); font-size: 13.5px; margin: 4px 0 0 0;">Consola unificada con seguimiento de tickets activos en la tabla de reparaciones y expediente clínico.</p>
+                        <p style="color: var(--text-muted); font-size: 13.5px; margin: 4px 0 0 0;">
+                            Gestión integral de activos estilo Odoo: Tablero Kanban de Taller, Planes Preventivos, Protocolo QC y Reportes Ejecutivos.
+                        </p>
                     </div>
-                    <button onclick="cargarModuloDanados()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500;">
-                        <i class="ph ph-arrows-clockwise"></i> Actualizar
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button onclick="cargarModuloDanados()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 9px 18px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #334155; transition: all 0.2s;">
+                            <i class="ph ph-arrows-clockwise" style="font-size: 16px;"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Barra de Pestañas Superiores (Tabs) -->
+                <div style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 2px; flex-wrap: wrap;">
+                    <button id="btn-tab-mant-kanban" onclick="cambiarPestanaMantenimiento('kanban')" 
+                        style="background: white; border: none; border-bottom: 3px solid #2563eb; padding: 10px 20px; font-size: 13.5px; font-weight: 700; color: #1e40af; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: 6px 6px 0 0;">
+                        <i class="ph ph-kanban"></i> 1. Tablero Kanban de Taller
+                        <span id="badge-kanban-total" style="background: #dbeafe; color: #1e40af; font-size: 11px; padding: 2px 7px; border-radius: 999px; font-weight: 800;">0</span>
+                    </button>
+
+                    <button id="btn-tab-mant-preventivo" onclick="cambiarPestanaMantenimiento('preventivo')" 
+                        style="background: transparent; border: none; border-bottom: 3px solid transparent; padding: 10px 20px; font-size: 13.5px; font-weight: 600; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: 6px 6px 0 0;">
+                        <i class="ph ph-calendar-check"></i> 2. Mantenimiento Preventivo & Radar
+                        <span id="badge-preventivo-total" style="background: #f1f5f9; color: #64748b; font-size: 11px; padding: 2px 7px; border-radius: 999px; font-weight: 800;">0</span>
+                    </button>
+
+                    <button id="btn-tab-mant-reportes" onclick="cambiarPestanaMantenimiento('reportes')" 
+                        style="background: transparent; border: none; border-bottom: 3px solid transparent; padding: 10px 20px; font-size: 13.5px; font-weight: 600; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: 6px 6px 0 0;">
+                        <i class="ph ph-lock-key" id="icono-candado-reportes" style="color: #f59e0b;"></i> 3. Reportes, Costos & Expedientes
+                        <span id="badge-reportes-candado" style="background: #fef3c7; color: #92400e; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 700;">201 / 202</span>
                     </button>
                 </div>
 
-                <!-- MATRIZ UNIFICADA DE RADAR Y REPARACIONES ACTIVAS -->
-                <div id="subvista-danados-radar">
+                <!-- ========================================================================= -->
+                <!-- PESTAÑA 1: TABLERO KANBAN DE TALLER -->
+                <!-- ========================================================================= -->
+                <div id="subvista-mant-kanban">
                     
-                    <!-- Formulario Desplegable: Registrar Reporte Directo -->
-                    <details style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 24px; padding: 16px 20px;">
-                        <summary style="font-weight: 700; color: #0f172a; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14.5px; user-select: none;">
-                            <span>🛠️ REGISTRAR REPORTE DIRECTO DE OFICINA / MANTENIMIENTO INTERNO</span>
-                        </summary>
-                        <div style="margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
-                            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 14px;">
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">🔍 Teclea o selecciona el Equipo / Activo:</label>
-                                    <div id="contenedor-input-directo" style="position: relative;">
-                                        <div style="display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 10px;">
-                                            <input type="text" id="input-danos-equipo-directo" 
-                                                placeholder="🔍 Teclea nombre o código del equipo..." 
-                                                autocomplete="off"
-                                                oninput="filtrarSugerenciasDirecto(this.value)" 
-                                                onfocus="activarSugerenciasDirecto()"
-                                                onkeydown="manejarKeydownSugerenciasDirecto(event)"
-                                                style="width: 100%; border: none; outline: none; padding: 9px 0; font-size: 13px; background: transparent; font-family: inherit;">
-                                            <button type="button" id="btn-limpiar-busqueda-directo" onclick="limpiarBusquedaDirecto()" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 2px;">
-                                                <i class="ph ph-x-circle"></i>
-                                            </button>
-                                        </div>
-                                        <div id="sugerencias-directo-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 280px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 10px 24px rgba(0,0,0,0.12); z-index: 1050;">
-                                        </div>
-                                        <input type="hidden" id="danos-sel-equipo-directo" value="">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">🩺 Tipo de Evento:</label>
-                                    <select id="danos-tipo-evento" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
-                                        <option value="MANTENIMIENTO_TÉCNICO">Mantenimiento Técnico</option>
-                                        <option value="FALLA_OPERATIVA">Falla Operativa</option>
-                                        <option value="DAÑO_FÍSICO_OFICINA">Daño Físico Oficina</option>
-                                        <option value="RESPALDO_SISTEMAS">Respaldo Sistemas</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📊 Estado Inicial del Ticket:</label>
-                                    <select id="danos-estado-inicial" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
-                                        <option value="PENDIENTE">PENDIENTE</option>
-                                        <option value="EN TALLER">EN TALLER</option>
-                                        <option value="DAÑADO">DAÑADO</option>
-                                        <option value="BAJA">BAJA</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">💰 Costo Estimado Reparación ($):</label>
-                                    <input type="number" id="danos-costo-estimado" min="0" step="50" value="0.00" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
-                                </div>
-                            </div>
-                            <div style="margin-bottom: 14px;">
-                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📝 Diagnóstico / Detalle del Daño:</label>
-                                <textarea id="danos-txt-detalle" placeholder="Ej. El aire acondicionado tira agua sobre la mesa de trabajo o la PC de edición no manda señal de video..." rows="3" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;"></textarea>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: flex-end; margin-bottom: 14px;">
-                                <div>
-                                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📸 Adjuntar Evidencia Fotográfica (Opcional):</label>
-                                    <input type="file" id="danos-input-foto" accept="image/*" style="font-size: 12px;">
-                                </div>
-                                <button type="button" onclick="guardarReporteDirectoDanado()" style="background: var(--accent-color); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer;">
-                                    💾 REGISTRAR TICKET EN POSTGRES
-                                </button>
-                            </div>
+                    <!-- Barra de Acciones y Filtros del Kanban -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; background: #f8fafc; padding: 14px 18px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <button type="button" onclick="alternarFormularioReporteDirecto()" style="background: #2563eb; color: white; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
+                                <i class="ph ph-plus-circle" style="font-size: 16px;"></i> Reportar Daño / Falla Directa
+                            </button>
+                            <span style="font-size: 12.5px; color: #64748b;">Mueve los tickets entre etapas para dar seguimiento a cada reparación.</span>
                         </div>
-                    </details>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="text" id="buscar-kanban-filtro" oninput="filtrarKanbanEnVivo(this.value)" placeholder="🔍 Buscar ticket, equipo, reportó..." style="padding: 7px 14px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; width: 260px; outline: none; background: white;">
+                        </div>
+                    </div>
 
-                    <!-- Filtros de Auditoría -->
-                    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Desde:</label>
-                            <input type="date" id="filtro-danos-desde" onchange="aplicarFiltrosDanados()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                    <!-- Formulario Desplegable: Registrar Reporte Directo -->
+                    <div id="contenedor-form-reporte-directo" style="display: none; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; margin-bottom: 24px; padding: 20px 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
+                            <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 15px;">
+                                <i class="ph ph-wrench" style="color: #2563eb;"></i> Levantar Orden de Mantenimiento / Reporte de Falla
+                            </h4>
+                            <button type="button" onclick="alternarFormularioReporteDirecto()" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;">&times;</button>
                         </div>
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Hasta:</label>
-                            <input type="date" id="filtro-danos-hasta" onchange="aplicarFiltrosDanados()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 14px;">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">🔍 Teclea o selecciona el Equipo / Activo:</label>
+                                <div id="contenedor-input-directo" style="position: relative;">
+                                    <div style="display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 10px;">
+                                        <input type="text" id="input-danos-equipo-directo" 
+                                            placeholder="🔍 Teclea nombre o código del equipo..." 
+                                            autocomplete="off"
+                                            oninput="filtrarSugerenciasDirecto(this.value)" 
+                                            onfocus="activarSugerenciasDirecto()"
+                                            onkeydown="manejarKeydownSugerenciasDirecto(event)"
+                                            style="width: 100%; border: none; outline: none; padding: 9px 0; font-size: 13px; background: transparent; font-family: inherit;">
+                                        <button type="button" id="btn-limpiar-busqueda-directo" onclick="limpiarBusquedaDirecto()" style="display: none; background: none; border: none; color: #94a3b8; cursor: pointer; padding: 2px;">
+                                            <i class="ph ph-x-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div id="sugerencias-directo-dropdown" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 280px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 10px 24px rgba(0,0,0,0.12); z-index: 1050;"></div>
+                                    <input type="hidden" id="danos-sel-equipo-directo" value="">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">🩺 Tipo de Evento:</label>
+                                <select id="danos-tipo-evento" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    <option value="MANTENIMIENTO_TÉCNICO">Mantenimiento Técnico / Falla</option>
+                                    <option value="FALLA_OPERATIVA">Falla Operativa en Evento</option>
+                                    <option value="DAÑO_FÍSICO_OFICINA">Daño Físico / Traslado</option>
+                                    <option value="RESPALDO_SISTEMAS">Revisión Preventiva de Rutina</option>
+                                </select>
+                            </div>
                         </div>
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Departamento:</label>
-                            <select id="filtro-danos-depto" onchange="aplicarFiltrosDanados()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; min-width: 150px; font-size: 13px;">
-                                <option value="Todos">Todos</option>
-                                <option value="ADMINISTRACION">ADMINISTRACION</option>
-                                <option value="EDICION">EDICION</option>
-                                <option value="PRODUCCION">PRODUCCION</option>
-                                <option value="SISTEMAS">SISTEMAS</option>
-                                <option value="VENTAS">VENTAS</option>
-                            </select>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📊 Etapa Inicial:</label>
+                                <select id="danos-estado-inicial" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white;">
+                                    <option value="DIAGNOSTICO">📥 Diagnóstico / Por Revisar</option>
+                                    <option value="ESPERA_REFACCION">⏳ Esperando Refacción / Proveedor</option>
+                                    <option value="EN_REPARACION">🔧 En Reparación Activa</option>
+                                    <option value="CONTROL_CALIDAD">🛡️ Control de Calidad</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">💰 Costo Estimado ($):</label>
+                                <input type="number" id="danos-costo-estimado" value="0.00" step="50" min="0" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                            </div>
                         </div>
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Reportante / Responsable:</label>
-                            <select id="filtro-danos-reportante" onchange="aplicarFiltrosDanados()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; min-width: 180px; font-size: 13px;">
-                                <option value="Todos">Todos</option>
-                            </select>
+                        <div style="margin-bottom: 14px;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">📝 Diagnóstico / Detalle del Daño o Falla:</label>
+                            <textarea id="danos-txt-detalle" placeholder="Describe los síntomas observados o el problema detectado..." rows="3" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;"></textarea>
                         </div>
-                        <button onclick="resetearFiltrosDanados()" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;">
-                            Resetear
+                        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                            <button type="button" onclick="alternarFormularioReporteDirecto()" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                                Cancelar
+                            </button>
+                            <button type="button" onclick="guardarReporteDirectoDanado()" style="background: #2563eb; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                <i class="ph ph-floppy-disk"></i> Registrar Ticket en Taller
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TABLERO KANBAN: 4 COLUMNAS -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; align-items: flex-start; min-height: 520px;">
+                        
+                        <!-- Columna 1: Diagnóstico -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 4px solid #3b82f6; border-radius: 12px; padding: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+                                <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: #1e3a8a;">
+                                    <i class="ph ph-magnifying-glass"></i> 1. DIAGNÓSTICO
+                                </div>
+                                <span id="col-count-diagnostico" style="background: #dbeafe; color: #1d4ed8; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">0</span>
+                            </div>
+                            <div id="kanban-col-diagnostico" style="display: flex; flex-direction: column; gap: 12px; min-height: 200px;">
+                                <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 20px 0;">Cargando...</div>
+                            </div>
+                        </div>
+
+                        <!-- Columna 2: Espera Refacción -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 4px solid #f59e0b; border-radius: 12px; padding: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+                                <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: #92400e;">
+                                    <i class="ph ph-hourglass-high"></i> 2. ESPERA REFACCIÓN
+                                </div>
+                                <span id="col-count-espera" style="background: #fef3c7; color: #b45309; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">0</span>
+                            </div>
+                            <div id="kanban-col-espera" style="display: flex; flex-direction: column; gap: 12px; min-height: 200px;">
+                                <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 20px 0;">Cargando...</div>
+                            </div>
+                        </div>
+
+                        <!-- Columna 3: En Reparación -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 4px solid #8b5cf6; border-radius: 12px; padding: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+                                <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: #5b21b6;">
+                                    <i class="ph ph-wrench"></i> 3. EN REPARACIÓN
+                                </div>
+                                <span id="col-count-reparacion" style="background: #ede9fe; color: #6d28d9; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">0</span>
+                            </div>
+                            <div id="kanban-col-reparacion" style="display: flex; flex-direction: column; gap: 12px; min-height: 200px;">
+                                <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 20px 0;">Cargando...</div>
+                            </div>
+                        </div>
+
+                        <!-- Columna 4: Control de Calidad (QC) -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-top: 4px solid #10b981; border-radius: 12px; padding: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+                                <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: #065f46;">
+                                    <i class="ph ph-shield-check"></i> 4. CONTROL CALIDAD
+                                </div>
+                                <span id="col-count-calidad" style="background: #d1fae5; color: #047857; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">0</span>
+                            </div>
+                            <div id="kanban-col-calidad" style="display: flex; flex-direction: column; gap: 12px; min-height: 200px;">
+                                <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 20px 0;">Cargando...</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- PESTAÑA 2: MANTENIMIENTO PREVENTIVO & RADAR -->
+                <!-- ========================================================================= -->
+                <div id="subvista-mant-preventivo" style="display: none;">
+                    
+                    <!-- Banner Explicativo -->
+                    <div style="background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%); border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                        <div>
+                            <h4 style="margin: 0; color: #1e3a8a; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-sparkle" style="color: #2563eb;"></i> Plan Maestro de Mantenimiento Preventivo
+                            </h4>
+                            <p style="margin: 4px 0 0 0; color: #3b82f6; font-size: 13px;">
+                                Monitorea los ciclos de revisión por días de uso para evitar que los equipos fallen durante un evento en vivo.
+                            </p>
+                        </div>
+                        <button type="button" onclick="alternarFormularioConfigurarPreventivo()" style="background: #1e40af; color: white; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                            <i class="ph ph-gear"></i> Programar Frecuencia a un Activo
                         </button>
                     </div>
 
-                    <!-- 4 Tarjetas KPI -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                        <div style="background: #fee2e2; border: 1px solid #fca5a5; padding: 16px 20px; border-radius: 12px;">
-                            <div style="font-size: 12px; font-weight: 700; color: #991b1b; text-transform: uppercase;">Tickets Activos en Taller</div>
-                            <div id="kpi-danados-total" style="font-size: 32px; font-weight: 800; color: #b91c1c; margin-top: 4px;">0</div>
-                            <div style="font-size: 11.5px; color: #7f1d1d; margin-top: 4px;">En reparación o revisión</div>
-                        </div>
-                        <div style="background: #fef3c7; border: 1px solid #fde68a; padding: 16px 20px; border-radius: 12px;">
-                            <div style="font-size: 12px; font-weight: 700; color: #92400e; text-transform: uppercase;">Promedio Días Fuera</div>
-                            <div id="kpi-danados-dias" style="font-size: 32px; font-weight: 800; color: #b45309; margin-top: 4px;">0 Días</div>
-                            <div style="font-size: 11.5px; color: #78350f; margin-top: 4px;">Tiempo de inactividad promedio</div>
-                        </div>
-                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px 20px; border-radius: 12px;">
-                            <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Mayor Reportante</div>
-                            <div id="kpi-danados-top-rep" style="font-size: 22px; font-weight: 800; color: #1d4ed8; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</div>
-                            <div style="font-size: 11.5px; color: #1e3a8a; margin-top: 4px;">Colaborador con más reportes</div>
-                        </div>
-                        <div style="background: #f3e8ff; border: 1px solid #d8b4fe; padding: 16px 20px; border-radius: 12px;">
-                            <div style="font-size: 12px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Área Principal</div>
-                            <div id="kpi-danados-top-area" style="font-size: 22px; font-weight: 800; color: #7e22ce; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</div>
-                            <div style="font-size: 11.5px; color: #581c87; margin-top: 4px;">Departamento con más fallas</div>
-                        </div>
-                    </div>
-
-                    <!-- Gráfica de Inactividad por Personal -->
-                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-                        <h4 style="margin: 0 0 16px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                            <i class="ph ph-chart-bar" style="color: #ef4444;"></i> Gráfico de Inactividad y Tickets por Personal
-                        </h4>
-                        <div style="height: 260px; position: relative;">
-                            <canvas id="chart-danados-personal"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Matriz Activa de Reparaciones -->
-                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <!-- Formulario Desplegable: Programar Frecuencia Preventiva -->
+                    <div id="contenedor-form-config-preventivo" style="display: none; background: white; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+                        <h4 style="margin: 0 0 14px 0; color: #0f172a; font-size: 14.5px;">⚙️ Configurar Frecuencia de Servicio Preventivo</h4>
+                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 14px; align-items: flex-end;">
                             <div>
-                                <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                                    <i class="ph ph-table"></i> Matriz Activa de Reparaciones
-                                </h4>
-                                <span style="font-size: 12px; color: #64748b; margin-top: 2px; display: block;">
-                                    💡 <b>Tip:</b> Haz clic en el <b>Código ID</b> o en el <b>Equipo</b> de cualquier fila para abrir su expediente clínico e historial completo.
-                                </span>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Código o Nombre del Equipo:</label>
+                                <input type="text" id="prev-input-codigo" placeholder="Ej. VPNRED039..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
                             </div>
-                            <input type="text" id="buscar-danados-tabla" oninput="filtrarTablaDanadosEnVivo(this.value)" placeholder="🔍 Buscar ticket, equipo, reportó..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; width: 250px;">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Frecuencia (Cada X Días):</label>
+                                <input type="number" id="prev-input-dias" value="30" min="5" step="5" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Próxima Fecha (Opcional):</label>
+                                <input type="date" id="prev-input-fecha-prox" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                            </div>
+                            <button type="button" onclick="guardarFrecuenciaPreventivaActivo()" style="background: #16a34a; color: white; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                <i class="ph ph-check"></i> Guardar Plan
+                            </button>
                         </div>
-                        <div class="tabla-container" style="max-height: 440px;">
+                    </div>
+
+                    <!-- Tabla de Radar Preventivo -->
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                            <h4 style="margin: 0; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 15px;">
+                                <i class="ph ph-radar"></i> Radar de Próximos Servicios Preventivos
+                            </h4>
+                            <input type="text" id="buscar-preventivos-tabla" oninput="filtrarTablaPreventivos(this.value)" placeholder="🔍 Filtrar radar..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px; width: 220px;">
+                        </div>
+                        <div class="tabla-container" style="max-height: 480px;">
                             <table class="tabla-vpro">
                                 <thead>
                                     <tr>
-                                        <th>Ticket #</th>
-                                        <th>Fecha</th>
-                                        <th>Días Fuera</th>
-                                        <th>Código ID</th>
-                                        <th>Equipo</th>
-                                        <th>Departamento</th>
-                                        <th>Reportó</th>
-                                        <th>Estado</th>
-                                        <th>Falla Detectada</th>
-                                        <th>Costo Est.</th>
-                                        <th>Acción</th>
+                                        <th>Semáforo</th>
+                                        <th>Código</th>
+                                        <th>Equipo / Activo</th>
+                                        <th>Ubicación</th>
+                                        <th>Frecuencia</th>
+                                        <th>Último Mantenimiento</th>
+                                        <th>Próximo Mantenimiento</th>
+                                        <th>Días Restantes</th>
+                                        <th>Acción Rápida</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tabla-danados-body">
-                                    <tr><td colspan="11" style="text-align: center; padding: 20px;">Cargando equipos dañados...</td></tr>
+                                <tbody id="tabla-preventivos-body">
+                                    <tr><td colspan="9" style="text-align: center; padding: 24px; color: #64748b;">Cargando radar preventivo...</td></tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- Módulo de Actualización / Cierre de Tickets -->
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
-                        <h4 style="margin: 0 0 12px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                            <i class="ph ph-check-circle" style="color: #16a34a;"></i> ⚙️ Actualizar o Cerrar Ticket de Reparación
-                        </h4>
-                        <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 16px; align-items: flex-end;">
-                            <div>
-                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Seleccione Ticket para resolver:</label>
-                                <select id="sel-ticket-danado-cerrar" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
-                                    <option value="">--- Seleccionar Ticket ---</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Nuevo Estado:</label>
-                                <select id="sel-estado-danado-cerrar" style="width: 100%; padding: 9px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
-                                    <option value="RESUELTO">RESUELTO</option>
-                                    <option value="REPARADO">REPARADO</option>
-                                    <option value="BAJA DEFINITIVA">BAJA DEFINITIVA</option>
-                                </select>
-                            </div>
-                            <button type="button" onclick="cerrarTicketDanado()" style="background: #16a34a; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                                <i class="ph ph-check"></i> REHABILITAR EQUIPO / CERRAR
-                            </button>
-                        </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- PESTAÑA 3: REPORTES, COSTOS & EXPEDIENTES (🔒 EXCLUSIVO EMPLEADOS 201 Y 202) -->
+                <!-- ========================================================================= -->
+                <div id="subvista-mant-reportes" style="display: none;">
+
+                    <!-- Contenedor Dinámico Evaluado por Rol / ID de Empleado -->
+                    <div id="contenedor-reportes-bloque-seguro">
+                        <!-- JS inyectará el bloqueo o el contenido analítico completo -->
                     </div>
 
                 </div>
 
-                <!-- MODAL DE EXPEDIENTE CLÍNICO E HISTORIAL INTEGRADO -->
-                <div class="modal-overlay" id="modal-danados-expediente" style="display: none; z-index: 1250;">
+                <!-- ========================================================================= -->
+                <!-- MODAL DE PROTOCOLO DE CONTROL DE CALIDAD (QC) Y LIBERACIÓN -->
+                <!-- ========================================================================= -->
+                <div class="modal-overlay" id="modal-mant-qc" style="display: none; z-index: 1300;">
+                    <div class="modal-box" style="max-width: 650px; text-align: left; width: 95%; padding: 28px; border-radius: 14px; background: #ffffff;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+                            <div>
+                                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 18px; color: #0f172a;">
+                                    <i class="ph ph-shield-check" style="color: #10b981;"></i> Protocolo de Control de Calidad (QC) y Liberación
+                                </h3>
+                                <p id="modal-qc-subtitulo" style="margin: 4px 0 0 0; color: #64748b; font-size: 12.5px;">Ticket: --</p>
+                            </div>
+                            <button onclick="cerrarModalQC()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #94a3b8;">&times;</button>
+                        </div>
+
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
+                            <div style="font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 10px;">
+                                📋 Valida las 3 inspecciones mínimas antes de devolver a bodega como OK:
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <label style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #334155; cursor: pointer;">
+                                    <input type="checkbox" id="qc-chk-electrico" checked style="width: 18px; height: 18px; accent-color: #10b981;">
+                                    <span>⚡ <b>Encendido y Sistema Eléctrico OK:</b> Voltaje estable, sin calentamiento ni cables expuestos.</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #334155; cursor: pointer;">
+                                    <input type="checkbox" id="qc-chk-operativo" checked style="width: 18px; height: 18px; accent-color: #10b981;">
+                                    <span>📡 <b>Prueba Operativa / Señal OK:</b> Audio, video, DMX o sensores probados en banco de trabajo.</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #334155; cursor: pointer;">
+                                    <input type="checkbox" id="qc-chk-limpieza" checked style="width: 18px; height: 18px; accent-color: #10b981;">
+                                    <span>✨ <b>Limpieza y Accesorios OK:</b> Equipo sopleteado/limpio con sus clamps y cables completos.</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Técnico / Responsable QC:</label>
+                                <input type="text" id="qc-input-tecnico" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Costo Final de Reparación ($):</label>
+                                <input type="number" id="qc-input-costo" step="50" min="0" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 18px;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Observaciones de Salida / Garantía:</label>
+                            <textarea id="qc-txt-observaciones" placeholder="Detalles de las refacciones cambiadas o notas técnicas..." rows="2" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;"></textarea>
+                        </div>
+
+                        <input type="hidden" id="qc-hidden-ticket" value="">
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                            <button type="button" onclick="ejecutarBajaDefinitivaQC()" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 9px 16px; border-radius: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer;">
+                                ⚫ Declarar Baja Definitiva
+                            </button>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" onclick="cerrarModalQC()" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 9px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                                    Cancelar
+                                </button>
+                                <button type="button" onclick="ejecutarAprobacionQC()" style="background: #16a34a; color: white; border: none; padding: 9px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                    <i class="ph ph-check-circle"></i> Aprobar QC y Devolver a Bodega (OK)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- MODAL DE EXPEDIENTE CLÍNICO INTEGRADO (HISTORIAL COMPLETO DEL EQUIPO) -->
+                <!-- ========================================================================= -->
+                <div class="modal-overlay" id="modal-danados-expediente" style="display: none; z-index: 1350;">
                     <div class="modal-box" style="max-width: 1050px; text-align: left; width: 95%; max-height: 92vh; display: flex; flex-direction: column; padding: 24px; border-radius: 14px; background: #ffffff;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
                             <div>
@@ -6013,10 +6136,10 @@
     <script src="js/core.js"></script>
     <script src="js/auth.js?v=20261028_auth_v7"></script>
     <script src="js/navegacion.js?v=20261021_v2_auth"></script>
-    <script src="js/inicio_asistencia.js?v=20261026_notif_v3"></script>
-    <script src="js/eventos_op.js?v=20261029_chat_clean_v5"></script>
+    <script src="js/inicio_asistencia.js?v=20261029_danos_201_202"></script>
+    <script src="js/eventos_op.js?v=20261029_fecha_label_v6"></script>
     <script src="js/eventos_impresion.js?v=20261028_crono_v2"></script>
-    <script src="js/equipos_danados.js"></script>
+    <script src="js/equipos_danados.js?v=20261029_kanban_v1"></script>
     <script src="js/gastos.js?v=20261026_op_v2"></script>
     <script src="js/asistencia.js"></script>
     <script src="js/manual.js"></script>

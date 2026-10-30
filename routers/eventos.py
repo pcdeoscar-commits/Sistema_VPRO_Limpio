@@ -78,7 +78,7 @@ def obtener_folios_activos_e_historicos():
     try:
         # Solo OPs activas (o habilitadas explícitamente para edición)
         query_activos_nueva = text("""
-            SELECT folio, nombre_evento, COALESCE(habilitada_para_edicion, FALSE) AS habilitada_para_edicion
+            SELECT folio, fec_del_evento, nombre_evento, COALESCE(habilitada_para_edicion, FALSE) AS habilitada_para_edicion
             FROM public.eventos 
             WHERE habilitada_para_edicion = TRUE
                OR (
@@ -92,7 +92,7 @@ def obtener_folios_activos_e_historicos():
         """)
         # OPs en archivo histórico (solo si no están habilitadas para edición)
         query_historicos_nueva = text("""
-            SELECT folio, nombre_evento 
+            SELECT folio, fec_del_evento, nombre_evento 
             FROM public.eventos 
             WHERE (habilitada_para_edicion IS NOT TRUE)
               AND (
@@ -115,11 +115,27 @@ def obtener_folios_activos_e_historicos():
             historicos_nuevos = conn.execute(query_historicos_nueva).mappings().fetchall()
             max_id_nuevo = conn.execute(query_max_id).scalar()
             
+            def formatear_folio_label(r):
+                folio_val = r['folio'] or ''
+                nom_val = reparar_mojibake(r['nombre_evento'] or 'Sin nombre')
+                fec_val = r.get('fec_del_evento')
+                if fec_val:
+                    if hasattr(fec_val, 'strftime'):
+                        fec_str = fec_val.strftime('%d/%m/%Y')
+                    else:
+                        fec_str = str(fec_val).strip()
+                        if len(fec_str) >= 10 and fec_str[4] == '-' and fec_str[7] == '-':
+                            parts = fec_str[:10].split('-')
+                            fec_str = f"{parts[2]}/{parts[1]}/{parts[0]}"
+                else:
+                    fec_str = "S/F"
+                return f"{folio_val} - {fec_str} - {nom_val}"
+
             folios_activos.extend([
-                f"{r['folio']} - {r['nombre_evento']}" + (" 🔓 [EN EDICIÓN]" if r.get('habilitada_para_edicion') else "")
+                formatear_folio_label(r) + (" 🔓 [EN EDICIÓN]" if r.get('habilitada_para_edicion') else "")
                 for r in activos_nuevos
             ])
-            folios_historicos.extend([f"{r['folio']} - {r['nombre_evento']}" for r in historicos_nuevos])
+            folios_historicos.extend([formatear_folio_label(r) for r in historicos_nuevos])
 
         return {
             "folios": folios_activos,

@@ -1,22 +1,884 @@
 // ==============================================================================
 // MÓDULO: equipos_danados.js
-// 7. Equipos dañados + buscador en vivo
-// Líneas originales: 3592–4456 de script.js
+// 🛠️ PLATAFORMA INTEGRADA DE MANTENIMIENTO & TALLER VPRO (ESTILO ODOO)
+// Incluye: Tablero Kanban de Taller, Radar Preventivo, Protocolo QC y
+// 🔒 Reportes Ejecutivos & Auditoría Financiera (EXCLUSIVO EMPLEADOS 201 Y 202)
 // ==============================================================================
 
-// ==========================================
-// 7. MÓDULO EQUIPOS DAÑADOS
-// ==========================================
-let datosRadarDanosCache = [];
-let datosDanosFiltrados = [];
-let chartDanadosInstance = null;
-
-// ==============================================================================
-// BUSCADOR EN VIVO DE EQUIPOS PARA EXPEDIENTE CLÍNICO Y REPORTES DE DAÑOS
-// ==============================================================================
 let catalogoGlobalEquipos = [];
-let indiceFocoSugerenciaExpediente = -1;
+let datosKanbanCache = null;
+let datosPreventivosCache = [];
+let pestanaMantenimientoActiva = 'kanban';
 let indiceFocoSugerenciaDirecto = -1;
+let indiceFocoSugerenciaExpediente = -1;
+let chartReportesDeptoInstance = null;
+
+// ==============================================================================
+// 1. NAVEGACIÓN ENTRE PESTAÑAS DEL MÓDULO
+// ==============================================================================
+function cambiarPestanaMantenimiento(tab) {
+    pestanaMantenimientoActiva = tab;
+
+    // Elementos de subvistas
+    const subKanban = document.getElementById("subvista-mant-kanban");
+    const subPrev = document.getElementById("subvista-mant-preventivo");
+    const subRep = document.getElementById("subvista-mant-reportes");
+
+    // Botones
+    const btnKanban = document.getElementById("btn-tab-mant-kanban");
+    const btnPrev = document.getElementById("btn-tab-mant-preventivo");
+    const btnRep = document.getElementById("btn-tab-mant-reportes");
+
+    const estilosInactivo = "background: transparent; border: none; border-bottom: 3px solid transparent; padding: 10px 20px; font-size: 13.5px; font-weight: 600; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: 6px 6px 0 0;";
+    const estilosActivo = "background: white; border: none; border-bottom: 3px solid #2563eb; padding: 10px 20px; font-size: 13.5px; font-weight: 700; color: #1e40af; cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: 6px 6px 0 0;";
+
+    if (btnKanban) btnKanban.style.cssText = tab === 'kanban' ? estilosActivo : estilosInactivo;
+    if (btnPrev) btnPrev.style.cssText = tab === 'preventivo' ? estilosActivo : estilosInactivo;
+    if (btnRep) btnRep.style.cssText = tab === 'reportes' ? estilosActivo : estilosInactivo;
+
+    if (subKanban) subKanban.style.display = tab === 'kanban' ? 'block' : 'none';
+    if (subPrev) subPrev.style.display = tab === 'preventivo' ? 'block' : 'none';
+    if (subRep) subRep.style.display = tab === 'reportes' ? 'block' : 'none';
+
+    if (tab === 'kanban') {
+        cargarTableroKanban();
+    } else if (tab === 'preventivo') {
+        cargarRadarPreventivos();
+    } else if (tab === 'reportes') {
+        cargarReportesEjecutivos();
+    }
+}
+
+// Compatibilidad con invocaciones previas
+function cambiarPestanaDanados(tab) {
+    cambiarPestanaMantenimiento('kanban');
+}
+
+// ==============================================================================
+// 2. CARGA CENTRALIZADA DEL MÓDULO
+// ==============================================================================
+async function cargarModuloDanados() {
+    try {
+        // Cargar catálogo global si está vacío
+        if (catalogoGlobalEquipos.length === 0) {
+            try {
+                const resCat = await fetch(`${API_URL}/api/inventario/catalogo-global`);
+                if (resCat.ok) {
+                    catalogoGlobalEquipos = await resCat.json() || [];
+                }
+            } catch(e) {
+                console.warn("No se pudo cargar catalogo global:", e);
+            }
+        }
+
+        // Cargar la pestaña activa actual
+        if (pestanaMantenimientoActiva === 'kanban') {
+            await cargarTableroKanban();
+        } else if (pestanaMantenimientoActiva === 'preventivo') {
+            await cargarRadarPreventivos();
+        } else if (pestanaMantenimientoActiva === 'reportes') {
+            await cargarReportesEjecutivos();
+        }
+
+        // Actualizar indicador del candado según usuario
+        actualizarIndicadorCandadoReportes();
+
+    } catch (err) {
+        console.error("Error al cargar módulo de mantenimiento:", err);
+    }
+}
+
+function cargarEquiposDanados() {
+    cargarModuloDanados();
+}
+
+function actualizarIndicadorCandadoReportes() {
+    const esAutorizado = typeof esUsuarioAutorizadoMantenimientoReportes === 'function'
+        ? esUsuarioAutorizadoMantenimientoReportes()
+        : ['201', '202'].includes(String(usuarioLogueado?.id_empleado || '').trim());
+
+    const badgeCandado = document.getElementById("badge-reportes-candado");
+    const iconoCandado = document.getElementById("icono-candado-reportes");
+
+    if (badgeCandado) {
+        if (esAutorizado) {
+            badgeCandado.innerText = "Autorizado 201/202";
+            badgeCandado.style.background = "#dcfce7";
+            badgeCandado.style.color = "#166534";
+        } else {
+            badgeCandado.innerText = "🔒 Solo 201/202";
+            badgeCandado.style.background = "#fee2e2";
+            badgeCandado.style.color = "#991b1b";
+        }
+    }
+    if (iconoCandado) {
+        iconoCandado.style.color = esAutorizado ? "#16a34a" : "#f59e0b";
+    }
+}
+
+// ==============================================================================
+// 3. TABLERO KANBAN DE TALLER (ODOO STYLE)
+// ==============================================================================
+async function cargarTableroKanban() {
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/kanban`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        datosKanbanCache = data.kanban || {};
+
+        // Actualizar contadores
+        const badgeTotal = document.getElementById("badge-kanban-total");
+        const badgeSidebar = document.getElementById("badge-danados");
+        if (badgeTotal) badgeTotal.innerText = data.total_activos || 0;
+        if (badgeSidebar) badgeSidebar.innerText = data.total_activos || 0;
+
+        renderizarColumnasKanban(datosKanbanCache);
+
+    } catch (err) {
+        console.error("Error al cargar Kanban:", err);
+        mostrarErrorEnColumnasKanban("Error al conectar con el servidor para cargar el tablero Kanban.");
+    }
+}
+
+function renderizarColumnasKanban(kanbanData) {
+    const columnasConfig = [
+        { id: "diagnostico", etapa: "DIAGNOSTICO", badgeId: "col-count-diagnostico", contId: "kanban-col-diagnostico" },
+        { id: "espera", etapa: "ESPERA_REFACCION", badgeId: "col-count-espera", contId: "kanban-col-espera" },
+        { id: "reparacion", etapa: "EN_REPARACION", badgeId: "col-count-reparacion", contId: "kanban-col-reparacion" },
+        { id: "calidad", etapa: "CONTROL_CALIDAD", badgeId: "col-count-calidad", contId: "kanban-col-calidad" }
+    ];
+
+    columnasConfig.forEach(col => {
+        const tickets = kanbanData[col.etapa] || [];
+        const badgeEl = document.getElementById(col.badgeId);
+        const contEl = document.getElementById(col.contId);
+
+        if (badgeEl) badgeEl.innerText = tickets.length;
+        if (!contEl) return;
+
+        if (tickets.length === 0) {
+            contEl.innerHTML = `
+                <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 28px 12px; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                    <i class="ph ph-check-circle" style="font-size: 24px; color: #cbd5e1; display: block; margin-bottom: 4px;"></i>
+                    Sin tickets en esta etapa
+                </div>`;
+            return;
+        }
+
+        contEl.innerHTML = tickets.map(t => generarTarjetaKanbanHTML(t)).join("");
+    });
+}
+
+function generarTarjetaKanbanHTML(t) {
+    const numServicio = escaparHTMLSeguro(t.ticket || "");
+    const codEquipo = escaparHTMLSeguro(t.id_equipo || "");
+    const nombreEquipo = escaparHTMLSeguro(t.nombre_equipo || t.id_equipo || "Equipo sin nombre");
+    const tipo = (t.tipo_mantenimiento || "CORRECTIVO").toUpperCase();
+    const esPreventivo = tipo.includes("PREV");
+    const dias = parseInt(t.dias_en_taller) || 0;
+    const reporto = escaparHTMLSeguro(t.reporto || "No especificado");
+    const falla = escaparHTMLSeguro(t.falla || "Sin detalle registrado");
+    const costo = parseFloat(t.costo || 0.0);
+    const etapa = t.etapa || "DIAGNOSTICO";
+
+    // Semáforo de días
+    let badgeDiasStyle = "background: #dcfce7; color: #166534;";
+    if (dias > 7) badgeDiasStyle = "background: #fee2e2; color: #991b1b; font-weight: 700;";
+    else if (dias > 3) badgeDiasStyle = "background: #fef3c7; color: #92400e;";
+
+    // Badge de tipo
+    const badgeTipoStyle = esPreventivo 
+        ? "background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;" 
+        : "background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;";
+    const badgeTipoIcon = esPreventivo ? "🕒 PREVENTIVO" : "🔧 CORRECTIVO";
+
+    // Botones de avance de etapa
+    let botonesAccion = "";
+    if (etapa === "DIAGNOSTICO") {
+        botonesAccion = `
+            <div style="display: flex; gap: 6px; margin-top: 10px;">
+                <button type="button" onclick="moverTicketEtapa('${numServicio}', 'ESPERA_REFACCION')" title="Mover a Espera Refacción" style="flex: 1; background: #fffbeb; border: 1px solid #fde68a; color: #b45309; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                    ⏳ Espera Refacción
+                </button>
+                <button type="button" onclick="moverTicketEtapa('${numServicio}', 'EN_REPARACION')" title="Mover a Reparación" style="flex: 1; background: #f5f3ff; border: 1px solid #ddd6fe; color: #6d28d9; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                    🔧 A Reparación
+                </button>
+            </div>
+        `;
+    } else if (etapa === "ESPERA_REFACCION") {
+        botonesAccion = `
+            <div style="display: flex; gap: 6px; margin-top: 10px;">
+                <button type="button" onclick="moverTicketEtapa('${numServicio}', 'DIAGNOSTICO')" style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                    ◀ Volver
+                </button>
+                <button type="button" onclick="moverTicketEtapa('${numServicio}', 'EN_REPARACION')" style="flex: 1; background: #f5f3ff; border: 1px solid #ddd6fe; color: #6d28d9; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                    🔧 Iniciar Reparación ▶
+                </button>
+            </div>
+        `;
+    } else if (etapa === "EN_REPARACION") {
+        botonesAccion = `
+            <div style="display: flex; gap: 6px; margin-top: 10px;">
+                <button type="button" onclick="moverTicketEtapa('${numServicio}', 'ESPERA_REFACCION')" style="background: #fffbeb; border: 1px solid #fde68a; color: #b45309; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                    ⏳ Pausar (Pieza)
+                </button>
+                <button type="button" onclick="moverTicketEtapa('${numServicio}', 'CONTROL_CALIDAD')" style="flex: 1; background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                    🛡️ Pasar a QC ▶
+                </button>
+            </div>
+        `;
+    } else if (etapa === "CONTROL_CALIDAD") {
+        botonesAccion = `
+            <div style="margin-top: 10px;">
+                <button type="button" onclick="abrirModalQC('${numServicio}', '${codEquipo}', ${costo})" style="width: 100%; background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(16,185,129,0.25);">
+                    <i class="ph ph-shield-check" style="font-size: 15px;"></i> Protocolo QC y Liberar
+                </button>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="tarjeta-kanban-item" style="background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); transition: transform 0.15s, box-shadow 0.15s;">
+            
+            <!-- Encabezado Tarjeta -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <span style="font-family: monospace; font-size: 11px; font-weight: 800; color: #2563eb; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">
+                    #${numServicio}
+                </span>
+                <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; ${badgeTipoStyle}">
+                    ${badgeTipoIcon}
+                </span>
+            </div>
+
+            <!-- Título del Equipo (Clic abre expediente clínico) -->
+            <div style="font-weight: 700; font-size: 13px; color: #0f172a; line-height: 1.3; margin-bottom: 3px; cursor: pointer;" 
+                 onclick="abrirExpedienteEquipoModal('${codEquipo}', '${nombreEquipo}', '${numServicio}')" 
+                 title="Haz clic para ver el expediente clínico del equipo">
+                ${nombreEquipo}
+            </div>
+            <div style="font-size: 11px; color: #64748b; font-family: monospace; margin-bottom: 8px;">
+                ID: ${codEquipo}
+            </div>
+
+            <!-- Detalle de la Falla -->
+            <div style="font-size: 12px; color: #475569; background: #f8fafc; border-left: 3px solid #cbd5e1; padding: 6px 8px; border-radius: 0 4px 4px 0; margin-bottom: 8px; line-height: 1.3;">
+                ${falla}
+            </div>
+
+            <!-- Metadatos: Días y Reportante -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b; margin-top: 4px;">
+                <span style="padding: 2px 6px; border-radius: 4px; ${badgeDiasStyle}">
+                    ⏱️ ${dias} día${dias === 1 ? '' : 's'}
+                </span>
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px;" title="Reportado por: ${reporto}">
+                    👤 ${reporto}
+                </span>
+            </div>
+
+            <!-- Botones de Acción de Etapa -->
+            ${botonesAccion}
+
+        </div>
+    `;
+}
+
+function mostrarErrorEnColumnasKanban(mensaje) {
+    ["kanban-col-diagnostico", "kanban-col-espera", "kanban-col-reparacion", "kanban-col-calidad"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<div style="text-align: center; color: #b91c1c; font-size: 11.5px; padding: 20px 8px;">${mensaje}</div>`;
+    });
+}
+
+function filtrarKanbanEnVivo(termino) {
+    if (!datosKanbanCache) return;
+    const t = normalizarTextoBusqueda(termino);
+    if (!t) {
+        renderizarColumnasKanban(datosKanbanCache);
+        return;
+    }
+
+    const filtrado = {};
+    for (const etapa in datosKanbanCache) {
+        filtrado[etapa] = datosKanbanCache[etapa].filter(item => {
+            const ticket = normalizarTextoBusqueda(item.ticket);
+            const equipo = normalizarTextoBusqueda(item.nombre_equipo);
+            const id = normalizarTextoBusqueda(item.id_equipo);
+            const rep = normalizarTextoBusqueda(item.reporto);
+            const falla = normalizarTextoBusqueda(item.falla);
+            return ticket.includes(t) || equipo.includes(t) || id.includes(t) || rep.includes(t) || falla.includes(t);
+        });
+    }
+    renderizarColumnasKanban(filtrado);
+}
+
+async function moverTicketEtapa(numServicio, nuevaEtapa) {
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/cambiar-etapa`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                num_servicio: numServicio,
+                nueva_etapa: nuevaEtapa,
+                encargado: usuarioLogueado?.nombre || "TALLER"
+            })
+        });
+
+        if (res.ok) {
+            await cargarTableroKanban();
+        } else {
+            const err = await res.json();
+            alert(`❌ Error al mover ticket: ${err.detail || 'Operación fallida'}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de red: ${e.message}`);
+    }
+}
+
+// ==============================================================================
+// 4. PROTOCOLO DE CONTROL DE CALIDAD (QC) Y LIBERACIÓN A BODEGA
+// ==============================================================================
+function abrirModalQC(numServicio, codEquipo, costoActual) {
+    const modal = document.getElementById("modal-mant-qc");
+    const subTit = document.getElementById("modal-qc-subtitulo");
+    const inputTec = document.getElementById("qc-input-tecnico");
+    const inputCosto = document.getElementById("qc-input-costo");
+    const inputHidden = document.getElementById("qc-hidden-ticket");
+    const txtObs = document.getElementById("qc-txt-observaciones");
+
+    if (subTit) subTit.innerText = `Ticket #${numServicio} • Activo: ${codEquipo}`;
+    if (inputHidden) inputHidden.value = numServicio;
+    if (inputTec) inputTec.value = usuarioLogueado?.nombre || "TÉCNICO QC";
+    if (inputCosto) inputCosto.value = costoActual || 0.0;
+    if (txtObs) txtObs.value = "";
+
+    // Resetear checkboxes a activo por defecto
+    const c1 = document.getElementById("qc-chk-electrico");
+    const c2 = document.getElementById("qc-chk-operativo");
+    const c3 = document.getElementById("qc-chk-limpieza");
+    if (c1) c1.checked = true;
+    if (c2) c2.checked = true;
+    if (c3) c3.checked = true;
+
+    if (modal) modal.style.display = "flex";
+}
+
+function cerrarModalQC() {
+    const modal = document.getElementById("modal-mant-qc");
+    if (modal) modal.style.display = "none";
+}
+
+async function ejecutarAprobacionQC() {
+    const numServicio = document.getElementById("qc-hidden-ticket")?.value;
+    const c1 = document.getElementById("qc-chk-electrico")?.checked;
+    const c2 = document.getElementById("qc-chk-operativo")?.checked;
+    const c3 = document.getElementById("qc-chk-limpieza")?.checked;
+
+    if (!c1 || !c2 || !c3) {
+        if (!confirm("⚠️ Advertencia: No has marcado las 3 pruebas de control de calidad como exitosas. ¿Deseas aprobar la liberación de todas formas?")) {
+            return;
+        }
+    }
+
+    const tec = document.getElementById("qc-input-tecnico")?.value || "TÉCNICO QC";
+    const costo = parseFloat(document.getElementById("qc-input-costo")?.value || 0.0);
+    const obs = document.getElementById("qc-txt-observaciones")?.value || "Liberado con éxito tras mantenimiento.";
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/liberar-qc`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                num_servicio: numServicio,
+                resultado: "APROBADO_OK",
+                checklist: {
+                    electrico_ok: c1,
+                    operativo_ok: c2,
+                    limpieza_ok: c3
+                },
+                tecnico_responsable: tec,
+                observaciones: obs,
+                costo_final: costo
+            })
+        });
+
+        if (res.ok) {
+            alert(`🎉 ¡Equipo rehabilitado con éxito! Se marcó como 'OK' en el inventario y está listo para eventos.`);
+            cerrarModalQC();
+            await cargarTableroKanban();
+        } else {
+            const err = await res.json();
+            alert(`❌ Error al liberar: ${err.detail || 'Fallo en servidor'}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de red: ${e.message}`);
+    }
+}
+
+async function ejecutarBajaDefinitivaQC() {
+    const numServicio = document.getElementById("qc-hidden-ticket")?.value;
+    if (!confirm(`¿Confirmas declarar la BAJA DEFINITIVA del equipo amparado por el ticket #${numServicio}? Esta acción desincorporará el activo del inventario activo.`)) {
+        return;
+    }
+
+    const tec = document.getElementById("qc-input-tecnico")?.value || "TÉCNICO QC";
+    const costo = parseFloat(document.getElementById("qc-input-costo")?.value || 0.0);
+    const obs = document.getElementById("qc-txt-observaciones")?.value || "Equipo irreparable o no costeable.";
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/liberar-qc`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                num_servicio: numServicio,
+                resultado: "BAJA_DEFINITIVA",
+                checklist: {},
+                tecnico_responsable: tec,
+                observaciones: obs,
+                costo_final: costo
+            })
+        });
+
+        if (res.ok) {
+            alert(`Ticket #${numServicio} cerrado y activo marcado como 'BAJA'.`);
+            cerrarModalQC();
+            await cargarTableroKanban();
+        } else {
+            const err = await res.json();
+            alert(`❌ Error: ${err.detail || 'Fallo en servidor'}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de red: ${e.message}`);
+    }
+}
+
+// ==============================================================================
+// 5. RADAR DE MANTENIMIENTO PREVENTIVO
+// ==============================================================================
+async function cargarRadarPreventivos() {
+    const tbody = document.getElementById("tabla-preventivos-body");
+    const badgePrev = document.getElementById("badge-preventivo-total");
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/preventivos`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const activos = await res.json();
+        datosPreventivosCache = activos || [];
+
+        if (badgePrev) badgePrev.innerText = datosPreventivosCache.length;
+
+        renderizarTablaPreventivos(datosPreventivosCache);
+
+    } catch (err) {
+        console.error("Error al cargar radar preventivo:", err);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 24px; color: #b91c1c;">Error al cargar planes preventivos: ${err.message}</td></tr>`;
+        }
+    }
+}
+
+function renderizarTablaPreventivos(lista) {
+    const tbody = document.getElementById("tabla-preventivos-body");
+    if (!tbody) return;
+
+    if (lista.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 32px; color: #64748b;">
+                    <i class="ph ph-calendar-x" style="font-size: 28px; color: #94a3b8; display: block; margin-bottom: 6px;"></i>
+                    No hay activos con plan de mantenimiento preventivo configurado.<br>
+                    <span style="font-size: 12px; color: #94a3b8;">Usa el botón "Programar Frecuencia a un Activo" para dar de alta uno.</span>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = lista.map(a => {
+        let badgeSemaforo = "";
+        if (a.semaforo === "VENCIDO") {
+            badgeSemaforo = `<span style="background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 999px; font-weight: 800; font-size: 11px;">🔴 VENCIDO</span>`;
+        } else if (a.semaforo === "URGENTE_ESTA_SEMANA") {
+            badgeSemaforo = `<span style="background: #ffedd5; color: #c2410c; padding: 4px 8px; border-radius: 999px; font-weight: 800; font-size: 11px;">🟠 ESTA SEMANA</span>`;
+        } else if (a.semaforo === "PROXIMO") {
+            badgeSemaforo = `<span style="background: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 999px; font-weight: 700; font-size: 11px;">🟡 PRÓXIMO</span>`;
+        } else {
+            badgeSemaforo = `<span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 999px; font-weight: 700; font-size: 11px;">🟢 AL DÍA</span>`;
+        }
+
+        const diasText = a.dias_restantes === null ? "Sin calcular" : `${a.dias_restantes} días`;
+        const codEsc = escaparHTMLSeguro(a.codigo);
+
+        return `
+            <tr>
+                <td>${badgeSemaforo}</td>
+                <td style="font-family: monospace; font-weight: 700; color: #2563eb;">${codEsc}</td>
+                <td><b>${escaparHTMLSeguro(a.descripcion)}</b><br><span style="font-size: 11.5px; color: #64748b;">${escaparHTMLSeguro(a.marca)} ${escaparHTMLSeguro(a.modelo)}</span></td>
+                <td>${escaparHTMLSeguro(a.ubicacion || 'Bodega General')}</td>
+                <td>Cada <b>${a.frecuencia_dias}</b> días</td>
+                <td>${escaparHTMLSeguro(a.ultimo_mantenimiento)}</td>
+                <td style="font-weight: 700;">${escaparHTMLSeguro(a.proximo_mantenimiento)}</td>
+                <td><span style="font-weight: 600;">${diasText}</span></td>
+                <td>
+                    <button type="button" onclick="crearTicketPreventivoInmediato('${codEsc}')" style="background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="ph ph-play"></i> Iniciar Taller
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function filtrarTablaPreventivos(termino) {
+    const t = normalizarTextoBusqueda(termino);
+    if (!t) {
+        renderizarTablaPreventivos(datosPreventivosCache);
+        return;
+    }
+    const filtrados = datosPreventivosCache.filter(a => {
+        return normalizarTextoBusqueda(a.codigo).includes(t) ||
+               normalizarTextoBusqueda(a.descripcion).includes(t) ||
+               normalizarTextoBusqueda(a.ubicacion).includes(t);
+    });
+    renderizarTablaPreventivos(filtrados);
+}
+
+function alternarFormularioConfigurarPreventivo() {
+    const el = document.getElementById("contenedor-form-config-preventivo");
+    if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+async function guardarFrecuenciaPreventivaActivo() {
+    const codigo = document.getElementById("prev-input-codigo")?.value.trim();
+    const dias = parseInt(document.getElementById("prev-input-dias")?.value || 30);
+    const fechaProx = document.getElementById("prev-input-fecha-prox")?.value || null;
+
+    if (!codigo) {
+        alert("⚠️ Por favor ingresa el código del equipo.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/programar-preventivo`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                codigo_equipo: codigo,
+                frecuencia_dias: dias,
+                fecha_proximo_mantenimiento: fechaProx
+            })
+        });
+
+        if (res.ok) {
+            alert(`✅ Plan preventivo programado para el equipo ${codigo}.`);
+            alternarFormularioConfigurarPreventivo();
+            await cargarRadarPreventivos();
+        } else {
+            const err = await res.json();
+            alert(`❌ Error: ${err.detail || 'Fallo en servidor'}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de red: ${e.message}`);
+    }
+}
+
+async function crearTicketPreventivoInmediato(codigo) {
+    if (!confirm(`¿Deseas enviar una orden de servicio preventiva a taller para el equipo ${codigo}?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/crear-ticket-preventivo`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                codigo_equipo: codigo,
+                id_empleado: usuarioLogueado?.id_empleado || "201",
+                descripcion: "Mantenimiento preventivo periódico por rutina programada"
+            })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            alert(`🚀 Orden preventiva #${data.num_servicio} creada con éxito e inyectada al Tablero Kanban.`);
+            cambiarPestanaMantenimiento('kanban');
+        } else {
+            const err = await res.json();
+            alert(`❌ Error: ${err.detail || 'Fallo al generar orden'}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de red: ${e.message}`);
+    }
+}
+
+// ==============================================================================
+// 6. REPORTES, COSTOS & AUDITORÍA (🔒 EXCLUSIVO EMPLEADOS 201 Y 202)
+// ==============================================================================
+async function cargarReportesEjecutivos() {
+    const contenedor = document.getElementById("contenedor-reportes-bloque-seguro");
+    if (!contenedor) return;
+
+    // 🔒 REGLA DE SEGURIDAD ESTRICTA: Solo empleados 201 y 202
+    const esAutorizado = typeof esUsuarioAutorizadoMantenimientoReportes === 'function'
+        ? esUsuarioAutorizadoMantenimientoReportes()
+        : ['201', '202'].includes(String(usuarioLogueado?.id_empleado || '').trim());
+
+    if (!esAutorizado) {
+        contenedor.innerHTML = `
+            <div style="background: white; border: 2px dashed #f59e0b; border-radius: 14px; padding: 48px 24px; text-align: center; max-width: 680px; margin: 40px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+                <div style="background: #fef3c7; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
+                    <i class="ph ph-lock-key" style="font-size: 32px; color: #b45309;"></i>
+                </div>
+                <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 19px;">Módulo Restringido a Dirección y Sistemas</h3>
+                <p style="color: #64748b; font-size: 13.5px; line-height: 1.5; margin: 0 0 20px 0;">
+                    Por políticas de confidencialidad institucional, los reportes financieros de costos de taller, 
+                    auditorías acumuladas y expedientes de siniestralidad están reservados 
+                    <b>exclusivamente para los empleados 201 y 202</b>.
+                </p>
+                <div style="display: inline-flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 8px; font-size: 12px; color: #475569;">
+                    <span>Tu usuario actual: <b>${usuarioLogueado?.nombre || 'Invitado'}</b> (ID: ${usuarioLogueado?.id_empleado || 'N/A'})</span>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // Usuario 201 o 202: Proceder a cargar métricas y reportes
+    contenedor.innerHTML = `<div style="text-align: center; padding: 40px; color: #64748b;"><i class="ph ph-spinner ph-spin" style="font-size: 28px;"></i> Cargando reportes ejecutivos...</div>`;
+
+    try {
+        const idEmp = String(usuarioLogueado?.id_empleado || "201").trim();
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/reportes-kpis?id_empleado=${encodeURIComponent(idEmp)}`);
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        renderizarVistaReportesAutorizado(data);
+
+    } catch (err) {
+        console.error("Error al cargar reportes ejecutivos:", err);
+        contenedor.innerHTML = `
+            <div style="background: #fee2e2; border: 1px solid #fca5a5; padding: 24px; border-radius: 12px; color: #991b1b; text-align: center;">
+                <b>⚠️ Error al consultar reportes:</b> ${err.message}
+            </div>
+        `;
+    }
+}
+
+function renderizarVistaReportesAutorizado(data) {
+    const contenedor = document.getElementById("contenedor-reportes-bloque-seguro");
+    if (!contenedor) return;
+
+    const res = data.resumen || {};
+    const porDepto = data.por_departamento || [];
+    const porTipo = data.por_tipo || [];
+    const topEq = data.top_equipos || [];
+
+    const totalTickets = res.total_tickets || 0;
+    const activos = res.activos || 0;
+    const resueltos = res.resueltos || 0;
+    const bajas = res.bajas || 0;
+    const gastoTotal = (res.gasto_total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+    const promDias = res.promedio_dias_taller || 0;
+
+    contenedor.innerHTML = `
+        <!-- 4 Tarjetas KPI Ejecutivas -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 18px 20px; border-radius: 12px;">
+                <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Total Histórico de Tickets</div>
+                <div style="font-size: 32px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">${totalTickets}</div>
+                <div style="font-size: 11.5px; color: #3b82f6; margin-top: 4px;">${activos} activos en taller hoy</div>
+            </div>
+            <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 18px 20px; border-radius: 12px;">
+                <div style="font-size: 12px; font-weight: 700; color: #065f46; text-transform: uppercase;">Gasto Total en Reparaciones</div>
+                <div style="font-size: 32px; font-weight: 800; color: #047857; margin-top: 4px;">$${gastoTotal}</div>
+                <div style="font-size: 11.5px; color: #059669; margin-top: 4px;">Inversión acumulada en refacciones</div>
+            </div>
+            <div style="background: #fef3c7; border: 1px solid #fde68a; padding: 18px 20px; border-radius: 12px;">
+                <div style="font-size: 12px; font-weight: 700; color: #92400e; text-transform: uppercase;">Promedio Días en Taller</div>
+                <div style="font-size: 32px; font-weight: 800; color: #b45309; margin-top: 4px;">${promDias} Días</div>
+                <div style="font-size: 11.5px; color: #d97706; margin-top: 4px;">Tiempo medio de resolución (MTTR)</div>
+            </div>
+            <div style="background: #f3e8ff; border: 1px solid #d8b4fe; padding: 18px 20px; border-radius: 12px;">
+                <div style="font-size: 12px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Tasa de Éxito / Bajas</div>
+                <div style="font-size: 26px; font-weight: 800; color: #7e22ce; margin-top: 6px;">${resueltos} OK / ${bajas} Bajas</div>
+                <div style="font-size: 11.5px; color: #9333ea; margin-top: 4px;">Activos rehabilitados vs chatarra</div>
+            </div>
+        </div>
+
+        <!-- Gráfico y Desglose por Departamento y Tipo -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+            
+            <!-- Gráfica por Departamento -->
+            <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                <h4 style="margin: 0 0 16px 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-chart-bar" style="color: #2563eb;"></i> Tickets e Inversión por Departamento
+                </h4>
+                <div style="height: 260px; position: relative;">
+                    <canvas id="chart-mant-deptos"></canvas>
+                </div>
+            </div>
+
+            <!-- Desglose Tipo de Mantenimiento -->
+            <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                <h4 style="margin: 0 0 16px 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-pie-chart" style="color: #8b5cf6;"></i> Correctivo vs Preventivo
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 20px;">
+                    ${porTipo.map(t => {
+                        const esPrev = t.tipo.includes('PREV');
+                        const colorBar = esPrev ? '#3b82f6' : '#ef4444';
+                        const pct = totalTickets > 0 ? Math.round((t.tickets / totalTickets) * 100) : 0;
+                        return `
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">
+                                    <span>${esPrev ? '🕒 Preventivo' : '🔧 Correctivo'} (${t.tickets} tickets)</span>
+                                    <span>${pct}%</span>
+                                </div>
+                                <div style="background: #e2e8f0; height: 8px; border-radius: 999px; overflow: hidden; margin-bottom: 6px;">
+                                    <div style="background: ${colorBar}; width: ${pct}%; height: 100%;"></div>
+                                </div>
+                                <div style="font-size: 11.5px; color: #64748b;">
+                                    Gasto asociado: <b>$${t.costo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</b>
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Top Equipos Problemáticos / con Mayor Gasto -->
+        <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <h4 style="margin: 0 0 14px 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-warning-octagon" style="color: #dc2626;"></i> Top Equipos con Mayor Índice de Falla o Gasto Acumulado
+            </h4>
+            <div class="tabla-container">
+                <table class="tabla-vpro">
+                    <thead>
+                        <tr>
+                            <th>Código ID</th>
+                            <th>Equipo / Descripción</th>
+                            <th>Total Incidencias</th>
+                            <th>Gasto Acumulado ($)</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topEq.map(eq => {
+                            const codEsc = escaparHTMLSeguro(eq.codigo);
+                            const nomEsc = escaparHTMLSeguro(eq.nombre);
+                            return `
+                                <tr>
+                                    <td style="font-family: monospace; font-weight: 700; color: #2563eb;">${codEsc}</td>
+                                    <td><b>${nomEsc}</b></td>
+                                    <td><span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 4px; font-weight: 700;">${eq.incidencias} reportes</span></td>
+                                    <td style="font-weight: 700;">$${eq.gasto_acumulado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                                    <td>
+                                        <button type="button" onclick="abrirExpedienteEquipoModal('${codEsc}', '${nomEsc}')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="ph ph-first-aid"></i> Ver Historial
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join("")}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Buscador Rápido de Expediente Clínico de Cualquier Activo -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+            <h4 style="margin: 0 0 8px 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-magnifying-glass" style="color: #2563eb;"></i> Consulta de Expediente Clínico por Código o Nombre
+            </h4>
+            <p style="font-size: 12.5px; color: #64748b; margin: 0 0 14px 0;">Busca cualquier equipo del inventario general para consultar su línea de tiempo histórica y todos los costos acumulados.</p>
+            <div style="display: flex; gap: 10px; max-width: 600px;">
+                <input type="text" id="buscar-expediente-manual-input" placeholder="Teclea código o nombre del equipo..." style="flex: 1; padding: 9px 14px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                <button type="button" onclick="consultarExpedienteManual()" style="background: #2563eb; color: white; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 700; cursor: pointer;">
+                    Buscar Expediente
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Renderizar gráfico con Chart.js si está disponible
+    setTimeout(() => {
+        renderizarGraficaDepartamentos(porDepto);
+    }, 100);
+}
+
+function renderizarGraficaDepartamentos(porDepto) {
+    const canvas = document.getElementById("chart-mant-deptos");
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    if (chartReportesDeptoInstance) {
+        chartReportesDeptoInstance.destroy();
+        chartReportesDeptoInstance = null;
+    }
+
+    const labels = porDepto.map(d => d.depto);
+    const dataTickets = porDepto.map(d => d.tickets);
+
+    chartReportesDeptoInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Tickets',
+                data: dataTickets,
+                backgroundColor: 'rgba(37, 99, 235, 0.85)',
+                borderColor: '#1d4ed8',
+                borderWidth: 1.5,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` ${ctx.raw} tickets registrados`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+}
+
+function consultarExpedienteManual() {
+    const input = document.getElementById("buscar-expediente-manual-input");
+    const val = input ? input.value.trim() : "";
+    if (!val) {
+        alert("⚠️ Ingresa un código o nombre de equipo para buscar.");
+        return;
+    }
+    abrirExpedienteEquipoModal(val, val);
+}
+
+// ==============================================================================
+// 7. FORMULARIO REPORTE DIRECTO Y AUTOCOMPLETE
+// ==============================================================================
+function alternarFormularioReporteDirecto() {
+    const el = document.getElementById("contenedor-form-reporte-directo");
+    if (!el) return;
+    el.style.display = el.style.display === "none" ? "block" : "none";
+    if (el.style.display === "block") {
+        const inp = document.getElementById("input-danos-equipo-directo");
+        if (inp) inp.focus();
+    }
+}
 
 function normalizarTextoBusqueda(str) {
     return (str || "")
@@ -35,141 +897,6 @@ function resaltarTexto(texto, query) {
     return String(texto).replace(re, '<mark style="background: #fef08a; color: #854d0e; padding: 0 2px; border-radius: 2px;">$1</mark>');
 }
 
-// --- Autocomplete Expediente Clínico ---
-function activarSugerenciasExpediente() {
-    const input = document.getElementById("input-expediente-buscar");
-    filtrarSugerenciasExpediente(input ? input.value : "");
-}
-
-function filtrarSugerenciasExpediente(termino) {
-    const dropdown = document.getElementById("sugerencias-expediente-dropdown");
-    const btnLimpiar = document.getElementById("btn-limpiar-busqueda-expediente");
-    if (!dropdown) return;
-
-    if (btnLimpiar) {
-        btnLimpiar.style.display = (termino && termino.trim()) ? "block" : "none";
-    }
-
-    const t = normalizarTextoBusqueda(termino);
-    indiceFocoSugerenciaExpediente = -1;
-
-    let coincidencias = [];
-    if (!t) {
-        coincidencias = catalogoGlobalEquipos.slice(0, 30);
-    } else {
-        const palabras = t.split(" ").filter(Boolean);
-        coincidencias = catalogoGlobalEquipos.filter(item => {
-            const norm = normalizarTextoBusqueda(item);
-            return palabras.every(pal => norm.includes(pal));
-        }).slice(0, 50);
-    }
-
-    if (coincidencias.length === 0) {
-        dropdown.innerHTML = `
-            <div style="padding: 16px; text-align: center; color: #64748b; font-size: 13px;">
-                <i class="ph ph-warning-circle" style="font-size: 20px; color: #f59e0b; display: block; margin-bottom: 4px;"></i>
-                No se encontraron equipos con el término: "<b>${termino}</b>"<br>
-                <span style="font-size: 11.5px; color: #94a3b8;">Intenta con otra palabra clave (marca, nombre o código).</span>
-            </div>
-        `;
-        dropdown.style.display = "block";
-        return;
-    }
-
-    dropdown.innerHTML = `
-        <div style="padding: 8px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between;">
-            <span>Coincidencias encontradas (${coincidencias.length}${coincidencias.length === 50 ? '+' : ''}):</span>
-            <span style="font-size: 10.5px; text-transform: none; color: #94a3b8;">Usa ↑ ↓ y Enter o haz clic</span>
-        </div>
-        ` + coincidencias.map((item, idx) => {
-            const partes = item.split(" - ");
-            const codigo = partes[0].trim();
-            const nombre = partes.slice(1).join(" - ").trim() || codigo;
-            return `
-                <div class="sugerencia-item-exp" data-idx="${idx}" onclick="seleccionarEquipoExpediente('${codigo.replace(/'/g, "\\'")}', '${item.replace(/'/g, "\\'")}')" 
-                     style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s;"
-                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">
-                    <div style="flex: 1; padding-right: 12px;">
-                        <div style="font-weight: 600; color: #0f172a; font-size: 13.5px; line-height: 1.3;">
-                            ${resaltarTexto(nombre, termino)}
-                        </div>
-                        <div style="font-size: 11.5px; color: #64748b; margin-top: 3px; display: flex; align-items: center; gap: 6px;">
-                            <span style="background: #e2e8f0; color: #334155; padding: 2px 7px; border-radius: 4px; font-family: monospace; font-weight: 700; font-size: 11px;">
-                                ${resaltarTexto(codigo, termino)}
-                            </span>
-                        </div>
-                    </div>
-                    <i class="ph ph-arrow-circle-right" style="color: var(--accent-color); font-size: 18px; flex-shrink: 0;"></i>
-                </div>
-            `;
-        }).join("");
-
-    dropdown.style.display = "block";
-}
-
-function ocultarSugerenciasExpediente() {
-    const dropdown = document.getElementById("sugerencias-expediente-dropdown");
-    if (dropdown) dropdown.style.display = "none";
-}
-
-function seleccionarEquipoExpediente(codigo, itemCompleto) {
-    const input = document.getElementById("input-expediente-buscar");
-    const hidden = document.getElementById("sel-expediente-equipo-buscar");
-    if (input) input.value = itemCompleto;
-    if (hidden) hidden.value = codigo;
-    ocultarSugerenciasExpediente();
-    buscarExpedienteDanado();
-}
-
-function limpiarBusquedaExpediente() {
-    const input = document.getElementById("input-expediente-buscar");
-    const hidden = document.getElementById("sel-expediente-equipo-buscar");
-    const btnLimpiar = document.getElementById("btn-limpiar-busqueda-expediente");
-    if (input) {
-        input.value = "";
-        input.focus();
-    }
-    if (hidden) hidden.value = "";
-    if (btnLimpiar) btnLimpiar.style.display = "none";
-    filtrarSugerenciasExpediente("");
-}
-
-function manejarKeydownSugerenciasExpediente(e) {
-    const dropdown = document.getElementById("sugerencias-expediente-dropdown");
-    if (!dropdown || dropdown.style.display === "none") {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            buscarExpedienteDanado();
-        }
-        return;
-    }
-
-    const items = dropdown.querySelectorAll(".sugerencia-item-exp");
-    if (items.length === 0) return;
-
-    if (e.key === "ArrowDown") {
-        e.preventDefault();
-        indiceFocoSugerenciaExpediente = (indiceFocoSugerenciaExpediente + 1) % items.length;
-        items.forEach((it, i) => it.style.background = i === indiceFocoSugerenciaExpediente ? "#eff6ff" : "white");
-        items[indiceFocoSugerenciaExpediente].scrollIntoView({ block: "nearest" });
-    } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        indiceFocoSugerenciaExpediente = (indiceFocoSugerenciaExpediente - 1 + items.length) % items.length;
-        items.forEach((it, i) => it.style.background = i === indiceFocoSugerenciaExpediente ? "#eff6ff" : "white");
-        items[indiceFocoSugerenciaExpediente].scrollIntoView({ block: "nearest" });
-    } else if (e.key === "Enter") {
-        e.preventDefault();
-        if (indiceFocoSugerenciaExpediente >= 0 && indiceFocoSugerenciaExpediente < items.length) {
-            items[indiceFocoSugerenciaExpediente].click();
-        } else {
-            buscarExpedienteDanado();
-        }
-    } else if (e.key === "Escape") {
-        ocultarSugerenciasExpediente();
-    }
-}
-
-// --- Autocomplete Reporte Directo ---
 function activarSugerenciasDirecto() {
     const input = document.getElementById("input-danos-equipo-directo");
     filtrarSugerenciasDirecto(input ? input.value : "");
@@ -202,7 +929,7 @@ function filtrarSugerenciasDirecto(termino) {
         return;
     }
 
-    dropdown.innerHTML = coincidencias.map((item, idx) => {
+    dropdown.innerHTML = coincidencias.map(item => {
         const partes = item.split(" - ");
         const codigo = partes[0].trim();
         const nombre = partes.slice(1).join(" - ").trim() || codigo;
@@ -253,343 +980,32 @@ function manejarKeydownSugerenciasDirecto(e) {
 
 // Cierre automático al hacer clic fuera
 document.addEventListener("click", function(e) {
-    const contExp = document.getElementById("contenedor-input-expediente");
-    const dropExp = document.getElementById("sugerencias-expediente-dropdown");
-    if (dropExp && contExp && !contExp.contains(e.target) && !dropExp.contains(e.target)) {
-        dropExp.style.display = "none";
-    }
-
     const contDir = document.getElementById("contenedor-input-directo");
     const dropDir = document.getElementById("sugerencias-directo-dropdown");
     if (dropDir && contDir && !contDir.contains(e.target) && !dropDir.contains(e.target)) {
         dropDir.style.display = "none";
     }
-
-    const contInv = document.getElementById("contenedor-busqueda-inv-editor");
-    const dropInv = document.getElementById("sugerencias-inv-editor-dropdown");
-    if (dropInv && contInv && !contInv.contains(e.target) && !dropInv.contains(e.target)) {
-        dropInv.style.display = "none";
-    }
 });
-
-function cambiarPestanaDanados(tab) {
-    // Vista unificada: si se invoca por compatibilidad, asegurar que la vista principal esté activa
-    const viewRadar = document.getElementById("subvista-danados-radar");
-    if (viewRadar) viewRadar.style.display = 'block';
-}
-
-async function cargarModuloDanados() {
-    try {
-        // Cargar catálogo global para los selectores si no se ha cargado
-        const [resCat, resRadar] = await Promise.all([
-            fetch(`${API_URL}/api/inventario/catalogo-global`),
-            fetch(`${API_URL}/api/inventario/radar-danos`)
-        ]);
-
-        if (resCat.ok) {
-            const catalogo = await resCat.json();
-            catalogoGlobalEquipos = catalogo || [];
-            const selDirecto = document.getElementById("danos-sel-equipo-directo");
-
-            if (selDirecto && selDirecto.tagName === 'SELECT' && selDirecto.children.length <= 1) {
-                selDirecto.innerHTML = '<option value="">--- Seleccionar Activo ---</option>' +
-                    catalogo.map(c => `<option value="${c}">${c}</option>`).join("");
-            }
-        }
-
-        if (resRadar.ok) {
-            const rawRadar = await resRadar.json();
-            
-            // 🛡️ DEDUPLICACIÓN ESTRICTA: Garantizar que cada NUM_SERVICIO aparezca exactamente una vez
-            const vistosServicios = new Set();
-            datosRadarDanosCache = [];
-            (rawRadar || []).forEach(d => {
-                const numServ = d.NUM_SERVICIO ? String(d.NUM_SERVICIO).trim() : null;
-                if (!numServ || !vistosServicios.has(numServ)) {
-                    if (numServ) vistosServicios.add(numServ);
-                    datosRadarDanosCache.push(d);
-                }
-            });
-
-            const badgeDanados = document.getElementById("badge-danados");
-            if (badgeDanados) badgeDanados.innerText = datosRadarDanosCache.length || 0;
-
-            // Poblar dropdown de reportantes
-            const selReportante = document.getElementById("filtro-danos-reportante");
-            if (selReportante) {
-                const reportantes = [...new Set(datosRadarDanosCache.map(d => d["REPORTÓ"] || d["REPORTÓ_RAW"]).filter(Boolean))].sort();
-                selReportante.innerHTML = '<option value="Todos">Todos</option>' +
-                    reportantes.map(r => `<option value="${r}">${r}</option>`).join("");
-            }
-
-            // Poblar dropdown de tickets para resolver
-            const selTicketResolver = document.getElementById("sel-ticket-danado-cerrar");
-            if (selTicketResolver) {
-                selTicketResolver.innerHTML = '<option value="">--- Seleccionar Ticket ---</option>' +
-                    datosRadarDanosCache.map(d => `<option value="${d.NUM_SERVICIO}">#${d.NUM_SERVICIO} - ${d.EQUIPO} (${d.ESTADO})</option>`).join("");
-            }
-
-            aplicarFiltrosDanados();
-        }
-    } catch (err) {
-        console.error("Error al cargar radar de daños:", err);
-    }
-}
-
-function cargarEquiposDanados() {
-    cargarModuloDanados();
-}
-
-function aplicarFiltrosDanados() {
-    const fDesde = document.getElementById("filtro-danos-desde")?.value;
-    const fHasta = document.getElementById("filtro-danos-hasta")?.value;
-    const fDepto = document.getElementById("filtro-danos-depto")?.value || "Todos";
-    const fReportante = document.getElementById("filtro-danos-reportante")?.value || "Todos";
-
-    const hoy = new Date();
-
-    datosDanosFiltrados = datosRadarDanosCache.filter(item => {
-        const fRepStr = item.FECHA_REPORTE ? String(item.FECHA_REPORTE).substring(0, 10) : "";
-        if (fDesde && fRepStr && fRepStr < fDesde) return false;
-        if (fHasta && fRepStr && fRepStr > fHasta) return false;
-
-        if (fDepto !== "Todos") {
-            const dItem = String(item.DEPARTAMENTO || "").toUpperCase();
-            if (dItem !== fDepto.toUpperCase()) return false;
-        }
-
-        if (fReportante !== "Todos") {
-            const repItem = String(item["REPORTÓ"] || item["REPORTÓ_RAW"] || "").trim();
-            if (repItem !== fReportante.trim()) return false;
-        }
-
-        return true;
-    });
-
-    // Calcular días fuera para cada registro
-    datosDanosFiltrados.forEach(item => {
-        if (item.FECHA_REPORTE) {
-            const fItem = new Date(item.FECHA_REPORTE);
-            const diffTime = Math.abs(hoy - fItem);
-            item.DIAS_FUERA = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        } else {
-            item.DIAS_FUERA = 0;
-        }
-    });
-
-    // 4 KPIs
-    const elKpiTotal = document.getElementById("kpi-danados-total");
-    const elKpiDias = document.getElementById("kpi-danados-dias");
-    const elKpiTopRep = document.getElementById("kpi-danados-top-rep");
-    const elKpiTopArea = document.getElementById("kpi-danados-top-area");
-
-    if (elKpiTotal) elKpiTotal.innerText = datosDanosFiltrados.length;
-
-    const promDias = datosDanosFiltrados.length > 0 
-        ? Math.round(datosDanosFiltrados.reduce((acc, i) => acc + (i.DIAS_FUERA || 0), 0) / datosDanosFiltrados.length)
-        : 0;
-    if (elKpiDias) elKpiDias.innerText = `${promDias} Días`;
-
-    // Conteo por reportante
-    const conteoRep = {};
-    const conteoDepto = {};
-    datosDanosFiltrados.forEach(i => {
-        const r = i["REPORTÓ"] || i["REPORTÓ_RAW"] || "Sin asignar";
-        conteoRep[r] = (conteoRep[r] || 0) + 1;
-        const d = i.DEPARTAMENTO || "General";
-        conteoDepto[d] = (conteoDepto[d] || 0) + 1;
-    });
-
-    const topRep = Object.keys(conteoRep).sort((a,b) => conteoRep[b] - conteoRep[a])[0] || "--";
-    const topDepto = Object.keys(conteoDepto).sort((a,b) => conteoDepto[b] - conteoDepto[a])[0] || "--";
-
-    if (elKpiTopRep) elKpiTopRep.innerText = topRep;
-    if (elKpiTopArea) elKpiTopArea.innerText = topDepto;
-
-    // Actualizar gráfica Chart.js
-    renderizarGraficaDanadosPersonal(conteoRep);
-
-    // Renderizar tabla interactiva
-    renderizarTablaDanados(datosDanosFiltrados);
-}
-
-function renderizarGraficaDanadosPersonal(conteoRep) {
-    const canvas = document.getElementById("chart-danados-personal");
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    if (chartDanadosInstance) {
-        chartDanadosInstance.destroy();
-        chartDanadosInstance = null;
-    }
-
-    const labels = Object.keys(conteoRep).slice(0, 10);
-    const data = labels.map(l => conteoRep[l]);
-
-    chartDanadosInstance = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Tickets Activos',
-                data: data,
-                backgroundColor: 'rgba(239, 68, 68, 0.85)',
-                borderColor: '#dc2626',
-                borderWidth: 1.5,
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => ` ${ctx.raw} ticket(s) activo(s)`
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1 }
-                },
-                x: {
-                    ticks: { maxRotation: 35, minRotation: 0 }
-                }
-            }
-        }
-    });
-}
-
-function escaparHTMLSeguro(str) {
-    if (!str) return "";
-    return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
-
-function renderizarTablaDanados(lista) {
-    const tbody = document.getElementById("tabla-danados-body");
-    if (!tbody) return;
-
-    if (lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 24px; color: #166534; font-weight: 500;">✅ No hay equipos con daño bajo estos criterios de búsqueda.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = lista.map(eq => {
-        const estado = (eq.ESTADO || 'EN REVISIÓN').toUpperCase();
-        let badgeStyle = "background: #fef3c7; color: #92400e;";
-        if (estado.includes('TALLER') || estado.includes('GRAVE') || estado.includes('DAÑ')) badgeStyle = "background: #fee2e2; color: #991b1b;";
-        else if (estado.includes('PIEZA') || estado.includes('ESPERA')) badgeStyle = "background: #e0e7ff; color: #3730a3;";
-        else if (estado.includes('REPARADO') || estado.includes('RESUELTO')) badgeStyle = "background: #dcfce7; color: #166534;";
-
-        const idSeguro = encodeURIComponent(eq.ID || '');
-        const nomSeguro = encodeURIComponent(eq.EQUIPO || eq.ID || '');
-        const ticketSeguro = encodeURIComponent(eq.NUM_SERVICIO || '');
-
-        return `
-            <tr style="transition: background-color 0.15s ease;">
-                <td style="font-weight: 700; color: #2563eb; cursor: pointer;" 
-                    onclick="abrirExpedienteEquipoModal(decodeURIComponent('${idSeguro}'), decodeURIComponent('${nomSeguro}'), decodeURIComponent('${ticketSeguro}'))" 
-                    title="Haz clic para ver el expediente clínico de este equipo">
-                    <span style="display: inline-flex; align-items: center; gap: 4px; text-decoration: underline dotted;">
-                        #${escaparHTMLSeguro(eq.NUM_SERVICIO) || '--'}
-                    </span>
-                </td>
-                <td>${eq.FECHA_REPORTE ? String(eq.FECHA_REPORTE).substring(0, 10) : '--'}</td>
-                <td><span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px;">${eq.DIAS_FUERA || 0} d</span></td>
-                <td style="cursor: pointer;" 
-                    onclick="abrirExpedienteEquipoModal(decodeURIComponent('${idSeguro}'), decodeURIComponent('${nomSeguro}'), decodeURIComponent('${ticketSeguro}'))" 
-                    title="Haz clic para consultar el historial completo del activo ${escaparHTMLSeguro(eq.ID)}">
-                    <code style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; text-decoration: underline dotted;">
-                        ${escaparHTMLSeguro(eq.ID) || '--'}
-                        <i class="ph ph-magnifying-glass" style="font-size: 11px;"></i>
-                    </code>
-                </td>
-                <td style="font-weight: 600; color: #0f172a; cursor: pointer;" 
-                    onclick="abrirExpedienteEquipoModal(decodeURIComponent('${idSeguro}'), decodeURIComponent('${nomSeguro}'), decodeURIComponent('${ticketSeguro}'))" 
-                    title="Haz clic para abrir el expediente de ${escaparHTMLSeguro(eq.EQUIPO)}">
-                    <span style="display: inline-flex; align-items: center; gap: 6px; color: #0f172a;">
-                        ${escaparHTMLSeguro(eq.EQUIPO) || '--'}
-                        <i class="ph ph-arrow-square-out" style="color: #64748b; font-size: 13px;"></i>
-                    </span>
-                </td>
-                <td>${escaparHTMLSeguro(eq.DEPARTAMENTO) || '--'}</td>
-                <td>${escaparHTMLSeguro(eq["REPORTÓ"] || eq["REPORTÓ_RAW"]) || '--'}</td>
-                <td><span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; ${badgeStyle}">${escaparHTMLSeguro(estado)}</span></td>
-                <td style="max-width: 240px; font-size: 12px; line-height: 1.4;">${escaparHTMLSeguro(eq.FALLA) || '--'}</td>
-                <td style="font-weight: 700; color: #0f172a;">$${Number(eq.COSTO || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
-                <td>
-                    <button type="button" 
-                        onclick="abrirExpedienteEquipoModal(decodeURIComponent('${idSeguro}'), decodeURIComponent('${nomSeguro}'), decodeURIComponent('${ticketSeguro}'))" 
-                        style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 5px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                        <i class="ph ph-first-aid"></i> Historial
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join("");
-}
-
-function filtrarTablaDanadosEnVivo(termino) {
-    const t = (termino || "").toLowerCase().trim();
-    if (!t) {
-        renderizarTablaDanados(datosDanosFiltrados);
-        return;
-    }
-    const filtrados = datosDanosFiltrados.filter(eq =>
-        (eq.EQUIPO && eq.EQUIPO.toLowerCase().includes(t)) ||
-        (eq.ID && eq.ID.toLowerCase().includes(t)) ||
-        (eq.DEPARTAMENTO && eq.DEPARTAMENTO.toLowerCase().includes(t)) ||
-        (eq["REPORTÓ"] && eq["REPORTÓ"].toLowerCase().includes(t)) ||
-        (eq.FALLA && eq.FALLA.toLowerCase().includes(t)) ||
-        (eq.ESTADO && eq.ESTADO.toLowerCase().includes(t)) ||
-        String(eq.NUM_SERVICIO).includes(t)
-    );
-    renderizarTablaDanados(filtrados);
-}
-
-function resetearFiltrosDanados() {
-    const fDesde = document.getElementById("filtro-danos-desde");
-    const fHasta = document.getElementById("filtro-danos-hasta");
-    const fDepto = document.getElementById("filtro-danos-depto");
-    const fReportante = document.getElementById("filtro-danos-reportante");
-    const fBuscar = document.getElementById("buscar-danados-tabla");
-
-    if (fDesde) fDesde.value = "";
-    if (fHasta) fHasta.value = "";
-    if (fDepto) fDepto.value = "Todos";
-    if (fReportante) fReportante.value = "Todos";
-    if (fBuscar) fBuscar.value = "";
-
-    aplicarFiltrosDanados();
-}
 
 async function guardarReporteDirectoDanado() {
     const selEq = document.getElementById("danos-sel-equipo-directo")?.value;
     const tipoEvento = document.getElementById("danos-tipo-evento")?.value;
-    const estInicial = document.getElementById("danos-estado-inicial")?.value;
+    const estInicial = document.getElementById("danos-estado-inicial")?.value || "DIAGNOSTICO";
     const costo = parseFloat(document.getElementById("danos-costo-estimado")?.value || 0);
     const detalle = document.getElementById("danos-txt-detalle")?.value.trim();
-    const fotoFile = document.getElementById("danos-input-foto")?.files?.[0];
 
     if (!selEq || !detalle) {
-        alert("⚠️ Por favor selecciona un equipo y escribe el diagnóstico o detalle del daño.");
+        alert("⚠️ Por favor selecciona un equipo y escribe el diagnóstico o detalle de la falla.");
         return;
     }
 
     const codPuro = selEq.includes(" - ") ? selEq.split(" - ")[0].trim() : selEq.trim();
     const userId = usuarioLogueado?.id_empleado ? String(usuarioLogueado.id_empleado) : "000";
-    const userDepto = usuarioLogueado?.depto ? String(usuarioLogueado.depto).toUpperCase() : "OFICINA";
+    const userDepto = usuarioLogueado?.depto ? String(usuarioLogueado.depto).toUpperCase() : "TALLER";
 
     const payload = {
         codigo_equipo: codPuro,
-        folio_vpro: "MANTENIMIENTO_INTERNO",
+        folio_vpro: "MANTENIMIENTO_DIRECTO",
         id_empleado: userId,
         tipo_evento: tipoEvento,
         descripcion: detalle,
@@ -605,74 +1021,31 @@ async function guardarReporteDirectoDanado() {
             body: JSON.stringify(payload)
         });
 
-        if (!res.ok) {
-            const err = await res.text();
-            throw new Error(err);
-        }
-
-        if (fotoFile) {
-            const fd = new FormData();
-            fd.append("file", fotoFile);
-            fd.append("codigo_equipo", codPuro);
-            fd.append("folio_vpro", "MANTENIMIENTO_INTERNO");
-            await fetch(`${API_URL}/api/inventario/subir-evidencia`, {
-                method: "POST",
-                body: fd
-            });
-        }
-
-        alert("✅ ¡Ticket de falla registrado con éxito en base de datos!");
-        document.getElementById("danos-txt-detalle").value = "";
-        document.getElementById("danos-costo-estimado").value = "0.00";
-        if (document.getElementById("danos-input-foto")) document.getElementById("danos-input-foto").value = "";
-        cargarModuloDanados();
-    } catch (e) {
-        console.error("Error al guardar ticket directo:", e);
-        alert(`❌ Error al registrar ticket: ${e.message}`);
-    }
-}
-
-async function cerrarTicketDanado() {
-    const selTicket = document.getElementById("sel-ticket-danado-cerrar")?.value;
-    const nuevoEstado = document.getElementById("sel-estado-danado-cerrar")?.value;
-
-    if (!selTicket) {
-        alert("⚠️ Por favor selecciona el ticket que deseas resolver.");
-        return;
-    }
-
-    if (!confirm(`¿Confirmas rehabilitar el equipo y marcar el ticket #${selTicket} como ${nuevoEstado}?`)) {
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_URL}/api/inventario/reparacion/cerrar/${selTicket}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ estado_actual: nuevoEstado })
-        });
-
         if (res.ok) {
-            alert(`✅ Ticket #${selTicket} cerrado con estado: ${nuevoEstado}. Equipo rehabilitado.`);
-            cargarModuloDanados();
+            alert(`✅ Ticket de taller registrado con éxito para el equipo ${codPuro}.`);
+            alternarFormularioReporteDirecto();
+            limpiarBusquedaDirecto();
+            const txtDet = document.getElementById("danos-txt-detalle");
+            if (txtDet) txtDet.value = "";
+            await cargarTableroKanban();
         } else {
-            const err = await res.text();
-            alert(`❌ Error al cerrar ticket: ${err}`);
+            const err = await res.json();
+            alert(`❌ Error al guardar reporte: ${err.detail || 'Fallo en servidor'}`);
         }
     } catch (e) {
-        alert(`❌ Error de comunicación: ${e.message}`);
+        alert(`❌ Error de red: ${e.message}`);
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// MODAL DE EXPEDIENTE CLÍNICO INTEGRADO (ACCESIBLE DESDE CÓDIGO ID / EQUIPO / TICKET)
-// ══════════════════════════════════════════════════════════════════════════════
+// ==============================================================================
+// 8. EXPEDIENTE CLÍNICO DE HARDWARE
+// ==============================================================================
 function cerrarModalExpedienteDanado() {
     const modal = document.getElementById("modal-danados-expediente");
     if (modal) modal.style.display = "none";
 }
 
-async function abrirExpedienteEquipoModal(codigoEquipo, nombreEquipo, numServicio) {
+async function abrirExpedienteEquipoModal(codId, nombreEquipo, numServicio) {
     const modal = document.getElementById("modal-danados-expediente");
     const titulo = document.getElementById("modal-expediente-titulo");
     const subtitulo = document.getElementById("modal-expediente-subtitulo");
@@ -681,153 +1054,87 @@ async function abrirExpedienteEquipoModal(codigoEquipo, nombreEquipo, numServici
 
     if (!modal || !contenido) return;
 
-    modal.style.display = "flex";
-    const codLimpio = (codigoEquipo || "").trim();
-    const nomLimpio = (nombreEquipo || codLimpio).trim();
-
-    titulo.innerHTML = `<i class="ph ph-first-aid" style="color: #ef4444;"></i> Expediente Clínico: <code style="background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #0f172a; margin-left: 6px;">${escaparHTMLSeguro(codLimpio)}</code>`;
-    subtitulo.innerText = `Activo: ${nomLimpio}`;
-
-    contenido.innerHTML = `
-        <div style="text-align: center; padding: 40px; color: #64748b;">
-            <i class="ph ph-spinner ph-spin" style="font-size: 32px; color: #2563eb;"></i>
-            <p style="margin-top: 10px; font-size: 14px;">Consultando historial médico y movimientos de ${escaparHTMLSeguro(nomLimpio)}...</p>
-        </div>
-    `;
-
+    if (titulo) titulo.innerHTML = `<i class="ph ph-first-aid" style="color: #ef4444;"></i> Expediente Clínico: ${escaparHTMLSeguro(nombreEquipo || codId)}`;
+    if (subtitulo) subtitulo.innerText = `ID de Control: ${codId} • Historial completo de movimientos, mantenimiento e incidencias.`;
+    contenido.innerHTML = `<div style="text-align: center; padding: 40px; color: #64748b;"><i class="ph ph-spinner ph-spin" style="font-size: 28px;"></i> Cargando historial clínico...</div>`;
     if (footerAcciones) footerAcciones.innerHTML = "";
 
+    modal.style.display = "flex";
+
     try {
-        const res = await fetch(`${API_URL}/api/inventario/expediente/${encodeURIComponent(codLimpio)}`);
-        if (!res.ok) throw new Error("No se pudo obtener el historial del equipo");
+        const codLimpio = (codId || '').trim();
+        const resExp = await fetch(`${API_URL}/api/inventario/historial/${encodeURIComponent(codLimpio)}`);
+        if (!resExp.ok) throw new Error(`HTTP ${resExp.status}`);
 
-        const data = await res.json();
-        const historial = data.historial || [];
-        const fotos = data.fotos || [];
+        const historial = await resExp.json();
 
-        // Calcular costo acumulado histórico
-        const costoTotal = historial.reduce((acc, h) => {
-            const val = parseFloat(h["COSTO ($)"] || h["COSTO"] || 0);
-            return acc + (isNaN(val) ? 0 : val);
-        }, 0);
-
-        const ultimoEstado = historial.length > 0 ? (historial[0]["ESTADO POSTERIOR"] || "EN REVISIÓN") : "BUEN ESTADO";
-
-        // URL de foto de evidencia
-        let urlFoto = "";
-        if (historial.length > 0) {
-            const folioRef = String(historial[0]["FOLIO OP / REF"] || "MANTENIMIENTO_INTERNO").replace(/[/\\ ]/g, "_").toUpperCase();
-            const codSafe = codLimpio.replace(/[/\\ ]/g, "_").toUpperCase();
-            urlFoto = `${API_URL}/evidencias_web/Evidencia_${folioRef}_${codSafe}.jpg`;
-        } else if (fotos.length > 0) {
-            urlFoto = `${API_URL}/${fotos[0]}`;
+        if (!historial || historial.length === 0) {
+            contenido.innerHTML = `
+                <div style="padding: 32px; text-align: center; color: #64748b;">
+                    <i class="ph ph-clipboard-text" style="font-size: 36px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
+                    <p style="font-weight: 600; margin: 0 0 4px 0;">Sin eventos registrados en la bitácora histórica</p>
+                    <p style="font-size: 12.5px; margin: 0;">Este activo no cuenta con entradas previas de daño o taller.</p>
+                </div>
+            `;
+            return;
         }
 
-        // Renderizar ficha del equipo y tabla histórica
-        contenido.innerHTML = `
-            <!-- Ficha Resumen -->
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px;">
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                        <div>
-                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Nombre del Activo</span>
-                            <div style="font-size: 17px; font-weight: 700; color: #0f172a; margin-top: 2px;">${escaparHTMLSeguro(nomLimpio)}</div>
-                            <span style="font-size: 12px; color: #64748b; font-family: monospace;">ID: ${escaparHTMLSeguro(codLimpio)}</span>
-                        </div>
-                        <span style="background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 700;">
-                            ${escaparHTMLSeguro(ultimoEstado)}
-                        </span>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; border-top: 1px solid #cbd5e1; padding-top: 12px;">
-                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
-                            <span style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Intervenciones Históricas</span>
-                            <div style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 2px;">${historial.length}</div>
-                        </div>
-                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
-                            <span style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Costo Acumulado Total</span>
-                            <div style="font-size: 22px; font-weight: 800; color: #047857; margin-top: 2px;">$${Number(costoTotal).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
-                        </div>
-                    </div>
-                </div>
+        const costoTotal = historial.reduce((acc, h) => acc + (parseFloat(h.costo_asociado) || 0), 0);
 
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                    <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">📸 Evidencia Fotográfica</span>
-                    <div style="width: 100%; height: 135px; background: #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                        <img id="modal-expediente-foto" src="${urlFoto}" alt="Evidencia" 
-                            style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;"
-                            onclick="if(this.src) window.open(this.src, '_blank')"
-                            onerror="this.style.display='none'; document.getElementById('modal-expediente-sin-foto').style.display='block';">
-                        <div id="modal-expediente-sin-foto" style="display: none; color: #94a3b8; font-size: 12px; padding: 10px;">
-                            <i class="ph ph-image-square" style="font-size: 28px; display: block; margin-bottom: 4px;"></i>
-                            Sin fotografía vinculada
-                        </div>
-                    </div>
+        contenido.innerHTML = `
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">TOTAL DE ENTRADAS CLÍNICAS:</span>
+                    <span style="font-weight: 800; font-size: 15px; color: #0f172a; margin-left: 6px;">${historial.length}</span>
+                </div>
+                <div>
+                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">INVERSIÓN TOTAL EN REPARACIONES:</span>
+                    <span style="font-weight: 800; font-size: 16px; color: #059669; margin-left: 6px;">$${costoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
                 </div>
             </div>
 
-            <!-- Tabla de Historial Completo -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
-                <h5 style="margin: 0 0 12px 0; color: #0f172a; display: flex; align-items: center; gap: 8px; font-size: 14px;">
-                    <i class="ph ph-clock-counter-clockwise" style="color: #2563eb;"></i> Bitácora Cronológica de Entradas a Taller y Fallas
-                </h5>
-                <div class="tabla-container" style="max-height: 280px; overflow-y: auto;">
-                    <table class="tabla-vpro" style="font-size: 12px; width: 100%;">
-                        <thead>
-                            <tr style="background: #f8fafc;">
-                                <th>Fecha</th>
-                                <th>Folio / OP</th>
-                                <th>Área</th>
-                                <th>Tipo Evento</th>
-                                <th>Diagnóstico / Notas</th>
-                                <th>Costo</th>
-                                <th>Estado Posterior</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${historial.length === 0 ? `
-                                <tr><td colspan="7" style="text-align: center; padding: 24px; color: #166534; font-weight: 500;">
-                                    ✅ Este equipo no tiene registros previos de daño o reparación en su expediente.
-                                </td></tr>
-                            ` : historial.map(h => {
-                                const fec = h["FECHA"] ? String(h["FECHA"]).substring(0, 10) : '--';
-                                const fol = h["FOLIO OP / REF"] || '--';
-                                const area = h["ÁREA"] || '--';
-                                const tipo = h["TIPO DE EVENTO"] || h["TIPO EVENTO"] || '--';
-                                const diag = h["DIAGNÓSTICO / NOTAS"] || h["DIAGNÓSTICO"] || h["DETALLE"] || '--';
-                                const cto = Number(h["COSTO ($)"] || h["COSTO"] || 0);
-                                const est = h["ESTADO POSTERIOR"] || '--';
-                                return `
-                                    <tr>
-                                        <td>${escaparHTMLSeguro(fec)}</td>
-                                        <td><b>${escaparHTMLSeguro(fol)}</b></td>
-                                        <td>${escaparHTMLSeguro(area)}</td>
-                                        <td><span style="background: #eff6ff; color: #1e40af; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${escaparHTMLSeguro(tipo)}</span></td>
-                                        <td style="max-width: 260px; line-height: 1.3;">${escaparHTMLSeguro(diag)}</td>
-                                        <td style="font-weight: 600;">$${cto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
-                                        <td><span style="font-weight: 700; font-size: 11px;">${escaparHTMLSeguro(est)}</span></td>
-                                    </tr>
-                                `;
-                            }).join("")}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="tabla-container" style="max-height: 480px;">
+                <table class="tabla-vpro">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Folio Ref.</th>
+                            <th>Tipo de Evento</th>
+                            <th>Diagnóstico / Detalle Clínico</th>
+                            <th>Costo ($)</th>
+                            <th>Estatus</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historial.map(h => {
+                            const fec = h.fecha ? String(h.fecha).substring(0, 10) : 'Sin fecha';
+                            const fol = h.folio_vpro || 'N/A';
+                            const tipo = h.tipo_evento || 'REPORTE';
+                            const diag = h.descripcion || 'Sin detalle';
+                            const cto = parseFloat(h.costo_asociado) || 0;
+                            const est = h.estado_final || 'OK';
+
+                            return `
+                                <tr>
+                                    <td>${escaparHTMLSeguro(fec)}</td>
+                                    <td><b>${escaparHTMLSeguro(fol)}</b></td>
+                                    <td><span style="background: #eff6ff; color: #1e40af; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${escaparHTMLSeguro(tipo)}</span></td>
+                                    <td style="max-width: 320px; line-height: 1.3;">${escaparHTMLSeguro(diag)}</td>
+                                    <td style="font-weight: 700;">$${cto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                                    <td><span style="font-weight: 700; font-size: 11px;">${escaparHTMLSeguro(est)}</span></td>
+                                </tr>
+                            `;
+                        }).join("")}
+                    </tbody>
+                </table>
             </div>
         `;
 
-        // Acción rápida de resolución si se abrió desde un ticket activo
-        if (numServicio && numServicio !== 'undefined' && footerAcciones) {
+        if (numServicio && footerAcciones) {
             footerAcciones.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 12px; color: #475569; font-weight: 600;">Resolver Ticket #${escaparHTMLSeguro(numServicio)}:</span>
-                    <select id="modal-sel-estado-cierre" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12.5px;">
-                        <option value="REPARADO">REPARADO</option>
-                        <option value="RESUELTO">RESUELTO</option>
-                        <option value="BAJA DEFINITIVA">BAJA DEFINITIVA</option>
-                    </select>
-                    <button type="button" onclick="cerrarTicketDesdeModal('${escaparHTMLSeguro(numServicio)}')" style="background: #16a34a; color: white; border: none; border-radius: 6px; padding: 7px 14px; font-weight: 600; cursor: pointer; font-size: 12.5px; display: inline-flex; align-items: center; gap: 4px;">
-                        <i class="ph ph-check"></i> Rehabilitar Equipo
-                    </button>
-                </div>
+                <button type="button" onclick="abrirModalQC('${escaparHTMLSeguro(numServicio)}', '${escaparHTMLSeguro(codId)}', 0)" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-shield-check"></i> Abrir Control de Calidad QC para este Ticket
+                </button>
             `;
         }
 
@@ -835,37 +1142,18 @@ async function abrirExpedienteEquipoModal(codigoEquipo, nombreEquipo, numServici
         console.error("Error al cargar expediente:", err);
         contenido.innerHTML = `
             <div style="padding: 24px; text-align: center; color: #b91c1c;">
-                <i class="ph ph-warning-circle" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
-                <p style="font-weight: 600;">Error al cargar el expediente clínico:</p>
-                <p style="font-size: 13px; color: #475569;">${err.message}</p>
+                Error al consultar expediente: ${err.message}
             </div>
         `;
     }
 }
 
-async function cerrarTicketDesdeModal(numServicio) {
-    const selEstado = document.getElementById("modal-sel-estado-cierre")?.value || "REPARADO";
-    if (!confirm(`¿Confirmas rehabilitar el equipo y marcar el ticket #${numServicio} como ${selEstado}?`)) {
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_URL}/api/inventario/reparacion/cerrar/${encodeURIComponent(numServicio)}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ estado_actual: selEstado })
-        });
-
-        if (res.ok) {
-            alert(`✅ Ticket #${numServicio} cerrado exitosamente como ${selEstado}.`);
-            cerrarModalExpedienteDanado();
-            cargarModuloDanados();
-        } else {
-            const err = await res.text();
-            alert(`❌ Error al cerrar ticket: ${err}`);
-        }
-    } catch (e) {
-        alert(`❌ Error de comunicación: ${e.message}`);
-    }
+function escaparHTMLSeguro(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
-

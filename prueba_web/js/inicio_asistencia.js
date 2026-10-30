@@ -77,14 +77,17 @@ async function cargarDatosInicio() {
                           ((usuarioLogueado?.rol || '').toUpperCase().includes('ADMIN')) ||
                           ((usuarioLogueado?.puesto || '').toUpperCase().includes('ADMIN'));
 
+        const esSeguimientoMantenimiento = ['201', '202'].includes(String(idEmp).trim());
+
         // Lanzar todas las peticiones en paralelo
-        const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend] = await Promise.allSettled([
+        const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos] = await Promise.allSettled([
             fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${idEmp}`),
             fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '')}`),
             fetch(`${API_URL}/api/rh/alertas?id_empleado=${idEmp}`),
             fetch(`${API_URL}/api/rh/vacaciones/${idEmp}`),
             fetch(`${API_URL}/api/gastos/pendientes-auditoria`),
-            esAdminRH ? fetch(`${API_URL}/api/rh/permisos/pendientes`) : Promise.resolve({ ok: false })
+            esAdminRH ? fetch(`${API_URL}/api/rh/permisos/pendientes`) : Promise.resolve({ ok: false }),
+            esSeguimientoMantenimiento ? fetch(`${API_URL}/api/inventario/radar-danos`) : Promise.resolve({ ok: false })
         ]);
 
         // ── Helper: construir tarjeta-grupo tipo accordion/dropdown ──────
@@ -174,6 +177,54 @@ async function cargarDatosInicio() {
                 }
             }
         } catch(e) { console.error('Transfer notif:', e); }
+
+        // ── 🛠️ SEGUIMIENTO DE EQUIPOS DAÑADOS Y TALLER (EXCLUSIVO EMPLEADOS 201 Y 202) ──────
+        try {
+            if (esSeguimientoMantenimiento && resDanosTodos.status === 'fulfilled' && resDanosTodos.value.ok) {
+                const danosActivos = await resDanosTodos.value.json();
+                if (Array.isArray(danosActivos) && danosActivos.length > 0) {
+                    gruposHtml.push(buildDropdownCard({
+                        icon: 'ph-wrench',
+                        color: '#dc2626',
+                        bg: '#fef2f2',
+                        border: '#ef4444',
+                        titulo: '🛠️ Reportes de Equipos Dañados y Taller (Seguimiento)',
+                        badge: `${danosActivos.length} equipo${danosActivos.length !== 1 ? 's' : ''}`,
+                        badgeColor: '#dc2626',
+                        items: danosActivos,
+                        renderItem: (d) => `
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border-bottom:1px solid #fee2e2; background:white; border-radius:8px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05); flex-wrap:wrap;">
+                                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:240px;">
+                                    <div style="width:38px; height:38px; border-radius:8px; background:#fee2e2; color:#b91c1c; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+                                        <i class="ph ph-warning-octagon"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:13.5px; font-weight:700; color:#0f172a;">
+                                            ${d.EQUIPO || d.ID} 
+                                            <span style="font-size:11px; font-family:monospace; font-weight:700; color:#2563eb; background:#eff6ff; padding:2px 6px; border-radius:4px; margin-left:4px;">${d.ID}</span>
+                                            <span style="font-size:10.5px; font-weight:700; color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:4px; margin-left:4px;">${d.ESTADO || 'EN REVISIÓN'}</span>
+                                        </div>
+                                        <div style="font-size:12px; color:#475569; margin-top:3px; line-height:1.3;">
+                                            <b>Falla detectada:</b> "${d.FALLA || 'Sin detalle registrado'}"
+                                        </div>
+                                        <div style="font-size:11.5px; color:#64748b; margin-top:2px;">
+                                            Reportó: <b>${d['REPORTÓ'] || 'Personal'}</b> (${d.DEPARTAMENTO || 'General'}) • Fecha: <b>${d.FECHA_REPORTE ? String(d.FECHA_REPORTE).substring(0, 10) : 'N/A'}</b>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <button type="button" onclick="irASeguimientoTaller('${d.ID}', '${d.NUM_SERVICIO}')" 
+                                            style="background:#dc2626; color:white; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:700; font-size:12px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(220,38,38,0.25); transition:all .15s;"
+                                            onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                                        <i class="ph ph-wrench" style="font-size:14px;"></i> Dar Seguimiento en Taller ➔
+                                    </button>
+                                </div>
+                            </div>
+                        `
+                    }));
+                }
+            }
+        } catch(e) { console.error('Danos seguimiento notif:', e); }
 
         // ── B. OPs convocadas (Checkout pendiente) ────────────────────────
         try {
@@ -481,46 +532,58 @@ const gruposFiltrados = gruposHtml.filter(Boolean);
         tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align: center; padding: 16px;">Error de red al consultar el registro de asistencia.</td></tr>`;
     }
 
-    // 3. Cargar Equipos Dañados en el Dropdown
+    // 3. Cargar Equipos Dañados en el Dashboard
     const dropdownDanos = document.getElementById("dropdown-mis-danos");
-    if (dropdownDanos) {
-        try {
-            const resDanos = await fetch(`${API_URL}/api/inventario/mis-reportes-dano/${usuarioLogueado.id_empleado}`);
-            if (resDanos.ok) {
-                const danos = await resDanos.json();
-                if (danos && danos.length > 0) {
-                    dropdownDanos.innerHTML = `<option value="">-- Mis Reportes Activos (${danos.length}) --</option>` + 
-                        danos.map(d => `<option value="${d.ticket}" data-equipo="${d.equipo}">Folio ${d.ticket}: ${d.equipo} - ${d.nombre_equipo || 'Sin nombre'} (${d.estado})</option>`).join("");
-                        
-                    // Agregar evento de cambio para redireccionar
-                    dropdownDanos.addEventListener("change", function() {
-                        const selectedOption = dropdownDanos.options[dropdownDanos.selectedIndex];
-                        if (selectedOption.value) {
-                            const codigoEquipo = selectedOption.getAttribute("data-equipo");
-                            
-                            // 1. Cambiar a vista de daños
-                            cambiarVista('vista-danados');
-                            
-                            // 2. Abrir directamente el expediente clínico e historial en el modal
-                            setTimeout(() => {
-                                if (typeof abrirExpedienteEquipoModal === 'function') {
-                                    abrirExpedienteEquipoModal(codigoEquipo, codigoEquipo);
+    const contenedorDanosInicio = document.getElementById("inicio-equipos-danados");
+    const esSeguimiento201202 = ['201', '202'].includes(String(usuarioLogueado?.id_empleado || '').trim());
+
+    if (contenedorDanosInicio) {
+        if (!esSeguimiento201202) {
+            // Para empleados que NO son 201 ni 202: solo deben reportar
+            contenedorDanosInicio.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px 18px; margin-top: 20px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h4 style="margin: 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-wrench" style="color: #ef4444;"></i> ¿Detectaste un equipo con falla o daño?
+                        </h4>
+                        <p style="margin: 3px 0 0 0; color: #64748b; font-size: 12.5px;">
+                            Genera un ticket directo para que el área de Mantenimiento y Taller le dé seguimiento.
+                        </p>
+                    </div>
+                    <button type="button" onclick="cambiarVista('vista-danados'); setTimeout(() => { if(typeof alternarFormularioReporteDirecto === 'function') alternarFormularioReporteDirecto(); }, 300);" 
+                            style="background: #2563eb; color: white; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(37,99,235,0.25);">
+                        <i class="ph ph-plus-circle" style="font-size: 16px;"></i> Levantar Reporte de Falla
+                    </button>
+                </div>
+            `;
+        } else {
+            // Para 201 y 202: seguimiento general
+            if (dropdownDanos) {
+                try {
+                    const resDanos = await fetch(`${API_URL}/api/inventario/radar-danos`);
+                    if (resDanos.ok) {
+                        const danos = await resDanos.json();
+                        if (danos && danos.length > 0) {
+                            dropdownDanos.innerHTML = `<option value="">-- Seguimiento de Equipos en Taller (${danos.length} activos) --</option>` + 
+                                danos.map(d => `<option value="${d.NUM_SERVICIO}" data-equipo="${d.ID}">Ticket #${d.NUM_SERVICIO}: ${d.ID} - ${d.EQUIPO || 'Sin nombre'} [Reportó: ${d['REPORTÓ'] || 'Personal'}] (${d.ESTADO})</option>`).join("");
+                                
+                            dropdownDanos.onchange = function() {
+                                const selectedOption = dropdownDanos.options[dropdownDanos.selectedIndex];
+                                if (selectedOption && selectedOption.value) {
+                                    const codigoEquipo = selectedOption.getAttribute("data-equipo");
+                                    const numServ = selectedOption.value;
+                                    irASeguimientoTaller(codigoEquipo, numServ);
+                                    dropdownDanos.value = "";
                                 }
-                            }, 300);
-                            
-                            // Resetear el dropdown
-                            dropdownDanos.value = "";
+                            };
+                        } else {
+                            dropdownDanos.innerHTML = `<option value="">✅ No hay equipos con daño o en taller actualmente.</option>`;
                         }
-                    });
-                } else {
-                    dropdownDanos.innerHTML = `<option value="">No tienes equipos reportados como dañados.</option>`;
+                    }
+                } catch (e) {
+                    console.error("Error al cargar radar de daños en inicio:", e);
                 }
-            } else {
-                dropdownDanos.innerHTML = `<option value="">Error al cargar equipos dañados</option>`;
             }
-        } catch (e) {
-            console.error("Error al cargar equipos dañados:", e);
-            dropdownDanos.innerHTML = `<option value="">Error de conexión</option>`;
         }
     }
 }
@@ -1043,4 +1106,16 @@ async function abrirDictamenPermisoDesdeNotif(idEmpleado, idPermiso) {
     } catch (e) {
         console.error('Error al abrir dictamen desde notificación:', e);
     }
+}
+
+// ==============================================================================
+// REDIRECCIÓN A SEGUIMIENTO DE TALLER (EMPLEADOS 201 Y 202)
+// ==============================================================================
+function irASeguimientoTaller(idEquipo, numServicio) {
+    cambiarVista('vista-danados');
+    setTimeout(() => {
+        if (typeof abrirExpedienteEquipoModal === 'function') {
+            abrirExpedienteEquipoModal(idEquipo, idEquipo, numServicio);
+        }
+    }, 350);
 }

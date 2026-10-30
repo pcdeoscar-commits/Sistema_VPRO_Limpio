@@ -400,6 +400,12 @@ function esUsuarioAutorizadoOP() {
     return esAdmin || esCoordinador || esProductor;
 }
 
+function esUsuarioAutorizadoMantenimientoReportes() {
+    if (!usuarioLogueado) return false;
+    const idEmp = String(usuarioLogueado.id_empleado || '').trim();
+    return idEmp === '201' || idEmp === '202';
+}
+
 function actualizarVisibilidadMenuOP() {
     const navOP = document.getElementById("nav-item-ops") || document.querySelector('.sidebar-menu .nav-item[onclick*="vista-ops"]');
     if (navOP) {

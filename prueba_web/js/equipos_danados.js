@@ -1242,14 +1242,8 @@ function alTeclearMensajeChatTaller() {
     const ticket = chatTallerActivo.ticket;
     if (!ticket || chatTallerActivo.estaCerrado) return;
 
-    const remitenteVal = document.getElementById("chat-taller-remitente-select")?.value || "YO";
-    let idAutor = String(window.usuarioLogueado?.id_empleado || "201").trim();
-    let nomAutor = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
-
-    if (remitenteVal === "REPORTANTE" && chatTallerActivo.reportanteId) {
-        idAutor = String(chatTallerActivo.reportanteId).trim();
-        nomAutor = String(chatTallerActivo.reportanteNombre || "Reportante").trim();
-    }
+    const idAutor = String(window.usuarioLogueado?.id_empleado || "201").trim();
+    const nomAutor = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
 
     fetch(`${API_URL}/api/inventario/mantenimiento/chat/escribiendo`, {
         method: "POST",
@@ -1302,10 +1296,6 @@ async function cargarChatTaller(numServicio, codId) {
         chatTallerActivo.totalMensajes = (data.mensajes || []).length;
 
         if (repNom) repNom.innerText = chatTallerActivo.reportanteNombre;
-        const optRep = document.getElementById("opt-remitente-reportante");
-        if (optRep) {
-            optRep.innerText = `👤 Reportante (${chatTallerActivo.reportanteNombre} • Izquierda)`;
-        }
 
         // Render estado
         if (estadoBadge) {
@@ -1467,16 +1457,10 @@ async function enviarMensajeChatTaller(event) {
 
     if (!texto || !chatTallerActivo.ticket) return;
 
-    const remitenteVal = document.getElementById("chat-taller-remitente-select")?.value || "YO";
-    let idAutor = String(window.usuarioLogueado?.id_empleado || "201").trim();
-    let nomAutor = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
-    let rolAutor = (idAutor === "201" || idAutor === "202") ? "SUPERVISOR TALLER" : "TÉCNICO";
-
-    if (remitenteVal === "REPORTANTE" && chatTallerActivo.reportanteId) {
-        idAutor = String(chatTallerActivo.reportanteId).trim();
-        nomAutor = String(chatTallerActivo.reportanteNombre || "Reportante").trim();
-        rolAutor = "REPORTANTE";
-    }
+    const miId = String(window.usuarioLogueado?.id_empleado || "201").trim();
+    const miNombre = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
+    const esTecnico = (miId === "201" || miId === "202");
+    const rolAutor = esTecnico ? "SUPERVISOR TALLER" : "REPORTANTE";
 
     if (input) input.disabled = true;
     if (btn) btn.disabled = true;
@@ -1485,8 +1469,8 @@ async function enviarMensajeChatTaller(event) {
         const payload = {
             num_servicio: chatTallerActivo.ticket,
             codigo_equipo: chatTallerActivo.codigoEquipo || "",
-            id_empleado: idAutor,
-            nombre_autor: nomAutor,
+            id_empleado: miId,
+            nombre_autor: miNombre,
             rol_autor: rolAutor,
             mensaje: texto
         };

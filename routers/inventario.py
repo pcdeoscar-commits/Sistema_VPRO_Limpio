@@ -2693,7 +2693,7 @@ def _sellar_chat_taller(cursor, num_servicio: str, cerrador_nombre: str = "TÉCN
 
         cursor.execute("""
             SELECT id, num_servicio, codigo_equipo, id_empleado, nombre_autor, rol_autor, mensaje, adjunto_url, 
-                   to_char(fecha_hora AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') as fecha_hora
+                   to_char(fecha_hora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') as fecha_hora
             FROM public.chat_taller_mensajes
             WHERE num_servicio = %s
             ORDER BY fecha_hora ASC, id ASC;
@@ -2715,7 +2715,7 @@ def _sellar_chat_taller(cursor, num_servicio: str, cerrador_nombre: str = "TÉCN
 
             cursor.execute("""
                 SELECT id, num_servicio, codigo_equipo, id_empleado, nombre_autor, rol_autor, mensaje, adjunto_url, 
-                       to_char(fecha_hora AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') as fecha_hora
+                       to_char(fecha_hora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') as fecha_hora
                 FROM public.chat_taller_mensajes
                 WHERE num_servicio = %s
                 ORDER BY fecha_hora ASC, id ASC;
@@ -2826,7 +2826,7 @@ def obtener_chat_taller(num_servicio: str, id_lector: Optional[str] = None):
                     rol_autor,
                     mensaje,
                     adjunto_url,
-                    to_char(fecha_hora AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') AS fecha_hora
+                    to_char(fecha_hora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') AS fecha_hora
                 FROM public.chat_taller_mensajes
                 WHERE num_servicio = %s
                 ORDER BY fecha_hora ASC, id ASC;
@@ -2847,23 +2847,25 @@ def obtener_chat_taller(num_servicio: str, id_lector: Optional[str] = None):
             else:
                 mensajes = [dict(m) for m in mensajes_db]
 
-            rep_raw = str(ticket.get("reportante") or "")
+            rep_raw = str(ticket.get("reportante") or "").strip()
             rep_id = ""
-            if "ID:" in rep_raw:
-                rep_id = rep_raw.split("ID:")[1].strip()
-            elif "Empleado ID:" in rep_raw:
-                rep_id = rep_raw.split("Empleado ID:")[1].strip()
+            ids_found = re.findall(r'\d+', rep_raw)
+            if ids_found:
+                rep_id = ids_found[0]
 
         rep_nombre = rep_raw
-        if rep_id:
-            try:
-                with get_db_cursor("db_personal", cursor_factory=RealDictCursor) as cursor_emp:
-                    cursor_emp.execute("SELECT nombre FROM public.empleados WHERE id_empleado = %s;", (rep_id,))
-                    emp_row = cursor_emp.fetchone()
-                    if emp_row and emp_row.get("nombre"):
-                        rep_nombre = emp_row["nombre"]
-            except Exception:
-                pass
+        try:
+            with get_db_cursor("db_personal", cursor_factory=RealDictCursor) as cursor_emp:
+                if rep_id:
+                    cursor_emp.execute("SELECT id_empleado, nombre FROM public.empleados WHERE id_empleado = %s;", (rep_id,))
+                else:
+                    cursor_emp.execute("SELECT id_empleado, nombre FROM public.empleados WHERE UPPER(TRIM(nombre)) = UPPER(TRIM(%s));", (rep_raw,))
+                emp_row = cursor_emp.fetchone()
+                if emp_row:
+                    rep_nombre = emp_row.get("nombre") or rep_raw
+                    rep_id = str(emp_row.get("id_empleado") or rep_id).strip()
+        except Exception:
+            pass
 
         # Quien está escribiendo actualmente
         ahora = time.time()
@@ -2923,7 +2925,7 @@ def enviar_mensaje_chat_taller(payload: dict):
                 (num_servicio, codigo_equipo, id_empleado, nombre_autor, rol_autor, mensaje, adjunto_url)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id, num_servicio, codigo_equipo, id_empleado, nombre_autor, rol_autor, mensaje, adjunto_url,
-                          to_char(fecha_hora AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') AS fecha_hora;
+                          to_char(fecha_hora AT TIME ZONE 'UTC' AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD HH12:MI AM') AS fecha_hora;
             """, (
                 num_servicio,
                 codigo_equipo,

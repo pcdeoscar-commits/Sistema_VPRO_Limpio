@@ -2176,6 +2176,15 @@
 
                                 <!-- Barra de Entrada / Envío -->
                                 <div id="chat-taller-input-box" style="padding: 10px 12px; background: #ffffff; border-top: 1px solid #e2e8f0;">
+                                    <!-- Barra de Rol Activo y Alternancia para Pruebas del Técnico -->
+                                    <div id="chat-taller-barra-autor" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 11px;">
+                                        <span style="color: #64748b;">
+                                            Escribiendo como: <b id="chat-taller-autor-label" style="color: #1d4ed8;">Cuauhtémoc Rivera Agúndez (Taller)</b>
+                                        </span>
+                                        <button type="button" id="btn-toggle-simular-reportante" onclick="alternarModoSimulacionReportante()" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px 8px; font-size: 10.5px; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                                            <i class="ph ph-arrows-left-right"></i> <span>⇄ Responder como Reportante (Prueba)</span>
+                                        </button>
+                                    </div>
                                     <form id="form-chat-taller-envio" onsubmit="enviarMensajeChatTaller(event)" style="display: flex; gap: 8px; margin: 0; align-items: center;">
                                         <input type="text" id="chat-taller-input-texto" oninput="alTeclearMensajeChatTaller()" placeholder="Escribe un mensaje..." style="flex: 1; padding: 9px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none;" autocomplete="off" />
                                         <button type="submit" id="btn-chat-taller-enviar" style="background: #2563eb; color: white; border: none; border-radius: 8px; padding: 9px 16px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
@@ -6211,7 +6220,7 @@
     <script src="js/inicio_asistencia.js?v=20261029_danos_201_202"></script>
     <script src="js/eventos_op.js?v=20261029_fecha_label_v6"></script>
     <script src="js/eventos_impresion.js?v=20261028_crono_v2"></script>
-    <script src="js/equipos_danados.js?v=20261029_kanban_v1"></script>
+    <script src="js/equipos_danados.js?v=20261030_mzt_v6"></script>
     <script src="js/gastos.js?v=20261026_op_v2"></script>
     <script src="js/asistencia.js"></script>
     <script src="js/manual.js"></script>

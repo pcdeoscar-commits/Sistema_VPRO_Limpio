@@ -1038,11 +1038,26 @@ async function guardarReporteDirectoDanado() {
 }
 
 // ==============================================================================
-// 8. EXPEDIENTE CLÍNICO DE HARDWARE
+// 8. EXPEDIENTE CLÍNICO DE HARDWARE & CHAT DE TALLER INTEGRADO
 // ==============================================================================
+
+let chatTallerActivo = {
+    ticket: null,
+    codigoEquipo: null,
+    reportanteId: null,
+    reportanteNombre: null,
+    estaCerrado: false,
+    intervaloPoller: null,
+    totalMensajes: 0
+};
+
 function cerrarModalExpedienteDanado() {
     const modal = document.getElementById("modal-danados-expediente");
     if (modal) modal.style.display = "none";
+    if (chatTallerActivo.intervaloPoller) {
+        clearInterval(chatTallerActivo.intervaloPoller);
+        chatTallerActivo.intervaloPoller = null;
+    }
 }
 
 async function abrirExpedienteEquipoModal(codId, nombreEquipo, numServicio) {
@@ -1060,6 +1075,13 @@ async function abrirExpedienteEquipoModal(codId, nombreEquipo, numServicio) {
     if (footerAcciones) footerAcciones.innerHTML = "";
 
     modal.style.display = "flex";
+
+    // 1. Cargar el Chat de Taller en la columna derecha
+    if (numServicio) {
+        cargarChatTaller(numServicio, codId);
+    } else {
+        reiniciarChatTallerEstadoVacio(codId);
+    }
 
     try {
         const codLimpio = (codId || '').trim();
@@ -1079,22 +1101,30 @@ async function abrirExpedienteEquipoModal(codId, nombreEquipo, numServicio) {
             return;
         }
 
+        // Si no se pasó numServicio explícito pero hay tickets en el historial, autoseleccionar el más reciente
+        if (!numServicio) {
+            const primerTicket = historial.find(h => h.folio_vpro && String(h.folio_vpro).startsWith("REP-"));
+            if (primerTicket) {
+                cargarChatTicketDesdeHistorial(primerTicket.folio_vpro, codId);
+            }
+        }
+
         const costoTotal = historial.reduce((acc, h) => acc + (parseFloat(h.costo_asociado) || 0), 0);
 
         contenido.innerHTML = `
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">TOTAL DE ENTRADAS CLÍNICAS:</span>
+                    <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">TOTAL DE ENTRADAS CLÍNICAS:</span>
                     <span style="font-weight: 800; font-size: 15px; color: #0f172a; margin-left: 6px;">${historial.length}</span>
                 </div>
                 <div>
-                    <span style="font-size: 12px; color: #64748b; font-weight: 600;">INVERSIÓN TOTAL EN REPARACIONES:</span>
-                    <span style="font-weight: 800; font-size: 16px; color: #059669; margin-left: 6px;">$${costoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                    <span style="font-size: 11.5px; color: #64748b; font-weight: 600;">INVERSIÓN TOTAL EN REPARACIONES:</span>
+                    <span style="font-weight: 800; font-size: 15px; color: #059669; margin-left: 6px;">$${costoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
                 </div>
             </div>
 
-            <div class="tabla-container" style="max-height: 480px;">
-                <table class="tabla-vpro">
+            <div class="tabla-container" style="max-height: 440px; overflow-y: auto;">
+                <table class="tabla-vpro" style="width: 100%; border-collapse: collapse;">
                     <thead>
                         <tr>
                             <th>Fecha</th>
@@ -1103,6 +1133,7 @@ async function abrirExpedienteEquipoModal(codId, nombreEquipo, numServicio) {
                             <th>Diagnóstico / Detalle Clínico</th>
                             <th>Costo ($)</th>
                             <th>Estatus</th>
+                            <th style="text-align: center;">Chat</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1113,15 +1144,25 @@ async function abrirExpedienteEquipoModal(codId, nombreEquipo, numServicio) {
                             const diag = h.descripcion || 'Sin detalle';
                             const cto = parseFloat(h.costo_asociado) || 0;
                             const est = h.estado_final || 'OK';
+                            const tieneFolioRep = fol && String(fol).startsWith("REP-");
+
+                            const btnChat = tieneFolioRep ? `
+                                <button type="button" onclick="cargarChatTicketDesdeHistorial('${escaparHTMLSeguro(fol)}', '${escaparHTMLSeguro(codId)}')" 
+                                        style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" 
+                                        title="Ver bitácora de mensajes de este servicio">
+                                    <i class="ph ph-chat-teardrop-text"></i> Ver
+                                </button>
+                            ` : `<span style="color: #cbd5e1; font-size: 11px;">—</span>`;
 
                             return `
                                 <tr>
                                     <td>${escaparHTMLSeguro(fec)}</td>
                                     <td><b>${escaparHTMLSeguro(fol)}</b></td>
-                                    <td><span style="background: #eff6ff; color: #1e40af; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${escaparHTMLSeguro(tipo)}</span></td>
-                                    <td style="max-width: 320px; line-height: 1.3;">${escaparHTMLSeguro(diag)}</td>
-                                    <td style="font-weight: 700;">$${cto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                                    <td><span style="background: #eff6ff; color: #1e40af; font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${escaparHTMLSeguro(tipo)}</span></td>
+                                    <td style="max-width: 260px; line-height: 1.3; font-size: 12px;">${escaparHTMLSeguro(diag)}</td>
+                                    <td style="font-weight: 700; font-size: 12px;">$${cto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
                                     <td><span style="font-weight: 700; font-size: 11px;">${escaparHTMLSeguro(est)}</span></td>
+                                    <td style="text-align: center;">${btnChat}</td>
                                 </tr>
                             `;
                         }).join("")}
@@ -1145,6 +1186,282 @@ async function abrirExpedienteEquipoModal(codId, nombreEquipo, numServicio) {
                 Error al consultar expediente: ${err.message}
             </div>
         `;
+    }
+}
+
+// ==============================================================================
+// 9. FUNCIONALIDAD DEL CHAT DE TALLER (TÉCNICO ⇄ REPORTANTE)
+// ==============================================================================
+
+function reiniciarChatTallerEstadoVacio(codId) {
+    chatTallerActivo.ticket = null;
+    chatTallerActivo.codigoEquipo = codId;
+    chatTallerActivo.estaCerrado = false;
+    if (chatTallerActivo.intervaloPoller) {
+        clearInterval(chatTallerActivo.intervaloPoller);
+        chatTallerActivo.intervaloPoller = null;
+    }
+
+    const badgeTicket = document.getElementById("chat-taller-ticket-badge");
+    const repNom = document.getElementById("chat-taller-reportante-nom");
+    const estadoBadge = document.getElementById("chat-taller-estado-badge");
+    const lista = document.getElementById("chat-taller-mensajes-lista");
+    const formEnvio = document.getElementById("form-chat-taller-envio");
+    const avisoCerrado = document.getElementById("chat-taller-aviso-cerrado");
+
+    if (badgeTicket) badgeTicket.innerText = "—";
+    if (repNom) repNom.innerText = "Consulta General";
+    if (estadoBadge) estadoBadge.innerHTML = `<span style="font-size: 11px; font-weight: 700; background: #f1f5f9; color: #64748b; padding: 3px 8px; border-radius: 12px;">ℹ️ Consulta</span>`;
+    if (formEnvio) formEnvio.style.display = "none";
+    if (avisoCerrado) {
+        avisoCerrado.style.display = "block";
+        avisoCerrado.innerHTML = `<i class="ph ph-chats" style="color: #64748b;"></i> Selecciona un ticket con botón <b>Ver</b> en la tabla para revisar su chat.`;
+    }
+
+    if (lista) {
+        lista.innerHTML = `
+            <div style="text-align: center; color: #94a3b8; font-size: 12.5px; padding: 50px 10px;">
+                <i class="ph ph-chat-teardrop-dots" style="font-size: 38px; display: block; margin-bottom: 8px; color: #cbd5e1;"></i>
+                Para chatear en vivo con el reportante o ver notas de taller, abre el expediente desde una tarjeta del Kanban o elige un ticket del historial.
+            </div>
+        `;
+    }
+}
+
+async function cargarChatTicketDesdeHistorial(folioTicket, codId) {
+    if (!folioTicket || folioTicket === 'N/A') return;
+    cargarChatTaller(folioTicket, codId);
+}
+
+async function cargarChatTaller(numServicio, codId) {
+    if (!numServicio) return;
+
+    if (chatTallerActivo.intervaloPoller) {
+        clearInterval(chatTallerActivo.intervaloPoller);
+        chatTallerActivo.intervaloPoller = null;
+    }
+
+    chatTallerActivo.ticket = numServicio;
+    chatTallerActivo.codigoEquipo = codId;
+
+    const badgeTicket = document.getElementById("chat-taller-ticket-badge");
+    const repNom = document.getElementById("chat-taller-reportante-nom");
+    const estadoBadge = document.getElementById("chat-taller-estado-badge");
+    const lista = document.getElementById("chat-taller-mensajes-lista");
+    const formEnvio = document.getElementById("form-chat-taller-envio");
+    const avisoCerrado = document.getElementById("chat-taller-aviso-cerrado");
+
+    if (badgeTicket) badgeTicket.innerText = `#${numServicio}`;
+    if (lista) {
+        lista.innerHTML = `
+            <div style="text-align: center; color: #64748b; font-size: 12.5px; padding: 30px 10px;">
+                <i class="ph ph-spinner ph-spin" style="font-size: 26px; display: block; margin-bottom: 6px; color: #2563eb;"></i>
+                Cargando mensajes del ticket...
+            </div>
+        `;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/chat/${encodeURIComponent(numServicio)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        chatTallerActivo.estaCerrado = Boolean(data.chat_cerrado);
+        chatTallerActivo.reportanteId = data.reportante_id || "";
+        chatTallerActivo.reportanteNombre = data.reportante_nombre || "Reportante";
+        chatTallerActivo.totalMensajes = (data.mensajes || []).length;
+
+        if (repNom) repNom.innerText = chatTallerActivo.reportanteNombre;
+
+        // Render estado
+        if (estadoBadge) {
+            if (chatTallerActivo.estaCerrado) {
+                estadoBadge.innerHTML = `<span style="font-size: 11px; font-weight: 700; background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 12px; border: 1px solid #cbd5e1;">🔒 Sellado / Concluido</span>`;
+            } else {
+                estadoBadge.innerHTML = `<span style="font-size: 11px; font-weight: 700; background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px;">🟢 En Revisión</span>`;
+            }
+        }
+
+        // Render visibilidad del formulario de envío
+        if (chatTallerActivo.estaCerrado) {
+            if (formEnvio) formEnvio.style.display = "none";
+            if (avisoCerrado) {
+                avisoCerrado.style.display = "block";
+                avisoCerrado.innerHTML = `<i class="ph ph-lock" style="color: #64748b;"></i> Este ticket fue concluido. El chat está sellado y archivado permanentemente.`;
+            }
+        } else {
+            if (formEnvio) formEnvio.style.display = "flex";
+            if (avisoCerrado) avisoCerrado.style.display = "none";
+        }
+
+        // Render mensajes
+        renderizarMensajesChatTaller(data.mensajes || []);
+
+        // Iniciar polling si sigue abierto
+        if (!chatTallerActivo.estaCerrado) {
+            chatTallerActivo.intervaloPoller = setInterval(() => {
+                sincronizarMensajesChatTallerSilencioso(numServicio);
+            }, 3500);
+        }
+
+    } catch (err) {
+        console.error("Error al cargar chat taller:", err);
+        if (lista) {
+            lista.innerHTML = `
+                <div style="text-align: center; color: #ef4444; font-size: 12px; padding: 20px;">
+                    Error al cargar mensajes: ${err.message}
+                </div>
+            `;
+        }
+    }
+}
+
+async function sincronizarMensajesChatTallerSilencioso(numServicio) {
+    if (!numServicio || chatTallerActivo.ticket !== numServicio || chatTallerActivo.estaCerrado) return;
+
+    try {
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/chat/${encodeURIComponent(numServicio)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const listaMsjs = data.mensajes || [];
+        if (listaMsjs.length !== chatTallerActivo.totalMensajes) {
+            chatTallerActivo.totalMensajes = listaMsjs.length;
+            renderizarMensajesChatTaller(listaMsjs);
+        }
+
+        if (data.chat_cerrado && !chatTallerActivo.estaCerrado) {
+            chatTallerActivo.estaCerrado = true;
+            if (chatTallerActivo.intervaloPoller) {
+                clearInterval(chatTallerActivo.intervaloPoller);
+                chatTallerActivo.intervaloPoller = null;
+            }
+            const estadoBadge = document.getElementById("chat-taller-estado-badge");
+            if (estadoBadge) estadoBadge.innerHTML = `<span style="font-size: 11px; font-weight: 700; background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 12px; border: 1px solid #cbd5e1;">🔒 Sellado / Concluido</span>`;
+            const formEnvio = document.getElementById("form-chat-taller-envio");
+            const avisoCerrado = document.getElementById("chat-taller-aviso-cerrado");
+            if (formEnvio) formEnvio.style.display = "none";
+            if (avisoCerrado) avisoCerrado.style.display = "block";
+        }
+    } catch (_) {}
+}
+
+function renderizarMensajesChatTaller(mensajes) {
+    const lista = document.getElementById("chat-taller-mensajes-lista");
+    if (!lista) return;
+
+    if (!mensajes || mensajes.length === 0) {
+        lista.innerHTML = `
+            <div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 35px 12px;">
+                <i class="ph ph-chat-centered-dots" style="font-size: 32px; display: block; margin-bottom: 6px; color: #cbd5e1;"></i>
+                No hay mensajes aún en este ticket. Envía el primer mensaje para coordinar la reparación con el reportante.
+            </div>
+        `;
+        return;
+    }
+
+    const miId = String(window.usuarioLogueado?.id_empleado || "201").trim();
+
+    lista.innerHTML = mensajes.map(m => {
+        const idAutor = String(m.id_empleado || "").trim();
+        const rol = String(m.rol_autor || "OPERATIVO").toUpperCase();
+        const texto = escaparHTMLSeguro(m.mensaje || "");
+        const fechaHora = m.fecha_hora ? String(m.fecha_hora).substring(11, 16) : "";
+
+        // Mensaje del Sistema / Cierre
+        if (rol === "SISTEMA" || idAutor === "SISTEMA") {
+            return `
+                <div style="display: flex; justify-content: center; margin: 6px 0;">
+                    <div style="background: #f1f5f9; border: 1px solid #e2e8f0; color: #334155; font-size: 11px; padding: 5px 12px; border-radius: 14px; max-width: 92%; text-align: center; line-height: 1.35;">
+                        <i class="ph ph-lock-key" style="color: #64748b; margin-right: 4px;"></i>${texto}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Mensaje Propio (Derecha)
+        const esMio = (idAutor === miId);
+        if (esMio) {
+            return `
+                <div style="display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 6px;">
+                    <div style="font-size: 10.5px; color: #64748b; margin-bottom: 2px;">
+                        <b>Tú</b> <span style="font-size: 10px; color: #94a3b8;">(${rol})</span> • ${fechaHora}
+                    </div>
+                    <div style="background: #2563eb; color: #ffffff; padding: 8px 12px; border-radius: 12px 12px 2px 12px; max-width: 82%; font-size: 12.5px; line-height: 1.35; word-break: break-word; box-shadow: 0 1px 3px rgba(37,99,235,0.18);">
+                        ${texto}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Mensaje del Compañero / Reportante (Izquierda)
+        return `
+            <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 6px;">
+                <div style="font-size: 10.5px; color: #64748b; margin-bottom: 2px;">
+                    <b style="color: #0284c7;">${escaparHTMLSeguro(m.nombre_autor || 'Compañero')}</b> <span style="font-size: 10px; color: #94a3b8;">(${rol})</span> • ${fechaHora}
+                </div>
+                <div style="background: #ffffff; color: #0f172a; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 12px 12px 12px 2px; max-width: 82%; font-size: 12.5px; line-height: 1.35; word-break: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                    ${texto}
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    // Auto-scroll al fondo
+    setTimeout(() => {
+        lista.scrollTop = lista.scrollHeight;
+    }, 40);
+}
+
+async function enviarMensajeChatTaller(event) {
+    if (event) event.preventDefault();
+
+    const input = document.getElementById("chat-taller-input-texto");
+    const btn = document.getElementById("btn-chat-taller-enviar");
+    const texto = (input ? input.value : "").trim();
+
+    if (!texto || !chatTallerActivo.ticket) return;
+
+    const miId = String(window.usuarioLogueado?.id_empleado || "201").trim();
+    const miNombre = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
+
+    if (input) input.disabled = true;
+    if (btn) btn.disabled = true;
+
+    try {
+        const payload = {
+            num_servicio: chatTallerActivo.ticket,
+            codigo_equipo: chatTallerActivo.codigoEquipo || "",
+            id_empleado: miId,
+            nombre_autor: miNombre,
+            rol_autor: (miId === "201" || miId === "202") ? "SUPERVISOR TALLER" : "TÉCNICO",
+            mensaje: texto
+        };
+
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/chat/enviar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || `HTTP ${res.status}`);
+        }
+
+        if (input) input.value = "";
+
+        // Refrescar mensajes inmediatamente
+        sincronizarMensajesChatTallerSilencioso(chatTallerActivo.ticket);
+
+    } catch (err) {
+        alert(`No se pudo enviar el mensaje: ${err.message}`);
+    } finally {
+        if (input) {
+            input.disabled = false;
+            input.focus();
+        }
+        if (btn) btn.disabled = false;
     }
 }
 

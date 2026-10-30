@@ -2749,8 +2749,39 @@ def _sellar_chat_taller(cursor, num_servicio: str, cerrador_nombre: str = "TÉCN
         return []
 
 
+# Estado volátil de escritura en tiempo real: { num_servicio: { id_empleado: { "nombre": str, "ts": float } } }
+_estado_escribiendo_taller: Dict[str, Dict[str, Any]] = {}
+
+@router.post("/api/inventario/mantenimiento/chat/escribiendo")
+def notificar_escribiendo_chat_taller(payload: dict):
+    """Registra que un usuario está tecleando en el chat de un ticket de taller."""
+    num_servicio = str(payload.get("num_servicio", "")).strip()
+    id_empleado = str(payload.get("id_empleado", "")).strip()
+    nombre_autor = str(payload.get("nombre_autor", "")).strip()
+
+    if not num_servicio or not id_empleado:
+        return {"status": "ignored"}
+
+    ahora = time.time()
+    if num_servicio not in _estado_escribiendo_taller:
+        _estado_escribiendo_taller[num_servicio] = {}
+
+    _estado_escribiendo_taller[num_servicio][id_empleado] = {
+        "nombre": nombre_autor or f"Empleado {id_empleado}",
+        "ts": ahora
+    }
+
+    # Limpieza de viejos (más de 5 segundos)
+    _estado_escribiendo_taller[num_servicio] = {
+        uid: info for uid, info in _estado_escribiendo_taller[num_servicio].items()
+        if ahora - info.get("ts", 0) < 5.0
+    }
+
+    return {"status": "ok"}
+
+
 @router.get("/api/inventario/mantenimiento/chat/{num_servicio}")
-def obtener_chat_taller(num_servicio: str):
+def obtener_chat_taller(num_servicio: str, id_lector: Optional[str] = None):
     """Consulta el historial de chat de un ticket de taller activo o archivado."""
     num_clean = str(num_servicio or "").strip()
     if not num_clean:
@@ -2834,6 +2865,18 @@ def obtener_chat_taller(num_servicio: str):
             except Exception:
                 pass
 
+        # Quien está escribiendo actualmente
+        ahora = time.time()
+        quienes_escriben = []
+        if num_clean in _estado_escribiendo_taller:
+            activos = {}
+            for uid, info in _estado_escribiendo_taller[num_clean].items():
+                if ahora - info.get("ts", 0) < 4.5:
+                    activos[uid] = info
+                    if str(uid).strip() != str(id_lector or "").strip():
+                        quienes_escriben.append(info.get("nombre", "Alguien"))
+            _estado_escribiendo_taller[num_clean] = activos
+
         return {
             "ticket": num_clean,
             "codigo_equipo": ticket.get("codigo_equipo", ""),
@@ -2842,7 +2885,8 @@ def obtener_chat_taller(num_servicio: str):
             "chat_cerrado": esta_cerrado,
             "chat_cerrado_por": ticket.get("chat_cerrado_por") or "",
             "chat_fecha_cierre": ticket.get("chat_fecha_cierre") or "",
-            "mensajes": mensajes
+            "mensajes": mensajes,
+            "quien_escribe": quienes_escriben
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -2890,6 +2934,10 @@ def enviar_mensaje_chat_taller(payload: dict):
                 adjunto_url
             ))
             nuevo_msj = cursor.fetchone()
+
+        # Limpiar estado escribiendo de este usuario
+        if num_servicio in _estado_escribiendo_taller and id_empleado in _estado_escribiendo_taller[num_servicio]:
+            del _estado_escribiendo_taller[num_servicio][id_empleado]
 
         return {
             "status": "SUCCESS",

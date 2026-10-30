@@ -1233,6 +1233,35 @@ async function cargarChatTicketDesdeHistorial(folioTicket, codId) {
     cargarChatTaller(folioTicket, codId);
 }
 
+let ultimoEnvioTyping = 0;
+function alTeclearMensajeChatTaller() {
+    const ahora = Date.now();
+    if (ahora - ultimoEnvioTyping < 2000) return;
+    ultimoEnvioTyping = ahora;
+
+    const ticket = chatTallerActivo.ticket;
+    if (!ticket || chatTallerActivo.estaCerrado) return;
+
+    const remitenteVal = document.getElementById("chat-taller-remitente-select")?.value || "YO";
+    let idAutor = String(window.usuarioLogueado?.id_empleado || "201").trim();
+    let nomAutor = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
+
+    if (remitenteVal === "REPORTANTE" && chatTallerActivo.reportanteId) {
+        idAutor = String(chatTallerActivo.reportanteId).trim();
+        nomAutor = String(chatTallerActivo.reportanteNombre || "Reportante").trim();
+    }
+
+    fetch(`${API_URL}/api/inventario/mantenimiento/chat/escribiendo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            num_servicio: ticket,
+            id_empleado: idAutor,
+            nombre_autor: nomAutor
+        })
+    }).catch(() => {});
+}
+
 async function cargarChatTaller(numServicio, codId) {
     if (!numServicio) return;
 
@@ -1262,7 +1291,8 @@ async function cargarChatTaller(numServicio, codId) {
     }
 
     try {
-        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/chat/${encodeURIComponent(numServicio)}`);
+        const miIdLector = String(window.usuarioLogueado?.id_empleado || "201").trim();
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/chat/${encodeURIComponent(numServicio)}?id_lector=${encodeURIComponent(miIdLector)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
@@ -1272,6 +1302,10 @@ async function cargarChatTaller(numServicio, codId) {
         chatTallerActivo.totalMensajes = (data.mensajes || []).length;
 
         if (repNom) repNom.innerText = chatTallerActivo.reportanteNombre;
+        const optRep = document.getElementById("opt-remitente-reportante");
+        if (optRep) {
+            optRep.innerText = `👤 Reportante (${chatTallerActivo.reportanteNombre} • Izquierda)`;
+        }
 
         // Render estado
         if (estadoBadge) {
@@ -1320,9 +1354,20 @@ async function sincronizarMensajesChatTallerSilencioso(numServicio) {
     if (!numServicio || chatTallerActivo.ticket !== numServicio || chatTallerActivo.estaCerrado) return;
 
     try {
-        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/chat/${encodeURIComponent(numServicio)}`);
+        const miIdLector = String(window.usuarioLogueado?.id_empleado || "201").trim();
+        const res = await fetch(`${API_URL}/api/inventario/mantenimiento/chat/${encodeURIComponent(numServicio)}?id_lector=${encodeURIComponent(miIdLector)}`);
         if (!res.ok) return;
         const data = await res.json();
+
+        // Control del indicador animado "Escribiendo..."
+        const typingBox = document.getElementById("chat-taller-typing-indicator");
+        const typingText = document.getElementById("chat-taller-typing-text");
+        if (data.quien_escribe && data.quien_escribe.length > 0) {
+            if (typingBox) typingBox.style.display = "flex";
+            if (typingText) typingText.innerText = `${data.quien_escribe.join(", ")} está escribiendo...`;
+        } else {
+            if (typingBox) typingBox.style.display = "none";
+        }
 
         const listaMsjs = data.mensajes || [];
         if (listaMsjs.length !== chatTallerActivo.totalMensajes) {
@@ -1422,8 +1467,16 @@ async function enviarMensajeChatTaller(event) {
 
     if (!texto || !chatTallerActivo.ticket) return;
 
-    const miId = String(window.usuarioLogueado?.id_empleado || "201").trim();
-    const miNombre = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
+    const remitenteVal = document.getElementById("chat-taller-remitente-select")?.value || "YO";
+    let idAutor = String(window.usuarioLogueado?.id_empleado || "201").trim();
+    let nomAutor = String(window.usuarioLogueado?.nombre || "Técnico Taller").trim();
+    let rolAutor = (idAutor === "201" || idAutor === "202") ? "SUPERVISOR TALLER" : "TÉCNICO";
+
+    if (remitenteVal === "REPORTANTE" && chatTallerActivo.reportanteId) {
+        idAutor = String(chatTallerActivo.reportanteId).trim();
+        nomAutor = String(chatTallerActivo.reportanteNombre || "Reportante").trim();
+        rolAutor = "REPORTANTE";
+    }
 
     if (input) input.disabled = true;
     if (btn) btn.disabled = true;
@@ -1432,9 +1485,9 @@ async function enviarMensajeChatTaller(event) {
         const payload = {
             num_servicio: chatTallerActivo.ticket,
             codigo_equipo: chatTallerActivo.codigoEquipo || "",
-            id_empleado: miId,
-            nombre_autor: miNombre,
-            rol_autor: (miId === "201" || miId === "202") ? "SUPERVISOR TALLER" : "TÉCNICO",
+            id_empleado: idAutor,
+            nombre_autor: nomAutor,
+            rol_autor: rolAutor,
             mensaje: texto
         };
 

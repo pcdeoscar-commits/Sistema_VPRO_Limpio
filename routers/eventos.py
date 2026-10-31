@@ -45,20 +45,53 @@ def extraer_catalogos_de_apoyo():
             provs = conn.execute(text("SELECT encode(nombre_del_proveedor::bytea,'hex') FROM public.proveedores ORDER BY nombre_del_proveedor ASC")).fetchall()
         lista_proveedores = [safe_decode_hex(p[0]) for p in provs]
 
+        hoy_dt = datetime.date.today()
         with engine_personal.connect() as conn:
-            staff_rows = conn.execute(text("SELECT encode(nombre::bytea,'hex'), encode(rol::bytea,'hex') FROM public.empleados ORDER BY nombre ASC")).fetchall()
+            staff_rows = conn.execute(text("""
+                SELECT encode(nombre::bytea,'hex'), 
+                       encode(rol::bytea,'hex'),
+                       encode(COALESCE(estatus_empleado, '')::bytea,'hex'),
+                       to_char(licencia_vence, 'YYYY-MM-DD')
+                FROM public.empleados 
+                ORDER BY nombre ASC
+            """)).fetchall()
         
         staff_vpro, apoyos_externos = [], []
+        licencias_map = {}
+
         for s in staff_rows:
-            nom = safe_decode_hex(s[0])
+            nom = reparar_mojibake(safe_decode_hex(s[0]))
             rol = safe_decode_hex(s[1]).strip().upper()
+            est = safe_decode_hex(s[2]).strip().upper()
+            lic_str = s[3] or ""
             nom_u = nom.upper()
-            # 🛡️ Excluir dispositivos compartidos/central de los selectores de crew
-            if 'CELULAR' in nom_u or 'LIVE STREAM' in nom_u or 'DISPOSITIVO' in rol:
+
+            # 🛡️ Excluir dispositivos / celulares / quioscos
+            if 'CELULAR' in nom_u or 'LIVE STREAM' in nom_u or 'DISPOSITIVO' in rol or 'KIOSCO' in nom_u:
                 continue
-            if rol in ['EXTERNO', 'PROVEEDOR', 'PROV'] and rol != 'BAJA':
+
+            # 🛡️ Excluir personal dado de baja
+            if est == 'BAJA' or rol == 'BAJA':
+                continue
+
+            # Verificar vigencia de licencia de conducir
+            lic_vigente = False
+            if lic_str:
+                try:
+                    f_lic = datetime.date.fromisoformat(lic_str)
+                    lic_vigente = (f_lic >= hoy_dt)
+                except Exception:
+                    lic_vigente = False
+
+            licencias_map[nom] = {
+                "vigente": lic_vigente,
+                "fecha": lic_str,
+                "label": "Licencia OK" if lic_vigente else "Licencia ❌"
+            }
+
+            if rol in ['EXTERNO', 'PROVEEDOR', 'PROV']:
                 apoyos_externos.append(nom)
-            elif rol != 'BAJA':
+            else:
                 staff_vpro.append(nom)
 
         return {
@@ -66,7 +99,8 @@ def extraer_catalogos_de_apoyo():
             "clientes": lista_clientes,
             "proveedores": lista_proveedores,
             "staff_vpro": staff_vpro,
-            "apoyos_externos": apoyos_externos
+            "apoyos_externos": apoyos_externos,
+            "licencias": licencias_map
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

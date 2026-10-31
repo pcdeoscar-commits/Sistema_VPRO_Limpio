@@ -204,10 +204,22 @@ function renderChoferesPorVehiculo(isReadOnly = false) {
     const personalExt = window.opMultiSelects.personal_externo || [];
     const poolConductores = [...personalVpro, ...personalExt];
 
+    // Catálogo de licencias provisto por el servidor
+    const licenciasMap = (window.vproCatalogosOP && window.vproCatalogosOP.licencias) || {};
+
+    // Choferes actualmente asignados a otros autos (para descontar)
+    const choferesAsignadosOtros = new Set();
+    Object.entries(window.opChoferesPorVehiculo).forEach(([vKey, chf]) => {
+        if (chf && String(chf).trim()) {
+            choferesAsignadosOtros.add(String(chf).trim().toLowerCase());
+        }
+    });
+
     let html = `
-        <div style="margin-top: 10px; padding: 10px 14px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
-            <div style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+        <div style="margin-top: 10px; padding: 12px 14px; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #334155; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                 <span>🚗 Conductor(es) Designado(s) por Vehículo:</span>
+                <span style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: none;">Un conductor por auto</span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
     `;
@@ -215,26 +227,53 @@ function renderChoferesPorVehiculo(isReadOnly = false) {
     vehiculos.forEach(auto => {
         const autoLimpio = String(auto).trim();
         const choferActual = window.opChoferesPorVehiculo[autoLimpio] || '';
+        const choferActualLower = choferActual.toLowerCase().trim();
 
         let opts = `<option value="">-- Sin conductor asignado --</option>`;
         let found = false;
+
         poolConductores.forEach(c => {
             const cTrim = String(c).trim();
-            const sel = (cTrim.toLowerCase() === choferActual.toLowerCase() && choferActual) ? 'selected' : '';
+            const cLower = cTrim.toLowerCase();
+            const esElActual = (cLower === choferActualLower && choferActualLower !== '');
+
+            // Si ya está asignado a otro auto y no es el actual de este auto, descontarlo
+            if (choferesAsignadosOtros.has(cLower) && !esElActual) {
+                return;
+            }
+
+            const sel = esElActual ? 'selected' : '';
             if (sel) found = true;
-            opts += `<option value="${cTrim}" ${sel}>${cTrim}</option>`;
+
+            // Determinar etiqueta de licencia
+            let badgeLic = "Licencia ❌";
+            const infoLic = licenciasMap[cTrim];
+            if (infoLic && infoLic.vigente) {
+                badgeLic = "Licencia Ok";
+            } else if (infoLic && infoLic.vigente === false) {
+                badgeLic = "Licencia ❌";
+            } else {
+                badgeLic = "Licencia ❌";
+            }
+
+            opts += `<option value="${cTrim}" ${sel}>${cTrim} (${badgeLic})</option>`;
         });
 
         if (choferActual && !found) {
-            opts += `<option value="${choferActual}" selected>${choferActual}</option>`;
+            let badgeLic = "Licencia ❌";
+            const infoLic = licenciasMap[choferActual];
+            if (infoLic && infoLic.vigente) {
+                badgeLic = "Licencia Ok";
+            }
+            opts += `<option value="${choferActual}" selected>${choferActual} (${badgeLic})</option>`;
         }
 
         html += `
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: white; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
                 <span style="font-size: 12.5px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 6px; min-width: 140px;">
-                    <i class="ph ph-car" style="color: #2563eb;"></i> ${autoLimpio}
+                    <i class="ph ph-car" style="color: #2563eb; font-size: 16px;"></i> ${autoLimpio}
                 </span>
-                <select class="op-select" ${isReadOnly ? 'disabled' : ''} style="flex: 1; height: 32px; padding: 2px 8px; font-size: 12px;" onchange="alCambiarChoferVehiculo('${autoLimpio.replace(/'/g, "\\'")}', this.value)">
+                <select class="op-select" ${isReadOnly ? 'disabled' : ''} style="flex: 1; height: 34px; padding: 2px 8px; font-size: 12.5px; font-weight: 500;" onchange="alCambiarChoferVehiculo('${autoLimpio.replace(/'/g, "\\'")}', this.value, ${isReadOnly})">
                     ${opts}
                 </select>
             </div>
@@ -246,7 +285,7 @@ function renderChoferesPorVehiculo(isReadOnly = false) {
     cont.style.display = 'block';
 }
 
-function alCambiarChoferVehiculo(vehiculo, chofer) {
+function alCambiarChoferVehiculo(vehiculo, chofer, isReadOnly = false) {
     if (!window.opChoferesPorVehiculo) window.opChoferesPorVehiculo = {};
     if (chofer && String(chofer).trim()) {
         window.opChoferesPorVehiculo[vehiculo] = String(chofer).trim();
@@ -263,6 +302,9 @@ function alCambiarChoferVehiculo(vehiculo, chofer) {
             if (typeof alCambiarChoferDesignado === 'function') alCambiarChoferDesignado(primerChofer);
         }
     }
+
+    // Re-renderizar para actualizar de inmediato la lista de descontados en los otros autos
+    renderChoferesPorVehiculo(isReadOnly);
 }
 function addMultiTag(stateKey, val, containerId) {
     if (!val) return;

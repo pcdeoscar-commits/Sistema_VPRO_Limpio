@@ -33,9 +33,10 @@ function esPersonalSistemasOAdmin() {
 // ==============================================================================
 async function cargarCanalSoporte() {
     const contenedorLista = document.getElementById("chat-lista-soporte");
-    const contenedorMsjs = document.getElementById("chat-contenedor-mensajes");
-    const emptyState = document.getElementById("chat-empty-state");
-    const ventanaChat = document.getElementById("chat-ventana-activa");
+    const contenedorMsjs = document.getElementById("chat-area-mensajes");
+    if (contenedorMsjs && (!soporteChatState.mensajes || soporteChatState.mensajes.length === 0)) {
+        contenedorMsjs.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:100%; color:#8696a0;"><i class="ph ph-spinner ph-spin" style="font-size:32px; color:#38bdf8;"></i></div>`;
+    }
     const inputMsg = document.getElementById("chat-input-mensaje");
 
     if (contenedorLista) {
@@ -140,11 +141,6 @@ function renderizarSidebarSoporte() {
 
 // Activa la ventana de conversación de soporte en el panel central
 function activarVentanaSoporte() {
-    const emptyState = document.getElementById("chat-empty-state");
-    const ventanaChat = document.getElementById("chat-ventana-activa");
-    if (emptyState) emptyState.style.display = "none";
-    if (ventanaChat) ventanaChat.style.display = "flex";
-
     // En pantallas móviles, contraer barra lateral y desplegar chat
     const panelLateral = document.getElementById("chat-panel-lateral");
     const panelConversacion = document.getElementById("chat-panel-conversacion");
@@ -202,7 +198,7 @@ function actualizarCabeceraSoporte() {
 
 // Renderiza la lista cronológica de mensajes con estilo WhatsApp
 function renderizarMensajesSoporte() {
-    const contenedor = document.getElementById("chat-contenedor-mensajes");
+    const contenedor = document.getElementById("chat-area-mensajes");
     if (!contenedor) return;
 
     const msjs = soporteChatState.mensajes || [];
@@ -344,7 +340,11 @@ function renderizarMensajesSoporte() {
     });
 
     contenedor.innerHTML = html;
-    scrollMensajesAlFinal();
+    if (typeof desplazarAlFondo === 'function') {
+        desplazarAlFondo();
+    } else {
+        setTimeout(() => { contenedor.scrollTop = contenedor.scrollHeight; }, 50);
+    }
 }
 
 // ==============================================================================

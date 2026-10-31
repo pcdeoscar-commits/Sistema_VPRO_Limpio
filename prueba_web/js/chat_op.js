@@ -271,7 +271,9 @@ async function inicializarChatOP() {
     const aristaParam = urlParams.get("arista");
     const esAdmin = typeof esUsuarioAdminChat === 'function' ? esUsuarioAdminChat() : false;
 
-    if (aristaParam === 'admin' || (esAdmin && !urlParams.get("op"))) {
+    if (aristaParam === 'soporte') {
+        cambiarAristaChat('soporte');
+    } else if (aristaParam === 'admin' || (esAdmin && !urlParams.get("op"))) {
         cambiarAristaChat('admin');
     } else {
         await cargarListaOPsChat();
@@ -514,6 +516,8 @@ function regresarAListaOPsMovil() {
     if (chatState.arista === 'admin') {
         if (typeof adminChatState !== 'undefined') adminChatState.chatActual = null;
         if (typeof renderizarListaAdmin === 'function') renderizarListaAdmin();
+    } else if (chatState.arista === 'soporte') {
+        if (typeof renderizarSidebarSoporte === 'function') renderizarSidebarSoporte();
     } else {
         chatState.opActual = null;
         renderizarListaOPs();
@@ -907,6 +911,12 @@ function actualizarBannerFijados(fijados) {
 // ENVIAR MENSAJE
 // ==============================================================================
 async function enviarMensajeChat() {
+    if (chatState.arista === 'soporte') {
+        if (typeof enviarMensajeSoporte === 'function') {
+            await enviarMensajeSoporte();
+        }
+        return;
+    }
     if (chatState.arista === 'admin') {
         if (typeof enviarMensajeAdmin === 'function') {
             await enviarMensajeAdmin();
@@ -969,6 +979,13 @@ async function procesarAdjuntoSeleccionado(inputEl) {
     if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
     const archivo = inputEl.files[0];
 
+    if (chatState.arista === 'soporte') {
+        if (typeof subirArchivoSoporte === 'function') {
+            await subirArchivoSoporte(archivo);
+        }
+        inputEl.value = "";
+        return;
+    }
     if (chatState.arista === 'admin') {
         if (typeof subirArchivoAdmin === 'function') {
             await subirArchivoAdmin(archivo);

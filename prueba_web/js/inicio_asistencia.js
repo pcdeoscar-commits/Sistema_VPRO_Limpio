@@ -133,10 +133,15 @@ async function cargarDatosInicio() {
                             </div>
                         </div>
                     </div>
-                    <div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button onclick="window.open('chat.html?arista=soporte', '_blank')" 
+                                title="Consultas directas a Sistemas e Internet"
+                                style="background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.28); color: #ffffff; padding: 9px 13px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; backdrop-filter: blur(4px); transition: all 0.2s ease;">
+                            <i class="ph ph-laptop" style="font-size: 16px; color: #67e8f9;"></i> 💻 Soporte TI
+                        </button>
                         <button onclick="window.open('chat.html', '_blank')" 
-                                style="background: #ffffff; color: #065f46; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s ease;">
-                            <i class="ph ph-chats-circle" style="font-size: 18px; color: #059669;"></i> Entrar a mis Chats <i class="ph ph-arrow-right" style="font-size: 14px;"></i>
+                                style="background: #ffffff; color: #065f46; border: none; padding: 9px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s ease;">
+                            <i class="ph ph-chats-circle" style="font-size: 17px; color: #059669;"></i> Entrar a mis Chats <i class="ph ph-arrow-right" style="font-size: 14px;"></i>
                         </button>
                     </div>
                 </div>

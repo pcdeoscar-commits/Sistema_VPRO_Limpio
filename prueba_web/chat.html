@@ -853,6 +853,9 @@
                 <i class="ph ph-buildings" style="font-size: 16px;"></i> 🏢 Admon & RH
                 <span id="badge-admin-no-leidos" style="display: none; background: #ef4444; color: white; border-radius: 10px; padding: 1px 7px; font-size: 10px; font-weight: 800;">0</span>
             </button>
+            <button id="btn-arista-soporte" class="chat-arista-btn" onclick="cambiarAristaChat('soporte')" style="flex: 1; padding: 8px 8px; border-radius: 8px; border: none; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s; background: #111b21; color: #8696a0;">
+                <i class="ph ph-laptop" style="font-size: 15px;"></i> 💻 Soporte TI
+            </button>
         </div>
 
         <div class="chat-search-bar">
@@ -877,6 +880,9 @@
         </div>
         <div class="chat-ops-list" id="chat-lista-admin" style="display: none;">
             <!-- Renderizado dinámico de colaboradores / administración -->
+        </div>
+        <div class="chat-ops-list" id="chat-lista-soporte" style="display: none;">
+            <!-- Renderizado dinámico de canal de soporte TI & consultas -->
         </div>
     </div>
 
@@ -947,6 +953,7 @@
 <!-- Scripts -->
 <script src="js/chat_op.js?v=20261028_chat_bot_v5"></script>
 <script src="js/chat_admin_ui.js?v=20261029_v1"></script>
+<script src="js/chat_soporte_ui.js?v=20261031_v1"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         inicializarChatOP();

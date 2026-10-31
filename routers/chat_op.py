@@ -123,15 +123,21 @@ def es_usuario_privilegiado(nombre: str, rol: str) -> bool:
         return True
     return False
 
-def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, chofer: str, convocados: List[str]) -> bool:
+def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, chofer: str, convocados: List[str], choferes_extra: Any = None) -> bool:
     if not usuario_nom or not usuario_nom.strip():
         return False
     norm_user = normalizar_texto(usuario_nom)
     if not norm_user:
         return False
     
-    # Comprobar si coincide con alguno de los responsables
-    for resp in [resp_prod, resp_gastos, chofer]:
+    # Comprobar si coincide con alguno de los responsables o choferes extra
+    todos_resp = [resp_prod, resp_gastos, chofer]
+    if isinstance(choferes_extra, dict):
+        todos_resp.extend(list(choferes_extra.values()))
+    elif isinstance(choferes_extra, (list, tuple)):
+        todos_resp.extend(choferes_extra)
+    
+    for resp in todos_resp:
         if resp and (norm_user in normalizar_texto(resp) or normalizar_texto(resp) in norm_user):
             return True
             
@@ -183,6 +189,7 @@ def listar_ops_para_chat(
                 encode(e.resp_de_produccion::bytea, 'hex') AS resp_prod_hex,
                 encode(e.responsable_gastos::bytea, 'hex') AS resp_gastos_hex,
                 encode(e.chofer::bytea, 'hex') AS chofer_hex,
+                COALESCE(e.choferes_por_vehiculo, '{}'::jsonb) AS choferes_por_vehiculo,
                 e.personal_convocado_op,
                 e.estatus,
                 COALESCE(e.chat_cerrado, FALSE) AS chat_cerrado,
@@ -229,7 +236,7 @@ def listar_ops_para_chat(
             # Validación de pertenencia a la OP:
             # Por defecto (ver_todas=False), TODO usuario (incluso Admin) SOLO ve las OPs donde está convocado o asignado
             if usuario_nombre and (not ver_todas or not es_privilegiado):
-                pertenece = usuario_pertenece_a_op(usuario_nombre, resp_prod, resp_gastos, chofer, convocados)
+                pertenece = usuario_pertenece_a_op(usuario_nombre, resp_prod, resp_gastos, chofer, convocados, r.choferes_por_vehiculo)
                 if not pertenece:
                     continue
 

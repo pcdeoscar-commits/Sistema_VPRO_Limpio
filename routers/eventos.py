@@ -23,6 +23,7 @@ def _asegurar_columnas_op():
         with engine_eventos.begin() as conn:
             conn.execute(text("ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS responsable_gastos character varying(255);"))
             conn.execute(text("ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS chofer character varying(255);"))
+            conn.execute(text("ALTER TABLE public.eventos ADD COLUMN IF NOT EXISTS choferes_por_vehiculo jsonb DEFAULT '{}'::jsonb;"))
     except Exception as e:
         print(f"⚠️ Nota de columnas OP en eventos: {e}")
 
@@ -268,6 +269,24 @@ def buscar_op_por_folio(folio: str):
             data["rol_juegos"] = reparar_mojibake(data.get("rol_juegos") or "")
             data["vehiculo_destino"] = reparar_mojibake(data.get("vehiculo_destino") or "")
             data["personal_roles_op"] = data.get("personal_roles_op") or []
+            import json
+            raw_cpv = data.get("choferes_por_vehiculo")
+            if isinstance(raw_cpv, str):
+                try:
+                    data["choferes_por_vehiculo"] = json.loads(raw_cpv)
+                except Exception:
+                    data["choferes_por_vehiculo"] = {}
+            elif isinstance(raw_cpv, dict):
+                data["choferes_por_vehiculo"] = raw_cpv
+            else:
+                data["choferes_por_vehiculo"] = {}
+
+            # Limpiar mojibake en llaves y valores
+            data["choferes_por_vehiculo"] = {
+                reparar_mojibake(k): reparar_mojibake(v)
+                for k, v in data["choferes_por_vehiculo"].items() if k
+            }
+
             data["personal_convocado_op"] = [reparar_mojibake(p) for p in parse_pg_array(data.get("personal_convocado_op")) if reparar_mojibake(p).strip()]
             data["carros_usados_op"] = [reparar_mojibake(c) for c in parse_pg_array(data.get("carros_usados_op")) if reparar_mojibake(c).strip()]
             data["externos_op"] = [reparar_mojibake(e) for e in parse_pg_array(data.get("externos_op")) if reparar_mojibake(e).strip()]
@@ -456,6 +475,20 @@ def guardar_o_actualizar_op(op: dict):
         payload["es_viaje_foraneo"] = bool(payload.get("es_viaje_foraneo") or False)
 
         import json
+        cpv_val = payload.get("choferes_por_vehiculo", {})
+        if isinstance(cpv_val, (dict, list)):
+            payload["choferes_por_vehiculo"] = json.dumps(cpv_val)
+        elif isinstance(cpv_val, str) and cpv_val.strip():
+            payload["choferes_por_vehiculo"] = cpv_val.strip()
+        else:
+            payload["choferes_por_vehiculo"] = "{}"
+
+        # Si hay choferes por vehículo asignados y no hay chofer general, tomar el primero
+        if isinstance(cpv_val, dict) and cpv_val and not payload["chofer"]:
+            primer_chofer = next((v for v in cpv_val.values() if v and str(v).strip()), "")
+            if primer_chofer:
+                payload["chofer"] = str(primer_chofer).strip()
+
         roles_val = payload.get("personal_roles_op", [])
         if isinstance(roles_val, (list, dict)):
             payload["personal_roles_op"] = json.dumps(roles_val)
@@ -497,6 +530,7 @@ def guardar_o_actualizar_op(op: dict):
                     nota = :nota, elabora = :elabora, organiza = :organiza, coordina = :coordina, vobo = :vobo, 
                     proveedor_op = CAST(:proveedor_op AS text[]), personal_convocado_op = CAST(:personal_convocado_op AS text[]), 
                     carros_usados_op = CAST(:carros_usados_op AS text[]), externos_op = CAST(:externos_op AS text[]), 
+                    choferes_por_vehiculo = CAST(:choferes_por_vehiculo AS jsonb),
                     personal_roles_op = CAST(:personal_roles_op AS jsonb),
                     reuniones_vinculadas = CAST(:reuniones_vinculadas AS text[]), 
                     cronogramas_vinculados = CAST(:cronogramas_vinculados AS text[]),
@@ -513,14 +547,14 @@ def guardar_o_actualizar_op(op: dict):
                     dependencia_solicita, quien_solicita, resp_de_produccion, responsable_gastos, chofer, horas_manejo_chofer, es_viaje_foraneo, fec_del_evento, fec_fin_evento, 
                     inicio_del_evento, hra_de_llamado, detalle_llamado, ubicacion, tipo_de_servicio, produccion, 
                     internet_redes, actividades_de_proveedores, rol_juegos, vehiculo_destino, nota, elabora, organiza, coordina, 
-                    vobo, proveedor_op, personal_convocado_op, carros_usados_op, externos_op, personal_roles_op, reuniones_vinculadas, 
+                    vobo, proveedor_op, personal_convocado_op, carros_usados_op, externos_op, choferes_por_vehiculo, personal_roles_op, reuniones_vinculadas, 
                     cronogramas_vinculados, fotos_evidencia, empleado_que_creo_la_op, fec_de_elaboracion_de_op 
                 ) VALUES (
                     :id_evento, :folio, :para_q_cliente, :nombre_evento, :subtitulo_evento, :locacion, CAST(:fec_de_instalacion AS date), CAST(:hra_de_instalacion AS time), 
                     :dependencia_solicita, :quien_solicita, :resp_de_produccion, :responsable_gastos, :chofer, CAST(:horas_manejo_chofer AS numeric), CAST(:es_viaje_foraneo AS boolean), CAST(:fec_del_evento AS date), CAST(:fec_fin_evento AS date), 
                     CAST(:inicio_del_evento AS time), CAST(:hra_de_llamado AS time), :detalle_llamado, :ubicacion, :tipo_de_servicio, :produccion, 
                     :internet_redes, :actividades_de_proveedores, :rol_juegos, :vehiculo_destino, :nota, :elabora, :organiza, :coordina, 
-                    :vobo, CAST(:proveedor_op AS text[]), CAST(:personal_convocado_op AS text[]), CAST(:carros_usados_op AS text[]), CAST(:externos_op AS text[]), CAST(:personal_roles_op AS jsonb), CAST(:reuniones_vinculadas AS text[]), 
+                    :vobo, CAST(:proveedor_op AS text[]), CAST(:personal_convocado_op AS text[]), CAST(:carros_usados_op AS text[]), CAST(:externos_op AS text[]), CAST(:choferes_por_vehiculo AS jsonb), CAST(:personal_roles_op AS jsonb), CAST(:reuniones_vinculadas AS text[]), 
                     CAST(:cronogramas_vinculados AS text[]), CAST(:fotos_evidencia AS text[]), :empleado_que_creo_la_op, CURRENT_DATE 
                 )
             """)
@@ -1502,9 +1536,25 @@ def generar_pdf_op_bytes(data: dict) -> bytes:
         ('TOPPADDING', (0,0), (-1,-1), 0.5),
     ]
 
+    cpv_map = data.get("choferes_por_vehiculo") or {}
+    if isinstance(cpv_map, str):
+        try:
+            import json
+            cpv_map = json.loads(cpv_map)
+        except Exception:
+            cpv_map = {}
+
     v_row_idx = 2
     for c_nom in carros:
-        sub_veh_data.append([Paragraph(f'<b>{c_nom}</b>', s_cbold), '', '', '', '', ''])
+        chofer_asignado = reparar_mojibake(str(cpv_map.get(c_nom) or "")).strip()
+        if not chofer_asignado and len(carros) == 1 and chofer_val:
+            chofer_asignado = chofer_val
+
+        txt_celda = f'<b>{c_nom}</b>'
+        if chofer_asignado:
+            txt_celda += f' <font size=4.8 color="#334155">(Chofer: {chofer_asignado})</font>'
+
+        sub_veh_data.append([Paragraph(txt_celda, s_cbold), '', '', '', '', ''])
         sub_veh_styles.append(('SPAN', (0, v_row_idx), (1, v_row_idx)))
         v_row_idx += 1
 

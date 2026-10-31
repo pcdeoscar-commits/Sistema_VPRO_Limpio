@@ -509,17 +509,21 @@ function generarHtmlOPInteligente(data) {
                                     <td style="border-right: 1px solid #000000; width: 14%;">km</td>
                                     <td style="width: 14%;">gas</td>
                                 </tr>
-                                ${listaCarros.map(carro => `
+                                ${listaCarros.map(carro => {
+                                    const cpvMap = (data && data.choferes_por_vehiculo) || window.opChoferesPorVehiculo || {};
+                                    let chfAsig = cpvMap[carro] || '';
+                                    if (!chfAsig && listaCarros.length === 1 && choferVal) chfAsig = choferVal;
+                                    return `
                                 <tr style="border-bottom: 1px solid #000000;">
                                     <td style="padding: 3px 6px; font-weight: 800; border-right: 1px solid #000000; font-size: 9.5px;">
-                                        ${carro}
+                                        ${carro}${chfAsig ? ` <span style="font-size: 8px; font-weight: 600; color: #334155;">(Chofer: ${chfAsig})</span>` : ''}
                                     </td>
                                     <td style="border-right: 1px solid #000000;"></td>
                                     <td style="border-right: 1px solid #000000;"></td>
                                     <td style="border-right: 1px solid #000000;"></td>
                                     <td></td>
                                 </tr>
-                                `).join('')}
+                                `;}).join('')}
                             </table>
                         </td>
                     </tr>
@@ -739,6 +743,7 @@ async function cargarDetalleOP(folioId) {
             reuniones: [],
             cronogramas: []
         };
+        window.opChoferesPorVehiculo = {};
         window.opFotosEvidenciaActuales = [];
 
         const proximoFolio = window.vproProximoId || 1;
@@ -774,6 +779,8 @@ async function cargarDetalleOP(folioId) {
             reuniones: Array.isArray(data.reuniones_vinculadas) ? data.reuniones_vinculadas : [],
             cronogramas: Array.isArray(data.cronogramas_vinculados) ? data.cronogramas_vinculados : []
         };
+        window.opChoferesPorVehiculo = (data.choferes_por_vehiculo && typeof data.choferes_por_vehiculo === 'object') ? data.choferes_por_vehiculo : {};
+        window.opChoferesPorVehiculo = (data.choferes_por_vehiculo && typeof data.choferes_por_vehiculo === 'object') ? data.choferes_por_vehiculo : {};
         window.opFotosEvidenciaActuales = Array.isArray(data.fotos_evidencia) ? data.fotos_evidencia : [];
         window.opHabilitadaTemporalmenteFolio = data.habilitada_para_edicion ? data.folio : null;
 
@@ -1579,6 +1586,7 @@ async function guardarOrdenOP(event) {
         vobo: vobo || "",
         personal_convocado_op: window.opMultiSelects.personal_vpro || [],
         carros_usados_op: window.opMultiSelects.vehiculos || [],
+        choferes_por_vehiculo: window.opChoferesPorVehiculo || {},
         externos_op: window.opMultiSelects.personal_externo || [],
         proveedor_op: window.opMultiSelects.proveedores || [],
         reuniones_vinculadas: window.opMultiSelects.reuniones || [],

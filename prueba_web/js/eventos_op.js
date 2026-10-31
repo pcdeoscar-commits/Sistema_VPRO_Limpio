@@ -21,6 +21,7 @@ window.opMultiSelects = {
     proveedores: [],
     reuniones: []
 };
+window.opChoferesPorVehiculo = {};
 
 function cambiarPestanaOP(pestana) {
     const btnActivas = document.getElementById("tab-btn-activas");
@@ -180,6 +181,89 @@ function renderMultiSelectComponent(containerId, stateKey, allOptions, placehold
     `;
 }
 
+
+// -------------------------------------------------------------
+// Gestión Dinámica de Conductor Designado por Cada Vehículo
+// -------------------------------------------------------------
+function renderChoferesPorVehiculo(isReadOnly = false) {
+    const contId = isReadOnly ? 'contenedor-choferes-vehiculos-hist' : 'contenedor-choferes-vehiculos-act';
+    const cont = document.getElementById(contId);
+    if (!cont) return;
+
+    const vehiculos = window.opMultiSelects.vehiculos || [];
+    if (vehiculos.length === 0) {
+        cont.innerHTML = '';
+        cont.style.display = 'none';
+        return;
+    }
+
+    if (!window.opChoferesPorVehiculo) window.opChoferesPorVehiculo = {};
+
+    // Personal convocado para asignar como conductor
+    const personalVpro = window.opMultiSelects.personal_vpro || [];
+    const personalExt = window.opMultiSelects.personal_externo || [];
+    const poolConductores = [...personalVpro, ...personalExt];
+
+    let html = `
+        <div style="margin-top: 10px; padding: 10px 14px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <span>🚗 Conductor(es) Designado(s) por Vehículo:</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+    `;
+
+    vehiculos.forEach(auto => {
+        const autoLimpio = String(auto).trim();
+        const choferActual = window.opChoferesPorVehiculo[autoLimpio] || '';
+
+        let opts = `<option value="">-- Sin conductor asignado --</option>`;
+        let found = false;
+        poolConductores.forEach(c => {
+            const cTrim = String(c).trim();
+            const sel = (cTrim.toLowerCase() === choferActual.toLowerCase() && choferActual) ? 'selected' : '';
+            if (sel) found = true;
+            opts += `<option value="${cTrim}" ${sel}>${cTrim}</option>`;
+        });
+
+        if (choferActual && !found) {
+            opts += `<option value="${choferActual}" selected>${choferActual}</option>`;
+        }
+
+        html += `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <span style="font-size: 12.5px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 6px; min-width: 140px;">
+                    <i class="ph ph-car" style="color: #2563eb;"></i> ${autoLimpio}
+                </span>
+                <select class="op-select" ${isReadOnly ? 'disabled' : ''} style="flex: 1; height: 32px; padding: 2px 8px; font-size: 12px;" onchange="alCambiarChoferVehiculo('${autoLimpio.replace(/'/g, "\\'")}', this.value)">
+                    ${opts}
+                </select>
+            </div>
+        `;
+    });
+
+    html += `</div></div>`;
+    cont.innerHTML = html;
+    cont.style.display = 'block';
+}
+
+function alCambiarChoferVehiculo(vehiculo, chofer) {
+    if (!window.opChoferesPorVehiculo) window.opChoferesPorVehiculo = {};
+    if (chofer && String(chofer).trim()) {
+        window.opChoferesPorVehiculo[vehiculo] = String(chofer).trim();
+    } else {
+        delete window.opChoferesPorVehiculo[vehiculo];
+    }
+
+    // Sincronizar automáticamente con el campo general op_chofer si éste está vacío
+    const selChoferGen = document.getElementById("op_chofer");
+    if (selChoferGen && (!selChoferGen.value || !selChoferGen.value.trim())) {
+        const primerChofer = Object.values(window.opChoferesPorVehiculo).find(v => v && String(v).trim());
+        if (primerChofer) {
+            selChoferGen.value = primerChofer;
+            if (typeof alCambiarChoferDesignado === 'function') alCambiarChoferDesignado(primerChofer);
+        }
+    }
+}
 function addMultiTag(stateKey, val, containerId) {
     if (!val) return;
     if (!window.opMultiSelects[stateKey]) window.opMultiSelects[stateKey] = [];
@@ -193,8 +277,8 @@ function addMultiTag(stateKey, val, containerId) {
     }
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
-    if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); }
-    else if (stateKey === 'vehiculos') optionsList = cats.autos;
+    if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); renderChoferesPorVehiculo(false); }
+    else if (stateKey === 'vehiculos') { optionsList = cats.autos; renderChoferesPorVehiculo(false); }
     else if (stateKey === 'personal_externo') optionsList = cats.apoyos_externos;
     else if (stateKey === 'proveedores') optionsList = cats.proveedores;
     else if (stateKey === 'reuniones') optionsList = cats.reuniones;
@@ -212,8 +296,14 @@ function removeMultiTag(stateKey, val, containerId) {
 
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
-    if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); }
-    else if (stateKey === 'vehiculos') optionsList = cats.autos;
+    if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); renderChoferesPorVehiculo(false); }
+    else if (stateKey === 'vehiculos') {
+        optionsList = cats.autos;
+        if (window.opChoferesPorVehiculo && window.opChoferesPorVehiculo[val]) {
+            delete window.opChoferesPorVehiculo[val];
+        }
+        renderChoferesPorVehiculo(false);
+    }
     else if (stateKey === 'personal_externo') optionsList = cats.apoyos_externos;
     else if (stateKey === 'proveedores') optionsList = cats.proveedores;
     else if (stateKey === 'reuniones') optionsList = cats.reuniones;
@@ -229,8 +319,12 @@ function clearMultiTags(stateKey, containerId) {
     window.opMultiSelects[stateKey] = [];
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
-    if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); }
-    else if (stateKey === 'vehiculos') optionsList = cats.autos;
+    if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); renderChoferesPorVehiculo(false); }
+    else if (stateKey === 'vehiculos') {
+        optionsList = cats.autos;
+        window.opChoferesPorVehiculo = {};
+        renderChoferesPorVehiculo(false);
+    }
     else if (stateKey === 'personal_externo') optionsList = cats.apoyos_externos;
     else if (stateKey === 'proveedores') optionsList = cats.proveedores;
     else if (stateKey === 'reuniones') optionsList = cats.reuniones;
@@ -475,6 +569,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     // Inyectar botones de acción en el recuadro superior (a la misma altura que el dropdown)
     setTimeout(() => {
         actualizarCrewGira(choferVal);
+        renderChoferesPorVehiculo(isReadOnly);
         const tieneGira = Boolean(data && (data.es_viaje_foraneo || Number(data.horas_manejo_chofer) > 0 || (data.chofer && String(data.chofer).trim() !== '')));
         if (tieneGira && typeof toggleBitacoraGira === 'function') {
             toggleBitacoraGira(true);
@@ -769,6 +864,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                         <div style="margin-bottom: 16px;">
                             <label class="op-form-label">VEHÍCULOS:</label>
                             <div id="ms-vehiculos-${isReadOnly ? 'hist' : 'act'}"></div>
+                            <div id="contenedor-choferes-vehiculos-${isReadOnly ? 'hist' : 'act'}" style="display: none;"></div>
                         </div>
                         <div>
                             <label class="op-form-label">PROVEEDORES CO-CONVOCADOS:</label>

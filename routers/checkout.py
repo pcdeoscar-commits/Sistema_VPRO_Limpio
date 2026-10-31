@@ -22,7 +22,7 @@ def normalizar_texto(t: str) -> str:
     sin_tildes = "".join([c for c in nfkd if not unicodedata.combining(c)])
     return re.sub(r'[^a-zA-Z0-9]', '', sin_tildes).upper()
 
-def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, chofer: str, convocados: Any) -> bool:
+def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, chofer: str, convocados: Any, choferes_extra: Any = None) -> bool:
     """Verifica si un usuario es responsable o está convocado en una OP."""
     if not usuario_nom or not str(usuario_nom).strip():
         return False
@@ -30,8 +30,21 @@ def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, c
     if not norm_user:
         return False
     
-    # Responsables directos (producción, gastos, chofer)
-    for resp in [resp_prod, resp_gastos, chofer]:
+    # Responsables directos (producción, gastos, choferes designados)
+    todos_resp = [resp_prod, resp_gastos, chofer]
+    if isinstance(choferes_extra, dict):
+        todos_resp.extend(list(choferes_extra.values()))
+    elif isinstance(choferes_extra, (list, tuple)):
+        todos_resp.extend(choferes_extra)
+    elif isinstance(choferes_extra, str):
+        try:
+            c_p = json.loads(choferes_extra)
+            if isinstance(c_p, dict):
+                todos_resp.extend(list(c_p.values()))
+        except Exception:
+            pass
+
+    for resp in todos_resp:
         if resp:
             norm_r = normalizar_texto(resp)
             if norm_user in norm_r or norm_r in norm_user:
@@ -81,7 +94,8 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
                       encode(COALESCE(e.resp_de_produccion, '')::bytea, 'hex'),
                       encode(COALESCE(e.responsable_gastos, '')::bytea, 'hex'),
                       encode(COALESCE(e.chofer, '')::bytea, 'hex'),
-                      encode(COALESCE(e.personal_convocado_op::text, '[]')::bytea, 'hex')
+                      encode(COALESCE(e.personal_convocado_op::text, '[]')::bytea, 'hex'),
+                      encode(COALESCE(e.choferes_por_vehiculo::text, '{}')::bytea, 'hex')
                FROM public.eventos e
                WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
                  AND NOT EXISTS (
@@ -110,8 +124,9 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
             resp_g = safe_decode_hex(r[4])
             chof = safe_decode_hex(r[5])
             conv_raw = safe_decode_hex(r[6])
+            cpv_raw = safe_decode_hex(r[7]) if len(r) > 7 else "{}"
             
-            if usuario_pertenece_a_op(nom_usuario, resp_p, resp_g, chof, conv_raw):
+            if usuario_pertenece_a_op(nom_usuario, resp_p, resp_g, chof, conv_raw, cpv_raw):
                 ordenes.append(f"OP-{str(id_ev).zfill(3)} | {cli} - {nom}")
 
         lista_kits = [safe_decode_hex(k[0]) for k in kits_rows]

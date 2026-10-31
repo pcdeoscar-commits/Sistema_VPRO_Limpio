@@ -196,6 +196,37 @@ function actualizarCabeceraSoporte() {
     }
 }
 
+
+// Funciones auxiliares para formato y seguridad
+function escaparHTML(texto) {
+    if (!texto) return "";
+    const div = document.createElement("div");
+    div.innerText = String(texto);
+    return div.innerHTML;
+}
+
+function formatearFechaSeparador(fechaStr) {
+    try {
+        if (!fechaStr) return "";
+        const partes = fechaStr.split("-");
+        if (partes.length < 3) return fechaStr;
+        const y = parseInt(partes[0], 10);
+        const m = parseInt(partes[1], 10) - 1;
+        const d = parseInt(partes[2], 10);
+        const fecha = new Date(y, m, d);
+        const hoy = new Date();
+        const ayer = new Date();
+        ayer.setDate(hoy.getDate() - 1);
+
+        if (fecha.toDateString() === hoy.toDateString()) return "HOY";
+        if (fecha.toDateString() === ayer.toDateString()) return "AYER";
+
+        return fecha.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" }).toUpperCase();
+    } catch {
+        return fechaStr;
+    }
+}
+
 // Renderiza la lista cronológica de mensajes con estilo WhatsApp
 function renderizarMensajesSoporte() {
     const contenedor = document.getElementById("chat-area-mensajes");
@@ -268,7 +299,7 @@ function renderizarMensajesSoporte() {
         if (m.tipo_mensaje === "FOTO" && m.archivo_url) {
             contenidoHtml = `
                 <div style="margin-bottom: 6px; border-radius: 8px; overflow: hidden; max-width: 320px;">
-                    <img src="${m.archivo_url}" alt="Foto" style="width: 100%; display: block; cursor: pointer;" onclick="abrirVisorFotoChat('${m.archivo_url}')">
+                    <img src="${m.archivo_url}" alt="Foto" style="width: 100%; display: block; cursor: pointer;" onclick="window.open('${m.archivo_url}', '_blank')">
                 </div>
                 ${m.mensaje ? `<div style="font-size: 13.5px; line-height: 1.4;">${escaparHTML(m.mensaje)}</div>` : ''}
             `;

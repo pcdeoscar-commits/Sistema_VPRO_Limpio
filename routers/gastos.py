@@ -54,7 +54,8 @@ def listar_folios_pendientes_gastos():
                e.fec_fin_evento,
                0.0 AS estimado_gasto
         FROM public.eventos e
-        WHERE NOT EXISTS (
+        WHERE UPPER(COALESCE(e.estatus, '')) != 'CERRADA (HISTÓRICO)'
+          AND NOT EXISTS (
             SELECT 1 FROM public.informes_gastos_maestro m 
             WHERE m.folio_vpro = e.id_evento
         )

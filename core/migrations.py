@@ -103,6 +103,13 @@ def aplicar_migraciones_automaticas():
 
                     DELETE FROM public.eventos WHERE id_evento = 42 OR folio = '42';
 
+                    -- Archivar al histórico todas las OPs del 30 de septiembre de 2026 o anteriores
+                    UPDATE public.eventos
+                    SET estatus = 'CERRADA (HISTÓRICO)',
+                        habilitada_para_edicion = FALSE
+                    WHERE fec_del_evento <= '2026-09-30'
+                      AND UPPER(COALESCE(estatus, '')) != 'CERRADA (HISTÓRICO)';
+
                     SELECT setval('public.eventos_id_evento_seq', (SELECT COALESCE(MAX(id_evento), 1) FROM public.eventos));
                 """)
                 logger.info("[Auto-Migraciones] OP-42 purgada de db_eventos y secuencia resincronizada con éxito.")

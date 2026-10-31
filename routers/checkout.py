@@ -72,19 +72,46 @@ def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, c
 
     return False
 
+def es_coordinador_o_admin(id_empleado: str = "", nombre: str = "", rol: str = "", puesto: str = "") -> bool:
+    """Verifica si el usuario es Coordinador, Administrador o Dirección para otorgar acceso total a las OPs en checkout."""
+    id_clean = str(id_empleado or "").strip()
+    if id_clean in ["124", "000", "119"]:
+        return True
+    
+    r_up = (rol or "").upper().strip()
+    p_up = (puesto or "").upper().strip()
+    for kw in ["COORD", "ADMIN", "DIREC", "GEREN", "SOPORTE"]:
+        if kw in r_up or kw in p_up:
+            return True
+            
+    norm_n = normalizar_texto(nombre)
+    for priv in ["MADRID", "VILLARREAL", "AGUNDEZ"]:
+        if priv in norm_n:
+            return True
+            
+    return False
+
 @router.get("/api/checkout/init-data/{id_empleado}")
-def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] = None):
-    """Carga los datos iniciales de órdenes, kits y alertas de checkout exclusivamente para el empleado convocado."""
+def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] = None, rol: Optional[str] = None):
+    """Carga los datos iniciales de órdenes, kits y alertas de checkout. El Coordinador o Admin tiene acceso total a todas las OPs activas."""
     try:
         nom_usuario = (usuario_nombre or "").strip()
+        rol_usuario = (rol or "").strip()
+        puesto_usuario = ""
         with engine_personal.connect() as conn_p:
-            if not nom_usuario:
-                row_u = conn_p.execute(
-                    text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
-                    {"id": id_empleado.strip()}
-                ).fetchone()
-                if row_u and row_u[0]:
+            row_u = conn_p.execute(
+                text("SELECT encode(nombre::bytea, 'hex'), encode(COALESCE(rol, '')::bytea, 'hex'), encode(COALESCE(puesto, '')::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
+                {"id": id_empleado.strip()}
+            ).fetchone()
+            if row_u:
+                if not nom_usuario and row_u[0]:
                     nom_usuario = safe_decode_hex(row_u[0])
+                if not rol_usuario and row_u[1]:
+                    rol_usuario = safe_decode_hex(row_u[1])
+                if row_u[2]:
+                    puesto_usuario = safe_decode_hex(row_u[2])
+
+        es_coord = es_coordinador_o_admin(id_empleado, nom_usuario, rol_usuario, puesto_usuario)
 
         with engine_eventos.connect() as conn:
             evs_query = text("""
@@ -126,7 +153,7 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
             conv_raw = safe_decode_hex(r[6])
             cpv_raw = safe_decode_hex(r[7]) if len(r) > 7 else "{}"
             
-            if usuario_pertenece_a_op(nom_usuario, resp_p, resp_g, chof, conv_raw, cpv_raw):
+            if es_coord or usuario_pertenece_a_op(nom_usuario, resp_p, resp_g, chof, conv_raw, cpv_raw):
                 ordenes.append(f"OP-{str(id_ev).zfill(3)} | {cli} - {nom}")
 
         lista_kits = [safe_decode_hex(k[0]) for k in kits_rows]
@@ -212,18 +239,26 @@ def buscar_kit_operador(nombre_kit: str, id_empleado: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/checkout/status/{id_evento}/{id_empleado}")
-def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Optional[str] = None):
+def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Optional[str] = None, rol: Optional[str] = None):
     """Consulta el estado del checkout de una OP para un empleado específico."""
     try:
         nom_usuario = (usuario_nombre or "").strip()
+        rol_usuario = (rol or "").strip()
+        puesto_usuario = ""
         with engine_personal.connect() as conn_p:
-            if not nom_usuario:
-                row_u = conn_p.execute(
-                    text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
-                    {"id": id_empleado.strip()}
-                ).fetchone()
-                if row_u and row_u[0]:
+            row_u = conn_p.execute(
+                text("SELECT encode(nombre::bytea, 'hex'), encode(COALESCE(rol, '')::bytea, 'hex'), encode(COALESCE(puesto, '')::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
+                {"id": id_empleado.strip()}
+            ).fetchone()
+            if row_u:
+                if not nom_usuario and row_u[0]:
                     nom_usuario = safe_decode_hex(row_u[0])
+                if not rol_usuario and row_u[1]:
+                    rol_usuario = safe_decode_hex(row_u[1])
+                if row_u[2]:
+                    puesto_usuario = safe_decode_hex(row_u[2])
+
+        es_coord = es_coordinador_o_admin(id_empleado, nom_usuario, rol_usuario, puesto_usuario)
 
         with engine_eventos.connect() as conn:
             conv_row = conn.execute(
@@ -232,7 +267,8 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Op
                            encode(COALESCE(proveedor_op::text, '[]')::bytea, 'hex'),
                            encode(COALESCE(resp_de_produccion, '')::bytea, 'hex'),
                            encode(COALESCE(responsable_gastos, '')::bytea, 'hex'),
-                           encode(COALESCE(chofer, '')::bytea, 'hex')
+                           encode(COALESCE(chofer, '')::bytea, 'hex'),
+                           encode(COALESCE(choferes_por_vehiculo::text, '{}')::bytea, 'hex')
                     FROM public.eventos WHERE id_evento = :id
                 """), 
                 {"id": id_evento}
@@ -242,8 +278,9 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Op
             resp_prod = safe_decode_hex(conv_row[2]) if conv_row and len(conv_row) > 2 and conv_row[2] else ""
             resp_gast = safe_decode_hex(conv_row[3]) if conv_row and len(conv_row) > 3 and conv_row[3] else ""
             chofer = safe_decode_hex(conv_row[4]) if conv_row and len(conv_row) > 4 and conv_row[4] else ""
+            choferes_veh = safe_decode_hex(conv_row[5]) if conv_row and len(conv_row) > 5 and conv_row[5] else "{}"
 
-            es_convocado = usuario_pertenece_a_op(nom_usuario, resp_prod, resp_gast, chofer, convocados)
+            es_convocado = es_coord or usuario_pertenece_a_op(nom_usuario, resp_prod, resp_gast, chofer, convocados, choferes_veh)
             
             m_row = conn.execute(
                 text("SELECT id_maestro, encode(incidencias_generales::text::bytea, 'hex'), estado_bodega, encode(nombre_kit::text::bytea, 'hex') FROM public.checkouts_maestro WHERE folio_op = :id AND TRIM(id_empleado) = :emp"), 
@@ -309,6 +346,7 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Op
             "proveedores_op": proveedores_op, 
             "resp_de_produccion": resp_prod,
             "es_convocado": es_convocado,
+            "es_coordinador": es_coord,
             "id_maestro": m_row[0] if m_row else None, 
             "incidencias_generales": reparar_mojibake(safe_decode_hex(m_row[1]).strip()) if m_row and m_row[1] else "", 
             "estado_bodega": m_row[2] if m_row else "NUEVO", 
@@ -411,18 +449,28 @@ def registrar_finalizacion_checkout(payload: dict):
         conv_raw = safe_decode_hex(ev_row[3])
 
         nombre_sujeto = ""
+        rol_sujeto = ""
         with engine_personal.connect() as conn_p:
             row_p = conn_p.execute(
-                text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
+                text("SELECT encode(nombre::bytea, 'hex'), encode(COALESCE(rol, '')::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
                 {"id": id_sujeto}
             ).fetchone()
-            if row_p and row_p[0]:
-                nombre_sujeto = safe_decode_hex(row_p[0])
+            if row_p:
+                if row_p[0]:
+                    nombre_sujeto = safe_decode_hex(row_p[0])
+                if row_p[1]:
+                    rol_sujeto = safe_decode_hex(row_p[1])
 
         if not nombre_sujeto:
             nombre_sujeto = id_sujeto
 
-        if not usuario_pertenece_a_op(nombre_sujeto, resp_prod, resp_gast, chofer, conv_raw):
+        user_actual = str(payload.get("usuario_actual", "")).strip()
+        es_privilegiado = (
+            es_coordinador_o_admin(id_sujeto, nombre_sujeto, rol_sujeto) or 
+            es_coordinador_o_admin(nombre=user_actual)
+        )
+
+        if not (es_privilegiado or usuario_pertenece_a_op(nombre_sujeto, resp_prod, resp_gast, chofer, conv_raw)):
             raise HTTPException(
                 status_code=403, 
                 detail=f"El operador '{nombre_sujeto}' no está convocado en la OP-{id_op}."

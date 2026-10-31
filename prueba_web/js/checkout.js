@@ -114,7 +114,8 @@ async function inicializarModuloCheckout() {
     try {
         const idEmp = usuarioLogueado.id_empleado || "001";
         const nomEmp = usuarioLogueado.nombre_completo || usuarioLogueado.nombre || "";
-        const resInit = await fetch(`${API_URL}/api/checkout/init-data/${encodeURIComponent(idEmp)}?usuario_nombre=${encodeURIComponent(nomEmp)}`);
+        const rolEmp = usuarioLogueado.rol || "";
+        const resInit = await fetch(`${API_URL}/api/checkout/init-data/${encodeURIComponent(idEmp)}?usuario_nombre=${encodeURIComponent(nomEmp)}&rol=${encodeURIComponent(rolEmp)}`);
         if (resInit.ok) {
             const pack = await resInit.json();
             ordenesCheckoutDisponibles = pack.ordenes || [];
@@ -253,7 +254,17 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
 
     try {
         const nomUser = usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || "";
-        const resStatus = await fetch(`${API_URL}/api/checkout/status/${idEvento}/${empId}?usuario_nombre=${encodeURIComponent(nomUser)}`);
+        const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase().trim();
+        const puestoUsuario = (usuarioLogueado?.puesto || '').toUpperCase().trim();
+        const nomUsuarioUpper = nomUser.toUpperCase().trim();
+        const idUsuario = String(usuarioLogueado?.id_empleado || '').trim();
+        const esCoordinador = rolUsuario === 'COORDINADOR' || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') ||
+                              puestoUsuario.includes('COORDINADOR') || puestoUsuario.includes('COORDINACION') ||
+                              rolUsuario === 'ADMIN' || rolUsuario.includes('DIREC') ||
+                              idUsuario === '124' || idUsuario === '000' || idUsuario === '119' ||
+                              nomUsuarioUpper.includes('MADRID') || nomUsuarioUpper.includes('VILLARREAL') || nomUsuarioUpper.includes('AGUNDEZ');
+
+        const resStatus = await fetch(`${API_URL}/api/checkout/status/${idEvento}/${empId}?usuario_nombre=${encodeURIComponent(nomUser)}&rol=${encodeURIComponent(rolUsuario)}`);
         if (!resStatus.ok) throw new Error("Error consultando status de checkout");
         const statusPack = await resStatus.json();
 
@@ -266,8 +277,11 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         const proveedores = desglosarArrayPostgres(statusPack.proveedores_op);
         proveedoresAsignadosOPCheckout = proveedores;
 
-        // Determinar si el usuario logueado está convocado en esta OP
-        const esConvocado = statusPack.hasOwnProperty('es_convocado') ? Boolean(statusPack.es_convocado) : true;
+        // Determinar si el usuario logueado está convocado en esta OP o si es Coordinador con acceso total
+        let esConvocado = statusPack.hasOwnProperty('es_convocado') ? Boolean(statusPack.es_convocado) : true;
+        if (esCoordinador || Boolean(statusPack.es_coordinador)) {
+            esConvocado = true;
+        }
         esConvocadoActual = esConvocado;
 
         // Actualizar resumen en pantalla
@@ -321,8 +335,14 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
                         selEmp.value = empId;
                         empleadoActivoCheckout = empId;
                     } else if (selEmp.options.length > 0) {
-                        selEmp.selectedIndex = 0;
-                        empleadoActivoCheckout = selEmp.value;
+                        const primerId = selEmp.options[0].value;
+                        selEmp.value = primerId;
+                        empleadoActivoCheckout = primerId;
+                        // Si el usuario es Coordinador y no se especificó un empIdOverride explícito, cargar automáticamente el status del primer convocado
+                        if (esCoordinador && !empIdOverride && primerId !== empId) {
+                            await cargarStatusCheckout(idEvento, primerId);
+                            return;
+                        }
                     }
                 }
             }
@@ -439,10 +459,6 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
 
         // Control de botón de autorización de Coordinador (EXCLUSIVO COORDINADOR)
         const btnCoord = document.getElementById('btn-autorizar-salida-coordinador');
-        const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase().trim();
-        const puestoUsuario = (usuarioLogueado?.puesto || '').toUpperCase().trim();
-        const esCoordinador = rolUsuario === 'COORDINADOR' || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') ||
-                              puestoUsuario.includes('COORDINADOR') || puestoUsuario.includes('COORDINACION');
         
         if (btnCoord) {
             if (esCoordinador && idMaestroCheckoutActual && estadoBodegaCheckoutActual !== 'DESPACHADO' && estadoBodegaCheckoutActual !== 'RECIBIDO') {
@@ -806,7 +822,8 @@ async function finalizarSalidaCheckout() {
         id_sujeto_a_revisar: empId,
         incidencias_generales: incidenciasFinal,
         nombre_kit: selKit,
-        items: itemsFinales
+        items: itemsFinales,
+        usuario_actual: usuarioLogueado?.nombre_completo || 'COORDINADOR'
     };
 
     try {
@@ -839,8 +856,13 @@ async function finalizarSalidaCheckout() {
 async function autorizarSalidaCoordinador() {
     const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase().trim();
     const puestoUsuario = (usuarioLogueado?.puesto || '').toUpperCase().trim();
+    const nomUsuarioUpper = (usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || '').toUpperCase().trim();
+    const idUsuario = String(usuarioLogueado?.id_empleado || '').trim();
     const esCoordinador = rolUsuario === 'COORDINADOR' || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') ||
-                          puestoUsuario.includes('COORDINADOR') || puestoUsuario.includes('COORDINACION');
+                          puestoUsuario.includes('COORDINADOR') || puestoUsuario.includes('COORDINACION') ||
+                          rolUsuario === 'ADMIN' || rolUsuario.includes('DIREC') ||
+                          idUsuario === '124' || idUsuario === '000' || idUsuario === '119' ||
+                          nomUsuarioUpper.includes('MADRID') || nomUsuarioUpper.includes('VILLARREAL') || nomUsuarioUpper.includes('AGUNDEZ');
 
     if (!esCoordinador) {
         alert("⚠️ Acción restringida: Solo el personal con rol de Coordinador puede autorizar la salida.");

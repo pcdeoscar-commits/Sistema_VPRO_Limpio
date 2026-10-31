@@ -128,5 +128,21 @@ def aplicar_migraciones_automaticas():
         except Exception as e_reindex:
             logger.warning(f"[Auto-Migraciones] Reindex opcional: {e_reindex}")
 
+        # 9. Trazabilidad estricta de gastos: Asignar id_empleado del productor real
+        try:
+            with get_db_cursor("db_eventos", commit=True) as cur_igm:
+                cur_igm.execute("""
+                    UPDATE public.informes_gastos_maestro SET id_empleado = '119', revisado = TRUE WHERE id_informe = 9;
+                    UPDATE public.informes_gastos_maestro SET id_empleado = '107', revisado = TRUE WHERE id_informe = 13;
+                    UPDATE public.informes_gastos_maestro SET id_empleado = '107', revisado = TRUE WHERE id_informe = 14;
+                    UPDATE public.informes_gastos_maestro SET id_empleado = '107', revisado = TRUE WHERE id_informe = 15;
+                    UPDATE public.informes_gastos_maestro SET id_empleado = '107', revisado = TRUE WHERE id_informe = 18;
+                    UPDATE public.informes_gastos_maestro SET id_empleado = '107', revisado = TRUE WHERE id_informe = 23;
+                    UPDATE public.informes_gastos_maestro SET id_empleado = '119', revisado = TRUE WHERE id_informe = 27;
+                """)
+                logger.info("[Auto-Migraciones] Trazabilidad de informes de gastos sincronizada al 100%.")
+        except Exception as e_igm:
+            logger.warning(f"[Auto-Migraciones] Nota en sincronizacion de gastos: {e_igm}")
+
     except Exception as e:
         logger.warning(f"[Auto-Migraciones] Advertencia al sincronizar esquemas: {e}")

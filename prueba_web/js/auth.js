@@ -347,14 +347,19 @@ function esUsuarioAutorizadoGastos() {
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
     const puesto = (usuarioLogueado.puesto || '').toUpperCase().trim();
+    const empId = String(usuarioLogueado.id_empleado || '').trim();
 
-    // 1. Apellido obligatorio: Villarreal (o variantes) o Agundez
-    const esApellidoAutorizado = nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ');
-    if (!esApellidoAutorizado) return false;
+    // 1. Directores y Administradores (Villarreal, Agundez, Admin)
+    const esDireccion = rol === 'ADMIN' || rol.includes('ADMIN') || 
+                        nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || 
+                        nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ');
+    if (esDireccion) return true;
 
-    // 2. Rol obligatorio: Productor (en el sistema los Productores Directivos tienen rol PRODUCTOR o ADMIN)
-    const esRolAutorizado = rol === 'PRODUCTOR' || rol.includes('PRODUCTOR') || puesto.includes('PRODUCTOR') || rol === 'ADMIN';
-    return esRolAutorizado;
+    // 2. Productores autorizados de VPRO que rinden cuentas
+    const esProductor = rol.includes('PRODUCTOR') || puesto.includes('PRODUCTOR') ||
+                        ['107', '119', '102', '104', '201', '203'].includes(empId) ||
+                        nombre.includes('SANCHEZ ESTRADA') || nombre.includes('MADRID ZAZUETA') || nombre.includes('TORRES SANCHEZ');
+    return Boolean(esProductor);
 }
 
 function actualizarVisibilidadMenuGastos() {

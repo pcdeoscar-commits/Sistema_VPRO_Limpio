@@ -344,35 +344,65 @@ async function cargarDatosInicio() {
             }
         } catch(e) { console.error('Vacaciones notif:', e); }
 
-        // ── E. Gastos pendientes de comprobación ──────────────────────────
+        // ── E. Gastos: Estado de Informes y Auditoría ──────────────────────────
         try {
             if (typeof esUsuarioAutorizadoGastos === 'function' && esUsuarioAutorizadoGastos() && resGastos.status === 'fulfilled' && resGastos.value.ok) {
                 const todosGastos = await resGastos.value.json();
                 const misGastos = (todosGastos || []).filter(g =>
                     String(g.id_empleado).trim() === String(idEmp).trim()
                 );
-                gruposHtml.push(buildDropdownCard({
-                    icon: 'ph-receipt',
-                    color: '#0891b2', bg: '#f0f9ff', border: '#38bdf8',
-                    titulo: '🧾 Gastos pendientes de comprobación',
-                    badge: `${misGastos.length} OP${misGastos.length !== 1 ? 's' : ''}`,
-                    badgeColor: '#0891b2',
-                    items: misGastos,
-                    renderItem: (g) => `
-                        <div onclick="cambiarVista('vista-gastos');"
-                             style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
-                             onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='transparent'">
-                            <i class="ph ph-money" style="font-size:18px;color:#0891b2;flex-shrink:0;"></i>
-                            <div style="flex:1;">
-                                <div style="font-size:13px;font-weight:600;color:#0c4a6e;">
-                                    OP-${g.folio_op} · ${g.evento||'Evento'}
+                // Si el usuario tiene informes enviados que están en revisión por auditoría:
+                if (misGastos.length > 0) {
+                    gruposHtml.push(buildDropdownCard({
+                        icon: 'ph-receipt',
+                        color: '#0891b2', bg: '#f0f9ff', border: '#38bdf8',
+                        titulo: '🧾 Informes de Gastos en Revisión',
+                        badge: `${misGastos.length} OP${misGastos.length !== 1 ? 's' : ''}`,
+                        badgeColor: '#0891b2',
+                        items: misGastos,
+                        renderItem: (g) => `
+                            <div onclick="cambiarVista('vista-gastos');"
+                                 style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
+                                 onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='transparent'">
+                                <i class="ph ph-money" style="font-size:18px;color:#0891b2;flex-shrink:0;"></i>
+                                <div style="flex:1;">
+                                    <div style="font-size:13px;font-weight:600;color:#0c4a6e;">
+                                        OP-${g.folio_op} · ${g.evento||'Evento'}
+                                    </div>
+                                    <div style="font-size:11.5px;color:#0369a1;">Comprobación enviada · En revisión por Auditoría</div>
+                                    <div style="font-size:11px;color:#0284c7;">👉 Ver estado en Gastos</div>
                                 </div>
-                                <div style="font-size:11.5px;color:#0369a1;">Pendiente de revisión de auditoría</div>
-                                <div style="font-size:11px;color:#0284c7;">👉 Ir a Gastos para comprobar</div>
-                            </div>
-                            <i class="ph ph-arrow-right" style="color:#0891b2;font-size:16px;flex-shrink:0;"></i>
-                        </div>`
-                }));
+                                <i class="ph ph-arrow-right" style="color:#0891b2;font-size:16px;flex-shrink:0;"></i>
+                            </div>`
+                    }));
+                }
+
+                // Si es Dirección / Auditoría y hay informes pendientes por revisar y aprobar:
+                const esDir = typeof esUsuarioAutorizadoDireccion === 'function' && esUsuarioAutorizadoDireccion();
+                if (esDir && Array.isArray(todosGastos) && todosGastos.length > 0) {
+                    gruposHtml.push(buildDropdownCard({
+                        icon: 'ph-scales',
+                        color: '#4f46e5', bg: '#eef2ff', border: '#818cf8',
+                        titulo: '⚖️ Auditoría de Gastos (Pendientes de Aprobación)',
+                        badge: `${todosGastos.length} por revisar`,
+                        badgeColor: '#4f46e5',
+                        items: todosGastos,
+                        renderItem: (g) => `
+                            <div onclick="cambiarVista('vista-gastos'); cambiarPestanaGastos('auditoria');"
+                                 style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
+                                 onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='transparent'">
+                                <i class="ph ph-file-text" style="font-size:18px;color:#4f46e5;flex-shrink:0;"></i>
+                                <div style="flex:1;">
+                                    <div style="font-size:13px;font-weight:600;color:#1e1b4b;">
+                                        OP-${g.folio_op} · ${g.evento||'Evento'}
+                                    </div>
+                                    <div style="font-size:11.5px;color:#4338ca;">Rendido por: Empleado #${g.id_empleado || 'Productor'}</div>
+                                    <div style="font-size:11px;color:#4f46e5;">👉 Ir al Panel de Auditoría para aprobar</div>
+                                </div>
+                                <i class="ph ph-arrow-right" style="color:#4f46e5;font-size:16px;flex-shrink:0;"></i>
+                            </div>`
+                    }));
+                }
             }
         } catch(e) { console.error('Gastos notif:', e); }
 

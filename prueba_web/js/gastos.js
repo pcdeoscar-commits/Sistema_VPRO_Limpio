@@ -204,6 +204,40 @@ async function seleccionarFolioParaGastos(folioId) {
 
         recalcularDiasGastos();
         if (formPanel) formPanel.style.display = "block";
+
+        // 🔒 Validar si el usuario logueado es el Productor Responsable o Responsable de Gastos de la OP
+        const miNombreNorm = (usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || "").trim().toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const prodOpNorm = (evData.responsable_gastos || evData.productor_responsable || "").trim().toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        const esElAsignado = miNombreNorm && prodOpNorm && (prodOpNorm.includes(miNombreNorm) || miNombreNorm.includes(prodOpNorm));
+
+        const btnEnviarGasto = document.getElementById("btn-guardar-informe-gastos") || document.querySelector('button[onclick*="guardarInformeGastosProductor"]');
+        const avisoRestriccion = document.getElementById("aviso-restriccion-productor-gasto");
+
+        if (!esElAsignado) {
+            if (btnEnviarGasto) {
+                btnEnviarGasto.disabled = true;
+                btnEnviarGasto.style.opacity = "0.45";
+                btnEnviarGasto.style.cursor = "not-allowed";
+                btnEnviarGasto.title = "Solo el Productor Responsable o Responsable de Gastos asignado puede elaborar y enviar este reporte.";
+            }
+            if (avisoRestriccion) {
+                avisoRestriccion.style.display = "block";
+                avisoRestriccion.innerHTML = `<i class="ph ph-shield-warning" style="font-size: 18px; vertical-align: middle;"></i> <b>Modo de Consulta Restringido:</b> Esta OP está asignada al Productor <b>${evData.productor_responsable || 'No asignado'}</b>. Por estrictas políticas de trazabilidad financiera, únicamente el productor asignado puede elaborar y remitir este reporte de gastos.`;
+            }
+        } else {
+            if (btnEnviarGasto) {
+                btnEnviarGasto.disabled = false;
+                btnEnviarGasto.style.opacity = "1";
+                btnEnviarGasto.style.cursor = "pointer";
+                btnEnviarGasto.removeAttribute("title");
+            }
+            if (avisoRestriccion) {
+                avisoRestriccion.style.display = "none";
+            }
+        }
     } catch (e) {
         alert(`❌ Error al cargar datos del evento: ${e.message}`);
     }
@@ -340,12 +374,24 @@ function recalcularTotalesGastos() {
 
 async function guardarInformeGastosProductor() {
     if (typeof esUsuarioAutorizadoGastos === 'function' && !esUsuarioAutorizadoGastos()) {
-        alert("⛔ Acceso Restringido: El módulo de Reporte de Gastos está reservado exclusivamente para Productores autorizados de Dirección (apellidos Villarreal o Agundez).");
+        alert("⛔ Acceso Restringido: El módulo de Reporte de Gastos está reservado para Productores autorizados de VPRO.");
         return;
     }
     const folioId = eventoSeleccionadoGasto?.id_evento;
     if (!folioId) {
         alert("⚠️ No hay un evento seleccionado.");
+        return;
+    }
+
+    // 🔒 REGLA ESTRICTA: Solo el Productor Responsable o el Responsable de Gastos de la OP puede elaborar este reporte
+    const miNombreNorm = (usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || "").trim().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const prodOpNorm = (eventoSeleccionadoGasto?.responsable_gastos || eventoSeleccionadoGasto?.productor_responsable || "").trim().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    const esElAsignado = miNombreNorm && prodOpNorm && (prodOpNorm.includes(miNombreNorm) || miNombreNorm.includes(prodOpNorm));
+    if (!esElAsignado) {
+        alert(`⛔ Acción no permitida: Solo el Productor Responsable o Responsable de Gastos asignado a esta OP (${eventoSeleccionadoGasto?.productor_responsable || 'No asignado'}) está facultado para elaborar y remitir este reporte.`);
         return;
     }
 

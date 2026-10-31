@@ -8,11 +8,15 @@ from core.database import engine_eventos, engine_personal
 from core.utils import safe_decode_hex
 
 def es_usuario_autorizado_gastos(nombre: str) -> bool:
-    """Verifica si el usuario es un Productor o Directivo autorizado (Villarreal o Agundez)."""
+    """Verifica si el usuario es un Productor o Directivo con facultad para rendir o auditar gastos."""
     if not nombre:
         return False
     norm = ''.join(c for c in unicodedata.normalize('NFD', str(nombre).upper()) if unicodedata.category(c) != 'Mn')
-    return any(ap in norm for ap in ["VILLARREAL", "VILLAREAL", "VILARREAL", "AGUNDEZ"])
+    productores_autorizados = [
+        "VILLARREAL", "VILLAREAL", "VILARREAL", "AGUNDEZ", 
+        "SANCHEZ ESTRADA", "MADRID ZAZUETA", "TORRES SANCHEZ"
+    ]
+    return any(p in norm for p in productores_autorizados)
 
 router = APIRouter(prefix="/api/gastos", tags=["💸 Gastos Operativos"])
 
@@ -146,63 +150,62 @@ def guardar_informe_gastos_completo(payload: dict):
         
         folio_vpro = int(maestro.get("folio_vpro", 0))
         emp_id = str(maestro.get("id_empleado", "")).strip()[:3]
+        nombre_usuario = str(maestro.get("nombre_usuario", "")).strip()
 
-        # Si no se pasó id_empleado o viene por defecto "000", resolverlo mediante el responsable de gastos o productor responsable
-        if not emp_id or emp_id == "000":
-            try:
-                with engine_eventos.connect() as ev_conn:
-                    row_ev = ev_conn.execute(
-                        text("SELECT encode(COALESCE(NULLIF(responsable_gastos, ''), resp_de_produccion, '')::bytea, 'hex') FROM public.eventos WHERE id_evento = :id"),
-                        {"id": folio_vpro}
-                    ).first()
-                    if row_ev:
-                        prod_nom = safe_decode_hex(row_ev[0]).strip().lower()
-                        with engine_personal.connect() as p_conn:
-                            emp_rows = p_conn.execute(text("SELECT id_empleado, encode(nombre::bytea, 'hex') FROM public.empleados")).fetchall()
-                            for er in emp_rows:
-                                if prod_nom and safe_decode_hex(er[1]).strip().lower() == prod_nom:
-                                    emp_id = str(er[0])[:3]
-                                    break
-            except Exception:
-                pass
-        
-        if not emp_id:
-            emp_id = "000"
-
-        # 🔒 Verificación estricta: Solo Productores de Dirección (Villarreal o Agundez)
-        nombres_candidatos = []
-        if maestro.get("nombre_usuario"):
-            nombres_candidatos.append(str(maestro.get("nombre_usuario")))
-
-        if emp_id and emp_id != "000":
-            try:
-                with engine_personal.connect() as p_conn:
-                    row_p = p_conn.execute(
-                        text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"),
-                        {"id": emp_id}
-                    ).first()
-                    if row_p and row_p[0]:
-                        nombres_candidatos.append(safe_decode_hex(row_p[0]))
-            except Exception:
-                pass
-
+        # 🔒 Consultar el Productor Responsable y Responsable de Gastos asignados en la OP
+        prod_op_nom = ""
+        resp_gastos_nom = ""
         if folio_vpro:
             try:
                 with engine_eventos.connect() as ev_conn:
                     row_ev = ev_conn.execute(
-                        text("SELECT encode(resp_de_produccion::bytea, 'hex') FROM public.eventos WHERE id_evento = :id"),
+                        text("SELECT encode(resp_de_produccion::bytea, 'hex'), encode(COALESCE(responsable_gastos, '')::bytea, 'hex') FROM public.eventos WHERE id_evento = :id"),
                         {"id": folio_vpro}
                     ).first()
-                    if row_ev and row_ev[0]:
-                        nombres_candidatos.append(safe_decode_hex(row_ev[0]))
+                    if row_ev:
+                        prod_op_nom = safe_decode_hex(row_ev[0]).strip() if row_ev[0] else ""
+                        resp_gastos_nom = safe_decode_hex(row_ev[1]).strip() if row_ev[1] else ""
             except Exception:
                 pass
 
-        if not any(es_usuario_autorizado_gastos(n) for n in nombres_candidatos):
+        # El responsable oficial designado para la OP (Responsable de Gastos tiene precedencia si se especificó, sino Productor)
+        responsable_oficial_nom = resp_gastos_nom if resp_gastos_nom else prod_op_nom
+
+        # Obtener el ID de empleado oficial del responsable desde db_personal
+        emp_id_oficial = None
+        if responsable_oficial_nom:
+            try:
+                with engine_personal.connect() as p_conn:
+                    emp_rows = p_conn.execute(text("SELECT TRIM(id_empleado), encode(nombre::bytea, 'hex') FROM public.empleados")).fetchall()
+                    for er in emp_rows:
+                        nom_bd = safe_decode_hex(er[1]).strip().lower()
+                        if nom_bd and (nom_bd == responsable_oficial_nom.lower() or responsable_oficial_nom.lower() in nom_bd or nom_bd in responsable_oficial_nom.lower()):
+                            emp_id_oficial = str(er[0])[:3]
+                            break
+            except Exception:
+                pass
+
+        # 🔒 REGLA ESTRICTA: Solo el Productor Responsable o el Responsable de Gastos de la OP puede elaborar este reporte
+        es_autor_valido = False
+        if responsable_oficial_nom:
+            norm_resp = ''.join(c for c in unicodedata.normalize('NFD', responsable_oficial_nom.upper()) if unicodedata.category(c) != 'Mn')
+            norm_usr = ''.join(c for c in unicodedata.normalize('NFD', nombre_usuario.upper()) if unicodedata.category(c) != 'Mn')
+            if emp_id_oficial and emp_id == emp_id_oficial:
+                es_autor_valido = True
+            elif norm_resp and norm_usr and (norm_resp in norm_usr or norm_usr in norm_resp):
+                es_autor_valido = True
+
+        if not es_autor_valido and responsable_oficial_nom:
             raise HTTPException(
                 status_code=403,
-                detail="Acceso denegado: El módulo de Reporte de Gastos está reservado exclusivamente para Productores autorizados de Dirección (apellidos Villarreal o Agundez)."
+                detail=f"Acceso denegado: Solo el Productor Responsable o el Responsable de Gastos asignado a la OP-{folio_vpro} ({responsable_oficial_nom}) está facultado para elaborar y remitir este reporte."
             )
+
+        # Asignar id_empleado oficial al registro para garantizar trazabilidad 100%
+        if emp_id_oficial:
+            emp_id = emp_id_oficial
+        elif not emp_id or emp_id == "000":
+            emp_id = "000"
 
         with engine_eventos.begin() as conn:
             sql_m = text("""

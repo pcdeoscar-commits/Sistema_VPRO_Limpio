@@ -562,60 +562,7 @@ const gruposFiltrados = gruposHtml.filter(Boolean);
         tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align: center; padding: 16px;">Error de red al consultar el registro de asistencia.</td></tr>`;
     }
 
-    // 3. Cargar Equipos Dañados en el Dashboard
-    const dropdownDanos = document.getElementById("dropdown-mis-danos");
-    const contenedorDanosInicio = document.getElementById("inicio-equipos-danados");
-    const esSeguimiento201202 = ['201', '202'].includes(String(usuarioLogueado?.id_empleado || '').trim());
 
-    if (contenedorDanosInicio) {
-        if (!esSeguimiento201202) {
-            // Para empleados que NO son 201 ni 202: solo deben reportar
-            contenedorDanosInicio.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px 18px; margin-top: 20px; flex-wrap: wrap; gap: 10px;">
-                    <div>
-                        <h4 style="margin: 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
-                            <i class="ph ph-wrench" style="color: #ef4444;"></i> ¿Detectaste un equipo con falla o daño?
-                        </h4>
-                        <p style="margin: 3px 0 0 0; color: #64748b; font-size: 12.5px;">
-                            Genera un ticket directo para que el área de Mantenimiento y Taller le dé seguimiento.
-                        </p>
-                    </div>
-                    <button type="button" onclick="cambiarVista('vista-danados'); setTimeout(() => { if(typeof alternarFormularioReporteDirecto === 'function') alternarFormularioReporteDirecto(); }, 300);" 
-                            style="background: #2563eb; color: white; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(37,99,235,0.25);">
-                        <i class="ph ph-plus-circle" style="font-size: 16px;"></i> Levantar Reporte de Falla
-                    </button>
-                </div>
-            `;
-        } else {
-            // Para 201 y 202: seguimiento general
-            if (dropdownDanos) {
-                try {
-                    const resDanos = await fetch(`${API_URL}/api/inventario/radar-danos`);
-                    if (resDanos.ok) {
-                        const danos = await resDanos.json();
-                        if (danos && danos.length > 0) {
-                            dropdownDanos.innerHTML = `<option value="">-- Seguimiento de Equipos en Taller (${danos.length} activos) --</option>` + 
-                                danos.map(d => `<option value="${d.NUM_SERVICIO}" data-equipo="${d.ID}">Ticket #${d.NUM_SERVICIO}: ${d.ID} - ${d.EQUIPO || 'Sin nombre'} [Reportó: ${d['REPORTÓ'] || 'Personal'}] (${d.ESTADO})</option>`).join("");
-                                
-                            dropdownDanos.onchange = function() {
-                                const selectedOption = dropdownDanos.options[dropdownDanos.selectedIndex];
-                                if (selectedOption && selectedOption.value) {
-                                    const codigoEquipo = selectedOption.getAttribute("data-equipo");
-                                    const numServ = selectedOption.value;
-                                    irASeguimientoTaller(codigoEquipo, numServ);
-                                    dropdownDanos.value = "";
-                                }
-                            };
-                        } else {
-                            dropdownDanos.innerHTML = `<option value="">✅ No hay equipos con daño o en taller actualmente.</option>`;
-                        }
-                    }
-                } catch (e) {
-                    console.error("Error al cargar radar de daños en inicio:", e);
-                }
-            }
-        }
-    }
 }
 
 // ==========================================

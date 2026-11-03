@@ -130,8 +130,8 @@ function renderizarTablaAuditoria(lista) {
             badgeObs = `<span style="background: #ffedd5; color: #c2410c; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">🏥 INCAPACIDAD</span>`;
         } else if (obs.includes("OMISIÓN") || obs.includes("OMISION") || obs.includes("ADVERTENCIA")) {
             badgeObs = `<span style="color: #991b1b; font-weight: 600;">🚨 ${r.observaciones}</span>`;
-        } else if (r.folio_op) {
-            badgeObs = `<span style="background: #f1f5f9; color: #0f172a; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 11.5px;">📍 OP-${r.folio_op}: ${r.nombre_evento || ''}</span>`;
+        } else if (obs.includes("📍 [OP-") || r.folio_op) {
+            badgeObs = `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">${r.observaciones || `📍 OP-${r.folio_op}: ${r.nombre_evento || ''}`}</span>`;
         }
 
         return `

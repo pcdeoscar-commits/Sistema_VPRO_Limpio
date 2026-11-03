@@ -540,6 +540,71 @@ def extraer_estado_asistencia_diaria(id_empleado: str):
     except Exception as e: 
         raise HTTPException(status_code=500, detail=str(e))
 
+
+def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
+    """
+    Busca si el empleado está convocado en una OP activa para el día de hoy.
+    Revisa si hoy coincide con:
+      - fec_de_instalacion (Montaje / Instalación previa o del día)
+      - fec_del_evento .. fec_fin_evento (Día del evento / llamado a producción)
+    Retorna (op_dict, hora_objetivo, tipo_jornada) o (None, None, None).
+    """
+    if not nom_emp:
+        return None, None, None
+
+    def _clean(txt):
+        return ''.join(c for c in unicodedata.normalize('NFD', str(txt).strip().upper()) if unicodedata.category(c) != 'Mn')
+
+    emp_clean = _clean(nom_emp)
+    
+    try:
+        with engine_eventos.connect() as conn_ev:
+            candidatas = conn_ev.execute(text("""
+                SELECT id_evento, folio, nombre_evento, fec_de_instalacion, hra_de_instalacion,
+                       fec_del_evento, fec_fin_evento, hra_de_llamado, inicio_del_evento, 
+                       vehiculo_destino, para_q_cliente, personal_convocado_op
+                FROM public.eventos
+                WHERE (UPPER(COALESCE(estatus, 'ACTIVA')) NOT LIKE '%CANCELAD%')
+                  AND (
+                      fec_de_instalacion = :hoy
+                      OR (fec_del_evento <= :hoy AND COALESCE(fec_fin_evento, fec_del_evento) >= :hoy)
+                  )
+                ORDER BY id_evento DESC
+            """), {"hoy": hoy_date}).mappings().all()
+
+            for op in candidatas:
+                personal_lista = parse_pg_array(str(op.get("personal_convocado_op", ""))) if isinstance(op.get("personal_convocado_op"), str) else (op.get("personal_convocado_op") or [])
+                if any(emp_clean in _clean(str(p)) for p in personal_lista):
+                    f_inst = op.get("fec_de_instalacion")
+                    h_inst = op.get("hra_de_instalacion")
+                    f_ini = op.get("fec_del_evento")
+                    f_fin = op.get("fec_fin_evento") or f_ini
+                    h_llam = op.get("hra_de_llamado")
+                    h_ini_ev = op.get("inicio_del_evento")
+
+                    candidatos = []
+                    tipo = "OP"
+
+                    es_inst = (f_inst == hoy_date)
+                    es_ev = (f_ini and f_ini <= hoy_date <= f_fin)
+
+                    if es_inst:
+                        tipo = "INSTALACIÓN"
+                        if h_llam: candidatos.append(h_llam)
+                        if h_inst: candidatos.append(h_inst)
+
+                    if es_ev:
+                        tipo = "EVENTO" if not es_inst else "INSTALACIÓN / EVENTO"
+                        if h_llam: candidatos.append(h_llam)
+                        if h_ini_ev: candidatos.append(h_ini_ev)
+
+                    h_target = min(candidatos) if candidatos else None
+                    return dict(op), h_target, tipo
+    except Exception as e:
+        print(f"⚠️ Error al resolver llamado de OP para {nom_emp}: {e}")
+
+    return None, None, None
+
 @router.post("/checar", tags=["🕒 Checador Asistencia"])
 def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
     """Registra la marca de asistencia (entrada/salida matutina o vespertina)."""
@@ -752,11 +817,61 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                     """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "h_in": loc_entrada, "h_out": hora_str, "obs": obs_fusion})
                     return {"status": "SUCCESS", "mensaje": "✅ SALIDA MATUTINA REGISTRADA (Continuación de Gira)"}
                 else:
+                    # 🎯 VINCULACIÓN DINÁMICA CON LLAMADO / INSTALACIÓN DE LA OP
+                    op_hoy, hora_target, tipo_jornada = resolver_llamado_op_empleado(nom_emp, ahora.date())
+                    h_actual_secs = ahora.hour * 3600 + ahora.minute * 60 + ahora.second
+
+                    if op_hoy and hora_target:
+                        folio_op = str(op_hoy.get("folio") or op_hoy.get("id_evento") or "").strip()
+                        nom_ev = reparar_mojibake(op_hoy.get("nombre_evento") or "Evento VPRO")
+                        h_target_str = hora_target.strftime("%H:%M")
+                        h_target_secs = hora_target.hour * 3600 + hora_target.minute * 60 + hora_target.second
+                        limite_secs = h_target_secs + (5 * 60) + 59  # 5 minutos y 59 seg de tolerancia
+
+                        if h_actual_secs <= limite_secs:
+                            estatus_reg = "ASISTENCIA"
+                            obs_op = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev}"
+                            msg_resp = f"A TIEMPO | Llamado OP-{folio_op} a las {h_target_str}"
+                        else:
+                            mins_tarde = (h_actual_secs - h_target_secs) // 60
+                            estatus_reg = "RETARDO"
+                            obs_op = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev} | Retardo {mins_tarde}m"
+                            msg_resp = f"RETARDO ({mins_tarde}m) | Llamado OP-{folio_op} era a las {h_target_str}"
+
+                        op_vinculada_info = {
+                            "id_evento": op_hoy.get("id_evento"),
+                            "folio": folio_op,
+                            "nombre_evento": nom_ev,
+                            "hora_llamado": h_target_str,
+                            "tipo_jornada": tipo_jornada,
+                            "estatus": estatus_reg
+                        }
+                    else:
+                        # Horario normal de oficina (09:00 a. m.)
+                        h_base_secs = 9 * 3600
+                        limite_secs = h_base_secs + (5 * 60) + 59
+                        if h_actual_secs <= limite_secs:
+                            estatus_reg = "ASISTENCIA"
+                            obs_op = payload.observaciones or "Kiosco HTML"
+                            msg_resp = "ENTRADA MATUTINA REGISTRADA"
+                        else:
+                            mins_tarde = (h_actual_secs - h_base_secs) // 60
+                            estatus_reg = "RETARDO"
+                            obs_op = f"Kiosco HTML | Retardo {mins_tarde}m"
+                            msg_resp = f"ENTRADA REGISTRADA (Retardo {mins_tarde} min vs 09:00)"
+                        op_vinculada_info = None
+
                     conn.execute(text("""
                         INSERT INTO public.control_asistencia (id_empleado, fecha, hora_entrada, estatus, observaciones)
                         VALUES (:emp, CAST(:hoy AS date), CAST(:hora AS time), :est, :obs)
-                    """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "hora": hora_str, "est": payload.estatus, "obs": payload.observaciones})
-                    return {"status": "SUCCESS", "mensaje": "✅ ENTRADA MATUTINA REGISTRADA"}
+                    """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "hora": hora_str, "est": estatus_reg, "obs": obs_op})
+
+                    return {
+                        "status": "SUCCESS" if estatus_reg == "ASISTENCIA" else "WARNING",
+                        "mensaje": f"{'✅' if estatus_reg == 'ASISTENCIA' else '⚠️'} {msg_resp}",
+                        "nombre_empleado": nom_emp,
+                        "op_vinculada": op_vinculada_info
+                    }
 
             id_reg = registro_hoy["id_registro"]
 
@@ -796,13 +911,13 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                         return {"status": "SUCCESS", "mensaje": "✅ SALIDA VESPERTINA REGISTRADA"}
                 else:
                     # Checada normal antes de las 16:30:00 -> Salida a comer
-                    conn.execute(text("UPDATE public.control_asistencia SET hora_salida = CAST(:hora AS time), observaciones = COALESCE(observaciones, '') || ' | ' || :obs WHERE id_registro = :id"), {"hora": hora_str, "obs": payload.observaciones, "id": id_reg})
+                    conn.execute(text("UPDATE public.control_asistencia SET hora_salida = CAST(:hora AS time) WHERE id_registro = :id"), {"hora": hora_str, "id": id_reg})
                     return {"status": "SUCCESS", "mensaje": "✅ SALIDA MATUTINA REGISTRADA"}
             elif registro_hoy["hora_salida"] is not None and registro_hoy.get("hora_entrada_v") is None:
-                conn.execute(text("UPDATE public.control_asistencia SET hora_entrada_v = CAST(:hora AS time), observaciones = COALESCE(observaciones, '') || ' | ' || :obs WHERE id_registro = :id"), {"hora": hora_str, "obs": payload.observaciones, "id": id_reg})
+                conn.execute(text("UPDATE public.control_asistencia SET hora_entrada_v = CAST(:hora AS time) WHERE id_registro = :id"), {"hora": hora_str, "id": id_reg})
                 return {"status": "SUCCESS", "mensaje": "✅ ENTRADA VESPERTINA REGISTRADA"}
             elif registro_hoy.get("hora_entrada_v") is not None and registro_hoy.get("hora_salida_v") is None:
-                conn.execute(text("UPDATE public.control_asistencia SET hora_salida_v = CAST(:hora AS time), estatus = 'COMPLETO', observaciones = COALESCE(observaciones, '') || ' | ' || :obs WHERE id_registro = :id"), {"hora": hora_str, "obs": payload.observaciones, "id": id_reg})
+                conn.execute(text("UPDATE public.control_asistencia SET hora_salida_v = CAST(:hora AS time), estatus = CASE WHEN estatus = 'RETARDO' THEN 'RETARDO' ELSE 'COMPLETO' END WHERE id_registro = :id"), {"hora": hora_str, "id": id_reg})
                 return {"status": "SUCCESS", "mensaje": "✅ SALIDA VESPERTINA REGISTRADA"}
             else:
                 raise HTTPException(status_code=400, detail="Tranquilo, ya completaste tus registros de hoy.")

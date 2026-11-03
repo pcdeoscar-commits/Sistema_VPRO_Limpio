@@ -591,7 +591,7 @@ function iniciarRelojKiosco() {
 }
 
 // ── HELPERS DE PUNTUALIDAD Y ESTATUS DEL KIOSCO ───────────────────────
-function calcularEstatusEntradaKiosco(horaStr, turno) {
+function calcularEstatusEntradaKiosco(horaStr, turno, observaciones = "") {
     if (!horaStr || horaStr === "--:--:--" || horaStr === "--:--") return "";
     try {
         const parts = horaStr.split(':').map(Number);
@@ -600,17 +600,31 @@ function calcularEstatusEntradaKiosco(horaStr, turno) {
         const s = parts[2] || 0;
         const horaSecs = h * 3600 + m * 60 + s;
         
-        const baseH = (turno === "Matutino") ? 9 : 16;
-        const baseSecs = baseH * 3600;
-        const limiteSecs = baseSecs + (5 * 60) + 59; // 5 minutos y 59 segundos de tolerancia
+        let baseSecs = (turno === "Matutino") ? (9 * 3600) : (16 * 3600);
+        let tagLlamado = "";
+
+        // Si es turno matutino, detectar si hay llamado u hora de instalación de OP en observaciones
+        if (turno === "Matutino" && observaciones) {
+            const matchLlam = observaciones.match(/Llamado:\s*(\d{1,2}):(\d{2})/i);
+            const matchOp = observaciones.match(/\[OP-([^\]]+)\]/i);
+            if (matchLlam) {
+                const hLl = parseInt(matchLlam[1], 10);
+                const mLl = parseInt(matchLlam[2], 10);
+                baseSecs = hLl * 3600 + mLl * 60;
+                const folioOp = matchOp ? matchOp[1].trim() : "";
+                const hFmt = `${String(hLl).padStart(2, '0')}:${String(mLl).padStart(2, '0')}`;
+                tagLlamado = folioOp ? ` (OP-${folioOp} ${hFmt})` : ` (${hFmt})`;
+            }
+        }
+
+        const limiteSecs = baseSecs + (5 * 60) + 59; // 5 minutos y 59 segundos de tolerancia oficial VPRO
         
         if (horaSecs > limiteSecs) {
             const retraso = horaSecs - baseSecs;
             const mins = Math.floor(retraso / 60);
-            const secs = retraso % 60;
-            return `<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #fecaca; white-space: nowrap; display: inline-block;">🔴 TARDE (${mins}m ${secs}s)</span>`;
+            return `<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #fecaca; white-space: nowrap; display: inline-block;">🔴 TARDE (${mins}m)${tagLlamado}</span>`;
         } else {
-            return `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #bbf7d0; white-space: nowrap; display: inline-block;">🟢 A TIEMPO</span>`;
+            return `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #bbf7d0; white-space: nowrap; display: inline-block;">🟢 A TIEMPO${tagLlamado}</span>`;
         }
     } catch(e) {
         return `<span style="background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #bbf7d0;">🟢 A TIEMPO</span>`;
@@ -748,7 +762,7 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
             const inVesp = limpiaHora(reg.hora_entrada_v);
             const outVesp = limpiaHora(reg.hora_salida_v);
 
-            const estInMat = inMat !== "--:--:--" ? calcularEstatusEntradaKiosco(inMat, "Matutino") : `<span style="color: #94a3b8; font-size: 11px;">--</span>`;
+            const estInMat = inMat !== "--:--:--" ? calcularEstatusEntradaKiosco(inMat, "Matutino", reg.observaciones) : `<span style="color: #94a3b8; font-size: 11px;">--</span>`;
             const estInVesp = inVesp !== "--:--:--" ? calcularEstatusEntradaKiosco(inVesp, "Vespertino") : `<span style="color: #94a3b8; font-size: 11px;">--</span>`;
             const estOutVesp = outVesp !== "--:--:--" ? calcularEstatusSalidaVespKiosco(outVesp, reg.observaciones, reg.estatus) : `<span style="color: #94a3b8; font-size: 11px;">--</span>`;
 
@@ -994,8 +1008,15 @@ function inicializarLectorKiosco() {
                             badge.innerText = `🌴 ${resultado.tipo_rh}`;
                             badge.style.background = "#dcfce7";
                             badge.style.color = "#166534";
+                        } else if (resultado.op_vinculada) {
+                            const badge = document.getElementById("scan-badge");
+                            const op = resultado.op_vinculada;
+                            const esTarde = (op.estatus === "RETARDO");
+                            badge.innerText = esTarde ? `🔴 RETARDO OP-${op.folio}` : `🟢 A TIEMPO OP-${op.folio}`;
+                            badge.style.background = esTarde ? "#fee2e2" : "#dcfce7";
+                            badge.style.color = esTarde ? "#991b1b" : "#166534";
                         } else {
-                            document.getElementById("scan-badge").innerText = resultado.status === "WARNING" ? "🚨 OMISIÓN DETECTADA" : "✅ REGISTRADO";
+                            document.getElementById("scan-badge").innerText = resultado.status === "WARNING" ? "🚨 RETARDO / OMISIÓN" : "✅ REGISTRADO";
                         }
                         document.getElementById("scan-foto").src = `${API_URL}/fotos/${emp.id_empleado}.jpg`;
                     }

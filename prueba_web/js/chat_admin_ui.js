@@ -11,6 +11,7 @@ const adminChatState = {
     conversaciones: [],
     chatActual: null,
     mensajes: [],
+    filtroBusqueda: '',
     ws: null,
     esAdmin: false
 };
@@ -28,6 +29,12 @@ function esUsuarioAdminChat() {
     const esRolAdmin = rol.includes('ADMIN') || rol.includes('DIRECCION') || rol.includes('RH') || puesto.includes('ADMIN') || puesto.includes('RH') || depto.includes('DIRECCION') || depto.includes('RH');
 
     return esDirectivo || esRolAdmin;
+}
+
+// Filtra la lista de conversaciones administrativas
+function filtrarAdminChat(termino) {
+    adminChatState.filtroBusqueda = (termino || '').toLowerCase().trim();
+    renderizarListaAdmin();
 }
 
 // ==============================================================================
@@ -52,7 +59,20 @@ function cambiarAristaChat(arista) {
         if (btnAdmin) { btnAdmin.style.background = "#111b21"; btnAdmin.style.color = "#8696a0"; }
         if (btnSoporte) { btnSoporte.style.background = "#0284c7"; btnSoporte.style.color = "#ffffff"; }
         if (tabsBar) tabsBar.style.display = "none";
-        if (searchBar) searchBar.style.display = "none";
+        const esTI = (typeof esPersonalSistemasOAdmin === 'function') ? esPersonalSistemasOAdmin() : false;
+        const searchInput = document.getElementById("chat-input-busqueda");
+        if (searchBar) {
+            searchBar.style.display = esTI ? "block" : "none";
+            if (searchInput) {
+                searchInput.value = "";
+                searchInput.placeholder = "Buscar colaborador en Soporte TI...";
+                searchInput.oninput = (e) => {
+                    if (typeof filtrarSoporteChat === 'function') {
+                        filtrarSoporteChat(e.target.value);
+                    }
+                };
+            }
+        }
         if (listOps) listOps.style.display = "none";
         if (listAdmin) listAdmin.style.display = "none";
         if (listSoporte) listSoporte.style.display = "block";
@@ -77,7 +97,15 @@ function cambiarAristaChat(arista) {
         if (btnAdmin) { btnAdmin.style.background = "#6366f1"; btnAdmin.style.color = "#ffffff"; }
         if (btnSoporte) { btnSoporte.style.background = "#111b21"; btnSoporte.style.color = "#8696a0"; }
         if (tabsBar) tabsBar.style.display = "none";
-        if (searchBar) searchBar.style.display = "block";
+        const searchInput = document.getElementById("chat-input-busqueda");
+        if (searchBar) {
+            searchBar.style.display = "block";
+            if (searchInput) {
+                searchInput.value = "";
+                searchInput.placeholder = "Buscar colaborador en Admon & RH...";
+                searchInput.oninput = (e) => filtrarAdminChat(e.target.value);
+            }
+        }
         if (listOps) listOps.style.display = "none";
         if (listAdmin) listAdmin.style.display = "block";
         if (listSoporte) listSoporte.style.display = "none";
@@ -185,7 +213,18 @@ function renderizarListaAdmin() {
     const contenedor = document.getElementById("chat-lista-admin");
     if (!contenedor) return;
 
-    if (adminChatState.conversaciones.length === 0) {
+    let lista = adminChatState.conversaciones || [];
+    if (adminChatState.filtroBusqueda) {
+        const q = adminChatState.filtroBusqueda;
+        lista = lista.filter(c => 
+            (c.nombre || '').toLowerCase().includes(q) ||
+            String(c.id_empleado || '').toLowerCase().includes(q) ||
+            (c.puesto || '').toLowerCase().includes(q) ||
+            (c.depto || '').toLowerCase().includes(q)
+        );
+    }
+
+    if (lista.length === 0) {
         contenedor.innerHTML = `
             <div style="text-align: center; padding: 40px 16px; color: #8696a0;">
                 <i class="ph ph-buildings" style="font-size: 40px; color: #6366f1; opacity: 0.6; margin-bottom: 8px;"></i>
@@ -195,7 +234,7 @@ function renderizarListaAdmin() {
         return;
     }
 
-    const html = adminChatState.conversaciones.map(conv => {
+    const html = lista.map(conv => {
         const esSeleccionado = adminChatState.chatActual && (adminChatState.chatActual.id_empleado === conv.id_empleado);
         const foto = conv.foto_url ? conv.foto_url : `${CHAT_API_URL}/fotos/${conv.id_empleado}.jpg`;
         const tienePermiso = conv.permisos_pendientes > 0;

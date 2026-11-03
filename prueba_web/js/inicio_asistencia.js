@@ -617,7 +617,7 @@ function calcularEstatusEntradaKiosco(horaStr, turno, observaciones = "") {
             }
         }
 
-        const limiteSecs = baseSecs + (5 * 60) + 59; // 5 minutos y 59 segundos de tolerancia oficial VPRO
+        const limiteSecs = baseSecs + (10 * 60); // 10 minutos exactos de tolerancia oficial VPRO
         
         if (horaSecs > limiteSecs) {
             const retraso = horaSecs - baseSecs;

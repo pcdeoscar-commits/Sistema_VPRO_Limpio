@@ -783,7 +783,7 @@ if modulo_a_ejecutar == "🏠 Inicio":
                         semana_data[f_reg]["Nota"] = f"{nota_actual} | {nueva_nota}".strip(" |")
 
         # 4️⃣ Función de análisis inteligente por día
-        HORA_LIMITE_ENTRADA = "09:05"  # Tolerancia de 5 min
+        HORA_LIMITE_ENTRADA = "09:10"  # Tolerancia oficial de 10 min
 
         def generar_observacion(nombre_empleado, dia_idx, m_in, m_out, v_in, v_out, es_pasado_o_hoy, nota_dia="", fecha_obj=None):
             """Analiza la asistencia del día y genera un comentario de semáforo."""

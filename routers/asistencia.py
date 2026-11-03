@@ -826,7 +826,7 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                         nom_ev = reparar_mojibake(op_hoy.get("nombre_evento") or "Evento VPRO")
                         h_target_str = hora_target.strftime("%H:%M")
                         h_target_secs = hora_target.hour * 3600 + hora_target.minute * 60 + hora_target.second
-                        limite_secs = h_target_secs + (5 * 60) + 59  # 5 minutos y 59 seg de tolerancia
+                        limite_secs = h_target_secs + (10 * 60)  # 10 minutos exactos de tolerancia oficial VPRO
 
                         if h_actual_secs <= limite_secs:
                             estatus_reg = "ASISTENCIA"
@@ -849,7 +849,7 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                     else:
                         # Horario normal de oficina (09:00 a. m.)
                         h_base_secs = 9 * 3600
-                        limite_secs = h_base_secs + (5 * 60) + 59
+                        limite_secs = h_base_secs + (10 * 60)  # 10 minutos exactos de tolerancia oficial VPRO (hasta 09:10:00)
                         if h_actual_secs <= limite_secs:
                             estatus_reg = "ASISTENCIA"
                             obs_op = payload.observaciones or "Kiosco HTML"

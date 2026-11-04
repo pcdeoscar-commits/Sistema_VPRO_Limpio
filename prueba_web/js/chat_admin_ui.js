@@ -97,9 +97,13 @@ function cambiarAristaChat(arista) {
         if (btnAdmin) { btnAdmin.style.background = "#6366f1"; btnAdmin.style.color = "#ffffff"; }
         if (btnSoporte) { btnSoporte.style.background = "#111b21"; btnSoporte.style.color = "#8696a0"; }
         if (tabsBar) tabsBar.style.display = "none";
+        
+        const esAdmin = (typeof esUsuarioAdminChat === 'function') ? esUsuarioAdminChat() : false;
+        adminChatState.esAdmin = esAdmin;
+        
         const searchInput = document.getElementById("chat-input-busqueda");
         if (searchBar) {
-            searchBar.style.display = "block";
+            searchBar.style.display = esAdmin ? "block" : "none";
             if (searchInput) {
                 searchInput.value = "";
                 searchInput.placeholder = "Buscar colaborador en Admon & RH...";
@@ -109,7 +113,11 @@ function cambiarAristaChat(arista) {
         if (listOps) listOps.style.display = "none";
         if (listAdmin) listAdmin.style.display = "block";
         if (listSoporte) listSoporte.style.display = "none";
-        if (inputMsg) inputMsg.placeholder = "Escribe un mensaje para Administración & RH...";
+        if (inputMsg) {
+            inputMsg.placeholder = esAdmin 
+                ? "Escribe un mensaje oficial o resolución..." 
+                : "Escribe tu duda, solicitud de permiso o mensaje para Admon & RH...";
+        }
 
         // Desconectar WebSocket de OP
         if (chatState.ws) {
@@ -213,6 +221,76 @@ function renderizarListaAdmin() {
     const contenedor = document.getElementById("chat-lista-admin");
     if (!contenedor) return;
 
+    // --- MODO 1: EMPLEADO REGULAR (Canal 1 a 1 único y privado con Admon & RH) ---
+    if (!adminChatState.esAdmin) {
+        const miConv = (adminChatState.conversaciones && adminChatState.conversaciones.length > 0)
+            ? adminChatState.conversaciones[0]
+            : {
+                id_empleado: (chatState.usuario && chatState.usuario.id_empleado) || "000",
+                nombre: "Administración & Recursos Humanos",
+                puesto: "Atención Oficial y Permisos Laborales",
+                depto: "Dirección General / RH",
+                no_leidos: 0,
+                permisos_pendientes: 0
+            };
+        const noLeidos = miConv.no_leidos || 0;
+        const permisosPend = miConv.permisos_pendientes || 0;
+
+        contenedor.innerHTML = `
+            <div onclick="seleccionarAdminChat(adminChatState.conversaciones[0])" 
+                 style="background: linear-gradient(135deg, #312e81 0%, #4338ca 100%); border-radius: 12px; padding: 14px 16px; margin: 10px; color: white; cursor: pointer; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3); border: 1px solid #818cf8; transition: transform 0.15s;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+                        <i class="ph ph-buildings"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                Admon & Recursos Humanos
+                            </h4>
+                            <span style="background: #22c55e; color: #052e16; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">OFICIAL</span>
+                        </div>
+                        <p style="margin: 3px 0 0 0; font-size: 11.5px; color: #c7d2fe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            Atención Directa y Permisos (1 a 1)
+                        </p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #a5b4fc; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 8px;">
+                    <span><i class="ph ph-lock-key"></i> Chat Privado y Confidencial</span>
+                    ${noLeidos > 0 ? `
+                        <span style="background: #818cf8; color: #1e1b4b; font-weight: 800; padding: 2px 8px; border-radius: 10px;">
+                            ${noLeidos} nuevo${noLeidos > 1 ? 's' : ''}
+                        </span>
+                    ` : (permisosPend > 0 ? `
+                        <span style="background: #f59e0b; color: #78350f; font-weight: 800; padding: 2px 8px; border-radius: 10px;">
+                            Permiso en revisión
+                        </span>
+                    ` : `
+                        <span style="color: #ffffff; font-weight: 600;">Ver Chat ➔</span>
+                    `)}
+                </div>
+            </div>
+
+            <div style="padding: 12px 16px; color: #8696a0; font-size: 12px; line-height: 1.4;">
+                <div style="background: #182229; border: 1px solid #222e35; border-radius: 10px; padding: 12px;">
+                    <b style="color: #e9edef; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                        <i class="ph ph-shield-check" style="color: #818cf8; font-size: 15px;"></i> Canal Confidencial 1 a 1
+                    </b>
+                    Este canal es estrictamente personal entre tú y Administración / Recursos Humanos (Ana Lilia). Ningún otro colaborador tiene acceso a esta conversación:
+                    <ul style="margin: 6px 0 0 0; padding-left: 18px; color: #aebac1; font-size: 11.5px;">
+                        <li>Solicitudes de permisos y ausencias laborales.</li>
+                        <li>Envío de justificantes médicos y recetas.</li>
+                        <li>Consultas de vacaciones y préstamos.</li>
+                        <li>Aclaraciones salariales o de asistencia.</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // --- MODO 2: RECURSOS HUMANOS / ADMINISTRACIÓN (Bandeja de colaboradores) ---
     let lista = adminChatState.conversaciones || [];
     if (adminChatState.filtroBusqueda) {
         const q = adminChatState.filtroBusqueda;
@@ -318,13 +396,21 @@ async function seleccionarAdminChat(conv) {
     if (elLlam) elLlam.innerHTML = `<i class="ph ph-shield-check"></i> Canal Oficial Confidencial 1 a 1`;
 
     if (elAcc) {
-        elAcc.innerHTML = `
-            <button onclick="window.open('index.html?vista=rh', '_blank')" 
-                    title="Abrir Expediente en Recursos Humanos"
-                    style="background: #202c33; color: #e9edef; border: 1px solid #374045; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-                <i class="ph ph-folder-user" style="font-size: 15px; color: #818cf8;"></i> Ir a RH
-            </button>
-        `;
+        if (adminChatState.esAdmin) {
+            elAcc.innerHTML = `
+                <button onclick="window.open('index.html?vista=rh', '_blank')" 
+                        title="Abrir Expediente en Recursos Humanos"
+                        style="background: #202c33; color: #e9edef; border: 1px solid #374045; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="ph ph-folder-user" style="font-size: 15px; color: #818cf8;"></i> Ir a RH
+                </button>
+            `;
+        } else {
+            elAcc.innerHTML = `
+                <span style="font-size: 11px; color: #10b981; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.25); padding: 5px 12px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="ph ph-lock-key"></i> Chat 1 a 1 Confidencial
+                </span>
+            `;
+        }
     }
 
     // Cargar mensajes
@@ -375,14 +461,25 @@ function renderizarMensajesAdmin(mantenerScroll = false) {
     const esAdmin = adminChatState.esAdmin;
 
     if (adminChatState.mensajes.length === 0) {
-        area.innerHTML = `
-            <div style="text-align: center; margin: auto; padding: 24px; color: #8696a0; background: rgba(32,44,51,0.85); backdrop-filter: blur(4px); border-radius: 12px; max-width: 400px; border: 1px solid #2a3942;">
-                <i class="ph ph-buildings" style="font-size: 40px; color: #6366f1; margin-bottom: 8px; display: block;"></i>
-                <h4 style="margin: 0 0 6px; color: #e9edef;">Canal de Administración & RH</h4>
-                <p style="margin: 0; font-size: 12.5px; line-height: 1.4;">
-                    Este es el canal oficial y privado para solicitar permisos, enviar justificantes médicos y recibir resoluciones directamente de Administración.
-                </p>
-            </div>`;
+        if (adminChatState.esAdmin) {
+            area.innerHTML = `
+                <div style="text-align: center; margin: auto; padding: 24px; color: #8696a0; background: rgba(32,44,51,0.85); backdrop-filter: blur(4px); border-radius: 12px; max-width: 400px; border: 1px solid #2a3942;">
+                    <i class="ph ph-buildings" style="font-size: 40px; color: #6366f1; margin-bottom: 8px; display: block;"></i>
+                    <h4 style="margin: 0 0 6px; color: #e9edef;">Expediente de ${adminChatState.chatActual ? adminChatState.chatActual.nombre : 'Colaborador'}</h4>
+                    <p style="margin: 0; font-size: 12.5px; line-height: 1.4;">
+                        No hay mensajes registrados en este momento. Puedes escribirle un mensaje directo o esperar su solicitud de permiso.
+                    </p>
+                </div>`;
+        } else {
+            area.innerHTML = `
+                <div style="text-align: center; margin: auto; padding: 24px; color: #8696a0; background: rgba(32,44,51,0.85); backdrop-filter: blur(4px); border-radius: 12px; max-width: 400px; border: 1px solid #2a3942;">
+                    <i class="ph ph-shield-check" style="font-size: 40px; color: #818cf8; margin-bottom: 8px; display: block;"></i>
+                    <h4 style="margin: 0 0 6px; color: #e9edef;">Canal Confidencial con Admon & RH</h4>
+                    <p style="margin: 0; font-size: 12.5px; line-height: 1.4;">
+                        Este es tu canal oficial y privado para solicitar permisos, enviar justificantes médicos y recibir resoluciones directamente de Administración.
+                    </p>
+                </div>`;
+        }
         return;
     }
 

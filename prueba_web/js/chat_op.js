@@ -259,8 +259,8 @@ async function inicializarChatOP() {
     }
 
     if (!user) {
-        // Mostrar selector rápido de usuario si está en standalone
-        mostrarSelectorUsuarioChat();
+        // Redirigir a login de la plataforma si no hay sesión activa
+        window.location.href = "index.html";
         return;
     }
 
@@ -1203,40 +1203,59 @@ function abrirVisorImagen(url) {
     visor.style.display = "flex";
 }
 
-// Selector de usuario para modo standalone / directo
-async function mostrarSelectorUsuarioChat() {
-    try {
-        const resp = await fetch(`${CHAT_API_URL}/api/empleados`);
-        if (!resp.ok) return;
-        const empleados = await resp.json();
-        const activos = empleados.filter(e => e.rol !== 'BAJA' && e.rol !== 'PROVEEDOR');
-
-        let selectHtml = `<select id="swal-user-select" class="swal2-input" style="font-size: 14px;">`;
-        selectHtml += `<option value="" disabled selected>-- Selecciona tu nombre --</option>`;
-        activos.forEach(e => {
-            selectHtml += `<option value="${e.id_empleado}">${e.nombre} (${e.puesto || e.depto || 'Staff'})</option>`;
-        });
-        selectHtml += `</select>`;
-
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: '¿Quién eres?',
-                text: 'Selecciona tu usuario para acceder a tus chats de OP:',
-                html: selectHtml,
-                icon: 'question',
-                confirmButtonText: 'Entrar al Chat',
-                allowOutsideClick: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const selId = document.getElementById("swal-user-select").value;
-                    const encontrado = activos.find(e => String(e.id_empleado) === String(selId));
-                    if (encontrado) {
-                        guardarSesionChatUsuario(encontrado);
-                    }
-                }
-            });
-        }
-    } catch (e) {
-        console.error("Error al mostrar selector de usuario:", e);
+// Ficha de sesión del usuario con opción segura de Cerrar Sesión
+function mostrarPerfilUsuarioChat() {
+    const u = chatState.usuario;
+    if (!u) {
+        window.location.href = "index.html";
+        return;
     }
+    const nombre = u.nombre_completo || u.nombre || "Usuario VPRO";
+    const puesto = u.puesto || "Colaborador";
+    const depto = u.depto || "General";
+    const idE = String(u.id_empleado || "").trim();
+    const foto = `${CHAT_API_URL}/fotos/${idE}.jpg`;
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Mi Perfil VPRO',
+            html: `
+                <div style="text-align: center; padding: 6px 0;">
+                    <img src="${foto}" onerror="this.src='vendor/img/avatar_default.png'" style="width: 86px; height: 86px; border-radius: 50%; object-fit: cover; border: 3px solid #00a884; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #1e293b;">${nombre}</h3>
+                    <p style="margin: 4px 0 0; color: #64748b; font-size: 13px;">${puesto} • ${depto}</p>
+                    <div style="margin-top: 10px; display: inline-block; background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #475569;">
+                        ID: #${idE}
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="ph ph-sign-out"></i> Cerrar Sesión',
+            confirmButtonColor: '#ef4444',
+            cancelButtonText: 'Aceptar',
+            cancelButtonColor: '#64748b'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                cerrarSesionChat();
+            }
+        });
+    } else {
+        if (confirm(`Sesión iniciada como: ${nombre}\n¿Deseas cerrar sesión?`)) {
+            cerrarSesionChat();
+        }
+    }
+}
+
+function cerrarSesionChat() {
+    try {
+        localStorage.removeItem("vpro_chat_usuario");
+        localStorage.removeItem("usuarioLogueado");
+        sessionStorage.removeItem("usuarioLogueado");
+    } catch(e){}
+    window.location.href = "index.html";
+}
+
+// Alias de retrocompatibilidad
+function mostrarSelectorUsuarioChat() {
+    mostrarPerfilUsuarioChat();
 }

@@ -277,7 +277,7 @@ function renderizarListaAdmin() {
                     <b style="color: #e9edef; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
                         <i class="ph ph-shield-check" style="color: #818cf8; font-size: 15px;"></i> Canal Confidencial 1 a 1
                     </b>
-                    Este canal es estrictamente personal entre tú y Administración / Recursos Humanos (Ana Lilia). Ningún otro colaborador tiene acceso a esta conversación:
+                    Chat personal/privado entre tú y Administración / RRHH:
                     <ul style="margin: 6px 0 0 0; padding-left: 18px; color: #aebac1; font-size: 11.5px;">
                         <li>Solicitudes de permisos y ausencias laborales.</li>
                         <li>Envío de justificantes médicos y recetas.</li>

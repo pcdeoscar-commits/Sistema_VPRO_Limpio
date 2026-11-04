@@ -1070,49 +1070,56 @@
 
         
 
-        .kiosco-header { border-bottom: 2px dashed var(--border-color); padding-bottom: 24px; margin-bottom: 24px; }
-
-        .reloj-kiosco { font-size: 72px; font-weight: 700; color: var(--text-main); font-variant-numeric: tabular-nums; letter-spacing: -2px; line-height: 1; }
-
-        .fecha-kiosco { font-size: 16px; color: var(--text-muted); margin-bottom: 24px; margin-top: 8px; text-transform: capitalize; }
-
+                .kiosco-header { border-bottom: 2px dashed var(--border-color); padding-bottom: 20px; margin-bottom: 20px; }
+        .reloj-kiosco { font-size: 64px; font-weight: 700; color: var(--text-main); font-variant-numeric: tabular-nums; letter-spacing: -2px; line-height: 1; }
+        .fecha-kiosco { font-size: 15px; color: var(--text-muted); margin-bottom: 14px; margin-top: 6px; text-transform: capitalize; }
         
-
         #input-gafete {
-
-            width: 100%; max-width: 600px; padding: 16px; font-size: 18px; text-align: center;
-
+            width: 100%; max-width: 520px; padding: 13px 18px; font-size: 16px; text-align: center;
             border: 2px solid var(--border-color); border-radius: 8px; outline: none; transition: border-color 0.2s;
-
         }
-
         #input-gafete:focus { border-color: var(--accent-color); }
 
-
-
-        /* Estructura de 2 Columnas */
-
-        .kiosco-body { display: flex; gap: 32px; text-align: left; align-items: flex-start; }
-
-        
-
-        /* Columna 1: Perfil */
-
-        .kiosco-perfil {
-
-            flex: 1; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; 
-
-            text-align: center; background: #f9fafb; min-width: 250px;
-
+        /* Contenedor Superior: Escáner a la izquierda + Tarjeta de empleado arriba */
+        .kiosco-top-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            align-items: center;
+            text-align: left;
+        }
+        @media (max-width: 900px) {
+            .kiosco-top-grid { grid-template-columns: 1fr; }
         }
 
-        .kiosco-perfil img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        /* Tarjeta compacta del empleado en cabecera */
+        .kiosco-perfil-horizontal {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            text-align: left;
+            min-height: 110px;
+        }
+        .kiosco-perfil-horizontal img {
+            width: 82px;
+            height: 82px;
+            min-width: 82px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid white;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+        }
 
-        
-
-        /* Columna 2: Tabla de Matriz */
-
-        .kiosco-matriz { flex: 2.5; width: 100%; }
+        /* Matriz de Asistencia a Ancho Completo */
+        .kiosco-matriz-full {
+            width: 100%;
+            text-align: left;
+        }
 
         .tabla-container {
 
@@ -2658,69 +2665,43 @@
 
                     <div id="modulo-checador" class="modulo-card kiosco-ampliado" style="margin: 0 auto; max-width: 100%;">
 
-                        <!-- CABECERA: Reloj y Escáner -->
-
+                        <!-- CABECERA SUPERIOR: Reloj/Escáner a la izquierda + Perfil Empleado a la derecha -->
                         <div class="kiosco-header" style="position: relative;">
-
-                            <button id="btn-salir-kiosco-pantalla" onclick="salirModoKiosco()" title="Salir del Kiosco y volver a selección de usuarios" style="display: none; position: absolute; top: 0; right: 0; background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
-
+                            <button id="btn-salir-kiosco-pantalla" onclick="salirModoKiosco()" title="Salir del Kiosco y volver a selección de usuarios" style="display: none; position: absolute; top: -6px; right: 0; background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
                                 <i class="ph ph-sign-out"></i> Salir del Kiosco
-
                             </button>
 
-                            <div class="reloj-kiosco" id="reloj-pantalla">00:00:00</div>
-
-                            <div class="fecha-kiosco" id="fecha-pantalla">Cargando fecha...</div>
-
-                            <div style="display: flex; justify-content: center; gap: 12px; max-width: 650px; margin: 0 auto;">
-
-                                <input type="password" id="input-gafete" placeholder="Pasa tu código QR por el lector digital..." autocomplete="off" autofocus style="flex: 1;">
-
-                                <button onclick="cargarMatrizKiosco()" title="Refrescar Matriz" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 16px; cursor: pointer;">
-
-                                    <i class="ph ph-arrows-clockwise" style="font-size: 20px;"></i>
-
-                                </button>
-
-                            </div>
-
-                            <div id="kiosco-alerta" style="display: none; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 15px; margin-top: 14px; max-width: 650px; margin-left: auto; margin-right: auto;"></div>
-
-                        </div>
-
-
-
-                        <!-- CUERPO: 2 Columnas -->
-
-                        <div class="kiosco-body">
-
-                            <!-- Columna Izquierda: Perfil Escaneado -->
-
-                            <div class="kiosco-perfil" id="kiosco-perfil-scan">
-
-                                <img src="vendor/img/avatar_default.png" id="scan-foto" alt="Foto">
-
-                                <h3 id="scan-nombre" style="margin: 10px 0 0 0; color: #0f172a; font-size: 16px;">Esperando lectura...</h3>
-
-                                <p id="scan-id" style="color: var(--text-muted); font-size: 12px; margin: 4px 0 16px 0;">--</p>
-
-                                <div id="scan-badge" style="background: #e5e7eb; color: #374151; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 13px;">--</div>
-
-                                <div id="scan-detalles-turno" style="margin-top: 14px; font-size: 12px; color: #64748b; text-align: left; background: white; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; display: none;">
-
-                                    <div><b>Matutino:</b> <span id="scan-mat-in">--</span> / <span id="scan-mat-out">--</span></div>
-
-                                    <div style="margin-top: 4px;"><b>Vespertino:</b> <span id="scan-vesp-in">--</span> / <span id="scan-vesp-out">--</span></div>
-
+                            <div class="kiosco-top-grid">
+                                <!-- Columna Izquierda Cabecera: Reloj + Captura QR -->
+                                <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                                    <div class="reloj-kiosco" id="reloj-pantalla">00:00:00</div>
+                                    <div class="fecha-kiosco" id="fecha-pantalla">Cargando fecha...</div>
+                                    <div style="display: flex; justify-content: center; gap: 10px; width: 100%; max-width: 520px;">
+                                        <input type="password" id="input-gafete" placeholder="Pasa tu código QR por el lector digital..." autocomplete="off" autofocus style="flex: 1;">
+                                        <button onclick="cargarMatrizKiosco()" title="Refrescar Matriz" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 14px; cursor: pointer;">
+                                            <i class="ph ph-arrows-clockwise" style="font-size: 20px;"></i>
+                                        </button>
+                                    </div>
+                                    <div id="kiosco-alerta" style="display: none; padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 10px; width: 100%; max-width: 520px;"></div>
                                 </div>
 
+                                <!-- Columna Derecha Cabecera: Perfil Escaneado Compacto y Elegante -->
+                                <div class="kiosco-perfil-horizontal" id="kiosco-perfil-scan">
+                                    <img src="vendor/img/avatar_default.png" id="scan-foto" alt="Foto">
+                                    <div style="flex: 1; min-width: 0;">
+                                        <h3 id="scan-nombre" style="margin: 0; color: #0f172a; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Esperando lectura...</h3>
+                                        <p id="scan-id" style="color: var(--text-muted); font-size: 12px; margin: 2px 0 6px 0;">--</p>
+                                        <div id="scan-badge" style="background: #e5e7eb; color: #374151; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 12px; display: inline-block;">--</div>
+                                        <div id="scan-detalles-turno" style="margin-top: 6px; font-size: 11px; color: #64748b; background: white; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0; display: none;">
+                                            <div><b>Mat:</b> <span id="scan-mat-in">--</span> / <span id="scan-mat-out">--</span> | <b>Vesp:</b> <span id="scan-vesp-in">--</span> / <span id="scan-vesp-out">--</span></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
 
-
-
-                            <!-- Columna Derecha: Matriz de Asistencia -->
-
-                            <div class="kiosco-matriz">
+                        <!-- CUERPO COMPLETO: Matriz de Asistencia a todo el ancho -->
+                        <div class="kiosco-matriz-full">
 
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
 
@@ -2783,8 +2764,6 @@
                             </div>
 
                         </div>
-
-                    </div>
 
                 </div>
 

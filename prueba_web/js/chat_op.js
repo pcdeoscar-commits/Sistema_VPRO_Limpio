@@ -266,6 +266,9 @@ async function inicializarChatOP() {
 
     chatState.usuario = user;
     actualizarInfoUsuarioEnChat();
+    if (typeof iniciarMonitoreoInactividad === 'function') {
+        iniciarMonitoreoInactividad(user);
+    }
 
     // Determinar arista inicial (Admon & RH vs OPs de Producción)
     const aristaParam = urlParams.get("arista");
@@ -1247,6 +1250,9 @@ function mostrarPerfilUsuarioChat() {
 }
 
 function cerrarSesionChat() {
+    if (typeof detenerMonitoreoInactividad === 'function') {
+        detenerMonitoreoInactividad();
+    }
     try {
         localStorage.removeItem("vpro_chat_usuario");
         localStorage.removeItem("usuarioLogueado");

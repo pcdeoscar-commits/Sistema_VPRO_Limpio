@@ -70,10 +70,27 @@ async function cargarEmpleados() {
         try {
             const p = new URLSearchParams(window.location.search);
             const targetId = p.get('u') || p.get('login_emp');
+            const esBloqueo = p.get('bloqueo') === '1';
             if (targetId) {
                 const empTarget = empleados.find(e => String(e.id_empleado).trim() === String(targetId).trim());
                 if (empTarget) {
-                    setTimeout(() => abrirModal(empTarget, `${API_URL}/fotos/${empTarget.id_empleado}.jpg`), 300);
+                    setTimeout(() => {
+                        abrirModal(empTarget, `${API_URL}/fotos/${empTarget.id_empleado}.jpg`);
+                        if (esBloqueo) {
+                            const errorEl = document.getElementById("modal-error");
+                            if (errorEl) {
+                                errorEl.innerHTML = `🔒 <b>Sesión bloqueada tras 5 minutos de inactividad.</b><br>Ingresa tu contraseña para reanudar.`;
+                                errorEl.style.display = "block";
+                                errorEl.style.background = "#fef3c7";
+                                errorEl.style.color = "#92400e";
+                                errorEl.style.border = "1px solid #f59e0b";
+                                errorEl.style.borderRadius = "8px";
+                                errorEl.style.padding = "10px";
+                                errorEl.style.fontSize = "12px";
+                                errorEl.style.lineHeight = "1.4";
+                            }
+                        }
+                    }, 300);
                 }
             }
         } catch(e) {}
@@ -260,10 +277,16 @@ function iniciarSesionExitosa(usuario) {
     iniciarRelojKiosco();
     inicializarLectorKiosco(); 
     cargarBadges();
+    if (typeof iniciarMonitoreoInactividad === 'function') {
+        iniciarMonitoreoInactividad(usuario);
+    }
     cambiarVista('vista-inicio'); 
 }
 
 function cerrarSesion() {
+    if (typeof detenerMonitoreoInactividad === 'function') {
+        detenerMonitoreoInactividad();
+    }
     document.getElementById("sidebar").style.display = "none";
     document.getElementById("vista-dashboard").style.display = "none";
     document.getElementById("vista-login").style.display = "block";

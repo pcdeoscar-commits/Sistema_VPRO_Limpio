@@ -9,6 +9,15 @@ from core.database import get_db_cursor
 
 router = APIRouter(prefix="/api/empleados", tags=["🦺 Gestión Personal"])
 
+def _asegurar_roles_productores():
+    try:
+        with get_db_cursor("db_personal", commit=True) as cursor:
+            cursor.execute("UPDATE empleados SET rol = 'PRODUCTOR' WHERE TRIM(id_empleado) IN ('107', '119') AND UPPER(COALESCE(rol, '')) != 'PRODUCTOR';")
+    except Exception as e:
+        print(f"⚠️ Nota de roles productores: {e}")
+
+_asegurar_roles_productores()
+
 @router.get("")
 def obtener_empleados():
     """Consulta la plantilla completa de empleados activos e inactivos."""

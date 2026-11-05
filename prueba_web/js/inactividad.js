@@ -24,18 +24,60 @@ const vproInactividadState = {
 const VPRO_EVENTOS_ACTIVIDAD = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel'];
 
 /**
- * Inicia el monitoreo de inactividad para el usuario actual.
- * Excluye explícitamente terminales públicas (Kiosco Checador).
+ * Determina si el usuario está exento de la regla de inactividad de 5 minutos.
+ * Excepciones autorizadas:
+ * 1. Terminal física de Kiosco Checador en bodega (ID 529).
+ * 2. Sra. Ana Lilia Villarreal Uribe (ID 101 / Admon y RH) - Exclusivamente ella queda libre de límite de tiempo.
  */
-function iniciarMonitoreoInactividad(usuario) {
-    if (!usuario) return;
+function esUsuarioExentoInactividad(usuario) {
+    if (!usuario) return false;
 
-    // Regla de seguridad: Si es Kiosco físico de checador en bodega, NUNCA bloquear
     const rol = (usuario.rol || '').toUpperCase();
     const depto = (usuario.depto || '').toUpperCase();
     const idEmp = String(usuario.id_empleado || '').trim();
+    const nom = (usuario.nombre_completo || usuario.nombre || '').toUpperCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // 1. Kiosco físico de checador en bodega
     if (rol === 'KIOSKO' || depto === 'KIOSKO' || idEmp === '529') {
+        return true;
+    }
+
+    // 2. Sra. Ana Lilia Villarreal Uribe (Exclusivamente ella queda libre de límite de tiempo)
+    const esAnaLilia = idEmp === '101' || (
+        nom.includes('ANA LILIA') && (
+            nom.includes('VILLARREAL') || nom.includes('VILLAREAL') || nom.includes('VILARREAL')
+        )
+    );
+
+    if (esAnaLilia) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Inicia el monitoreo de inactividad para el usuario actual.
+ * Excluye explícitamente terminales públicas (Kiosco Checador) y a la Sra. Ana Lilia Villarreal.
+ */
+function iniciarMonitoreoInactividad(usuario) {
+    if (!usuario) {
+        if (typeof usuarioLogueado !== 'undefined' && usuarioLogueado) {
+            usuario = usuarioLogueado;
+        } else {
+            try {
+                const guardado = localStorage.getItem("vpro_chat_usuario");
+                if (guardado) usuario = JSON.parse(guardado);
+            } catch(e) {}
+        }
+    }
+    if (!usuario) return;
+
+    // Regla de seguridad: Kiosco Checador y Sra. Ana Lilia Villarreal quedan 100% libres de tiempo
+    if (esUsuarioExentoInactividad(usuario)) {
         detenerMonitoreoInactividad();
+        console.log("ℹ️ [Inactividad] Usuario exento de límite de tiempo (libre de bloqueo):", usuario.nombre_completo || usuario.nombre || usuario.id_empleado);
         return;
     }
 
@@ -91,6 +133,10 @@ function registrarActividadUsuario() {
  */
 function reiniciarTemporizadorInactividad() {
     if (!vproInactividadState.activo) return;
+    if (esUsuarioExentoInactividad(vproInactividadState.usuarioMonitoreado)) {
+        detenerMonitoreoInactividad();
+        return;
+    }
 
     if (vproInactividadState.timerTotal) clearTimeout(vproInactividadState.timerTotal);
     if (vproInactividadState.timerPreaviso) clearTimeout(vproInactividadState.timerPreaviso);
@@ -210,6 +256,10 @@ function ocultarAvisoInactividad() {
  */
 function ejecutarCierrePorInactividad() {
     const usuario = vproInactividadState.usuarioMonitoreado || (typeof usuarioLogueado !== 'undefined' ? usuarioLogueado : null);
+    if (esUsuarioExentoInactividad(usuario)) {
+        detenerMonitoreoInactividad();
+        return;
+    }
     detenerMonitoreoInactividad();
 
     const idEmpleado = usuario ? String(usuario.id_empleado || '').trim() : '';

@@ -79,15 +79,31 @@ async function cargarDatosInicio() {
 
         const esSeguimientoMantenimiento = ['201', '202'].includes(String(idEmp).trim());
 
+        // Identificar exclusivamente si el usuario tiene rol de Coordinador o Productor
+        const rolUser = (usuarioLogueado?.rol || '').toUpperCase().trim();
+        const puestoUser = (usuarioLogueado?.puesto || '').toUpperCase().trim();
+        const idUser = String(idEmp || '').trim();
+
+        const esCoordinador = rolUser === 'COORDINADOR' || rolUser.includes('COORDINADOR') || rolUser.includes('COORDINACION') ||
+                              puestoUser.includes('COORDINADOR') || puestoUser.includes('COORDINACION') ||
+                              idUser === '124' || idUser === '000';
+
+        const esProductor = rolUser === 'PRODUCTOR' || rolUser.includes('PRODUCTOR') ||
+                            puestoUser.includes('PRODUCTOR') ||
+                            idUser === '107' || idUser === '119';
+
+        const esCoordOProductor = esCoordinador || esProductor;
+
         // Lanzar todas las peticiones en paralelo
-        const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos] = await Promise.allSettled([
+        const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos, resOpsSinConv] = await Promise.allSettled([
             fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${idEmp}`),
             fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '')}`),
             fetch(`${API_URL}/api/rh/alertas?id_empleado=${idEmp}`),
             fetch(`${API_URL}/api/rh/vacaciones/${idEmp}`),
             fetch(`${API_URL}/api/gastos/pendientes-auditoria`),
             esAdminRH ? fetch(`${API_URL}/api/rh/permisos/pendientes`) : Promise.resolve({ ok: false }),
-            esSeguimientoMantenimiento ? fetch(`${API_URL}/api/inventario/radar-danos`) : Promise.resolve({ ok: false })
+            esSeguimientoMantenimiento ? fetch(`${API_URL}/api/inventario/radar-danos`) : Promise.resolve({ ok: false }),
+            esCoordOProductor ? fetch(`${API_URL}/api/eventos/pendientes-convocados`) : Promise.resolve({ ok: false })
         ]);
 
         // ── Helper: construir tarjeta-grupo tipo accordion/dropdown ──────
@@ -115,6 +131,48 @@ async function cargarDatosInicio() {
         }
 
         let gruposHtml = [];
+        // ── 🚨 ALERTA EXCLUSIVA: OPs nuevas sin personal convocado (COORDINADOR / PRODUCTOR) ──
+        if (esCoordOProductor && resOpsSinConv && resOpsSinConv.status === 'fulfilled' && resOpsSinConv.value.ok) {
+            try {
+                const opsSinConv = await resOpsSinConv.value.json();
+                if (Array.isArray(opsSinConv) && opsSinConv.length > 0) {
+                    gruposHtml.push(buildDropdownCard({
+                        icon: 'ph-users-three',
+                        color: '#dc2626', bg: '#fef2f2', border: '#ef4444',
+                        titulo: '🚨 OPs Nuevas pendientes de Convocatoria de Personal',
+                        badge: `${opsSinConv.length} por convocar`,
+                        badgeColor: '#dc2626',
+                        items: opsSinConv,
+                        renderItem: (op) => `
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 13px; border-radius:8px; margin-bottom:6px; background:#ffffff; border:1px solid #fee2e2; box-shadow:0 1px 3px rgba(0,0,0,0.04); flex-wrap:wrap;">
+                                <div style="flex:1; min-width:240px;">
+                                    <div style="font-size:13.5px; font-weight:700; color:#991b1b; display:flex; align-items:center; gap:6px;">
+                                        <i class="ph ph-warning-circle" style="color:#ef4444; font-size:17px;"></i> OP-${String(op.id_evento).padStart(3, '0')} | ${op.cliente || 'Sin Cliente'}
+                                    </div>
+                                    <div style="font-size:12.5px; font-weight:600; color:#1e293b; margin-top:2px;">
+                                        ${op.nombre_evento || 'Evento sin nombre'}
+                                    </div>
+                                    <div style="font-size:11.5px; color:#64748b; margin-top:3px; display:flex; gap:14px; flex-wrap:wrap;">
+                                        <span>✍️ <b>Elaboró:</b> ${op.elabora || 'Administración'}</span>
+                                        <span>🎬 <b>Productor:</b> ${op.resp_de_produccion || 'Por asignar'}</span>
+                                        <span>📅 <b>Fecha Evento:</b> ${op.fec_del_evento || 'Por definir'}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button type="button" onclick="abrirOPEspecifica(${op.id_evento})" 
+                                            style="background:#dc2626; color:white; border:none; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 5px rgba(220,38,38,0.25); transition:background .15s;"
+                                            onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                                        <i class="ph ph-user-plus" style="font-size:16px;"></i> Asignar Personal
+                                    </button>
+                                </div>
+                            </div>`
+                    }));
+                }
+            } catch (e) {
+                console.error("Error al procesar OPs pendientes de convocados:", e);
+            }
+        }
+
         // ── ⭐ ACCESO DESTACADO: Chat Operativo de OPs (WhatsApp) ─────────────
         gruposHtml.push(`
             <div class="notif-card-chat-op" style="background: linear-gradient(135deg, #064e3b 0%, #0f766e 100%); border-left: 5px solid #10b981; border-radius: 12px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25); padding: 14px 18px; color: white;">
@@ -1060,6 +1118,30 @@ function inicializarLectorKiosco() {
  * Abre/cierra el dropdown de una tarjeta de notificación.
  * Rota el icono caret al abrir.
  */
+/**
+ * Abre una OP específica en el módulo de Órdenes de Producción y posiciona en Convocados
+ */
+function abrirOPEspecifica(idEvento) {
+    if (typeof cambiarVista === 'function') {
+        cambiarVista('vista-ops');
+    }
+    setTimeout(() => {
+        const selectFolios = document.getElementById('select-folios-op');
+        if (selectFolios) {
+            selectFolios.value = String(idEvento);
+        }
+        if (typeof cargarDetalleOP === 'function') {
+            cargarDetalleOP(String(idEvento));
+        }
+        setTimeout(() => {
+            const seccionConv = document.getElementById('contenedor-multiselect-personal');
+            if (seccionConv) {
+                seccionConv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 500);
+    }, 350);
+}
+
 function toggleNotifDropdown(uid) {
     const panel = document.getElementById(uid);
     const caret = document.getElementById(uid + '-caret');

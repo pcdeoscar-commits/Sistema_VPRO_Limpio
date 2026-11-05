@@ -105,6 +105,74 @@ def extraer_catalogos_de_apoyo():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/pendientes-convocados")
+def obtener_ops_pendientes_convocados():
+    """Obtiene las OPs activas que no tienen personal convocado asignado aún."""
+    try:
+        with engine_eventos.connect() as conn:
+            query = text("""
+                SELECT e.id_evento, 
+                       encode(COALESCE(e.folio, '')::bytea, 'hex'),
+                       encode(COALESCE(e.para_q_cliente, '')::bytea, 'hex'), 
+                       encode(COALESCE(e.nombre_evento, '')::bytea, 'hex'),
+                       encode(COALESCE(e.elabora, '')::bytea, 'hex'),
+                       encode(COALESCE(e.empleado_que_creo_la_op, '')::bytea, 'hex'),
+                       encode(COALESCE(e.resp_de_produccion, '')::bytea, 'hex'),
+                       encode(COALESCE(e.fec_del_evento::text, '')::bytea, 'hex'),
+                       encode(COALESCE(e.fec_de_elaboracion_de_op::text, '')::bytea, 'hex'),
+                       COALESCE(e.personal_convocado_op, '{}'::text[])
+                FROM public.eventos e
+                WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM public.informes_gastos_maestro igm 
+                      WHERE igm.folio_vpro = e.id_evento
+                  )
+                ORDER BY e.id_evento DESC
+            """)
+            rows = conn.execute(query).fetchall()
+            
+            pendientes = []
+            for r in rows:
+                id_ev = r[0]
+                folio = safe_decode_hex(r[1]) or str(id_ev)
+                cliente = safe_decode_hex(r[2])
+                evento = safe_decode_hex(r[3])
+                elabora = safe_decode_hex(r[4])
+                creador = safe_decode_hex(r[5])
+                resp_prod = safe_decode_hex(r[6])
+                fec_evento = safe_decode_hex(r[7])
+                fec_elabora = safe_decode_hex(r[8])
+                personal_raw = r[9]
+                
+                convocados = []
+                if personal_raw:
+                    if isinstance(personal_raw, list):
+                        convocados = [str(p).strip() for p in personal_raw if str(p).strip()]
+                    elif isinstance(personal_raw, str):
+                        s = personal_raw.strip()
+                        if s.startswith("{") and s.endswith("}"):
+                            s = s[1:-1]
+                            convocados = [x.strip().strip('"').strip() for x in s.split(",") if x.strip()]
+                        elif s and s != "[]":
+                            convocados = [s]
+
+                # Si NO tiene convocados asignados
+                if len(convocados) == 0:
+                    quien_elaboro = elabora or creador or "Administración"
+                    pendientes.append({
+                        "id_evento": id_ev,
+                        "folio": folio,
+                        "cliente": cliente,
+                        "nombre_evento": evento,
+                        "elabora": quien_elaboro,
+                        "resp_de_produccion": resp_prod or "Sin asignar",
+                        "fec_del_evento": fec_evento,
+                        "fec_elaboracion": fec_elabora
+                    })
+            return pendientes
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/folios")
 def obtener_folios_activos_e_historicos():
     """Obtiene los folios activos e históricos de ambas bases de datos.

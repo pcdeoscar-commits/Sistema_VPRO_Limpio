@@ -5,14 +5,15 @@ from fastapi import APIRouter, HTTPException
 from psycopg2.extras import RealDictCursor
 import qrcode
 
-from core.database import get_db_cursor
+from core.database import get_db_cursor, engine_personal
+from sqlalchemy import text
 
 router = APIRouter(prefix="/api/empleados", tags=["🦺 Gestión Personal"])
 
 def _asegurar_roles_productores():
     try:
-        with get_db_cursor("db_personal", commit=True) as cursor:
-            cursor.execute("UPDATE empleados SET rol = 'PRODUCTOR' WHERE TRIM(id_empleado) IN ('107', '119') AND UPPER(COALESCE(rol, '')) != 'PRODUCTOR';")
+        with engine_personal.begin() as conn:
+            conn.execute(text("UPDATE public.empleados SET rol = 'PRODUCTOR' WHERE TRIM(id_empleado) IN ('107', '119') AND UPPER(COALESCE(rol, '')) != 'PRODUCTOR';"))
     except Exception as e:
         print(f"⚠️ Nota de roles productores: {e}")
 

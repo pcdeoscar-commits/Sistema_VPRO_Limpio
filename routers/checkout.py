@@ -120,13 +120,17 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
                       encode(COALESCE(e.responsable_gastos, '')::bytea, 'hex'),
                       encode(COALESCE(e.chofer, '')::bytea, 'hex'),
                       encode(COALESCE(e.personal_convocado_op::text, '[]')::bytea, 'hex'),
-                      encode(COALESCE(e.choferes_por_vehiculo::text, '{}')::bytea, 'hex')
+                      encode(COALESCE(e.choferes_por_vehiculo::text, '{}')::bytea, 'hex'),
+                      COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada_para_edicion
                FROM public.eventos e
-               WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
-                 AND NOT EXISTS (
-                     SELECT 1 FROM public.informes_gastos_maestro igm 
-                     WHERE igm.folio_vpro = e.id_evento
-                 )
+               WHERE e.habilitada_para_edicion = TRUE
+                  OR (
+                      UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
+                      AND NOT EXISTS (
+                          SELECT 1 FROM public.informes_gastos_maestro igm 
+                          WHERE igm.folio_vpro = e.id_evento
+                      )
+                  )
                ORDER BY e.id_evento DESC
             """)
             evs = conn.execute(evs_query).fetchall()
@@ -150,9 +154,11 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
             chof = safe_decode_hex(r[5])
             conv_raw = safe_decode_hex(r[6])
             cpv_raw = safe_decode_hex(r[7]) if len(r) > 7 else "{}"
+            es_hab = bool(r[8]) if len(r) > 8 else False
             
             if es_coord or usuario_pertenece_a_op(nom_usuario, resp_p, resp_g, chof, conv_raw, cpv_raw):
-                ordenes.append(f"OP-{str(id_ev).zfill(3)} | {cli} - {nom}")
+                label_hab = " 🔓 [REHABILITADA]" if es_hab else ""
+                ordenes.append(f"OP-{str(id_ev).zfill(3)} | {cli} - {nom}{label_hab}")
 
         lista_kits = [safe_decode_hex(k[0]) for k in kits_rows]
         
@@ -628,13 +634,17 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
         with engine_eventos.connect() as conn:
             query_pendientes = text("""
                 SELECT e.id_evento, encode(e.para_q_cliente::bytea, 'hex'), encode(e.nombre_evento::bytea, 'hex'), 
-                       e.personal_convocado_op, encode(e.resp_de_produccion::bytea, 'hex') 
+                       e.personal_convocado_op, encode(e.resp_de_produccion::bytea, 'hex'),
+                       COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada_para_edicion
                 FROM public.eventos e
-                WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
-                  AND NOT EXISTS (
-                      SELECT 1 FROM public.informes_gastos_maestro igm 
-                      WHERE igm.folio_vpro = e.id_evento
-                  )
+                WHERE e.habilitada_para_edicion = TRUE
+                   OR (
+                       UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
+                       AND NOT EXISTS (
+                           SELECT 1 FROM public.informes_gastos_maestro igm 
+                           WHERE igm.folio_vpro = e.id_evento
+                       )
+                   )
                 ORDER BY e.id_evento DESC
             """)
             rows = conn.execute(query_pendientes).fetchall()
@@ -646,6 +656,7 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
                 evento = reparar_mojibake(safe_decode_hex(r[2]))
                 personal_raw = r[3]
                 resp_prod = reparar_mojibake(safe_decode_hex(r[4])).strip() if r[4] else ""
+                es_hab = bool(r[5]) if len(r) > 5 else False
                 
                 convocados = []
                 if personal_raw:
@@ -667,16 +678,19 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
 
                 if es_convocado:
                     m_row = conn.execute(
-                        text("SELECT estado_bodega FROM public.checkouts_maestro WHERE folio_op = :id AND TRIM(id_empleado) = :emp"), 
+                        text("SELECT estado_bodega, incidencias_generales FROM public.checkouts_maestro WHERE folio_op = :id AND TRIM(id_empleado) = :emp"), 
                         {"id": id_ev, "emp": id_empleado.strip()}
                     ).mappings().first()
                     estado_actual_bodega = m_row["estado_bodega"] if m_row else "NUEVO"
+                    inc_actual = (m_row["incidencias_generales"] if m_row and m_row["incidencias_generales"] else "").strip()
                     
-                    if estado_actual_bodega in ["NUEVO", "PENDIENTE"]:
+                    # Si está pendiente o si la OP fue expresamente rehabilitada por el coordinador
+                    if estado_actual_bodega in ["NUEVO", "PENDIENTE"] or es_hab:
+                        tag_hab = " 🔓 [REHABILITADA]" if es_hab else ""
                         ops_pendientes.append({
                             "id_evento": id_ev, 
-                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}", 
-                            "estado": estado_actual_bodega
+                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}{tag_hab}", 
+                            "estado": "REHABILITADA" if es_hab else estado_actual_bodega
                         })
                         continue
 

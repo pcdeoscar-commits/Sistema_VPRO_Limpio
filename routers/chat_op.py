@@ -202,12 +202,15 @@ def listar_ops_para_chat(
                 (SELECT m.autor_nombre FROM public.chat_op_mensajes m WHERE m.id_evento = e.id_evento ORDER BY m.id DESC LIMIT 1) AS ultimo_autor,
                 (SELECT to_char(m.fecha_hora, 'YYYY-MM-DD HH24:MI:SS') FROM public.chat_op_mensajes m WHERE m.id_evento = e.id_evento ORDER BY m.id DESC LIMIT 1) AS ultima_hora
             FROM public.eventos e
-            WHERE (e.estatus IS NULL OR UPPER(e.estatus) NOT IN ('CANCELADO', 'ARCHIVADO', 'CERRADO', 'CERRADA (HISTÓRICO)'))
-              AND COALESCE(e.chat_cerrado, FALSE) = FALSE
-              AND NOT EXISTS (
-                  SELECT 1 FROM public.informes_gastos_maestro g 
-                  WHERE g.folio_vpro = e.id_evento OR CAST(g.folio_vpro AS TEXT) = e.folio
-              )
+            WHERE (COALESCE(e.habilitada_para_edicion, FALSE) = TRUE)
+               OR (
+                   (e.estatus IS NULL OR UPPER(e.estatus) NOT IN ('CANCELADO', 'ARCHIVADO', 'CERRADO', 'CERRADA (HISTÓRICO)'))
+                   AND COALESCE(e.chat_cerrado, FALSE) = FALSE
+                   AND NOT EXISTS (
+                       SELECT 1 FROM public.informes_gastos_maestro g 
+                       WHERE g.folio_vpro = e.id_evento OR CAST(g.folio_vpro AS TEXT) = e.folio
+                   )
+               )
             ORDER BY COALESCE(
                 (SELECT m.fecha_hora FROM public.chat_op_mensajes m WHERE m.id_evento = e.id_evento ORDER BY m.id DESC LIMIT 1),
                 (e.fec_del_evento::timestamp + COALESCE(e.inicio_del_evento, '00:00:00'::time)::time)
@@ -384,12 +387,13 @@ async def enviar_mensaje_op(id_evento: int, payload: MensajeNuevoPayload):
             chk_cerrado = conn.execute(
                 text("""
                     SELECT COALESCE(e.chat_cerrado, FALSE) AS cerrado,
+                           COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada,
                            EXISTS(SELECT 1 FROM public.informes_gastos_maestro m WHERE m.folio_vpro = e.id_evento OR CAST(m.folio_vpro AS TEXT) = e.folio) AS tiene_gasto
                     FROM public.eventos e WHERE e.id_evento = :id_ev
                 """),
                 {"id_ev": id_evento}
             ).fetchone()
-            if chk_cerrado and (chk_cerrado.cerrado or chk_cerrado.tiene_gasto):
+            if chk_cerrado and not chk_cerrado.habilitada and (chk_cerrado.cerrado or chk_cerrado.tiene_gasto):
                 raise HTTPException(status_code=400, detail="Este chat operativo ha concluido y fue sellado en el historial de la OP (Cuenta con Reporte de Gastos).")
 
         # Detectar enlaces en el mensaje automáticamente
@@ -465,12 +469,13 @@ async def subir_adjunto_chat_op(
             chk_cerrado = conn.execute(
                 text("""
                     SELECT COALESCE(e.chat_cerrado, FALSE) AS cerrado,
+                           COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada,
                            EXISTS(SELECT 1 FROM public.informes_gastos_maestro m WHERE m.folio_vpro = e.id_evento OR CAST(m.folio_vpro AS TEXT) = e.folio) AS tiene_gasto
                     FROM public.eventos e WHERE e.id_evento = :id_ev
                 """),
                 {"id_ev": id_evento}
             ).fetchone()
-            if chk_cerrado and (chk_cerrado.cerrado or chk_cerrado.tiene_gasto):
+            if chk_cerrado and not chk_cerrado.habilitada and (chk_cerrado.cerrado or chk_cerrado.tiene_gasto):
                 raise HTTPException(status_code=400, detail="Este chat operativo ha concluido y fue sellado en el historial de la OP (Cuenta con Reporte de Gastos).")
 
         # Generar nombre único seguro

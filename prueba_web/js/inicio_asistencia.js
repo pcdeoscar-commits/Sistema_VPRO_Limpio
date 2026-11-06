@@ -719,6 +719,25 @@ function iniciarRelojKiosco() {
 function calcularEstatusEntradaKiosco(horaStr, turno, observaciones = "") {
     if (!horaStr || horaStr === "--:--:--" || horaStr === "--:--") return "";
     try {
+        const obsUpper = (observaciones || "").toUpperCase();
+
+        // 🩺 Si cuenta con permiso de ausencia justificado (médico, personal, etc.)
+        if (turno === "Matutino" && (obsUpper.includes("PERMISO") || obsUpper.includes("CITA MÉDICA") || obsUpper.includes("CITA MEDICA") || obsUpper.includes("DENTISTA"))) {
+            let etiquetaPermiso = "PERMISO - MÉDICO";
+            if (obsUpper.includes("ASUNTOS PERSONALES") || obsUpper.includes("PERSONAL")) {
+                etiquetaPermiso = "PERMISO - PERSONAL";
+            } else if (obsUpper.includes("TRÁMITE") || obsUpper.includes("TRAMITE")) {
+                etiquetaPermiso = "PERMISO - TRÁMITE";
+            } else if (obsUpper.includes("LUTO") || obsUpper.includes("FALLECIMIENTO")) {
+                etiquetaPermiso = "PERMISO - LUTO";
+            } else if (obsUpper.includes("CITA") || obsUpper.includes("MÉDIC") || obsUpper.includes("MEDIC") || obsUpper.includes("DENTISTA")) {
+                etiquetaPermiso = "PERMISO - MÉDICO";
+            } else {
+                etiquetaPermiso = "PERMISO LABORAL";
+            }
+            return `<span style="background: #eff6ff; color: #1d4ed8; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 11px; border: 1px solid #bfdbfe; white-space: nowrap; display: inline-block;">🔵 ${etiquetaPermiso}</span>`;
+        }
+
         const parts = horaStr.split(':').map(Number);
         const h = parts[0] || 0;
         const m = parts[1] || 0;
@@ -857,8 +876,9 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
             const esReciente = (idRecienRegistrado && String(emp.id_empleado).trim() === String(idRecienRegistrado).trim());
             const estiloFila = esReciente ? 'style="background: #f0fdf4; border-left: 4px solid #10b981; transition: background 0.6s ease;"' : '';
 
-            // 🌴 Si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad
-            if (['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(String(reg.estatus || '').toUpperCase())) {
+            // 🌴 Si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad (Y no asistió a laborar hoy)
+            const noHaChecado = !esHoraValida(reg.hora_entrada) && !esHoraValida(reg.hora_entrada_v);
+            if (noHaChecado && ['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(String(reg.estatus || '').toUpperCase())) {
                 const est = String(reg.estatus).toUpperCase();
                 let badgeTxt = '🌴 EN VACACIONES AUTORIZADAS';
                 let bgStyle = 'background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;';

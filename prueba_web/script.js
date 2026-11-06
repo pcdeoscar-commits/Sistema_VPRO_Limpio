@@ -1919,9 +1919,9 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
 
 
 
-            // 🌴 Si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad
-
-            if (['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(String(reg.estatus || '').toUpperCase())) {
+            // 🌴 Si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad (Y no tiene registro de checada física hoy)
+            const noHaChecado = !esHoraValida(reg.hora_entrada) && !esHoraValida(reg.hora_entrada_v);
+            if (noHaChecado && ['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(String(reg.estatus || '').toUpperCase())) {
 
                 const est = String(reg.estatus).toUpperCase();
 

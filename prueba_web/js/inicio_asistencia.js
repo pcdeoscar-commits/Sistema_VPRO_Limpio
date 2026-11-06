@@ -508,7 +508,9 @@ async function cargarDatosInicio() {
                                             <span style="font-size:11px; font-weight:700; color:#4338ca; background:#e0e7ff; padding:2px 8px; border-radius:10px; margin-left:4px;">${p.folio_permiso}</span>
                                         </div>
                                         <div style="font-size:12px; color:#475569; margin-top:2px;">
-                                            <b>${p.tipo_permiso}</b> • Del <b>${p.fecha_inicio}</b> al <b>${p.fecha_fin}</b> (${p.dias_solicitados} día${p.dias_solicitados !== 1 ? 's' : ''})
+                                            <b>${p.tipo_permiso}</b> • ${(p.modalidad || '').toUpperCase() === 'HORAS' || (p.horas_solicitadas && p.horas_solicitadas > 0)
+                                                ? `El <b>${p.fecha_inicio}</b> · <b style="color:#0f766e;">${p.horas_solicitadas} hr(s)</b> ${(p.hora_inicio && p.hora_fin ? `(${p.hora_inicio} a ${p.hora_fin})` : '')}`
+                                                : `Del <b>${p.fecha_inicio}</b> al <b>${p.fecha_fin}</b> (${p.dias_solicitados} día${p.dias_solicitados !== 1 ? 's' : ''})`}
                                         </div>
                                         <div style="font-size:11.5px; color:#6b7280; font-style:italic; margin-top:2px;">
                                             "${p.justificacion || 'Sin motivo especificado'}"
@@ -561,7 +563,9 @@ async function cargarDatosInicio() {
                                             <span style="font-weight:500;color:#64748b;">· ${p.tipo_permiso || 'Permiso'}</span>
                                         </div>
                                         <div style="font-size:11.5px;color:#475569;margin-top:2px;">
-                                            Del <b>${p.fecha_inicio}</b> al <b>${p.fecha_fin}</b> (${p.dias_solicitados || 1} día${(p.dias_solicitados || 1) !== 1 ? 's' : ''})
+                                            ${(p.modalidad || '').toUpperCase() === 'HORAS' || (p.horas_solicitadas && p.horas_solicitadas > 0)
+                                                ? `El <b>${p.fecha_inicio}</b> · <b style="color:#0f766e;">${p.horas_solicitadas} hora(s)</b> ${(p.hora_inicio && p.hora_fin ? `(${String(p.hora_inicio).substring(0,5)} a ${String(p.hora_fin).substring(0,5)})` : '')}`
+                                                : `Del <b>${p.fecha_inicio}</b> al <b>${p.fecha_fin}</b> (${p.dias_solicitados || 1} día${(p.dias_solicitados || 1) !== 1 ? 's' : ''})`}
                                         </div>
                                         ${p.justificacion ? `<div style="font-size:11px;color:#64748b;font-style:italic;margin-top:2px;">"${p.justificacion}"</div>` : ''}
                                         ${p.motivo_rechazo ? `<div style="font-size:11px;color:#dc2626;font-weight:600;margin-top:2px;">Motivo rechazo: ${p.motivo_rechazo}</div>` : ''}
@@ -1271,7 +1275,110 @@ function irASeguimientoTaller(idEquipo, numServicio) {
 
 // ══════════════════════════════════════════════════════════════════
 // 📝 MÓDULO SOLICITUD DE PERMISOS DIRECTO DESDE INICIO (PARA TODO EL PERSONAL)
+// Soporta tanto Días Completos como Permisos por Horas (Llegadas tarde, etc.)
 // ══════════════════════════════════════════════════════════════════
+
+window.cambiarModalidadPermiso = function(mod) {
+    const inputMod = document.getElementById('swal-per-modalidad');
+    const btnDias = document.getElementById('swal-btn-mod-dias');
+    const btnHoras = document.getElementById('swal-btn-mod-horas');
+    const secDias = document.getElementById('sec-per-dias');
+    const secHoras = document.getElementById('sec-per-horas');
+    if (!inputMod || !btnDias || !btnHoras || !secDias || !secHoras) return;
+
+    inputMod.value = mod;
+
+    if (mod === 'HORAS') {
+        btnHoras.style.background = '#ecfdf5';
+        btnHoras.style.borderColor = '#059669';
+        btnHoras.style.color = '#065f46';
+        btnHoras.style.borderWidth = '2px';
+
+        btnDias.style.background = '#f8fafc';
+        btnDias.style.borderColor = '#cbd5e1';
+        btnDias.style.color = '#64748b';
+        btnDias.style.borderWidth = '1.5px';
+
+        secDias.style.display = 'none';
+        secHoras.style.display = 'block';
+
+        // Si estaba seleccionado vacaciones, cambiar a personal porque vacaciones no aplican por horas
+        const selTipo = document.getElementById('swal-per-tipo');
+        if (selTipo && selTipo.value === 'VACACIONES') {
+            selTipo.value = 'PERMISO PERSONAL';
+        }
+        window.recalcularHorasModalPermiso();
+    } else {
+        btnDias.style.background = '#ecfdf5';
+        btnDias.style.borderColor = '#059669';
+        btnDias.style.color = '#065f46';
+        btnDias.style.borderWidth = '2px';
+
+        btnHoras.style.background = '#f8fafc';
+        btnHoras.style.borderColor = '#cbd5e1';
+        btnHoras.style.color = '#64748b';
+        btnHoras.style.borderWidth = '1.5px';
+
+        secDias.style.display = 'block';
+        secHoras.style.display = 'none';
+        window.recalcularDiasModalPermiso();
+    }
+};
+
+window.alCambiarTipoHorarioPermiso = function() {
+    const tipoH = document.getElementById('swal-per-tipo-horario')?.value;
+    const elIni = document.getElementById('swal-per-hora-ini');
+    const elFin = document.getElementById('swal-per-hora-fin');
+    const elNum = document.getElementById('swal-per-num-horas');
+    if (!tipoH || !elIni || !elFin || !elNum) return;
+
+    if (tipoH === 'LLEGADA_TARDE') {
+        elIni.value = '09:00';
+        elFin.value = '11:00';
+        elNum.value = '2';
+    } else if (tipoH === 'SALIDA_TEMPRANA') {
+        elIni.value = '17:00';
+        elFin.value = '19:00';
+        elNum.value = '2';
+    } else if (tipoH === 'INTERMEDIO') {
+        elIni.value = '12:00';
+        elFin.value = '14:00';
+        elNum.value = '2';
+    }
+    window.recalcularHorasModalPermiso();
+};
+
+window.recalcularHorasModalPermiso = function() {
+    const elIni = document.getElementById('swal-per-hora-ini');
+    const elFin = document.getElementById('swal-per-hora-fin');
+    const elNum = document.getElementById('swal-per-num-horas');
+    const elBadge = document.getElementById('swal-per-horas-badge');
+    const tipoH = document.getElementById('swal-per-tipo-horario')?.value;
+    if (!elIni || !elFin || !elNum || !elBadge) return;
+
+    if (elIni.value && elFin.value) {
+        const [h1, m1] = elIni.value.split(':').map(Number);
+        const [h2, m2] = elFin.value.split(':').map(Number);
+        const minTot1 = (h1 * 60) + m1;
+        const minTot2 = (h2 * 60) + m2;
+        if (minTot2 > minTot1) {
+            const diffH = (minTot2 - minTot1) / 60;
+            elNum.value = (Math.round(diffH * 10) / 10).toFixed(diffH % 1 === 0 ? 0 : 1);
+        }
+    }
+
+    const numH = parseFloat(elNum.value || 0);
+    let desc = '';
+    if (tipoH === 'LLEGADA_TARDE') {
+        desc = `Llegará a laborar a las <b>${elFin.value || '11:00'}</b> (${numH} hr${numH !== 1 ? 's' : ''} solicitadas)`;
+    } else if (tipoH === 'SALIDA_TEMPRANA') {
+        desc = `Saldrá a las <b>${elIni.value || '17:00'}</b> (${numH} hr${numH !== 1 ? 's' : ''} antes)`;
+    } else {
+        desc = `De <b>${elIni.value || '09:00'}</b> a <b>${elFin.value || '11:00'}</b> (${numH} hr${numH !== 1 ? 's' : ''})`;
+    }
+
+    elBadge.innerHTML = `⏱️ Tiempo solicitado: <b style="color:#0f766e;font-size:13.5px;background:#ccfbf1;padding:2px 8px;border-radius:6px;">${numH} hora(s)</b> · ${desc}`;
+};
 
 window.recalcularDiasModalPermiso = function() {
     const elIni = document.getElementById('swal-per-inicio');
@@ -1329,7 +1436,7 @@ window.abrirModalSolicitarPermisoInicio = async function(tipoDefault = '', diasD
     const htmlModal = `
         <div style="text-align: left; font-family: inherit; color: #1e293b;">
             <!-- Header colaborador -->
-            <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 10px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px;">
                 <img src="${fotoEmp}" onerror="this.src='vendor/img/avatar_default.png'" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #10b981;">
                 <div>
                     <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${nomEmp}</div>
@@ -1337,68 +1444,135 @@ window.abrirModalSolicitarPermisoInicio = async function(tipoDefault = '', diasD
                 </div>
             </div>
 
+            <!-- Selector de Modalidad (Días Completos vs Horas) -->
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                    ⏱️ Duración / Modalidad del Permiso:
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button type="button" id="swal-btn-mod-dias" onclick="window.cambiarModalidadPermiso('DIAS')" 
+                            style="padding: 9px 12px; border-radius: 8px; border: 2px solid #059669; background: #ecfdf5; color: #065f46; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s;">
+                        <i class="ph ph-calendar-blank" style="font-size: 17px;"></i> 📅 Día(s) Completo(s)
+                    </button>
+                    <button type="button" id="swal-btn-mod-horas" onclick="window.cambiarModalidadPermiso('HORAS')" 
+                            style="padding: 9px 12px; border-radius: 8px; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #64748b; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s;">
+                        <i class="ph ph-clock" style="font-size: 17px;"></i> ⏱️ Por Horas (Parcial)
+                    </button>
+                </div>
+                <input type="hidden" id="swal-per-modalidad" value="DIAS">
+            </div>
+
             <!-- Tipo de Permiso -->
             <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px;">
-                    📌 Tipo de Solicitud / Ausencia:
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px;">
+                    📌 Motivo / Tipo de Solicitud:
                 </label>
-                <select id="swal-per-tipo" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13.5px; font-weight: 600; color: #0f172a; background: white; outline: none; box-sizing: border-box;">
-                    <option value="PERMISO PERSONAL" ${(!esVac && tipoDefault === 'PERMISO PERSONAL') || (!esVac && !tipoDefault) ? 'selected' : ''}>🙋‍♂️ Permiso Personal / Particular</option>
-                    <option value="MEDICO" ${tipoDefault === 'MEDICO' ? 'selected' : ''}>🩺 Cita Médica / Justificante de Salud</option>
-                    <option value="VACACIONES" ${esVac ? 'selected' : ''}>🏖️ Días de Vacaciones (LFT)</option>
+                <select id="swal-per-tipo" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background: white; outline: none; box-sizing: border-box;">
+                    <option value="PERMISO PERSONAL" ${(!esVac && tipoDefault === 'PERMISO PERSONAL') || (!esVac && !tipoDefault) ? 'selected' : ''}>🙋‍♂️ Permiso Personal / Particular (Escuela, Familia, Trámite)</option>
+                    <option value="MEDICO" ${tipoDefault === 'MEDICO' ? 'selected' : ''}>🩺 Cita Médica / Consulta de Salud</option>
                     <option value="ASUNTO FAMILIAR" ${tipoDefault === 'ASUNTO FAMILIAR' ? 'selected' : ''}>👨‍👩‍👧 Asunto Familiar / Fuerza Mayor</option>
-                    <option value="TRAMITE OFICIAL" ${tipoDefault === 'TRAMITE OFICIAL' ? 'selected' : ''}>🏛️ Trámite Oficial (INE, Licencia, etc.)</option>
+                    <option value="TRAMITE OFICIAL" ${tipoDefault === 'TRAMITE OFICIAL' ? 'selected' : ''}>🏛️ Trámite Oficial (INE, Licencia, Banco)</option>
+                    <option value="VACACIONES" ${esVac ? 'selected' : ''}>🏖️ Días de Vacaciones (LFT)</option>
                     <option value="OTRO" ${tipoDefault === 'OTRO' ? 'selected' : ''}>📝 Otro Permiso Especial</option>
                 </select>
             </div>
 
-            <!-- Fechas Inicio y Fin -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
-                <div>
-                    <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                        📅 Fecha de Inicio:
-                    </label>
-                    <input type="date" id="swal-per-inicio" value="${hoy}" min="${hoy}" onchange="window.recalcularDiasModalPermiso()" 
-                           style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; box-sizing: border-box;">
+            <!-- SECCIÓN 1: Días Completos -->
+            <div id="sec-per-dias" style="display: block;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 6px;">
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                            📅 Fecha de Inicio:
+                        </label>
+                        <input type="date" id="swal-per-inicio" value="${hoy}" min="${hoy}" onchange="window.recalcularDiasModalPermiso()" 
+                               style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                            📅 Fecha de Fin:
+                        </label>
+                        <input type="date" id="swal-per-fin" value="${hoy}" min="${hoy}" onchange="window.recalcularDiasModalPermiso()" 
+                               style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; box-sizing: border-box;">
+                    </div>
                 </div>
-                <div>
-                    <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                        📅 Fecha de Fin:
-                    </label>
-                    <input type="date" id="swal-per-fin" value="${hoy}" min="${hoy}" onchange="window.recalcularDiasModalPermiso()" 
-                           style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; box-sizing: border-box;">
+                <div id="swal-per-dias-badge" style="font-size: 12px; color: #475569; margin-bottom: 12px; padding-left: 2px;">
+                    📅 Días a solicitar: <b style="color:#0f766e;font-size:13.5px;background:#ccfbf1;padding:2px 8px;border-radius:6px;">1 día</b>
                 </div>
             </div>
 
-            <!-- Badge días solicitados -->
-            <div id="swal-per-dias-badge" style="font-size: 12.5px; color: #475569; margin-bottom: 14px; padding-left: 2px;">
-                📅 Días a solicitar: <b style="color:#0f766e;font-size:14px;background:#ccfbf1;padding:2px 8px;border-radius:6px;">1 día</b>
+            <!-- SECCIÓN 2: Por Horas (Parcial) -->
+            <div id="sec-per-horas" style="display: none; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: #166534; margin-bottom: 4px;">
+                        📅 Día del Permiso por Horas:
+                    </label>
+                    <input type="date" id="swal-per-fecha-hora" value="${hoy}" min="${hoy}" 
+                           style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #86efac; font-size: 13px; font-weight: 700; color: #14532d; background: white; box-sizing: border-box;">
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: #166534; margin-bottom: 4px;">
+                        🕒 Tipo de Situación:
+                    </label>
+                    <select id="swal-per-tipo-horario" onchange="window.alCambiarTipoHorarioPermiso()" 
+                            style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #86efac; font-size: 12.5px; font-weight: 600; color: #14532d; background: white; outline: none; box-sizing: border-box;">
+                        <option value="LLEGADA_TARDE">🚗 Llegada tardía (Llegar más tarde por la mañana)</option>
+                        <option value="SALIDA_TEMPRANA">🏃 Salida anticipada (Retirarse antes de finalizar jornada)</option>
+                        <option value="INTERMEDIO">🔄 Salida intermedia (Salir y regresar durante el día)</option>
+                        <option value="PERSONALIZADO">⏱️ Rango de horas personalizado</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 6px;">
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: #166534; margin-bottom: 3px;">
+                            Hora Desde:
+                        </label>
+                        <input type="time" id="swal-per-hora-ini" value="09:00" onchange="window.recalcularHorasModalPermiso()" 
+                               style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #86efac; font-size: 12.5px; font-weight: 700; color: #14532d; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: #166534; margin-bottom: 3px;">
+                            Hora Hasta:
+                        </label>
+                        <input type="time" id="swal-per-hora-fin" value="11:00" onchange="window.recalcularHorasModalPermiso()" 
+                               style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #86efac; font-size: 12.5px; font-weight: 700; color: #14532d; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11.5px; font-weight: 700; color: #166534; margin-bottom: 3px;">
+                            Total Horas:
+                        </label>
+                        <input type="number" id="swal-per-num-horas" value="2" step="0.5" min="0.5" max="12" onchange="window.recalcularHorasModalPermiso()" 
+                               style="width: 100%; padding: 7px 8px; border-radius: 6px; border: 1px solid #86efac; font-size: 12.5px; font-weight: 800; color: #047857; text-align: center; box-sizing: border-box;">
+                    </div>
+                </div>
+
+                <div id="swal-per-horas-badge" style="font-size: 11.5px; color: #15803d; margin-top: 6px; line-height: 1.4;">
+                    ⏱️ Tiempo solicitado: <b style="color:#0f766e;font-size:13px;background:#ccfbf1;padding:2px 8px;border-radius:6px;">2 hora(s)</b> · Llegará a las <b>11:00</b>
+                </div>
             </div>
 
             <!-- Motivo / Justificación -->
-            <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px;">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px;">
                     📝 Motivo o Justificación <span style="color:#dc2626;">*</span>:
                 </label>
-                <textarea id="swal-per-motivo" rows="3" placeholder="Describe brevemente el motivo de tu permiso o vacaciones para que Recursos Humanos pueda autorizarlo..." 
-                          style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-family: inherit; color: #0f172a; box-sizing: border-box; resize: vertical;"></textarea>
+                <textarea id="swal-per-motivo" rows="2" placeholder="Ej: Mañana llegaré tarde 2 horas por evento escolar de mi hija / Cita médica..." 
+                          style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 12.5px; font-family: inherit; color: #0f172a; box-sizing: border-box; resize: vertical;"></textarea>
             </div>
 
             <!-- Adjuntar Comprobante -->
-            <div style="margin-bottom: 14px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px 12px;">
+            <div style="margin-bottom: 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 9px 12px;">
                 <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">
-                    <i class="ph ph-paperclip" style="font-size: 15px; color: #059669;"></i> Adjuntar Justificante / Receta Médica / Citatorio (Opcional):
+                    <i class="ph ph-paperclip" style="font-size: 15px; color: #059669;"></i> Adjuntar Justificante / Citatorio / Foto (Opcional):
                 </label>
                 <input type="file" id="swal-per-archivo" accept="image/*,.pdf,.doc,.docx" 
                        style="width: 100%; font-size: 12px; color: #475569; margin-top: 4px;">
-                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                    Formatos permitidos: Fotos (JPG, PNG), Recetas médicas o PDFs oficiales.
-                </div>
             </div>
 
             <!-- Nota de proceso -->
-            <div style="background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 9px 12px; font-size: 11.5px; color: #1e40af; line-height: 1.45;">
-                ℹ️ <b>Proceso de Autorización:</b> Tu solicitud quedará en estatus <b>PENDIENTE</b> y se notificará en tiempo real a <b>Administración y Recursos Humanos (Ana Lilia)</b> para su dictamen y resolución.
+            <div style="background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 8px 12px; font-size: 11px; color: #1e40af; line-height: 1.4;">
+                ℹ️ <b>Autorización en Reloj Checador:</b> Tu solicitud quedará en estatus <b>PENDIENTE</b>. Al ser autorizada por <b>Administración (Ana Lilia)</b>, el reloj checador justificará tu horario automáticamente sin generar retardo ni advertencia de conducta.
             </div>
         </div>
     `;
@@ -1406,7 +1580,7 @@ window.abrirModalSolicitarPermisoInicio = async function(tipoDefault = '', diasD
     const { value: formValues } = await Swal.fire({
         title: '<div style="display:flex;align-items:center;gap:8px;font-size:18px;color:#0f172a;"><i class="ph ph-calendar-plus" style="color:#059669;font-size:24px;"></i> Solicitar Permiso / Ausencia</div>',
         html: htmlModal,
-        width: 520,
+        width: 530,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
         cancelButtonColor: '#94a3b8',
@@ -1414,37 +1588,73 @@ window.abrirModalSolicitarPermisoInicio = async function(tipoDefault = '', diasD
         confirmButtonColor: '#059669',
         focusConfirm: false,
         preConfirm: () => {
+            const modalidad = document.getElementById('swal-per-modalidad')?.value || 'DIAS';
             const tipo = document.getElementById('swal-per-tipo')?.value;
-            const inicio = document.getElementById('swal-per-inicio')?.value;
-            const fin = document.getElementById('swal-per-fin')?.value;
             const motivo = document.getElementById('swal-per-motivo')?.value?.trim();
             const fileInput = document.getElementById('swal-per-archivo');
 
-            if (!inicio || !fin) {
-                Swal.showValidationMessage('Por favor especifica las fechas de inicio y fin.');
-                return false;
-            }
-            if (fin < inicio) {
-                Swal.showValidationMessage('La fecha de fin no puede ser anterior a la de inicio.');
-                return false;
-            }
             if (!motivo) {
                 Swal.showValidationMessage('Por favor escribe el motivo o justificación de tu solicitud.');
                 return false;
             }
 
-            const d1 = new Date(inicio + 'T00:00:00');
-            const d2 = new Date(fin + 'T00:00:00');
-            const dias = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+            if (modalidad === 'HORAS') {
+                const fecha = document.getElementById('swal-per-fecha-hora')?.value;
+                const horaIni = document.getElementById('swal-per-hora-ini')?.value;
+                const horaFin = document.getElementById('swal-per-hora-fin')?.value;
+                const numHoras = parseFloat(document.getElementById('swal-per-num-horas')?.value || 0);
 
-            return {
-                tipo,
-                inicio,
-                fin,
-                dias,
-                motivo,
-                file: fileInput && fileInput.files ? fileInput.files[0] : null
-            };
+                if (!fecha) {
+                    Swal.showValidationMessage('Por favor selecciona la fecha del permiso por horas.');
+                    return false;
+                }
+                if (!numHoras || numHoras <= 0) {
+                    Swal.showValidationMessage('Por favor especifica un número de horas válido.');
+                    return false;
+                }
+
+                return {
+                    modalidad: 'HORAS',
+                    inicio: fecha,
+                    fin: fecha,
+                    dias: 0,
+                    horas: numHoras,
+                    horaInicio: horaIni,
+                    horaFin: horaFin,
+                    tipo,
+                    motivo,
+                    file: fileInput && fileInput.files ? fileInput.files[0] : null
+                };
+            } else {
+                const inicio = document.getElementById('swal-per-inicio')?.value;
+                const fin = document.getElementById('swal-per-fin')?.value;
+
+                if (!inicio || !fin) {
+                    Swal.showValidationMessage('Por favor especifica las fechas de inicio y fin.');
+                    return false;
+                }
+                if (fin < inicio) {
+                    Swal.showValidationMessage('La fecha de fin no puede ser anterior a la de inicio.');
+                    return false;
+                }
+
+                const d1 = new Date(inicio + 'T00:00:00');
+                const d2 = new Date(fin + 'T00:00:00');
+                const dias = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+
+                return {
+                    modalidad: 'DIAS',
+                    inicio,
+                    fin,
+                    dias,
+                    horas: null,
+                    horaInicio: null,
+                    horaFin: null,
+                    tipo,
+                    motivo,
+                    file: fileInput && fileInput.files ? fileInput.files[0] : null
+                };
+            }
         }
     });
 
@@ -1496,7 +1706,11 @@ window.procesarEnvioPermisoDesdeInicio = async function(idEmp, nomEmp, datos) {
             archivo_justificante: archivoUrl,
             estatus: "PENDIENTE",
             impacta_asistencia: true,
-            registrado_por: nomEmp
+            registrado_por: nomEmp,
+            modalidad: datos.modalidad,
+            horas_solicitadas: datos.horas,
+            hora_inicio: datos.horaInicio,
+            hora_fin: datos.horaFin
         };
 
         const res = await fetch(`${API_URL}/api/rh/permisos`, {
@@ -1507,6 +1721,10 @@ window.procesarEnvioPermisoDesdeInicio = async function(idEmp, nomEmp, datos) {
 
         if (res.ok) {
             const data = await res.json();
+            const periodoDesc = datos.modalidad === 'HORAS'
+                ? `El <b>${datos.inicio}</b> · <b>${datos.horas} hr(s)</b> (${datos.horaInicio} a ${datos.horaFin})`
+                : `Del <b>${datos.inicio}</b> al <b>${datos.fin}</b> (${datos.dias} día${datos.dias !== 1 ? 's' : ''})`;
+
             await Swal.fire({
                 icon: 'success',
                 title: '📋 ¡Solicitud Enviada con Éxito!',
@@ -1514,12 +1732,13 @@ window.procesarEnvioPermisoDesdeInicio = async function(idEmp, nomEmp, datos) {
                     <div style="text-align:left; font-size:13px; color:#334155; line-height:1.5;">
                         <p>Se ha registrado tu solicitud bajo el folio: <b style="color:#059669; font-size:15px;">${data.folio || ''}</b>.</p>
                         <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px; margin:12px 0;">
+                            <div>• <b>Modalidad:</b> ${datos.modalidad === 'HORAS' ? '⏱️ Por Horas (Permiso Parcial)' : '📅 Día(s) Completo(s)'}</div>
                             <div>• <b>Tipo:</b> ${datos.tipo}</div>
-                            <div>• <b>Periodo:</b> Del <b>${datos.inicio}</b> al <b>${datos.fin}</b> (${datos.dias} día${datos.dias !== 1 ? 's' : ''})</div>
+                            <div>• <b>Horario / Periodo:</b> ${periodoDesc}</div>
                             <div>• <b>Estatus:</b> <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-weight:700;font-size:11px;">⏳ PENDIENTE DE REVISIÓN</span></div>
                         </div>
                         <p style="font-size:12px; color:#64748b;">
-                            Tu solicitud ha sido notificada en el <b>Chat Administrativo</b> y en el Centro de Notificaciones de <b>Administración / RRHH (Ana Lilia)</b> para su dictamen oficial.
+                            Tu solicitud ha sido notificada en el <b>Chat Administrativo</b> y en el panel de <b>Administración / RRHH (Ana Lilia)</b> para su dictamen y sincronización con el Reloj Checador.
                         </p>
                     </div>
                 `,

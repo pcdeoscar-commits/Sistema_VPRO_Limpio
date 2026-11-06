@@ -410,6 +410,14 @@ class PermisoCreate(BaseModel):
 
     registrado_por: Optional[str] = None
 
+    modalidad: Optional[str] = "DIAS"  # 'DIAS' o 'HORAS'
+
+    horas_solicitadas: Optional[float] = None
+
+    hora_inicio: Optional[time] = None
+
+    hora_fin: Optional[time] = None
+
 
 
 
@@ -1843,6 +1851,10 @@ def get_permisos_pendientes():
                     to_char(p.fecha_inicio, 'YYYY-MM-DD') AS fecha_inicio,
                     to_char(p.fecha_fin, 'YYYY-MM-DD') AS fecha_fin,
                     p.dias_solicitados,
+                    p.modalidad,
+                    p.horas_solicitadas,
+                    to_char(p.hora_inicio, 'HH24:MI') AS hora_inicio,
+                    to_char(p.hora_fin, 'HH24:MI') AS hora_fin,
                     p.con_goce_de_sueldo,
                     p.justificacion,
                     p.archivo_justificante,
@@ -1898,31 +1910,62 @@ def dictaminar_permiso(id_permiso: int, payload: DictamenPermisoPayload):
             })
 
             # Si se aprueba e impacta asistencia, justificar en control_asistencia
+            modalidad = (p.get("modalidad") or "DIAS").upper()
             if nuevo_estatus == "APROBADO" and payload.impacta_asistencia != False:
                 f_cur = p["fecha_inicio"]
                 while f_cur <= p["fecha_fin"]:
                     try:
-                        conn.execute(text("""
-                            INSERT INTO public.control_asistencia (id_empleado, fecha, estatus, observaciones)
-                            VALUES (:emp, :f, 'PERMISO', :obs)
-                            ON CONFLICT (id_empleado, fecha) 
-                            DO UPDATE SET estatus = 'PERMISO', observaciones = EXCLUDED.observaciones
-                        """), {
-                            "emp": p["id_empleado"],
-                            "f": f_cur,
-                            "obs": f"📋 Permiso RH ({p['tipo_permiso']}: {'Con Goce' if payload.con_goce_de_sueldo else 'Sin Goce'}) - Dictaminó: {payload.dictaminado_por}"
-                        })
+                        if modalidad == "HORAS":
+                            h_ini_str = str(p.get("hora_inicio"))[:5] if p.get("hora_inicio") else ""
+                            h_fin_str = str(p.get("hora_fin"))[:5] if p.get("hora_fin") else ""
+                            horas_txt = f"{p.get('horas_solicitadas') or 0}h"
+                            if h_ini_str and h_fin_str:
+                                horas_txt += f" ({h_ini_str} a {h_fin_str})"
+                            obs_txt = f"⏱️ Permiso {horas_txt} ({p.get('tipo_permiso', 'Permiso')}: {'Con Goce' if payload.con_goce_de_sueldo else 'Sin Goce'}) - Dictaminó: {payload.dictaminado_por}"
+                            
+                            reg_existente = conn.execute(text("SELECT id_registro, estatus, observaciones FROM public.control_asistencia WHERE TRIM(id_empleado) = :emp AND fecha = :f"), {"emp": str(p["id_empleado"]).strip(), "f": f_cur}).mappings().first()
+                            if reg_existente:
+                                nuevas_obs = f"{reg_existente['observaciones'] or ''} | {obs_txt}".strip(" |")
+                                nuevo_est_asist = "ASISTENCIA" if reg_existente["estatus"] == "RETARDO" else reg_existente["estatus"]
+                                conn.execute(text("UPDATE public.control_asistencia SET estatus = :est, observaciones = :obs WHERE id_registro = :id"), {"est": nuevo_est_asist, "obs": nuevas_obs, "id": reg_existente["id_registro"]})
+                            else:
+                                conn.execute(text("""
+                                    INSERT INTO public.control_asistencia (id_empleado, fecha, estatus, observaciones)
+                                    VALUES (:emp, :f, 'PERMISO_HORAS', :obs)
+                                    ON CONFLICT (id_empleado, fecha) 
+                                    DO UPDATE SET observaciones = EXCLUDED.observaciones
+                                """), {"emp": p["id_empleado"], "f": f_cur, "obs": obs_txt})
+                        else:
+                            conn.execute(text("""
+                                INSERT INTO public.control_asistencia (id_empleado, fecha, estatus, observaciones)
+                                VALUES (:emp, :f, 'PERMISO', :obs)
+                                ON CONFLICT (id_empleado, fecha) 
+                                DO UPDATE SET estatus = 'PERMISO', observaciones = EXCLUDED.observaciones
+                            """), {
+                                "emp": p["id_empleado"],
+                                "f": f_cur,
+                                "obs": f"📋 Permiso RH ({p['tipo_permiso']}: {'Con Goce' if payload.con_goce_de_sueldo else 'Sin Goce'}) - Dictaminó: {payload.dictaminado_por}"
+                            })
                     except Exception as e_asist:
                         print(f"[WARN] Error al sincronizar asistencia permiso: {e_asist}")
                     f_cur += datetime.timedelta(days=1)
 
             # Inyectar notificación de resolución en el Chat Administrativo
             tipo_goce_txt = "Con goce de sueldo" if payload.con_goce_de_sueldo else "Sin goce de sueldo"
+            if modalidad == "HORAS":
+                h_ini_txt = str(p.get("hora_inicio"))[:5] if p.get("hora_inicio") else ""
+                h_fin_txt = str(p.get("hora_fin"))[:5] if p.get("hora_fin") else ""
+                rango_txt = f" de {h_ini_txt} a {h_fin_txt}" if (h_ini_txt and h_fin_txt) else ""
+                periodo_res = f"El {p['fecha_inicio']} ({p.get('horas_solicitadas') or 0} hr(s){rango_txt})"
+            else:
+                periodo_res = f"Del {p['fecha_inicio']} al {p['fecha_fin']} ({p['dias_solicitados']} día(s))"
+
             if nuevo_estatus == "APROBADO":
                 mensaje_resolucion = (
                     f"✅ *SOLICITUD DE PERMISO APROBADA*\n"
                     f"• *Folio:* {p['folio_permiso']}\n"
-                    f"• *Modalidad:* {tipo_goce_txt}\n"
+                    f"• *Modalidad:* {'⏱️ Por Horas (Parcial)' if modalidad == 'HORAS' else '📅 Día(s) Completo(s)'} ({tipo_goce_txt})\n"
+                    f"• *Periodo / Horario:* {periodo_res}\n"
                     f"• *Autorizado por:* {payload.dictaminado_por}\n"
                     f"• *Observaciones:* {payload.observaciones_rh or 'Sin observaciones adicionales'}\n"
                     f"• *Asistencia:* Sincronizada y justificada en el Reloj Checador."
@@ -1931,6 +1974,7 @@ def dictaminar_permiso(id_permiso: int, payload: DictamenPermisoPayload):
                 mensaje_resolucion = (
                     f"❌ *SOLICITUD DE PERMISO NO AUTORIZADA*\n"
                     f"• *Folio:* {p['folio_permiso']}\n"
+                    f"• *Periodo / Horario:* {periodo_res}\n"
                     f"• *Revisado por:* {payload.dictaminado_por}\n"
                     f"• *Motivo de rechazo:* {payload.motivo_rechazo or 'Sin motivo especificado'}\n"
                     f"• *Observaciones RH:* {payload.observaciones_rh or 'N/A'}"
@@ -2050,7 +2094,16 @@ def create_permiso(payload: PermisoCreate):
 
             data["folio_permiso"] = folio
 
-            data["dias_solicitados"] = max(1, (data["fecha_fin"] - data["fecha_inicio"]).days + 1)
+            modalidad = (data.get("modalidad") or "DIAS").upper()
+            data["modalidad"] = modalidad
+            if modalidad == "HORAS":
+                data["dias_solicitados"] = 0
+                data["fecha_fin"] = data["fecha_inicio"]
+            else:
+                data["dias_solicitados"] = max(1, (data["fecha_fin"] - data["fecha_inicio"]).days + 1)
+                data["horas_solicitadas"] = None
+                data["hora_inicio"] = None
+                data["hora_fin"] = None
 
             estatus_inicial = data.get("estatus") or "APROBADO"
 
@@ -2128,12 +2181,23 @@ def create_permiso(payload: PermisoCreate):
                 except Exception:
                     pass
 
+                if modalidad == "HORAS":
+                    h_ini = str(data.get("hora_inicio"))[:5] if data.get("hora_inicio") else ""
+                    h_fin = str(data.get("hora_fin"))[:5] if data.get("hora_fin") else ""
+                    rango_txt = f" de {h_ini} a {h_fin}" if (h_ini and h_fin) else ""
+                    periodo_card = f"El {data.get('fecha_inicio')} ({data.get('horas_solicitadas') or 0} hr(s){rango_txt})"
+                    mod_card = "⏱️ Por Horas (Llegada tarde / Salida anticipada / Parcial)"
+                else:
+                    periodo_card = f"Del {data.get('fecha_inicio')} al {data.get('fecha_fin')} ({data.get('dias_solicitados')} día(s))"
+                    mod_card = "📅 Día(s) Completo(s)"
+
                 card_mensaje = (
                     f"📋 *NUEVA SOLICITUD DE PERMISO LABORAL*\n"
                     f"• *Folio:* {folio}\n"
                     f"• *Colaborador:* {nom_emp} (ID: {data['id_empleado']})\n"
+                    f"• *Modalidad:* {mod_card}\n"
                     f"• *Tipo:* {data.get('tipo_permiso', 'Permiso')}\n"
-                    f"• *Periodo:* Del {data.get('fecha_inicio')} al {data.get('fecha_fin')} ({data.get('dias_solicitados')} día(s))\n"
+                    f"• *Periodo / Horario:* {periodo_card}\n"
                     f"• *Goce de Sueldo:* {'Con Goce' if data.get('con_goce_de_sueldo') else 'Sin Goce'}\n"
                     f"• *Motivo:* {data.get('justificacion') or 'Sin justificación'}\n"
                     f"• *Estatus:* ⏳ PENDIENTE DE REVISIÓN EN RH"
@@ -2142,6 +2206,10 @@ def create_permiso(payload: PermisoCreate):
                     "id_permiso": id_permiso,
                     "folio": folio,
                     "id_empleado": str(data["id_empleado"]),
+                    "modalidad": modalidad,
+                    "horas": data.get("horas_solicitadas"),
+                    "hora_inicio": str(data.get("hora_inicio")) if data.get("hora_inicio") else None,
+                    "hora_fin": str(data.get("hora_fin")) if data.get("hora_fin") else None,
                     "tipo_permiso": data.get("tipo_permiso"),
                     "fecha_inicio": str(data.get("fecha_inicio")),
                     "fecha_fin": str(data.get("fecha_fin")),

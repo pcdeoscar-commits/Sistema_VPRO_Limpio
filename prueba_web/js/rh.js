@@ -4325,9 +4325,9 @@ function renderizarExpedienteCompletoModal(datos) {
 
                                     <td style="padding: 6px;">${p.justificacion || '--'}</td>
 
-                                    <td style="padding: 6px;">${p.fecha_inicio} al ${p.fecha_fin}</td>
+                                    <td style="padding: 6px;">${(p.modalidad || '').toUpperCase() === 'HORAS' || (p.horas_solicitadas && p.horas_solicitadas > 0) ? `${p.fecha_inicio} ${(p.hora_inicio && p.hora_fin ? `(${String(p.hora_inicio).substring(0,5)}-${String(p.hora_fin).substring(0,5)})` : '')}` : `${p.fecha_inicio} al ${p.fecha_fin}`}</td>
 
-                                    <td style="padding: 6px;">${p.dias_solicitados} d</td>
+                                    <td style="padding: 6px;">${(p.modalidad || '').toUpperCase() === 'HORAS' || (p.horas_solicitadas && p.horas_solicitadas > 0) ? `<b style="color:#0f766e;">${p.horas_solicitadas} h</b>` : `${p.dias_solicitados} d`}</td>
 
                                     <td style="padding: 6px; text-align: center;">
 
@@ -4761,7 +4761,12 @@ async function abrirModalDictamenPermiso(idPermiso) {
                     <strong>Tipo:</strong> ${permiso.tipo_permiso}
                 </div>
                 <div style="color: #475569; font-size: 12px; margin-bottom: 4px;">
-                    <strong>Periodo:</strong> Del <b>${permiso.fecha_inicio}</b> al <b>${permiso.fecha_fin}</b> (${permiso.dias_solicitados} día${permiso.dias_solicitados !== 1 ? 's' : ''})
+                    <strong>Modalidad:</strong> ${(permiso.modalidad || '').toUpperCase() === 'HORAS' || (permiso.horas_solicitadas && permiso.horas_solicitadas > 0) ? '<span style="background:#ccfbf1;color:#0f766e;font-size:11px;padding:2px 7px;border-radius:6px;font-weight:700;">⏱️ Por Horas (Permiso Parcial)</span>' : '<span style="background:#ede9fe;color:#5b21b6;font-size:11px;padding:2px 7px;border-radius:6px;font-weight:700;">📅 Día(s) Completo(s)</span>'}
+                </div>
+                <div style="color: #475569; font-size: 12px; margin-bottom: 4px;">
+                    <strong>Horario / Periodo:</strong> ${(permiso.modalidad || '').toUpperCase() === 'HORAS' || (permiso.horas_solicitadas && permiso.horas_solicitadas > 0)
+                        ? `El <b>${permiso.fecha_inicio}</b> · <b style="color:#0f766e;">${permiso.horas_solicitadas} hora(s)</b> ${(permiso.hora_inicio && permiso.hora_fin ? `(${permiso.hora_inicio} a ${permiso.hora_fin})` : '')}`
+                        : `Del <b>${permiso.fecha_inicio}</b> al <b>${permiso.fecha_fin}</b> (${permiso.dias_solicitados} día${permiso.dias_solicitados !== 1 ? 's' : ''})`}
                 </div>
                 <div style="color: #334155; font-size: 12px; background: white; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 6px; margin-top: 6px; font-style: italic;">
                     "${permiso.justificacion || 'Sin justificación detallada'}"

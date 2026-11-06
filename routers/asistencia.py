@@ -477,6 +477,7 @@ def extraer_estado_asistencia_diaria(id_empleado: str):
             WHERE TRIM(id_empleado) = :emp 
               AND CAST(:hoy AS date) BETWEEN fecha_inicio AND fecha_fin
               AND estatus IN ('APROBADO', 'AUTORIZADO', 'EN_GOCE')
+              AND COALESCE(modalidad, 'DIAS') = 'DIAS' 
             UNION ALL
             SELECT 'INCAPACIDAD' as tipo, fecha_inicio as f_ini, fecha_fin as f_fin, diagnostico as nota
             FROM public.rh_incapacidades
@@ -627,6 +628,7 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                 WHERE TRIM(id_empleado) = :emp 
                   AND CAST(:hoy AS date) BETWEEN fecha_inicio AND fecha_fin
                   AND estatus IN ('APROBADO', 'AUTORIZADO', 'EN_GOCE')
+                  AND COALESCE(modalidad, 'DIAS') = 'DIAS' 
                 UNION ALL
                 SELECT 'INCAPACIDAD' as tipo, fecha_inicio as f_ini, fecha_fin as f_fin
                 FROM public.rh_incapacidades
@@ -850,7 +852,38 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                         # Horario normal de oficina (09:00 a. m.)
                         h_base_secs = 9 * 3600
                         limite_secs = h_base_secs + (10 * 60)  # 10 minutos exactos de tolerancia oficial VPRO (hasta 09:10:00)
-                        if h_actual_secs <= limite_secs:
+
+                        # ⏱️ Verificar si tiene Permiso por Horas aprobado para hoy
+                        permiso_h = conn.execute(text("""
+                            SELECT horas_solicitadas, hora_inicio, hora_fin, tipo_permiso
+                            FROM public.rh_permisos
+                            WHERE TRIM(id_empleado) = :emp 
+                              AND fecha_inicio = CAST(:hoy AS date)
+                              AND estatus IN ('APROBADO', 'AUTORIZADO', 'EN_GOCE')
+                              AND modalidad = 'HORAS'
+                            ORDER BY id_permiso DESC
+                            LIMIT 1
+                        """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str}).mappings().first()
+
+                        if permiso_h:
+                            hrs = float(permiso_h["horas_solicitadas"] or 0)
+                            if permiso_h.get("hora_fin"):
+                                h_fin_p = permiso_h["hora_fin"]
+                                h_base_secs = (h_fin_p.hour * 3600) + (h_fin_p.minute * 60)
+                            elif hrs > 0:
+                                h_base_secs = (9 * 3600) + int(hrs * 3600)
+                            limite_secs = h_base_secs + (10 * 60)
+
+                            if h_actual_secs <= limite_secs:
+                                estatus_reg = "ASISTENCIA"
+                                obs_op = f"Kiosco HTML | ⏱️ Permiso por Horas Justificado ({hrs}h {permiso_h['tipo_permiso']})"
+                                msg_resp = f"ENTRADA REGISTRADA (Permiso {hrs}h Justificado)"
+                            else:
+                                mins_tarde = (h_actual_secs - h_base_secs) // 60
+                                estatus_reg = "RETARDO"
+                                obs_op = f"Kiosco HTML | Retardo {mins_tarde}m excediendo permiso {hrs}h"
+                                msg_resp = f"ENTRADA REGISTRADA (Retardo {mins_tarde} min vs permiso)"
+                        elif h_actual_secs <= limite_secs:
                             estatus_reg = "ASISTENCIA"
                             obs_op = payload.observaciones or "Kiosco HTML"
                             msg_resp = "ENTRADA MATUTINA REGISTRADA"

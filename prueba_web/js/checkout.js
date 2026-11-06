@@ -23,6 +23,17 @@ let radarDanosCheckoutSet = new Set();
 let radarDanosActivosList = [];
 let proveedoresAsignadosOPCheckout = [];
 
+function esCoordinadorActivo() {
+    const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase().trim();
+    const puestoUsuario = (usuarioLogueado?.puesto || '').toUpperCase().trim();
+    const nomUsuarioUpper = (usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || '').toUpperCase().trim();
+    const idUsuario = String(usuarioLogueado?.id_empleado || '').trim();
+    return rolUsuario === 'COORDINADOR' || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') ||
+           puestoUsuario.includes('COORDINADOR') || puestoUsuario.includes('COORDINACION') ||
+           idUsuario === '124' || idUsuario === '000' ||
+           nomUsuarioUpper === 'MANUEL EDUARDO MADRID';
+}
+
 function equipoTieneDanoEnRadar(cod, nombre) {
     if (!radarDanosActivosList || radarDanosActivosList.length === 0) return false;
     const cUp = (cod || '').toUpperCase().trim();
@@ -54,6 +65,21 @@ function abrirCheckoutConOP(idEvento, opLabel) {
 }
 
 function cambiarPestanaCheckout(pestana) {
+    // Regla de Negocio: Solo el coordinador tiene acceso a la pestaña de Check-in (Retorno a Bodega)
+    if (pestana === 'checkin' && !esCoordinadorActivo()) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: '⛔ Retorno Restringido',
+                text: 'Solo el Coordinador de Bodega tiene autorización para recibir equipos y realizar Check-in.',
+                confirmButtonColor: '#3b82f6'
+            });
+        } else {
+            alert('⛔ Solo el Coordinador de Bodega tiene autorización para recibir equipos y realizar Check-in.');
+        }
+        return;
+    }
+
     pestanaActivaCheckout = pestana;
     const btnSalida = document.getElementById('tab-checkout-salida');
     const btnCheckin = document.getElementById('tab-checkout-checkin');
@@ -138,6 +164,15 @@ async function inicializarModuloCheckout() {
         } catch (e) {
             console.warn("Aviso inicializando catálogos para checkout:", e);
         }
+    }
+
+    // Regla de Negocio: Pestaña Retorno a Bodega (Check-in) visible EXCLUSIVAMENTE para el Coordinador
+    const tabCheckin = document.getElementById('tab-checkout-checkin');
+    if (tabCheckin) {
+        tabCheckin.style.display = esCoordinadorActivo() ? 'inline-flex' : 'none';
+    }
+    if (!esCoordinadorActivo()) {
+        cambiarPestanaCheckout('salida');
     }
 
     // 2. Cargar lista de OPs disponibles para este empleado
@@ -327,11 +362,22 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
             alertaNoConv.style.display = esConvocado ? 'none' : 'flex';
         }
 
+        // Regla de Negocio: Pestaña Retorno a Bodega (Check-in) visible EXCLUSIVAMENTE para el Coordinador
+        const tabCheckin = document.getElementById('tab-checkout-checkin');
+        if (tabCheckin) {
+            tabCheckin.style.display = esCoordinador ? 'inline-flex' : 'none';
+        }
+        if (!esCoordinador && pestanaActivaCheckout === 'checkin') {
+            cambiarPestanaCheckout('salida');
+        }
+
         // Poblar selector de personal convocado
         const selEmp = document.getElementById('checkout-sel-empleado');
         if (selEmp) {
             if (convocados.length === 0) {
-                if (esConvocado) {
+                if (esCoordinador) {
+                    selEmp.innerHTML = `<option value="" disabled selected>⚠️ OP sin personal convocado aún</option>`;
+                } else if (esConvocado) {
                     selEmp.innerHTML = `<option value="${empId}">${usuarioLogueado?.nombre_completo || 'Operador Actual'}</option>`;
                 } else {
                     selEmp.innerHTML = `<option value="" disabled selected>⚠️ No convocado en esta OP</option>`;
@@ -347,30 +393,34 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
                 if (!esConvocado) {
                     selEmp.innerHTML = `<option value="" disabled selected>⚠️ No estás convocado en esta OP</option>` + optionsHtml;
                     empleadoActivoCheckout = null;
-                } else {
-                    selEmp.innerHTML = optionsHtml;
+                } else if (!esCoordinador) {
+                    // Operador ordinario convocado: solo se selecciona y ve a sí mismo
                     const normUser = nomUser.toUpperCase().trim();
-                    const userOpt = [...selEmp.options].find(o => {
-                        const optText = o.textContent.toUpperCase().trim();
-                        return o.value === empId || 
-                               optText === normUser ||
-                               optText.includes(normUser) ||
-                               normUser.includes(optText);
-                    });
-                    if (userOpt) {
-                        selEmp.value = userOpt.value;
-                        empleadoActivoCheckout = userOpt.value;
-                    } else if ([...selEmp.options].some(o => o.value === empId)) {
-                        selEmp.value = empId;
-                        empleadoActivoCheckout = empId;
+                    const miNombre = convocados.find(c => {
+                        const cNorm = c.toUpperCase().trim();
+                        return cNorm === normUser || cNorm.includes(normUser) || normUser.includes(cNorm);
+                    }) || nomUser;
+                    selEmp.innerHTML = `<option value="${empId}">${miNombre}</option>`;
+                    selEmp.value = empId;
+                    empleadoActivoCheckout = empId;
+                } else {
+                    // Coordinador: puede elegir a cualquiera de los convocados de la OP
+                    selEmp.innerHTML = optionsHtml;
+                    if (empIdOverride && [...selEmp.options].some(o => o.value === empIdOverride)) {
+                        selEmp.value = empIdOverride;
+                        empleadoActivoCheckout = empIdOverride;
                     } else if (selEmp.options.length > 0) {
                         const primerId = selEmp.options[0].value;
-                        selEmp.value = primerId;
-                        empleadoActivoCheckout = primerId;
-                        // Si el usuario es Coordinador y no se especificó un empIdOverride explícito, cargar automáticamente el status del primer convocado
-                        if (esCoordinador && !empIdOverride && primerId !== empId) {
-                            await cargarStatusCheckout(idEvento, primerId);
-                            return;
+                        if (!empIdOverride || empIdOverride === empId) {
+                            selEmp.value = primerId;
+                            empleadoActivoCheckout = primerId;
+                            if (primerId !== empId) {
+                                await cargarStatusCheckout(idEvento, primerId);
+                                return;
+                            }
+                        } else {
+                            selEmp.value = empIdOverride;
+                            empleadoActivoCheckout = empIdOverride;
                         }
                     }
                 }
@@ -388,10 +438,12 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         const selKit = document.getElementById('checkout-sel-kit');
 
         if (!esConvocado) {
+            // Usuario bloqueado: no convocado en la OP
             if (btnFinalizarSalida) {
                 btnFinalizarSalida.disabled = true;
                 btnFinalizarSalida.style.opacity = '0.5';
                 btnFinalizarSalida.style.cursor = 'not-allowed';
+                btnFinalizarSalida.innerHTML = '<i class="ph ph-prohibit"></i> <span>No Convocado</span>';
                 btnFinalizarSalida.title = "No puedes realizar salida de hardware porque no estás convocado en esta OP.";
             }
             if (btnAgregarHw) btnAgregarHw.disabled = true;
@@ -401,12 +453,52 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
             if (btnVaciarLista) btnVaciarLista.disabled = true;
             if (btnGrabarPlantilla) btnGrabarPlantilla.disabled = true;
             if (selKit) selKit.disabled = true;
+        } else if (esCoordinador) {
+            // Regla de Negocio: El coordinador no puede elaborar checkout desde cero, pero sí modificar/alterar/revisar los que el personal ha hecho
+            const tieneCheckoutElaborado = Boolean(idMaestroCheckoutActual);
+
+            if (!tieneCheckoutElaborado) {
+                if (btnFinalizarSalida) {
+                    btnFinalizarSalida.disabled = true;
+                    btnFinalizarSalida.style.opacity = '0.6';
+                    btnFinalizarSalida.style.cursor = 'not-allowed';
+                    btnFinalizarSalida.innerHTML = '<i class="ph ph-clock"></i> <span>⏳ Esperando que el Operador elabore su Checkout</span>';
+                    btnFinalizarSalida.title = "El operador convocado debe elaborar primero su checkout de salida para que Coordinación pueda revisarlo o modificarlo.";
+                }
+                if (btnAgregarHw) btnAgregarHw.disabled = true;
+                if (inputBuscarHw) inputBuscarHw.disabled = true;
+                if (inputCantHw) inputCantHw.disabled = true;
+                if (btnFilaVacia) btnFilaVacia.disabled = true;
+                if (btnVaciarLista) btnVaciarLista.disabled = true;
+                if (btnGrabarPlantilla) btnGrabarPlantilla.disabled = true;
+                if (selKit) selKit.disabled = true;
+            } else {
+                // El personal ya elaboró su checkout: el coordinador PUEDE modificar, alterar y revisar
+                if (btnFinalizarSalida) {
+                    btnFinalizarSalida.disabled = false;
+                    btnFinalizarSalida.style.opacity = '1';
+                    btnFinalizarSalida.style.cursor = 'pointer';
+                    btnFinalizarSalida.innerHTML = '<i class="ph ph-floppy-disk"></i> <span>💾 Guardar Modificaciones al Checkout</span>';
+                    btnFinalizarSalida.title = "Guardar cambios realizados al checkout del operador convocado";
+                }
+                if (btnAgregarHw) btnAgregarHw.disabled = false;
+                if (inputBuscarHw) inputBuscarHw.disabled = false;
+                if (inputCantHw) inputCantHw.disabled = false;
+                if (btnFilaVacia) btnFilaVacia.disabled = false;
+                if (btnVaciarLista) btnVaciarLista.disabled = false;
+                if (btnGrabarPlantilla) btnGrabarPlantilla.disabled = false;
+                if (selKit) selKit.disabled = false;
+            }
         } else {
+            // Operador convocado legítimo
             if (btnFinalizarSalida) {
                 btnFinalizarSalida.disabled = false;
                 btnFinalizarSalida.style.opacity = '1';
                 btnFinalizarSalida.style.cursor = 'pointer';
-                btnFinalizarSalida.title = "Finalizar y registrar salida de bodega";
+                btnFinalizarSalida.innerHTML = idMaestroCheckoutActual 
+                    ? '<i class="ph ph-floppy-disk"></i> <span>💾 Actualizar mi Salida de Bodega</span>' 
+                    : '<i class="ph ph-paper-plane-tilt"></i> <span>🚀 Finalizar y Registrar Salida de Bodega</span>';
+                btnFinalizarSalida.title = "Registrar o actualizar la salida física de tus equipos";
             }
             if (btnAgregarHw) btnAgregarHw.disabled = false;
             if (inputBuscarHw) inputBuscarHw.disabled = false;
@@ -506,8 +598,8 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
             }
         }
 
-        // Si el cargamento ya está DESPACHADO, cambiar a la pestaña de Check-in automáticamente
-        if (estadoBodegaCheckoutActual === 'DESPACHADO' && pestanaActivaCheckout === 'salida' && detalle.length > 0) {
+        // Si el cargamento ya está DESPACHADO, cambiar a la pestaña de Check-in automáticamente SOLO SI ES COORDINADOR
+        if (esCoordinador && estadoBodegaCheckoutActual === 'DESPACHADO' && pestanaActivaCheckout === 'salida' && detalle.length > 0) {
             cambiarPestanaCheckout('checkin');
         }
 
@@ -1021,6 +1113,12 @@ function marcarTodosCheckin(valor) {
 }
 
 async function finalizarCheckinCheckout() {
+    // Regla de Negocio: Únicamente el Coordinador puede hacer Check-in / Retorno a Bodega
+    if (!esCoordinadorActivo()) {
+        alert("⚠️ Acción restringida: Solo el personal con rol de Coordinador de Bodega puede recibir equipos y finalizar el Check-in.");
+        return;
+    }
+
     if (!idMaestroCheckoutActual) {
         alert("⚠️ No hay registro maestro de salida para cotejar en esta OP.");
         return;
@@ -1071,7 +1169,9 @@ async function finalizarCheckinCheckout() {
         id_maestro: idMaestroCheckoutActual,
         id_evento: idEvento,
         incidencias_generales: incidenciasFinal,
-        items: itemsFinales
+        items: itemsFinales,
+        usuario_actual: usuarioLogueado?.nombre_completo || usuarioLogueado?.nombre || '',
+        id_usuario: usuarioLogueado?.id_empleado || ''
     };
 
     try {

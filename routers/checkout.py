@@ -486,6 +486,14 @@ def registrar_finalizacion_checkout(payload: dict):
                 {"id": id_op, "emp": id_sujeto}
             ).scalar()
             
+            # Regla de Negocio: El coordinador no puede elaborar checkouts nuevos desde cero, solo modificar/alterar/revisar los que el personal ha hecho
+            es_coord_actual = es_coordinador_bodega(nombre=user_actual)
+            if es_coord_actual and not m_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"El operador '{nombre_sujeto}' aún no ha elaborado su checkout de salida. El Coordinador solo puede revisar o modificar checkouts que el personal ya haya elaborado."
+                )
+
             if m_id:
                 conn.execute(text("DELETE FROM public.checkouts_detalle WHERE id_maestro = :id_m"), {"id_m": m_id})
                 conn.execute(
@@ -514,6 +522,16 @@ def registrar_finalizacion_checkout(payload: dict):
 def registrar_retorno_checkin(payload: dict):
     """Registra el retorno físico de hardware, auditoría de daños y liberación de OP."""
     try:
+        user_actual = str(payload.get("usuario_actual", "")).strip()
+        id_usuario = str(payload.get("id_usuario", "")).strip()
+
+        # Regla de Negocio: Solo el coordinador puede hacer checkin (retorno a bodega)
+        if not es_coordinador_bodega(id_empleado=id_usuario, nombre=user_actual):
+            raise HTTPException(
+                status_code=403, 
+                detail="Acceso Denegado: Únicamente el personal con rol de Coordinador de Bodega tiene autorización para recibir equipos y registrar el Retorno (Check-in)."
+            )
+
         id_maestro = int(payload["id_maestro"])
         id_op = int(payload["id_evento"])
         incidencias_gen = str(payload["incidencias_generales"])

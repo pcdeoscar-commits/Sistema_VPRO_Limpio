@@ -916,8 +916,11 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
 
                 # Si checa después de las 16:30:00, ya no es salida a comer, es salida de fin de jornada
                 if hora_str >= "16:30:00":
-                    if not es_villarreal:
-                        # 🚨 PRÁCTICA IRRESPONSABLE DETECTADA: Entrada matutina y salida nocturna sin checar comida
+                    hora_ent_val = str(registro_hoy["hora_entrada"])
+                    es_tarde_o_evento = hora_ent_val >= "13:00:00" or bool(registro_hoy.get("op_vinculada")) or "[OP-" in str(registro_hoy.get("observaciones") or "")
+
+                    if not es_villarreal and not es_tarde_o_evento:
+                        # 🚨 PRÁCTICA IRRESPONSABLE DETECTADA: Entrada matutina (antes de las 13:00) y salida nocturna sin checar comida
                         obs_omision = "🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)"
                         conn.execute(text("""
                             UPDATE public.control_asistencia 
@@ -934,13 +937,14 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                             "advertencia": msg_adv
                         }
                     else:
-                        # Excepción oficial: Familia Villarreal registra salida vespertina limpia
+                        # Salida vespertina limpia: Familia Villarreal, eventos en locación OP o personal ingresado en turno tarde
+                        obs_extra = payload.observaciones or ("Salida OP / turno vespertino" if es_tarde_o_evento else "")
                         conn.execute(text("""
                             UPDATE public.control_asistencia 
                             SET hora_salida_v = CAST(:hora AS time), 
-                                observaciones = COALESCE(observaciones, '') || ' | ' || :obs 
+                                observaciones = CASE WHEN :obs <> '' THEN COALESCE(observaciones, '') || ' | ' || :obs ELSE observaciones END
                             WHERE id_registro = :id
-                        """), {"hora": hora_str, "obs": payload.observaciones, "id": id_reg})
+                        """), {"hora": hora_str, "obs": obs_extra, "id": id_reg})
                         return {"status": "SUCCESS", "mensaje": "✅ SALIDA VESPERTINA REGISTRADA"}
                 else:
                     # Checada normal antes de las 16:30:00 -> Salida a comer

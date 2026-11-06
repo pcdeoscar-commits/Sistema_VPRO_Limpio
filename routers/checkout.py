@@ -72,22 +72,20 @@ def usuario_pertenece_a_op(usuario_nom: str, resp_prod: str, resp_gastos: str, c
 
     return False
 
-def es_coordinador_o_admin(id_empleado: str = "", nombre: str = "", rol: str = "", puesto: str = "") -> bool:
-    """Verifica si el usuario es Coordinador, Administrador o Dirección para otorgar acceso total a las OPs en checkout."""
+def es_coordinador_bodega(id_empleado: str = "", nombre: str = "", rol: str = "", puesto: str = "") -> bool:
+    """Verifica estrictamente si el usuario es el Coordinador de Bodega / Logística para supervisar todas las salidas."""
     id_clean = str(id_empleado or "").strip()
-    if id_clean in ["124", "000", "119"]:
+    if id_clean in ["124", "000"]:
         return True
     
     r_up = (rol or "").upper().strip()
     p_up = (puesto or "").upper().strip()
-    for kw in ["COORD", "ADMIN", "DIREC", "GEREN", "SOPORTE"]:
-        if kw in r_up or kw in p_up:
-            return True
+    if "COORD" in r_up or "COORD" in p_up:
+        return True
             
     norm_n = normalizar_texto(nombre)
-    for priv in ["MADRID", "VILLARREAL", "AGUNDEZ"]:
-        if priv in norm_n:
-            return True
+    if "MANUELEDUARDOMADRID" in norm_n:
+        return True
             
     return False
 
@@ -111,7 +109,7 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
                 if row_u[2]:
                     puesto_usuario = safe_decode_hex(row_u[2])
 
-        es_coord = es_coordinador_o_admin(id_empleado, nom_usuario, rol_usuario, puesto_usuario)
+        es_coord = es_coordinador_bodega(id_empleado, nom_usuario, rol_usuario, puesto_usuario)
 
         with engine_eventos.connect() as conn:
             evs_query = text("""
@@ -258,7 +256,7 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Op
                 if row_u[2]:
                     puesto_usuario = safe_decode_hex(row_u[2])
 
-        es_coord = es_coordinador_o_admin(id_empleado, nom_usuario, rol_usuario, puesto_usuario)
+        es_coord = es_coordinador_bodega(id_empleado, nom_usuario, rol_usuario, puesto_usuario)
 
         with engine_eventos.connect() as conn:
             conv_row = conn.execute(
@@ -466,8 +464,8 @@ def registrar_finalizacion_checkout(payload: dict):
 
         user_actual = str(payload.get("usuario_actual", "")).strip()
         es_privilegiado = (
-            es_coordinador_o_admin(id_sujeto, nombre_sujeto, rol_sujeto) or 
-            es_coordinador_o_admin(nombre=user_actual)
+            es_coordinador_bodega(id_sujeto, nombre_sujeto, rol_sujeto) or 
+            es_coordinador_bodega(nombre=user_actual)
         )
 
         if not (es_privilegiado or usuario_pertenece_a_op(nombre_sujeto, resp_prod, resp_gast, chofer, conv_raw)):

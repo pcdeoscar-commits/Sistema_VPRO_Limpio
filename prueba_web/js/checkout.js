@@ -260,9 +260,8 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         const idUsuario = String(usuarioLogueado?.id_empleado || '').trim();
         const esCoordinador = rolUsuario === 'COORDINADOR' || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') ||
                               puestoUsuario.includes('COORDINADOR') || puestoUsuario.includes('COORDINACION') ||
-                              rolUsuario === 'ADMIN' || rolUsuario.includes('DIREC') ||
-                              idUsuario === '124' || idUsuario === '000' || idUsuario === '119' ||
-                              nomUsuarioUpper.includes('MADRID') || nomUsuarioUpper.includes('VILLARREAL') || nomUsuarioUpper.includes('AGUNDEZ');
+                              idUsuario === '124' || idUsuario === '000' ||
+                              nomUsuarioUpper === 'MANUEL EDUARDO MADRID';
 
         const resStatus = await fetch(`${API_URL}/api/checkout/status/${idEvento}/${empId}?usuario_nombre=${encodeURIComponent(nomUser)}&rol=${encodeURIComponent(rolUsuario)}`);
         if (!resStatus.ok) throw new Error("Error consultando status de checkout");
@@ -860,9 +859,8 @@ async function autorizarSalidaCoordinador() {
     const idUsuario = String(usuarioLogueado?.id_empleado || '').trim();
     const esCoordinador = rolUsuario === 'COORDINADOR' || rolUsuario.includes('COORDINADOR') || rolUsuario.includes('COORDINACION') ||
                           puestoUsuario.includes('COORDINADOR') || puestoUsuario.includes('COORDINACION') ||
-                          rolUsuario === 'ADMIN' || rolUsuario.includes('DIREC') ||
-                          idUsuario === '124' || idUsuario === '000' || idUsuario === '119' ||
-                          nomUsuarioUpper.includes('MADRID') || nomUsuarioUpper.includes('VILLARREAL') || nomUsuarioUpper.includes('AGUNDEZ');
+                          idUsuario === '124' || idUsuario === '000' ||
+                          nomUsuarioUpper === 'MANUEL EDUARDO MADRID';
 
     if (!esCoordinador) {
         alert("⚠️ Acción restringida: Solo el personal con rol de Coordinador puede autorizar la salida.");

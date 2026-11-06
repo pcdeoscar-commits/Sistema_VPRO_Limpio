@@ -95,7 +95,7 @@ async function cargarDatosInicio() {
         const esCoordOProductor = esCoordinador || esProductor;
 
         // Lanzar todas las peticiones en paralelo
-        const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos, resOpsSinConv] = await Promise.allSettled([
+        const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos, resOpsSinConv, resMisPermisos] = await Promise.allSettled([
             fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${idEmp}`),
             fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '')}`),
             fetch(`${API_URL}/api/rh/alertas?id_empleado=${idEmp}`),
@@ -103,7 +103,8 @@ async function cargarDatosInicio() {
             fetch(`${API_URL}/api/gastos/pendientes-auditoria`),
             esAdminRH ? fetch(`${API_URL}/api/rh/permisos/pendientes`) : Promise.resolve({ ok: false }),
             esSeguimientoMantenimiento ? fetch(`${API_URL}/api/inventario/radar-danos`) : Promise.resolve({ ok: false }),
-            esCoordOProductor ? fetch(`${API_URL}/api/eventos/pendientes-convocados`) : Promise.resolve({ ok: false })
+            esCoordOProductor ? fetch(`${API_URL}/api/eventos/pendientes-convocados`) : Promise.resolve({ ok: false }),
+            fetch(`${API_URL}/api/rh/permisos?id_empleado=${idEmp}`)
         ]);
 
         // ── Helper: construir tarjeta-grupo tipo accordion/dropdown ──────
@@ -191,7 +192,13 @@ async function cargarDatosInicio() {
                             </div>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <button onclick="abrirModalSolicitarPermisoInicio()" 
+                                title="Solicitar permiso de ausencia, médico o vacaciones a Administración"
+                                style="background: rgba(255,255,255,0.22); border: 1.5px solid rgba(255,255,255,0.45); color: #ffffff; padding: 9px 15px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 7px; backdrop-filter: blur(6px); box-shadow: 0 2px 6px rgba(0,0,0,0.12); transition: all 0.2s ease;"
+                                onmouseover="this.style.background='rgba(255,255,255,0.32)'" onmouseout="this.style.background='rgba(255,255,255,0.22)'">
+                            <i class="ph ph-calendar-plus" style="font-size: 17px; color: #fde047;"></i> 📝 Solicitar Permiso / Ausencia
+                        </button>
                         <button onclick="window.open('chat.html?arista=soporte', '_blank')" 
                                 title="Consultas directas a Sistemas e Internet"
                                 style="background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.28); color: #ffffff; padding: 9px 13px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; backdrop-filter: blur(4px); transition: all 0.2s ease;">
@@ -387,20 +394,27 @@ async function cargarDatosInicio() {
                         badgeColor: '#059669',
                         items: [resumen],
                         renderItem: (r) => `
-                            <div onclick="cambiarVista('vista-rh'); setTimeout(()=>activarPestanaRH('vacaciones'),300);"
-                                 style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:8px;cursor:pointer;transition:background .15s;"
-                                 onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">
-                                <i class="ph ph-sun-horizon" style="font-size:18px;color:#059669;flex-shrink:0;"></i>
-                                <div style="flex:1;">
-                                    <div style="font-size:13px;font-weight:600;color:#14532d;">
-                                        Tienes <b>${r.dias_pendientes}</b> días de vacaciones disponibles (LFT)
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 10px;border-radius:8px;flex-wrap:wrap;background:#ffffff;border:1px solid #bbf7d0;">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:240px;">
+                                    <div style="width:38px;height:38px;border-radius:8px;background:#dcfce7;display:flex;align-items:center;justify-content:center;color:#059669;font-size:22px;flex-shrink:0;">
+                                        <i class="ph ph-sun-horizon"></i>
                                     </div>
-                                    <div style="font-size:11.5px;color:#166534;">
-                                        Correspondientes: ${r.dias_totales_correspondientes} · Tomados: ${r.dias_tomados}
+                                    <div>
+                                        <div style="font-size:13.5px;font-weight:700;color:#14532d;">
+                                            Tienes <b>${r.dias_pendientes}</b> días de vacaciones disponibles (LFT)
+                                        </div>
+                                        <div style="font-size:11.5px;color:#166534;margin-top:2px;">
+                                            Correspondientes: ${r.dias_totales_correspondientes} · Tomados: ${r.dias_tomados}
+                                        </div>
                                     </div>
-                                    <div style="font-size:11px;color:#15803d;">👉 Ir a RH → Vacaciones para solicitar</div>
                                 </div>
-                                <i class="ph ph-arrow-right" style="color:#059669;font-size:16px;flex-shrink:0;"></i>
+                                <div>
+                                    <button onclick="abrirModalSolicitarPermisoInicio('VACACIONES', ${r.dias_pendientes})"
+                                            style="background:#059669;color:#ffffff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:700;font-size:12.5px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 2px 6px rgba(5,150,105,0.25);transition:all 0.2s ease;"
+                                            onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
+                                        <i class="ph ph-calendar-plus" style="font-size:16px;"></i> 📝 Solicitar Días de Vacaciones
+                                    </button>
+                                </div>
                             </div>`
                     }));
                 }
@@ -513,6 +527,55 @@ async function cargarDatosInicio() {
                 }
             }
         } catch(e) { console.error('Error al renderizar permisos pendientes:', e); }
+
+        // ─── G. Mis Solicitudes de Permiso Recientes (Para el Colaborador) ───
+        try {
+            if (resMisPermisos && resMisPermisos.status === 'fulfilled' && resMisPermisos.value.ok) {
+                const misPermisos = await resMisPermisos.value.json();
+                if (Array.isArray(misPermisos) && misPermisos.length > 0) {
+                    const pendCount = misPermisos.filter(p => (p.estatus||'').toUpperCase() === 'PENDIENTE').length;
+                    gruposHtml.push(buildDropdownCard({
+                        icon: 'ph-calendar-check',
+                        color: pendCount > 0 ? '#d97706' : '#059669',
+                        bg: pendCount > 0 ? '#fffbeb' : '#f0fdf4',
+                        border: pendCount > 0 ? '#f59e0b' : '#34d399',
+                        titulo: '📋 Mis Solicitudes de Permiso y Ausencias',
+                        badge: pendCount > 0 ? `${pendCount} en revisión` : `${misPermisos.length} registrada${misPermisos.length !== 1 ? 's' : ''}`,
+                        badgeColor: pendCount > 0 ? '#d97706' : '#059669',
+                        items: misPermisos.slice(0, 5),
+                        renderItem: (p) => {
+                            const est = (p.estatus || 'PENDIENTE').toUpperCase();
+                            let badgeHtml = '';
+                            if (est === 'PENDIENTE') {
+                                badgeHtml = `<span style="background:#fef3c7;color:#b45309;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">⏳ En Revisión RH</span>`;
+                            } else if (est === 'APROBADO') {
+                                badgeHtml = `<span style="background:#dcfce7;color:#15803d;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">✅ Aprobado (${p.con_goce_de_sueldo ? 'Con Goce' : 'Sin Goce'})</span>`;
+                            } else {
+                                badgeHtml = `<span style="background:#fee2e2;color:#b91c1c;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">❌ No Autorizado</span>`;
+                            }
+                            return `
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:8px;background:white;border:1px solid #e2e8f0;margin-bottom:6px;flex-wrap:wrap;">
+                                    <div style="flex:1;min-width:220px;">
+                                        <div style="font-size:13px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:6px;">
+                                            <span>${p.folio_permiso || 'PER-SOL'}</span>
+                                            <span style="font-weight:500;color:#64748b;">· ${p.tipo_permiso || 'Permiso'}</span>
+                                        </div>
+                                        <div style="font-size:11.5px;color:#475569;margin-top:2px;">
+                                            Del <b>${p.fecha_inicio}</b> al <b>${p.fecha_fin}</b> (${p.dias_solicitados || 1} día${(p.dias_solicitados || 1) !== 1 ? 's' : ''})
+                                        </div>
+                                        ${p.justificacion ? `<div style="font-size:11px;color:#64748b;font-style:italic;margin-top:2px;">"${p.justificacion}"</div>` : ''}
+                                        ${p.motivo_rechazo ? `<div style="font-size:11px;color:#dc2626;font-weight:600;margin-top:2px;">Motivo rechazo: ${p.motivo_rechazo}</div>` : ''}
+                                    </div>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        ${badgeHtml}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }));
+                }
+            }
+        } catch(e) { console.error('Error al cargar mis permisos:', e); }
 
 const gruposFiltrados = gruposHtml.filter(Boolean);
         if (gruposFiltrados.length > 0) {
@@ -1204,3 +1267,281 @@ function irASeguimientoTaller(idEquipo, numServicio) {
         }
     }, 350);
 }
+
+
+// ══════════════════════════════════════════════════════════════════
+// 📝 MÓDULO SOLICITUD DE PERMISOS DIRECTO DESDE INICIO (PARA TODO EL PERSONAL)
+// ══════════════════════════════════════════════════════════════════
+
+window.recalcularDiasModalPermiso = function() {
+    const elIni = document.getElementById('swal-per-inicio');
+    const elFin = document.getElementById('swal-per-fin');
+    const elBadge = document.getElementById('swal-per-dias-badge');
+    if (!elIni || !elFin || !elBadge) return;
+
+    if (elIni.value) {
+        elFin.min = elIni.value;
+        if (elFin.value && elFin.value < elIni.value) {
+            elFin.value = elIni.value;
+        }
+    }
+
+    if (!elIni.value || !elFin.value) return;
+
+    const d1 = new Date(elIni.value + 'T00:00:00');
+    const d2 = new Date(elFin.value + 'T00:00:00');
+    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return;
+
+    const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+    if (diff < 1) {
+        elBadge.innerHTML = `<span style="color:#dc2626;font-weight:700;">⚠️ La fecha de fin no puede ser anterior a la de inicio</span>`;
+    } else {
+        elBadge.innerHTML = `📅 Días a solicitar: <b style="color:#0f766e;font-size:14px;background:#ccfbf1;padding:2px 8px;border-radius:6px;">${diff} día${diff !== 1 ? 's' : ''}</b>`;
+    }
+};
+
+window.abrirModalSolicitarPermisoInicio = async function(tipoDefault = '', diasDisponiblesVac = null) {
+    let u = window.usuarioLogueado;
+    if (!u) {
+        try {
+            const stored = localStorage.getItem("vpro_chat_usuario");
+            if (stored) u = JSON.parse(stored);
+        } catch(e) {}
+    }
+
+    const idEmp = u?.id_empleado || localStorage.getItem('usuario_id');
+    const nomEmp = u?.nombre_completo || u?.nombre || localStorage.getItem('usuario_nombre') || 'Colaborador';
+    const fotoEmp = u?.foto_url || `${API_URL}/fotos/${idEmp}.jpg`;
+
+    if (!idEmp) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sesión no identificada',
+            text: 'Por favor inicia sesión para solicitar un permiso laboral.',
+            confirmButtonColor: '#059669'
+        });
+        return;
+    }
+
+    const hoy = new Date().toISOString().split('T')[0];
+    const esVac = (tipoDefault || '').toUpperCase().includes('VAC');
+
+    const htmlModal = `
+        <div style="text-align: left; font-family: inherit; color: #1e293b;">
+            <!-- Header colaborador -->
+            <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 10px; margin-bottom: 16px;">
+                <img src="${fotoEmp}" onerror="this.src='vendor/img/avatar_default.png'" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #10b981;">
+                <div>
+                    <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${nomEmp}</div>
+                    <div style="font-size: 12px; color: #64748b;">ID Empleado: <b>#${idEmp}</b> ${diasDisponiblesVac ? `· Vacaciones disponibles: <b style="color:#059669;">${diasDisponiblesVac} días</b>` : ''}</div>
+                </div>
+            </div>
+
+            <!-- Tipo de Permiso -->
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px;">
+                    📌 Tipo de Solicitud / Ausencia:
+                </label>
+                <select id="swal-per-tipo" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13.5px; font-weight: 600; color: #0f172a; background: white; outline: none; box-sizing: border-box;">
+                    <option value="PERMISO PERSONAL" ${(!esVac && tipoDefault === 'PERMISO PERSONAL') || (!esVac && !tipoDefault) ? 'selected' : ''}>🙋‍♂️ Permiso Personal / Particular</option>
+                    <option value="MEDICO" ${tipoDefault === 'MEDICO' ? 'selected' : ''}>🩺 Cita Médica / Justificante de Salud</option>
+                    <option value="VACACIONES" ${esVac ? 'selected' : ''}>🏖️ Días de Vacaciones (LFT)</option>
+                    <option value="ASUNTO FAMILIAR" ${tipoDefault === 'ASUNTO FAMILIAR' ? 'selected' : ''}>👨‍👩‍👧 Asunto Familiar / Fuerza Mayor</option>
+                    <option value="TRAMITE OFICIAL" ${tipoDefault === 'TRAMITE OFICIAL' ? 'selected' : ''}>🏛️ Trámite Oficial (INE, Licencia, etc.)</option>
+                    <option value="OTRO" ${tipoDefault === 'OTRO' ? 'selected' : ''}>📝 Otro Permiso Especial</option>
+                </select>
+            </div>
+
+            <!-- Fechas Inicio y Fin -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                        📅 Fecha de Inicio:
+                    </label>
+                    <input type="date" id="swal-per-inicio" value="${hoy}" min="${hoy}" onchange="window.recalcularDiasModalPermiso()" 
+                           style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                        📅 Fecha de Fin:
+                    </label>
+                    <input type="date" id="swal-per-fin" value="${hoy}" min="${hoy}" onchange="window.recalcularDiasModalPermiso()" 
+                           style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; box-sizing: border-box;">
+                </div>
+            </div>
+
+            <!-- Badge días solicitados -->
+            <div id="swal-per-dias-badge" style="font-size: 12.5px; color: #475569; margin-bottom: 14px; padding-left: 2px;">
+                📅 Días a solicitar: <b style="color:#0f766e;font-size:14px;background:#ccfbf1;padding:2px 8px;border-radius:6px;">1 día</b>
+            </div>
+
+            <!-- Motivo / Justificación -->
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px;">
+                    📝 Motivo o Justificación <span style="color:#dc2626;">*</span>:
+                </label>
+                <textarea id="swal-per-motivo" rows="3" placeholder="Describe brevemente el motivo de tu permiso o vacaciones para que Recursos Humanos pueda autorizarlo..." 
+                          style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-family: inherit; color: #0f172a; box-sizing: border-box; resize: vertical;"></textarea>
+            </div>
+
+            <!-- Adjuntar Comprobante -->
+            <div style="margin-bottom: 14px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px 12px;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px;">
+                    <i class="ph ph-paperclip" style="font-size: 15px; color: #059669;"></i> Adjuntar Justificante / Receta Médica / Citatorio (Opcional):
+                </label>
+                <input type="file" id="swal-per-archivo" accept="image/*,.pdf,.doc,.docx" 
+                       style="width: 100%; font-size: 12px; color: #475569; margin-top: 4px;">
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                    Formatos permitidos: Fotos (JPG, PNG), Recetas médicas o PDFs oficiales.
+                </div>
+            </div>
+
+            <!-- Nota de proceso -->
+            <div style="background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 9px 12px; font-size: 11.5px; color: #1e40af; line-height: 1.45;">
+                ℹ️ <b>Proceso de Autorización:</b> Tu solicitud quedará en estatus <b>PENDIENTE</b> y se notificará en tiempo real a <b>Administración y Recursos Humanos (Ana Lilia)</b> para su dictamen y resolución.
+            </div>
+        </div>
+    `;
+
+    const { value: formValues } = await Swal.fire({
+        title: '<div style="display:flex;align-items:center;gap:8px;font-size:18px;color:#0f172a;"><i class="ph ph-calendar-plus" style="color:#059669;font-size:24px;"></i> Solicitar Permiso / Ausencia</div>',
+        html: htmlModal,
+        width: 520,
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: '<i class="ph ph-paper-plane-tilt"></i> Enviar Solicitud a RH',
+        confirmButtonColor: '#059669',
+        focusConfirm: false,
+        preConfirm: () => {
+            const tipo = document.getElementById('swal-per-tipo')?.value;
+            const inicio = document.getElementById('swal-per-inicio')?.value;
+            const fin = document.getElementById('swal-per-fin')?.value;
+            const motivo = document.getElementById('swal-per-motivo')?.value?.trim();
+            const fileInput = document.getElementById('swal-per-archivo');
+
+            if (!inicio || !fin) {
+                Swal.showValidationMessage('Por favor especifica las fechas de inicio y fin.');
+                return false;
+            }
+            if (fin < inicio) {
+                Swal.showValidationMessage('La fecha de fin no puede ser anterior a la de inicio.');
+                return false;
+            }
+            if (!motivo) {
+                Swal.showValidationMessage('Por favor escribe el motivo o justificación de tu solicitud.');
+                return false;
+            }
+
+            const d1 = new Date(inicio + 'T00:00:00');
+            const d2 = new Date(fin + 'T00:00:00');
+            const dias = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+
+            return {
+                tipo,
+                inicio,
+                fin,
+                dias,
+                motivo,
+                file: fileInput && fileInput.files ? fileInput.files[0] : null
+            };
+        }
+    });
+
+    if (formValues) {
+        await window.procesarEnvioPermisoDesdeInicio(idEmp, nomEmp, formValues);
+    }
+};
+
+window.procesarEnvioPermisoDesdeInicio = async function(idEmp, nomEmp, datos) {
+    Swal.fire({
+        title: 'Enviando solicitud...',
+        html: '<div style="font-size:13px;color:#64748b;margin-top:8px;">Subiendo información y notificando a Recursos Humanos...</div>',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        let archivoUrl = null;
+
+        // Subir archivo adjunto si existe
+        if (datos.file) {
+            try {
+                const formData = new FormData();
+                formData.append('archivo', datos.file);
+                const uploadRes = await fetch(`${API_URL}/api/chat-admin/subir-adjunto/${encodeURIComponent(idEmp)}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json();
+                    archivoUrl = uploadData.archivo_url;
+                } else {
+                    console.warn('No se pudo subir adjunto, se continúa sin archivo');
+                }
+            } catch (errUpload) {
+                console.error('Error al subir comprobante:', errUpload);
+            }
+        }
+
+        const hoy = new Date().toISOString().split('T')[0];
+        const payload = {
+            id_empleado: String(idEmp),
+            tipo_permiso: datos.tipo,
+            fecha_solicitud: hoy,
+            fecha_inicio: datos.inicio,
+            fecha_fin: datos.fin,
+            con_goce_de_sueldo: false, // Sujeto a dictamen de RH
+            justificacion: datos.motivo,
+            archivo_justificante: archivoUrl,
+            estatus: "PENDIENTE",
+            impacta_asistencia: true,
+            registrado_por: nomEmp
+        };
+
+        const res = await fetch(`${API_URL}/api/rh/permisos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            await Swal.fire({
+                icon: 'success',
+                title: '📋 ¡Solicitud Enviada con Éxito!',
+                html: `
+                    <div style="text-align:left; font-size:13px; color:#334155; line-height:1.5;">
+                        <p>Se ha registrado tu solicitud bajo el folio: <b style="color:#059669; font-size:15px;">${data.folio || ''}</b>.</p>
+                        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px; margin:12px 0;">
+                            <div>• <b>Tipo:</b> ${datos.tipo}</div>
+                            <div>• <b>Periodo:</b> Del <b>${datos.inicio}</b> al <b>${datos.fin}</b> (${datos.dias} día${datos.dias !== 1 ? 's' : ''})</div>
+                            <div>• <b>Estatus:</b> <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:10px;font-weight:700;font-size:11px;">⏳ PENDIENTE DE REVISIÓN</span></div>
+                        </div>
+                        <p style="font-size:12px; color:#64748b;">
+                            Tu solicitud ha sido notificada en el <b>Chat Administrativo</b> y en el Centro de Notificaciones de <b>Administración / RRHH (Ana Lilia)</b> para su dictamen oficial.
+                        </p>
+                    </div>
+                `,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#059669'
+            });
+
+            // Recargar datos del inicio para reflejar la solicitud en el listado
+            if (typeof cargarDatosInicio === 'function') {
+                cargarDatosInicio();
+            }
+        } else {
+            const errText = await res.text();
+            throw new Error(errText || 'Error en el servidor al registrar permiso');
+        }
+    } catch (e) {
+        console.error('Error al registrar permiso:', e);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error al enviar solicitud',
+            text: `No se pudo enviar la solicitud: ${e.message}`,
+            confirmButtonColor: '#dc2626'
+        });
+    }
+};

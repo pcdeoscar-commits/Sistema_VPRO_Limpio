@@ -91,7 +91,9 @@ async function inicializarModuloCheckout() {
                 radarDanosCheckoutSet.clear();
                 resDanos.value.forEach(d => {
                     const eq = (d.EQUIPO || d.equipo || '').toUpperCase().trim();
-                    if (eq) radarDanosCheckoutSet.add(eq);
+                    const id = (d.ID || d.id || '').toUpperCase().trim();
+                    if (eq && eq.length > 2) radarDanosCheckoutSet.add(eq);
+                    if (id && id.length > 2) radarDanosCheckoutSet.add(id);
                 });
             }
 
@@ -628,12 +630,35 @@ async function alSeleccionarKitCheckout() {
             return;
         }
 
-        itemsCheckoutSalida = parsed.map(it => ({
-            ID: it.ID || it.codigo || it.ID_ITEM || "",
-            EQUIPO: it.EQUIPO || it.descripcion || it.DESCRIPCION || it.Equipo || "Equipo",
-            CANT: parseInt(it.CANT || it.cantidad || it.CANTIDAD || 1) || 1,
-            OBSERVACIONES: it.OBSERVACIONES || it.observaciones || ""
-        }));
+        itemsCheckoutSalida = parsed.map(it => {
+            const nom = it.EQUIPO || it.descripcion || it.DESCRIPCION || it.Equipo || "Equipo";
+            const cod = it.ID || it.codigo || it.ID_ITEM || "";
+            // Limpiar etiquetas de daño estáticas previas
+            let obs = (it.OBSERVACIONES || it.observaciones || '')
+                .replace(/⚠️?\s*\[LLEVA DAÑO REPORTADO\]/gi, '')
+                .trim();
+
+            // Evaluar en tiempo real si el equipo actualmente tiene ticket abierto en taller
+            const tieneDano = [...radarDanosCheckoutSet].some(d => {
+                if (!d || d.length <= 2) return false;
+                const dUp = d.toUpperCase();
+                const nUp = nom.toUpperCase();
+                const cUp = cod.toUpperCase();
+                return (nUp && (nUp.includes(dUp) || dUp.includes(nUp))) || 
+                       (cUp && (cUp.includes(dUp) || dUp.includes(cUp)));
+            });
+
+            if (tieneDano) {
+                obs = obs ? `⚠️ [LLEVA DAÑO REPORTADO] ${obs}` : `⚠️ [LLEVA DAÑO REPORTADO]`;
+            }
+
+            return {
+                ID: cod,
+                EQUIPO: nom,
+                CANT: parseInt(it.CANT || it.cantidad || it.CANTIDAD || 1) || 1,
+                OBSERVACIONES: obs
+            };
+        });
 
         renderTablaCheckoutSalida();
         
@@ -657,12 +682,22 @@ function verificarDanoEquipoSeleccionado() {
         return;
     }
 
+    let cod = "";
     let nombreEq = val;
     if (val.includes(' - ')) {
-        nombreEq = val.split(' - ').slice(1).join(' - ').trim();
+        const partes = val.split(' - ');
+        cod = partes[0].trim();
+        nombreEq = partes.slice(1).join(' - ').trim();
     }
 
-    const tieneDano = [...radarDanosCheckoutSet].some(d => nombreEq.toUpperCase().includes(d) || d.includes(nombreEq.toUpperCase()));
+    const tieneDano = [...radarDanosCheckoutSet].some(d => {
+        if (!d || d.length <= 2) return false;
+        const dUp = d.toUpperCase();
+        const nUp = nombreEq.toUpperCase();
+        const cUp = cod.toUpperCase();
+        return (nUp && (nUp.includes(dUp) || dUp.includes(nUp))) || 
+               (cUp && (cUp.includes(dUp) || dUp.includes(cUp)));
+    });
     if (tieneDano) {
         alerta.style.display = 'block';
     } else {
@@ -693,7 +728,14 @@ function inyectarHardwareCheckout() {
 
     // Sensor de daño al vuelo
     let obsDano = "";
-    const tieneDano = [...radarDanosCheckoutSet].some(d => nombre.toUpperCase().includes(d) || d.includes(nombre.toUpperCase()));
+    const tieneDano = [...radarDanosCheckoutSet].some(d => {
+        if (!d || d.length <= 2) return false;
+        const dUp = d.toUpperCase();
+        const nUp = nombre.toUpperCase();
+        const cUp = cod.toUpperCase();
+        return (nUp && (nUp.includes(dUp) || dUp.includes(nUp))) || 
+               (cUp && (cUp.includes(dUp) || dUp.includes(cUp)));
+    });
     if (tieneDano) {
         obsDano = "⚠️ [LLEVA DAÑO REPORTADO]";
     }
@@ -743,7 +785,9 @@ async function guardarComoPlantillaKit() {
         items: itemsCheckoutSalida.map(it => ({
             ID: it.ID || '',
             EQUIPO: it.EQUIPO || '',
-            OBSERVACIONES: it.OBSERVACIONES || ''
+            OBSERVACIONES: (it.OBSERVACIONES || '')
+                .replace(/⚠️?\s*\[LLEVA DAÑO REPORTADO\]/gi, '')
+                .trim()
         })),
         usuario_actual: usuarioLogueado?.nombre_completo || 'OPERADOR'
     };

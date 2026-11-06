@@ -1302,10 +1302,10 @@ window.cambiarModalidadPermiso = function(mod) {
         secDias.style.display = 'none';
         secHoras.style.display = 'block';
 
-        // Si estaba seleccionado vacaciones, cambiar a personal porque vacaciones no aplican por horas
+        // Si estaba seleccionado vacaciones, cambiar a ausentismo en horas porque vacaciones no aplican por horas
         const selTipo = document.getElementById('swal-per-tipo');
         if (selTipo && selTipo.value === 'VACACIONES') {
-            selTipo.value = 'PERMISO PERSONAL';
+            selTipo.value = 'AUSENTISMO EN HRS. HÁBILES';
         }
         window.recalcularHorasModalPermiso();
     } else {
@@ -1322,6 +1322,29 @@ window.cambiarModalidadPermiso = function(mod) {
         secDias.style.display = 'block';
         secHoras.style.display = 'none';
         window.recalcularDiasModalPermiso();
+    }
+};
+
+window.alCambiarTipoPermiso = function() {
+    const selTipo = document.getElementById('swal-per-tipo');
+    if (!selTipo) return;
+    const val = selTipo.value;
+
+    if (val === 'LACTANCIA') {
+        window.cambiarModalidadPermiso('HORAS');
+        const elIni = document.getElementById('swal-per-hora-ini');
+        const elFin = document.getElementById('swal-per-hora-fin');
+        const elNum = document.getElementById('swal-per-num-horas');
+        if (elIni && elFin && elNum) {
+            elIni.value = '13:00';
+            elFin.value = '14:00';
+            elNum.value = '1';
+        }
+        window.recalcularHorasModalPermiso();
+    } else if (val === 'AUSENTISMO EN HRS. HÁBILES') {
+        window.cambiarModalidadPermiso('HORAS');
+    } else if (val === 'VACACIONES' || val === 'POR PATERNIDAD' || val === 'NUPCIAS' || val === 'CUMPLEAÑOS' || val === 'DÍAS ECONÓMICOS' || val === 'DEFUNCIÓN DE FAMILIARES') {
+        window.cambiarModalidadPermiso('DIAS');
     }
 };
 
@@ -1465,15 +1488,23 @@ window.abrirModalSolicitarPermisoInicio = async function(tipoDefault = '', diasD
             <!-- Tipo de Permiso -->
             <div style="margin-bottom: 14px;">
                 <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px;">
-                    📌 Motivo / Tipo de Solicitud:
+                    📌 Motivo / Tipo de Ausencia o Permiso:
                 </label>
-                <select id="swal-per-tipo" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background: white; outline: none; box-sizing: border-box;">
-                    <option value="PERMISO PERSONAL" ${(!esVac && tipoDefault === 'PERMISO PERSONAL') || (!esVac && !tipoDefault) ? 'selected' : ''}>🙋‍♂️ Permiso Personal / Particular (Escuela, Familia, Trámite)</option>
-                    <option value="MEDICO" ${tipoDefault === 'MEDICO' ? 'selected' : ''}>🩺 Cita Médica / Consulta de Salud</option>
-                    <option value="ASUNTO FAMILIAR" ${tipoDefault === 'ASUNTO FAMILIAR' ? 'selected' : ''}>👨‍👩‍👧 Asunto Familiar / Fuerza Mayor</option>
-                    <option value="TRAMITE OFICIAL" ${tipoDefault === 'TRAMITE OFICIAL' ? 'selected' : ''}>🏛️ Trámite Oficial (INE, Licencia, Banco)</option>
+                <select id="swal-per-tipo" onchange="window.alCambiarTipoPermiso()" style="width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; color: #0f172a; background: white; outline: none; box-sizing: border-box;">
+                    <option value="DÍAS ECONÓMICOS" ${!esVac && (tipoDefault === 'DÍAS ECONÓMICOS' || !tipoDefault) ? 'selected' : ''}>💵 Días Económicos</option>
+                    <option value="DEFUNCIÓN DE FAMILIARES" ${tipoDefault === 'DEFUNCIÓN DE FAMILIARES' ? 'selected' : ''}>🖤 Defunción de Familiares</option>
+                    <option value="POR PATERNIDAD" ${tipoDefault === 'POR PATERNIDAD' ? 'selected' : ''}>👶 Por Paternidad (5 días LFT)</option>
+                    <option value="NUPCIAS" ${tipoDefault === 'NUPCIAS' ? 'selected' : ''}>💍 Nupcias (Matrimonio)</option>
+                    <option value="CUIDADOS MATERNOS" ${tipoDefault === 'CUIDADOS MATERNOS' ? 'selected' : ''}>🤱 Cuidados Maternos</option>
+                    <option value="LICENCIA MÉDICA PARTICULAR" ${tipoDefault === 'LICENCIA MÉDICA PARTICULAR' || tipoDefault === 'MEDICO' ? 'selected' : ''}>🩺 Licencia Médica Particular / Consulta</option>
+                    <option value="LACTANCIA" ${tipoDefault === 'LACTANCIA' ? 'selected' : ''}>🍼 Lactancia</option>
+                    <option value="AUSENTISMO EN HRS. HÁBILES" ${tipoDefault === 'AUSENTISMO EN HRS. HÁBILES' ? 'selected' : ''}>⏱️ Ausentismo en hrs. Hábiles</option>
+                    <option value="PERMUTA DE DÍAS" ${tipoDefault === 'PERMUTA DE DÍAS' ? 'selected' : ''}>🔄 Permuta de Días</option>
+                    <option value="PERMUTA POR TIEMPO EXTRA" ${tipoDefault === 'PERMUTA POR TIEMPO EXTRA' ? 'selected' : ''}>⏳ Permuta por tiempo Extra</option>
+                    <option value="CUMPLEAÑOS" ${tipoDefault === 'CUMPLEAÑOS' ? 'selected' : ''}>🎂 Cumpleaños</option>
+                    <option value="PERMISO MENOR SIN GOCE DE SALARIO" ${tipoDefault === 'PERMISO MENOR SIN GOCE DE SALARIO' ? 'selected' : ''}>📋 Permiso menor sin goce de salario</option>
                     <option value="VACACIONES" ${esVac ? 'selected' : ''}>🏖️ Días de Vacaciones (LFT)</option>
-                    <option value="OTRO" ${tipoDefault === 'OTRO' ? 'selected' : ''}>📝 Otro Permiso Especial</option>
+                    <option value="OTRO PERMISO ESPECIAL" ${tipoDefault === 'OTRO PERMISO ESPECIAL' || tipoDefault === 'OTRO' ? 'selected' : ''}>📝 Otro Permiso Especial</option>
                 </select>
             </div>
 

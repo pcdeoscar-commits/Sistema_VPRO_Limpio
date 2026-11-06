@@ -20,7 +20,33 @@ let estadoBodegaCheckoutActual = "NUEVO";
 let pestanaActivaCheckout = 'salida';
 let catalogoGlobalCheckoutCargado = false;
 let radarDanosCheckoutSet = new Set();
+let radarDanosActivosList = [];
 let proveedoresAsignadosOPCheckout = [];
+
+function equipoTieneDanoEnRadar(cod, nombre) {
+    if (!radarDanosActivosList || radarDanosActivosList.length === 0) return false;
+    const cUp = (cod || '').toUpperCase().trim();
+    const nUp = (nombre || '').toUpperCase().trim();
+
+    return radarDanosActivosList.some(d => {
+        // 1. Coincidencia EXACTA por código ID (previene que INV_VPRO_ALT_00 coincida con INV_VPRO_ALT_00237)
+        if (cUp && d.id && cUp === d.id) return true;
+        
+        // 2. Coincidencia estricta por nombre de equipo
+        if (nUp && d.equipo) {
+            if (nUp === d.equipo) return true;
+            // Solo si ambos nombres son largos y no son palabras genéricas
+            if (nUp.length >= 10 && d.equipo.length >= 10) {
+                const genericos = ['COMPUTADORA', 'MONITOR', 'MOUSE', 'TECLADO', 'CABLE', 'BATERIA', 'BATERIAS', 'TRIPOD', 'TRIPIE', 'MICROFONO', 'CAMARA'];
+                const esGenerico = genericos.some(g => nUp === g || d.equipo === g);
+                if (!esGenerico && (nUp === d.equipo || d.equipo.startsWith(nUp) || nUp.startsWith(d.equipo))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    });
+}
 
 function abrirCheckoutConOP(idEvento, opLabel) {
     opPreseleccionadaCheckout = { id: idEvento, label: opLabel };
@@ -89,11 +115,13 @@ async function inicializarModuloCheckout() {
 
             if (resDanos.status === 'fulfilled' && Array.isArray(resDanos.value)) {
                 radarDanosCheckoutSet.clear();
+                radarDanosActivosList = [];
                 resDanos.value.forEach(d => {
                     const eq = (d.EQUIPO || d.equipo || '').toUpperCase().trim();
                     const id = (d.ID || d.id || '').toUpperCase().trim();
                     if (eq && eq.length > 2) radarDanosCheckoutSet.add(eq);
                     if (id && id.length > 2) radarDanosCheckoutSet.add(id);
+                    radarDanosActivosList.push({ id, equipo: eq });
                 });
             }
 
@@ -437,13 +465,22 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
 
         // Cargar ítems de salida y checkin
         const detalle = statusPack.detalle || [];
-        itemsCheckoutSalida = detalle.map(item => ({
-            id_detalle: item.id_detalle,
-            ID: item.ID || item.codigo || "",
-            EQUIPO: item.EQUIPO || item.Equipo || item.descripcion || "Equipo sin descripción",
-            CANT: parseInt(item.CANT || item.cantidad || 1) || 1,
-            OBSERVACIONES: item.OBSERVACIONES || item.observaciones || ""
-        }));
+        itemsCheckoutSalida = detalle.map(item => {
+            const cod = item.ID || item.codigo || "";
+            const nom = item.EQUIPO || item.Equipo || item.descripcion || "Equipo sin descripción";
+            let obs = item.OBSERVACIONES || item.observaciones || "";
+            // Si tiene leyenda de daño pero el equipo ya no está en radar de daños (ya fue reparado), limpiar la nota
+            if (obs.includes("DAÑO REPORTADO") && !equipoTieneDanoEnRadar(cod, nom)) {
+                obs = obs.replace(/⚠️?\s*\[LLEVA DAÑO REPORTADO\]/gi, '').trim();
+            }
+            return {
+                id_detalle: item.id_detalle,
+                ID: cod,
+                EQUIPO: nom,
+                CANT: parseInt(item.CANT || item.cantidad || 1) || 1,
+                OBSERVACIONES: obs
+            };
+        });
 
         itemsCheckoutCheckin = detalle.map(item => ({
             id_detalle: item.id_detalle,
@@ -638,15 +675,8 @@ async function alSeleccionarKitCheckout() {
                 .replace(/⚠️?\s*\[LLEVA DAÑO REPORTADO\]/gi, '')
                 .trim();
 
-            // Evaluar en tiempo real si el equipo actualmente tiene ticket abierto en taller
-            const tieneDano = [...radarDanosCheckoutSet].some(d => {
-                if (!d || d.length <= 2) return false;
-                const dUp = d.toUpperCase();
-                const nUp = nom.toUpperCase();
-                const cUp = cod.toUpperCase();
-                return (nUp && (nUp.includes(dUp) || dUp.includes(nUp))) || 
-                       (cUp && (cUp.includes(dUp) || dUp.includes(cUp)));
-            });
+            // Evaluar en tiempo real si el equipo actualmente tiene ticket abierto en taller (usando coincidencia exacta)
+            const tieneDano = equipoTieneDanoEnRadar(cod, nom);
 
             if (tieneDano) {
                 obs = obs ? `⚠️ [LLEVA DAÑO REPORTADO] ${obs}` : `⚠️ [LLEVA DAÑO REPORTADO]`;
@@ -690,14 +720,7 @@ function verificarDanoEquipoSeleccionado() {
         nombreEq = partes.slice(1).join(' - ').trim();
     }
 
-    const tieneDano = [...radarDanosCheckoutSet].some(d => {
-        if (!d || d.length <= 2) return false;
-        const dUp = d.toUpperCase();
-        const nUp = nombreEq.toUpperCase();
-        const cUp = cod.toUpperCase();
-        return (nUp && (nUp.includes(dUp) || dUp.includes(nUp))) || 
-               (cUp && (cUp.includes(dUp) || dUp.includes(cUp)));
-    });
+    const tieneDano = equipoTieneDanoEnRadar(cod, nombreEq);
     if (tieneDano) {
         alerta.style.display = 'block';
     } else {
@@ -726,17 +749,9 @@ function inyectarHardwareCheckout() {
         nombre = partes.slice(1).join(' - ').trim();
     }
 
-    // Sensor de daño al vuelo
+    // Sensor de daño al vuelo con validación estricta
     let obsDano = "";
-    const tieneDano = [...radarDanosCheckoutSet].some(d => {
-        if (!d || d.length <= 2) return false;
-        const dUp = d.toUpperCase();
-        const nUp = nombre.toUpperCase();
-        const cUp = cod.toUpperCase();
-        return (nUp && (nUp.includes(dUp) || dUp.includes(nUp))) || 
-               (cUp && (cUp.includes(dUp) || dUp.includes(cUp)));
-    });
-    if (tieneDano) {
+    if (equipoTieneDanoEnRadar(cod, nombre)) {
         obsDano = "⚠️ [LLEVA DAÑO REPORTADO]";
     }
 

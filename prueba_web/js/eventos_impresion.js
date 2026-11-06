@@ -725,15 +725,27 @@ function descargarPDFDirectoOP() {
 }
 
 // -------------------------------------------------------------
+// Control de Concurrencia y Tokens de Carrera para OPs
+// -------------------------------------------------------------
+window._opCargaToken = 0;
+window._ultimoFolioSolicitadoOP = null;
+window._opHistCargaToken = 0;
+window._ultimoFolioSolicitadoHist = null;
+
+// -------------------------------------------------------------
 // Carga del Detalle para OPs Activas
 // -------------------------------------------------------------
 async function cargarDetalleOP(folioId) {
     const container = document.getElementById('formulario-op-container');
     if (!container) return;
 
+    const tokenActual = ++window._opCargaToken;
+    const folioSolicitado = String(folioId || '').trim();
+    window._ultimoFolioSolicitadoOP = folioSolicitado;
+
     const cats = window.vproCatalogosOP || {};
 
-    if (!folioId) {
+    if (!folioSolicitado) {
         // Modo Nueva Orden
         window.opMultiSelects = {
             personal_vpro: [],
@@ -759,15 +771,25 @@ async function cargarDetalleOP(folioId) {
         renderMultiSelectComponent('ms-proveedores-act', 'proveedores', cats.proveedores, "Choose options");
 
         actualizarCrewGira();
+
+        const selectFolios = document.getElementById('select-folios-op');
+        if (selectFolios) selectFolios.value = "";
         return;
     }
 
-    container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 30px;">Cargando información completa del folio ${folioId}...</p>`;
+    container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 30px;">Cargando información completa del folio ${folioSolicitado}...</p>`;
 
     try {
-        const response = await fetch(`${API_URL}/api/eventos/buscar/${encodeURIComponent(folioId)}`);
+        const response = await fetch(`${API_URL}/api/eventos/buscar/${encodeURIComponent(folioSolicitado)}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
+
+        // 🛡️ GUARD DE CONCURRENCIA: Descartar si el usuario seleccionó otro folio mientras esta petición viajaba
+        if (tokenActual !== window._opCargaToken) {
+            console.warn(`[OP] Descartando respuesta de OP ${folioSolicitado} porque el usuario ya cambió a folio ${window._ultimoFolioSolicitadoOP}`);
+            return;
+        }
+
         window.currentOPData = data;
 
         // Inicializar estado de multiselects con lo guardado en base de datos
@@ -780,11 +802,16 @@ async function cargarDetalleOP(folioId) {
             cronogramas: Array.isArray(data.cronogramas_vinculados) ? data.cronogramas_vinculados : []
         };
         window.opChoferesPorVehiculo = (data.choferes_por_vehiculo && typeof data.choferes_por_vehiculo === 'object') ? data.choferes_por_vehiculo : {};
-        window.opChoferesPorVehiculo = (data.choferes_por_vehiculo && typeof data.choferes_por_vehiculo === 'object') ? data.choferes_por_vehiculo : {};
         window.opFotosEvidenciaActuales = Array.isArray(data.fotos_evidencia) ? data.fotos_evidencia : [];
         window.opHabilitadaTemporalmenteFolio = data.habilitada_para_edicion ? data.folio : null;
 
         container.innerHTML = generarHtmlFormularioOP(data, false);
+
+        // 🛡️ Sincronizar bidireccionalmente el selector de folios para que NUNCA quede desfasado
+        const selectFolios = document.getElementById('select-folios-op');
+        if (selectFolios && data.folio) {
+            selectFolios.value = String(data.folio);
+        }
 
         // Renderizar los componentes multiselect poblados
         renderMultiSelectComponent('ms-reuniones-act', 'reuniones', cats.reuniones, "Despliega y selecciona una o varias reuniones...");
@@ -803,6 +830,7 @@ async function cargarDetalleOP(folioId) {
         cargarJornadasGira(data.id_evento);
 
     } catch (error) {
+        if (tokenActual !== window._opCargaToken) return;
         console.error("Error al cargar la orden de producción:", error);
         container.innerHTML = `<p style="color: #ef4444; text-align: center; padding: 20px;">Error al obtener los datos del folio seleccionado: ${error.message}</p>`;
     }
@@ -814,17 +842,28 @@ async function cargarDetalleOP(folioId) {
 async function cargarDetalleOPHistorico(folioId) {
     const container = document.getElementById('formulario-op-historico-container');
     if (!container) return;
-    if (!folioId) {
+
+    const tokenActual = ++window._opHistCargaToken;
+    const folioSolicitado = String(folioId || '').trim();
+    window._ultimoFolioSolicitadoHist = folioSolicitado;
+
+    if (!folioSolicitado) {
         container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 20px;">Selecciona una orden histórica arriba para visualizar su expediente.</p>`;
         return;
     }
 
-    container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 30px;">Cargando orden histórica ${folioId}...</p>`;
+    container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 30px;">Cargando orden histórica ${folioSolicitado}...</p>`;
 
     try {
-        const response = await fetch(`${API_URL}/api/eventos/buscar/${encodeURIComponent(folioId)}`);
+        const response = await fetch(`${API_URL}/api/eventos/buscar/${encodeURIComponent(folioSolicitado)}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
+
+        // 🛡️ GUARD DE CONCURRENCIA HISTÓRICA
+        if (tokenActual !== window._opHistCargaToken) {
+            console.warn(`[OP Histórico] Descartando respuesta de OP ${folioSolicitado} porque el usuario ya cambió a ${window._ultimoFolioSolicitadoHist}`);
+            return;
+        }
 
         window.opMultiSelects = {
             personal_vpro: Array.isArray(data.personal_convocado_op) ? data.personal_convocado_op : [],
@@ -840,6 +879,12 @@ async function cargarDetalleOPHistorico(folioId) {
         const cats = window.vproCatalogosOP || {};
         container.innerHTML = generarHtmlFormularioOP(data, true);
 
+        // 🛡️ Sincronizar select histórico
+        const selectHist = document.getElementById('select-folios-historicos');
+        if (selectHist && data.folio) {
+            selectHist.value = String(data.folio);
+        }
+
         renderMultiSelectComponent('ms-reuniones-hist', 'reuniones', cats.reuniones, "Sin reuniones", true);
         renderMultiSelectComponent('ms-cronogramas-hist', 'cronogramas', cats.cronogramas, "Sin cronograma", true);
         const cronFirmaHist = (window.opMultiSelects.cronogramas && window.opMultiSelects.cronogramas.length > 0) ? window.opMultiSelects.cronogramas[0] : null;
@@ -854,6 +899,7 @@ async function cargarDetalleOPHistorico(folioId) {
         cargarJornadasGira(data.id_evento, true);
 
     } catch (error) {
+        if (tokenActual !== window._opHistCargaToken) return;
         console.error("Error al cargar orden histórica:", error);
         container.innerHTML = `<p style="color: #ef4444; text-align: center; padding: 20px;">Error al obtener los datos de la orden histórica: ${error.message}</p>`;
     }

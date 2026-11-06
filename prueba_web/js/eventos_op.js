@@ -53,7 +53,7 @@ function cambiarPestanaOP(pestana) {
     }
 }
 
-async function inicializarModuloOP() {
+async function inicializarModuloOP(folioDeseado = null) {
     if (typeof esUsuarioAutorizadoOP === 'function' && !esUsuarioAutorizadoOP()) {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -119,14 +119,18 @@ async function inicializarModuloOP() {
             });
         }
 
-        // Cargar por defecto la primera orden activa si existe, o formulario nuevo
-        if (window.vproFoliosActivos.length > 0) {
-            const primerFolio = window.vproFoliosActivos[0].split(' - ')[0];
-            selectFolios.value = primerFolio;
-            cargarDetalleOP(primerFolio);
-        } else {
-            cargarDetalleOP("");
+        // Cargar folio deseado, o el que esté seleccionado, o el primer folio activo
+        let folioACargar = "";
+        if (folioDeseado && [...selectFolios.options].some(o => o.value === String(folioDeseado))) {
+            folioACargar = String(folioDeseado);
+        } else if (selectFolios.value && [...selectFolios.options].some(o => o.value === selectFolios.value)) {
+            folioACargar = selectFolios.value;
+        } else if (window.vproFoliosActivos.length > 0) {
+            folioACargar = window.vproFoliosActivos[0].split(' - ')[0];
         }
+
+        selectFolios.value = folioACargar;
+        cargarDetalleOP(folioACargar);
 
     } catch (error) {
         console.error("Error al conectar con la API de eventos:", error);

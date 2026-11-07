@@ -1543,7 +1543,8 @@ async function guardarJornadaGira(idEvento, fecha) {
             alert(`✅ Jornada de fecha ${fecha} actualizada correctamente.`);
             cargarJornadasGira(idEvento);
         } else {
-            alert("❌ Error al guardar las correcciones de la jornada.");
+            const errData = await res.json().catch(() => ({}));
+            alert(`❌ Error al guardar las correcciones de la jornada: ${errData.detail || ''}`);
         }
     } catch (err) {
         alert(`❌ Error de red: ${err.message}`);
@@ -1563,6 +1564,15 @@ async function crearNuevoDiaGira(idEvento) {
     if (!fechaSeleccionada) {
         alert("Selecciona una fecha válida.");
         return;
+    }
+
+    // 💾 Auto-guardar la OP primero para que el personal remoto quede persistido en la base de datos
+    try {
+        if (typeof guardarOrdenOP === 'function') {
+            await guardarOrdenOP(null, true);
+        }
+    } catch (saveErr) {
+        console.warn("Auto-guardado previo de OP:", saveErr);
     }
 
     const registrosNuevos = crewRemoto.map(persona => ({
@@ -1588,7 +1598,8 @@ async function crearNuevoDiaGira(idEvento) {
             alert(`✅ ¡Día ${fechaSeleccionada} agregado! Ya puedes asignar las horas.`);
             cargarJornadasGira(idEvento);
         } else {
-            alert("❌ Error del servidor al crear la nueva jornada.");
+            const errData = await res.json().catch(() => ({}));
+            alert(`❌ Error del servidor al crear la nueva jornada: ${errData.detail || ''}`);
         }
     } catch (e) {
         alert(`❌ Error de conexión: ${e.message}`);

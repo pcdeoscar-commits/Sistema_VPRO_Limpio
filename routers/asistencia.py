@@ -65,7 +65,8 @@ class AutorizarHorasExtrasPayload(BaseModel):
 def obtener_ops_activas_empleado(nombre_empleado: str):
     """Retorna las Órdenes de Producción activas donde el empleado está convocado oficialmente."""
     query = text("""
-        SELECT e.id_evento, e.folio, e.nombre_evento, e.para_q_cliente, e.personal_convocado_op
+        SELECT e.id_evento, e.folio, e.nombre_evento, e.para_q_cliente, 
+               (COALESCE(e.personal_convocado_op, '{}'::text[]) || COALESCE(e.personal_remoto_foraneo, '{}'::text[])) AS personal_convocado_op
         FROM public.eventos e
         WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
           AND NOT EXISTS (
@@ -186,9 +187,13 @@ def guardar_asistencia_evento(id_evento: int, payload: AsistenciaBatch):
     """
     try:
         with engine_eventos.begin() as conn:
-            # 1. Consultar la lista oficial de personal convocado para esta OP
+            # 1. Consultar la lista oficial de personal convocado para esta OP (local y remoto)
             op_row = conn.execute(
-                text("SELECT folio, nombre_evento, personal_convocado_op FROM public.eventos WHERE id_evento = :id"),
+                text("""
+                    SELECT folio, nombre_evento, 
+                           (COALESCE(personal_convocado_op, '{}'::text[]) || COALESCE(personal_remoto_foraneo, '{}'::text[])) as personal_autorizado
+                    FROM public.eventos WHERE id_evento = :id
+                """),
                 {"id": id_evento}
             ).mappings().first()
             
@@ -196,22 +201,16 @@ def guardar_asistencia_evento(id_evento: int, payload: AsistenciaBatch):
                 raise HTTPException(status_code=404, detail=f"No se encontró la Orden de Producción #{id_evento}.")
             
             folio_op = op_row.get("folio") or str(id_evento)
-            raw_convocados = parse_pg_array(op_row.get("personal_convocado_op"))
+            raw_convocados = parse_pg_array(op_row.get("personal_autorizado"))
             personal_autorizado = {str(p).strip().upper() for p in raw_convocados if str(p).strip()}
             
-            if not personal_autorizado:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"⚠️ La OP-{folio_op} no tiene personal seleccionado en 'SELECCIONAR PERSONAL VPRO'. Debe asignar personal a la orden antes de registrar bitácora foránea."
-                )
-            
-            # 2. Validar que cada empleado en el payload esté en la lista convocada
+            # 2. Validar que cada empleado en el payload esté en la lista convocada/remota
             for reg in payload.registros:
                 nom_emp = str(reg.nombre_empleado).strip().upper()
-                if nom_emp not in personal_autorizado:
+                if personal_autorizado and nom_emp not in personal_autorizado:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"⛔ Acceso denegado: El empleado '{reg.nombre_empleado}' NO está seleccionado en el personal convocado de la OP-{folio_op}. No se le puede tomar asistencia fuera de la ciudad."
+                        detail=f"⛔ Acceso denegado: El empleado '{reg.nombre_empleado}' NO está seleccionado en el personal convocado ni remoto de la OP-{folio_op}."
                     )
 
             fechas_en_batch = list(set([r.fecha_jornada for r in payload.registros]))
@@ -563,7 +562,8 @@ def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
             candidatas = conn_ev.execute(text("""
                 SELECT id_evento, folio, nombre_evento, fec_de_instalacion, hra_de_instalacion,
                        fec_del_evento, fec_fin_evento, hra_de_llamado, inicio_del_evento, 
-                       vehiculo_destino, para_q_cliente, personal_convocado_op
+                       vehiculo_destino, para_q_cliente, 
+                       (COALESCE(personal_convocado_op, '{}'::text[]) || COALESCE(personal_remoto_foraneo, '{}'::text[])) AS personal_convocado_op
                 FROM public.eventos
                 WHERE (UPPER(COALESCE(estatus, 'ACTIVA')) NOT LIKE '%CANCELAD%')
                   AND (
@@ -674,7 +674,8 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                         try:
                             with engine_eventos.connect() as conn_ev:
                                 ops = conn_ev.execute(text("""
-                                    SELECT id_evento, folio, nombre_evento, resp_de_produccion, personal_convocado_op
+                                    SELECT id_evento, folio, nombre_evento, resp_de_produccion, 
+                                           (COALESCE(personal_convocado_op, '{}'::text[]) || COALESCE(personal_remoto_foraneo, '{}'::text[])) AS personal_convocado_op
                                     FROM public.eventos
                                     WHERE fec_del_evento - INTERVAL '2 days' <= CAST(:ayer AS date)
                                       AND COALESCE(fec_fin_evento, fec_del_evento) >= CAST(:ayer AS date)

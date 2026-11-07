@@ -79,14 +79,21 @@ def aplicar_migraciones_automaticas():
 
             logger.info("[Auto-Migraciones] Esquemas de db_inventario, taller y chat sincronizados al 100%.")
 
-        # 7. Asegurar esquemas en db_eventos
+        # 7. Asegurar columna personal_remoto_foraneo en db_eventos
         try:
             with get_db_cursor("db_eventos", commit=True) as cursor_ev:
                 cursor_ev.execute("""
                     ALTER TABLE public.eventos 
                     ADD COLUMN IF NOT EXISTS personal_remoto_foraneo TEXT[] DEFAULT '{}'::text[];
+                """)
+                logger.info("[Auto-Migraciones] Columna personal_remoto_foraneo asegurada en public.eventos.")
+        except Exception as e_col:
+            logger.error(f"[Auto-Migraciones] Error al agregar columna personal_remoto_foraneo: {e_col}")
 
-                    DELETE FROM public.checkouts_detalle 
+        # 7.1 Purga de OP-42 y resincronización de secuencia
+        try:
+            with get_db_cursor("db_eventos", commit=True) as cursor_ev:
+                cursor_ev.execute("""
                     DELETE FROM public.checkouts_detalle 
                     WHERE id_maestro IN (SELECT id_maestro FROM public.checkouts_maestro WHERE folio_op = 42);
 

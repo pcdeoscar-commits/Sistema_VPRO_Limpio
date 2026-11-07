@@ -1395,6 +1395,14 @@ function toggleBitacoraGira(forceOpen) {
         switchBg.style.background = "#16a34a";
         knob.style.left = "23px";
         if (typeof actualizarCrewGira === 'function') actualizarCrewGira();
+        
+        // Refrescar selector de personal remoto para que excluya automáticamente al personal ya asignado en Estudio
+        const cats = window.vproCatalogosOP || {};
+        const isHist = Boolean(document.getElementById('ms-personal_remoto-hist'));
+        const idRemoto = isHist ? 'ms-personal_remoto-hist' : 'ms-personal_remoto-act';
+        if (typeof renderMultiSelectComponent === 'function' && document.getElementById(idRemoto)) {
+            renderMultiSelectComponent(idRemoto, 'personal_remoto', cats.staff_vpro, isHist ? "Sin personal remoto" : "Seleccionar personal en locación remota...", isHist);
+        }
     } else {
         contenedor.style.display = "none";
         switchBg.style.background = "#cbd5e1";

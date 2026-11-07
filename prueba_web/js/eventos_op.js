@@ -153,7 +153,20 @@ function renderMultiSelectComponent(containerId, stateKey, allOptions, placehold
     if (!cont) return;
 
     const selectedList = window.opMultiSelects[stateKey] || [];
-    const availableOptions = (allOptions || []).filter(opt => !selectedList.includes(opt));
+    
+    // Complementariedad estricta entre Personal Estudio/Ciudad y Personal Remoto:
+    // Un colaborador asignado al Estudio no puede estar en Locación Remota y viceversa.
+    const availableOptions = (allOptions || []).filter(opt => {
+        if (selectedList.includes(opt)) return false;
+        if (stateKey === 'personal_vpro') {
+            const remotoSel = window.opMultiSelects.personal_remoto || [];
+            if (remotoSel.includes(opt)) return false;
+        } else if (stateKey === 'personal_remoto') {
+            const vproSel = window.opMultiSelects.personal_vpro || [];
+            if (vproSel.includes(opt)) return false;
+        }
+        return true;
+    });
 
     let tagsHtml = selectedList.map(item => `
         <span class="tag-pill" style="${stateKey === 'personal_remoto' ? 'background: #e0e7ff; color: #3730a3; border: 1.5px solid #a5b4fc;' : ''}">
@@ -309,6 +322,27 @@ function alCambiarChoferVehiculo(vehiculo, chofer, isReadOnly = false) {
     // Re-renderizar para actualizar de inmediato la lista de descontados en los otros autos
     renderChoferesPorVehiculo(isReadOnly);
 }
+function sincronizarPersonalComplementario(origenContainerId) {
+    const isHist = Boolean(origenContainerId && origenContainerId.endsWith('-hist'));
+    const suffix = isHist ? '-hist' : '-act';
+    const cats = window.vproCatalogosOP || {};
+
+    const idVpro = `ms-personal_vpro${suffix}`;
+    const idRemoto = `ms-personal_remoto${suffix}`;
+
+    if (origenContainerId === idVpro) {
+        const contRemoto = document.getElementById(idRemoto);
+        if (contRemoto) {
+            renderMultiSelectComponent(idRemoto, 'personal_remoto', cats.staff_vpro, isHist ? "Sin personal remoto" : "Seleccionar personal en locación remota...", isHist);
+        }
+    } else if (origenContainerId === idRemoto) {
+        const contVpro = document.getElementById(idVpro);
+        if (contVpro) {
+            renderMultiSelectComponent(idVpro, 'personal_vpro', cats.staff_vpro, isHist ? "Sin personal" : "Choose options", isHist);
+        }
+    }
+}
+
 function addMultiTag(stateKey, val, containerId) {
     if (!val) return;
     if (!window.opMultiSelects[stateKey]) window.opMultiSelects[stateKey] = [];
@@ -322,8 +356,17 @@ function addMultiTag(stateKey, val, containerId) {
     }
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
-    if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); renderChoferesPorVehiculo(false); }
-    else if (stateKey === 'personal_remoto') { optionsList = cats.staff_vpro; actualizarCrewGira(); }
+    if (stateKey === 'personal_vpro') { 
+        optionsList = cats.staff_vpro; 
+        actualizarCrewGira(); 
+        renderChoferesPorVehiculo(false); 
+        sincronizarPersonalComplementario(containerId);
+    }
+    else if (stateKey === 'personal_remoto') { 
+        optionsList = cats.staff_vpro; 
+        actualizarCrewGira(); 
+        sincronizarPersonalComplementario(containerId);
+    }
     else if (stateKey === 'vehiculos') { optionsList = cats.autos; renderChoferesPorVehiculo(false); }
     else if (stateKey === 'personal_externo') optionsList = cats.apoyos_externos;
     else if (stateKey === 'proveedores') optionsList = cats.proveedores;
@@ -342,8 +385,17 @@ function removeMultiTag(stateKey, val, containerId) {
 
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
-    if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); renderChoferesPorVehiculo(false); }
-    else if (stateKey === 'personal_remoto') { optionsList = cats.staff_vpro; actualizarCrewGira(); }
+    if (stateKey === 'personal_vpro') { 
+        optionsList = cats.staff_vpro; 
+        actualizarCrewGira(); 
+        renderChoferesPorVehiculo(false); 
+        sincronizarPersonalComplementario(containerId);
+    }
+    else if (stateKey === 'personal_remoto') { 
+        optionsList = cats.staff_vpro; 
+        actualizarCrewGira(); 
+        sincronizarPersonalComplementario(containerId);
+    }
     else if (stateKey === 'vehiculos') {
         optionsList = cats.autos;
         if (window.opChoferesPorVehiculo && window.opChoferesPorVehiculo[val]) {
@@ -366,8 +418,17 @@ function clearMultiTags(stateKey, containerId) {
     window.opMultiSelects[stateKey] = [];
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
-    if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); renderChoferesPorVehiculo(false); }
-    else if (stateKey === 'personal_remoto') { optionsList = cats.staff_vpro; actualizarCrewGira(); }
+    if (stateKey === 'personal_vpro') { 
+        optionsList = cats.staff_vpro; 
+        actualizarCrewGira(); 
+        renderChoferesPorVehiculo(false); 
+        sincronizarPersonalComplementario(containerId);
+    }
+    else if (stateKey === 'personal_remoto') { 
+        optionsList = cats.staff_vpro; 
+        actualizarCrewGira(); 
+        sincronizarPersonalComplementario(containerId);
+    }
     else if (stateKey === 'vehiculos') {
         optionsList = cats.autos;
         window.opChoferesPorVehiculo = {};
@@ -924,8 +985,9 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     <!-- Columna Izquierda -->
                     <div>
                         <div style="margin-bottom: 16px;">
-                            <label class="op-form-label">SELECCIONAR PERSONAL VPRO:</label>
+                            <label class="op-form-label">👥 PERSONAL VPRO (ESTUDIO / PRODUCCIÓN LOCAL):</label>
                             <div id="ms-personal_vpro-${isReadOnly ? 'hist' : 'act'}"></div>
+                            <p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;"><em>Asigna al personal en estudio o ciudad (los elegidos aquí no aparecerán en locación remota).</em></p>
                         </div>
                         <div>
                             <label class="op-form-label">SELECCIONAR PERSONAL EXTERNO:</label>
@@ -1030,8 +1092,9 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                         </div>
 
                         <div>
-                            <label class="op-form-label" style="color: #4338ca; font-weight: 700;">SELECCIONAR PERSONAL EN LOCACIÓN REMOTA:</label>
+                            <label class="op-form-label" style="color: #4338ca; font-weight: 700;">📡 SELECCIONAR PERSONAL EN LOCACIÓN REMOTA (FUERA DE LA CIUDAD):</label>
                             <div id="ms-personal_remoto-${isReadOnly ? 'hist' : 'act'}"></div>
+                            <p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;"><em>Asigna al resto del equipo que viaja a enviar señal remota (excluye al personal de estudio).</em></p>
                         </div>
                     </div>
 

@@ -175,7 +175,7 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
                       encode(COALESCE(e.resp_de_produccion, '')::bytea, 'hex'),
                       encode(COALESCE(e.responsable_gastos, '')::bytea, 'hex'),
                       encode(COALESCE(e.chofer, '')::bytea, 'hex'),
-                      encode(COALESCE(e.personal_convocado_op::text, '[]')::bytea, 'hex'),
+                      encode(COALESCE((COALESCE(e.personal_convocado_op, '{}'::text[]) || COALESCE(e.personal_remoto_foraneo, '{}'::text[]))::text, '[]')::bytea, 'hex'),
                       encode(COALESCE(e.choferes_por_vehiculo::text, '{}')::bytea, 'hex'),
                       COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada_para_edicion
                FROM public.eventos e
@@ -323,7 +323,7 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Op
         with engine_eventos.connect() as conn:
             conv_row = conn.execute(
                 text("""
-                    SELECT encode(COALESCE(personal_convocado_op::text, '[]')::bytea, 'hex'), 
+                    SELECT encode(COALESCE((COALESCE(personal_convocado_op, '{}'::text[]) || COALESCE(personal_remoto_foraneo, '{}'::text[]))::text, '[]')::bytea, 'hex'), 
                            encode(COALESCE(proveedor_op::text, '[]')::bytea, 'hex'),
                            encode(COALESCE(resp_de_produccion, '')::bytea, 'hex'),
                            encode(COALESCE(responsable_gastos, '')::bytea, 'hex'),
@@ -498,7 +498,7 @@ def registrar_finalizacion_checkout(payload: dict):
                     SELECT encode(COALESCE(resp_de_produccion, '')::bytea, 'hex'), 
                            encode(COALESCE(responsable_gastos, '')::bytea, 'hex'), 
                            encode(COALESCE(chofer, '')::bytea, 'hex'), 
-                           encode(COALESCE(personal_convocado_op::text, '[]')::bytea, 'hex') 
+                           encode(COALESCE((COALESCE(personal_convocado_op, '{}'::text[]) || COALESCE(personal_remoto_foraneo, '{}'::text[]))::text, '[]')::bytea, 'hex') 
                     FROM public.eventos WHERE id_evento = :id
                 """),
                 {"id": id_op}
@@ -721,7 +721,7 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
         with engine_eventos.connect() as conn:
             query_pendientes = text("""
                 SELECT e.id_evento, encode(e.para_q_cliente::bytea, 'hex'), encode(e.nombre_evento::bytea, 'hex'), 
-                       e.personal_convocado_op, encode(e.resp_de_produccion::bytea, 'hex'),
+                       (COALESCE(e.personal_convocado_op, '{}'::text[]) || COALESCE(e.personal_remoto_foraneo, '{}'::text[])) AS personal_convocado_op, encode(e.resp_de_produccion::bytea, 'hex'),
                        COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada_para_edicion
                 FROM public.eventos e
                 WHERE e.habilitada_para_edicion = TRUE

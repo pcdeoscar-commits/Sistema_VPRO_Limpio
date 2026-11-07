@@ -135,7 +135,7 @@ def obtener_datos_evento_gasto(id_evento: int):
         SELECT encode(resp_de_produccion::bytea, 'hex'), 
                fec_de_instalacion, 
                carros_usados_op, 
-               personal_convocado_op,
+               (COALESCE(personal_convocado_op, '{}'::text[]) || COALESCE(personal_remoto_foraneo, '{}'::text[])) AS personal_convocado_op,
                encode(nombre_evento::bytea, 'hex'),
                encode(para_q_cliente::bytea, 'hex'),
                fec_del_evento,

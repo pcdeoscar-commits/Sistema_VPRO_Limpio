@@ -604,7 +604,6 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
 
         const alertaBloqueo = document.getElementById('alerta-bloqueo-salida-checkout');
         const txtBloqueo = document.getElementById('texto-bloqueo-salida-checkout');
-        const btnFinalizarSalida = document.getElementById('btn-finalizar-salida');
 
         if (window.checkoutBloqueadoActual && window.opsDeudaIncidenciasActual.length > 0) {
             const foliosStr = window.opsDeudaIncidenciasActual.map(x => `<b>OP-${x.folio}</b> (${x.evento})`).join(", ");

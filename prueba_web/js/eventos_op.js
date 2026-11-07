@@ -16,6 +16,7 @@ window.vproProximoId = 1;
 
 window.opMultiSelects = {
     personal_vpro: [],
+    personal_remoto: [],
     vehiculos: [],
     personal_externo: [],
     proveedores: [],
@@ -155,8 +156,8 @@ function renderMultiSelectComponent(containerId, stateKey, allOptions, placehold
     const availableOptions = (allOptions || []).filter(opt => !selectedList.includes(opt));
 
     let tagsHtml = selectedList.map(item => `
-        <span class="tag-pill">
-            <span>${item}</span>
+        <span class="tag-pill" style="${stateKey === 'personal_remoto' ? 'background: #e0e7ff; color: #3730a3; border: 1.5px solid #a5b4fc;' : ''}">
+            <span>${stateKey === 'personal_remoto' ? '📡 ' : ''}${item}</span>
             ${!isReadOnly ? `<span class="tag-close" onclick="removeMultiTag('${stateKey}', '${item.replace(/'/g, "\\'")}', '${containerId}')" title="Eliminar">✖</span>` : ''}
         </span>
     `).join('');
@@ -322,6 +323,7 @@ function addMultiTag(stateKey, val, containerId) {
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
     if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); renderChoferesPorVehiculo(false); }
+    else if (stateKey === 'personal_remoto') { optionsList = cats.staff_vpro; actualizarCrewGira(); }
     else if (stateKey === 'vehiculos') { optionsList = cats.autos; renderChoferesPorVehiculo(false); }
     else if (stateKey === 'personal_externo') optionsList = cats.apoyos_externos;
     else if (stateKey === 'proveedores') optionsList = cats.proveedores;
@@ -331,7 +333,7 @@ function addMultiTag(stateKey, val, containerId) {
         actualizarVistaCronogramaAccordion(val, containerId, null, false);
     }
 
-    renderMultiSelectComponent(containerId, stateKey, optionsList, stateKey === 'cronogramas' ? "Despliega y selecciona cronograma de actividades..." : "Seleccionar...");
+    renderMultiSelectComponent(containerId, stateKey, optionsList, stateKey === 'cronogramas' ? "Despliega y selecciona cronograma de actividades..." : (stateKey === 'personal_remoto' ? "Seleccionar personal en locación remota..." : "Seleccionar..."));
 }
 
 function removeMultiTag(stateKey, val, containerId) {
@@ -341,6 +343,7 @@ function removeMultiTag(stateKey, val, containerId) {
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
     if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); renderChoferesPorVehiculo(false); }
+    else if (stateKey === 'personal_remoto') { optionsList = cats.staff_vpro; actualizarCrewGira(); }
     else if (stateKey === 'vehiculos') {
         optionsList = cats.autos;
         if (window.opChoferesPorVehiculo && window.opChoferesPorVehiculo[val]) {
@@ -356,7 +359,7 @@ function removeMultiTag(stateKey, val, containerId) {
         actualizarVistaCronogramaAccordion(null, containerId, null, false);
     }
 
-    renderMultiSelectComponent(containerId, stateKey, optionsList, stateKey === 'cronogramas' ? "Despliega y selecciona cronograma de actividades..." : "Seleccionar...");
+    renderMultiSelectComponent(containerId, stateKey, optionsList, stateKey === 'cronogramas' ? "Despliega y selecciona cronograma de actividades..." : (stateKey === 'personal_remoto' ? "Seleccionar personal en locación remota..." : "Seleccionar..."));
 }
 
 function clearMultiTags(stateKey, containerId) {
@@ -364,6 +367,7 @@ function clearMultiTags(stateKey, containerId) {
     const cats = window.vproCatalogosOP || {};
     let optionsList = [];
     if (stateKey === 'personal_vpro') { optionsList = cats.staff_vpro; actualizarCrewGira(); renderChoferesPorVehiculo(false); }
+    else if (stateKey === 'personal_remoto') { optionsList = cats.staff_vpro; actualizarCrewGira(); }
     else if (stateKey === 'vehiculos') {
         optionsList = cats.autos;
         window.opChoferesPorVehiculo = {};
@@ -377,7 +381,7 @@ function clearMultiTags(stateKey, containerId) {
         actualizarVistaCronogramaAccordion(null, containerId, null, false);
     }
 
-    renderMultiSelectComponent(containerId, stateKey, optionsList, stateKey === 'cronogramas' ? "Despliega y selecciona cronograma de actividades..." : "Seleccionar...");
+    renderMultiSelectComponent(containerId, stateKey, optionsList, stateKey === 'cronogramas' ? "Despliega y selecciona cronograma de actividades..." : (stateKey === 'personal_remoto' ? "Seleccionar personal en locación remota..." : "Seleccionar..."));
 }
 
 // -------------------------------------------------------------
@@ -525,17 +529,26 @@ async function actualizarVistaCronogramaAccordion(firma, containerId, detallePre
 }
 window.actualizarVistaCronogramaAccordion = actualizarVistaCronogramaAccordion;
 
-function actualizarCrewGira(choferGuardado, personalRemotoGuardado, isReadOnly = false) {
+function actualizarCrewGira(choferGuardado, isReadOnly = false) {
+    const crewRemoto = (window.opMultiSelects && window.opMultiSelects.personal_remoto) || [];
+    const crewBase = (window.opMultiSelects && window.opMultiSelects.personal_vpro) || [];
+    const crew = crewRemoto.length > 0 ? crewRemoto : crewBase;
+
     const el = document.getElementById("texto-crew-gira");
-    const crew = window.opMultiSelects.personal_vpro || [];
     if (el) {
-        el.innerText = crew.length > 0 ? crew.join(", ") : "Sin personal asignado en la orden";
+        if (crewRemoto.length > 0) {
+            el.innerHTML = `<span style="color: #4338ca; font-weight: 700;">📡 Remoto:</span> ${crewRemoto.join(", ")}`;
+        } else if (crewBase.length > 0) {
+            el.innerHTML = `<span style="color: #64748b; font-weight: 600;">(Personal Base):</span> ${crewBase.join(", ")}`;
+        } else {
+            el.innerText = "Sin personal asignado en la orden ni en locación";
+        }
     }
 
     const selectChofer = document.getElementById("op_chofer");
     if (selectChofer) {
         const actual = (choferGuardado !== undefined && choferGuardado !== null) ? String(choferGuardado).trim() : (selectChofer.value || '').trim();
-        let html = '<option value="">-- Selecciona chofer del personal convocado --</option>';
+        let html = '<option value="">-- Selecciona chofer del personal asignado --</option>';
         let found = false;
         crew.forEach(nombre => {
             const nTrim = String(nombre).trim();
@@ -550,51 +563,9 @@ function actualizarCrewGira(choferGuardado, personalRemotoGuardado, isReadOnly =
         selectChofer.innerHTML = html;
         alCambiarChoferDesignado(selectChofer.value);
     }
-
-    // Actualizar checkboxes de personal de transmisión / señal remota
-    const contRemoto = document.getElementById("contenedor-personal-remoto-gira");
-    if (contRemoto) {
-        if (personalRemotoGuardado && Array.isArray(personalRemotoGuardado)) {
-            window.opPersonalRemotoGuardado = personalRemotoGuardado.map(p => String(p).trim().toLowerCase());
-        }
-        const seleccionadosPrevios = window.opPersonalRemotoGuardado || [];
-        
-        if (crew.length === 0) {
-            contRemoto.innerHTML = `<span style="font-size: 12px; color: #94a3b8; font-style: italic;">Selecciona personal en "SELECCIONAR PERSONAL VPRO" para asignar enlaces remotos...</span>`;
-        } else {
-            let htmlCheckboxes = '';
-            crew.forEach(nombre => {
-                const nTrim = String(nombre).trim();
-                const estaMarcado = seleccionadosPrevios.includes(nTrim.toLowerCase());
-                htmlCheckboxes += `
-                    <label style="display: inline-flex; align-items: center; gap: 7px; background: ${estaMarcado ? '#e0e7ff' : '#ffffff'}; border: 1.5px solid ${estaMarcado ? '#6366f1' : '#cbd5e1'}; padding: 6px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 600; color: ${estaMarcado ? '#3730a3' : '#334155'}; cursor: ${isReadOnly ? 'default' : 'pointer'}; transition: all 0.2s;">
-                        <input type="checkbox" class="chk-personal-remoto-op" value="${nTrim}" ${estaMarcado ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} onchange="alCambiarCheckboxPersonalRemoto(this)" style="cursor: ${isReadOnly ? 'default' : 'pointer'}; width: 15px; height: 15px; accent-color: #6366f1;">
-                        <span>📡 ${nTrim}</span>
-                    </label>
-                `;
-            });
-            contRemoto.innerHTML = htmlCheckboxes;
-        }
-    }
 }
 
-function alCambiarCheckboxPersonalRemoto(chk) {
-    if (!window.opPersonalRemotoGuardado) window.opPersonalRemotoGuardado = [];
-    const valLower = chk.value.trim().toLowerCase();
-    if (chk.checked) {
-        if (!window.opPersonalRemotoGuardado.includes(valLower)) {
-            window.opPersonalRemotoGuardado.push(valLower);
-        }
-        chk.parentElement.style.background = '#e0e7ff';
-        chk.parentElement.style.borderColor = '#6366f1';
-        chk.parentElement.style.color = '#3730a3';
-    } else {
-        window.opPersonalRemotoGuardado = window.opPersonalRemotoGuardado.filter(x => x !== valLower);
-        chk.parentElement.style.background = '#ffffff';
-        chk.parentElement.style.borderColor = '#cbd5e1';
-        chk.parentElement.style.color = '#334155';
-    }
-}
+function alCambiarCheckboxPersonalRemoto() {}
 
 function alCambiarChoferDesignado(nombre, syncVehiculos = true) {
     const badge = document.getElementById("badge-chofer-info");
@@ -1048,18 +1019,19 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
 
                     <!-- 📡 PERSONAL ASIGNADO A TRANSMISIÓN / SEÑAL REMOTA (FUERA DE LA CIUDAD) -->
                     <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-left: 5px solid #6366f1; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                             <span style="font-size: 20px;">📡</span>
                             <div>
                                 <h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0f172a;">Personal Asignado a Transmisión / Señal Remota (Fuera de la Ciudad)</h4>
                                 <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">
-                                    <em>Marque a los colaboradores convocados que transmitirán señal remota al estudio. Este personal queda <b>exento del bloqueo de checkout</b> durante el viaje.</em>
+                                    <em>Seleccione a los participantes que estarán en el evento remoto enviando señal al estudio. Este personal queda <b>exento del bloqueo de checkout</b> durante el viaje.</em>
                                 </p>
                             </div>
                         </div>
 
-                        <div id="contenedor-personal-remoto-gira" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; min-height: 44px; align-items: center;">
-                            <span style="font-size: 12px; color: #94a3b8; font-style: italic;">Selecciona personal en "SELECCIONAR PERSONAL VPRO" para asignar enlaces remotos...</span>
+                        <div>
+                            <label class="op-form-label" style="color: #4338ca; font-weight: 700;">SELECCIONAR PERSONAL EN LOCACIÓN REMOTA:</label>
+                            <div id="ms-personal_remoto-${isReadOnly ? 'hist' : 'act'}"></div>
                         </div>
                     </div>
 

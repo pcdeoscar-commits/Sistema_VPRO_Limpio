@@ -749,6 +749,7 @@ async function cargarDetalleOP(folioId) {
         // Modo Nueva Orden
         window.opMultiSelects = {
             personal_vpro: [],
+            personal_remoto: [],
             vehiculos: [],
             personal_externo: [],
             proveedores: [],
@@ -766,6 +767,7 @@ async function cargarDetalleOP(folioId) {
         renderMultiSelectComponent('ms-cronogramas-act', 'cronogramas', cats.cronogramas, "Despliega y selecciona cronograma de actividades...");
         if (typeof actualizarVistaCronogramaAccordion === 'function') actualizarVistaCronogramaAccordion(null, 'ms-cronogramas-act');
         renderMultiSelectComponent('ms-personal_vpro-act', 'personal_vpro', cats.staff_vpro, "Choose options");
+        renderMultiSelectComponent('ms-personal_remoto-act', 'personal_remoto', cats.staff_vpro, "Seleccionar personal en locación remota...");
         renderMultiSelectComponent('ms-personal_externo-act', 'personal_externo', cats.apoyos_externos, "Choose options");
         renderMultiSelectComponent('ms-vehiculos-act', 'vehiculos', cats.autos, "Choose options");
         renderMultiSelectComponent('ms-proveedores-act', 'proveedores', cats.proveedores, "Choose options");
@@ -795,6 +797,7 @@ async function cargarDetalleOP(folioId) {
         // Inicializar estado de multiselects con lo guardado en base de datos
         window.opMultiSelects = {
             personal_vpro: Array.isArray(data.personal_convocado_op) ? data.personal_convocado_op : [],
+            personal_remoto: Array.isArray(data.personal_remoto_foraneo) ? data.personal_remoto_foraneo : [],
             vehiculos: Array.isArray(data.carros_usados_op) ? data.carros_usados_op : [],
             personal_externo: Array.isArray(data.externos_op) ? data.externos_op : [],
             proveedores: Array.isArray(data.proveedor_op) ? data.proveedor_op : [],
@@ -828,6 +831,7 @@ async function cargarDetalleOP(folioId) {
         const detallePreAct = (data.detalle_cronogramas && data.detalle_cronogramas.length > 0) ? data.detalle_cronogramas[0] : null;
         if (typeof actualizarVistaCronogramaAccordion === 'function') actualizarVistaCronogramaAccordion(cronFirmaAct, 'ms-cronogramas-act', detallePreAct, false);
         renderMultiSelectComponent('ms-personal_vpro-act', 'personal_vpro', cats.staff_vpro, "Choose options");
+        renderMultiSelectComponent('ms-personal_remoto-act', 'personal_remoto', cats.staff_vpro, "Seleccionar personal en locación remota...");
         renderMultiSelectComponent('ms-personal_externo-act', 'personal_externo', cats.apoyos_externos, "Choose options");
         renderMultiSelectComponent('ms-vehiculos-act', 'vehiculos', cats.autos, "Choose options");
         renderMultiSelectComponent('ms-proveedores-act', 'proveedores', cats.proveedores, "Choose options");
@@ -875,6 +879,7 @@ async function cargarDetalleOPHistorico(folioId) {
 
         window.opMultiSelects = {
             personal_vpro: Array.isArray(data.personal_convocado_op) ? data.personal_convocado_op : [],
+            personal_remoto: Array.isArray(data.personal_remoto_foraneo) ? data.personal_remoto_foraneo : [],
             vehiculos: Array.isArray(data.carros_usados_op) ? data.carros_usados_op : [],
             personal_externo: Array.isArray(data.externos_op) ? data.externos_op : [],
             proveedores: Array.isArray(data.proveedor_op) ? data.proveedor_op : [],
@@ -908,6 +913,7 @@ async function cargarDetalleOPHistorico(folioId) {
         const detallePreHist = (data.detalle_cronogramas && data.detalle_cronogramas.length > 0) ? data.detalle_cronogramas[0] : null;
         if (typeof actualizarVistaCronogramaAccordion === 'function') actualizarVistaCronogramaAccordion(cronFirmaHist, 'ms-cronogramas-hist', detallePreHist, true);
         renderMultiSelectComponent('ms-personal_vpro-hist', 'personal_vpro', cats.staff_vpro, "Sin personal", true);
+        renderMultiSelectComponent('ms-personal_remoto-hist', 'personal_remoto', cats.staff_vpro, "Sin personal remoto", true);
         renderMultiSelectComponent('ms-personal_externo-hist', 'personal_externo', cats.apoyos_externos, "Sin externos", true);
         renderMultiSelectComponent('ms-vehiculos-hist', 'vehiculos', cats.autos, "Sin vehículos", true);
         renderMultiSelectComponent('ms-proveedores-hist', 'proveedores', cats.proveedores, "Sin proveedores", true);
@@ -1537,9 +1543,12 @@ async function guardarJornadaGira(idEvento, fecha) {
 }
 
 async function crearNuevoDiaGira(idEvento) {
-    const crew = window.opMultiSelects.personal_vpro || [];
+    const crewRemoto = window.opMultiSelects?.personal_remoto || [];
+    const crewBase = window.opMultiSelects?.personal_vpro || [];
+    const crew = crewRemoto.length > 0 ? crewRemoto : crewBase;
+
     if (crew.length === 0) {
-        alert("⚠️ Atención: Debes seleccionar personal en 'SELECCIONAR PERSONAL VPRO' arriba para poder tomar asistencia.");
+        alert("⚠️ Atención: Debes seleccionar personal en 'SELECCIONAR PERSONAL EN LOCACIÓN REMOTA' o 'SELECCIONAR PERSONAL VPRO' arriba para poder tomar asistencia.");
         return;
     }
 
@@ -1601,7 +1610,7 @@ async function guardarOrdenOP(event, silencioso = false) {
     const horas_manejo_chofer = parseFloat(document.getElementById("op_horas_manejo_chofer")?.value) || 0.0;
     const es_viaje_foraneo = document.getElementById("contenedor-bitacora-gira")?.style.display !== "none";
     const personal_remoto_foraneo = es_viaje_foraneo 
-        ? Array.from(document.querySelectorAll('.chk-personal-remoto-op:checked')).map(cb => cb.value.trim())
+        ? (window.opMultiSelects?.personal_remoto || [])
         : [];
     const fec_del_evento = document.getElementById("op_fec_del_evento")?.value;
     const fec_fin_evento = document.getElementById("op_fec_fin_evento")?.value;

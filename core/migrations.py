@@ -144,5 +144,23 @@ def aplicar_migraciones_automaticas():
         except Exception as e_igm:
             logger.warning(f"[Auto-Migraciones] Nota en sincronizacion de gastos: {e_igm}")
 
+        # 10. Corrección puntual de checada errónea (Salida Vespertina 17:51) para Martín Sánchez en fecha 2026-11-06
+        try:
+            with get_db_cursor("db_personal", commit=True) as cur_per:
+                cur_per.execute("""
+                    UPDATE public.control_asistencia
+                    SET hora_salida_v = NULL,
+                        estatus = 'ASISTENCIA'
+                    WHERE fecha = '2026-11-06'
+                      AND (
+                          TRIM(id_empleado) = '107' 
+                          OR id_empleado IN (SELECT id_empleado FROM public.empleados WHERE UPPER(nombre) LIKE '%SANCHEZ ESTRADA%')
+                      )
+                      AND hora_salida_v IS NOT NULL;
+                """)
+                logger.info("[Auto-Migraciones] Registro de asistencia 2026-11-06 para Martín Sánchez limpiado exitosamente.")
+        except Exception as e_per:
+            logger.warning(f"[Auto-Migraciones] Nota en corrección de asistencia: {e_per}")
+
     except Exception as e:
         logger.warning(f"[Auto-Migraciones] Advertencia al sincronizar esquemas: {e}")

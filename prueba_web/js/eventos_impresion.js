@@ -801,7 +801,15 @@ async function cargarDetalleOP(folioId) {
             reuniones: Array.isArray(data.reuniones_vinculadas) ? data.reuniones_vinculadas : [],
             cronogramas: Array.isArray(data.cronogramas_vinculados) ? data.cronogramas_vinculados : []
         };
-        window.opChoferesPorVehiculo = (data.choferes_por_vehiculo && typeof data.choferes_por_vehiculo === 'object') ? data.choferes_por_vehiculo : {};
+        window.opChoferesPorVehiculo = (data.choferes_por_vehiculo && typeof data.choferes_por_vehiculo === 'object') ? JSON.parse(JSON.stringify(data.choferes_por_vehiculo)) : {};
+        if (data.chofer && Array.isArray(data.carros_usados_op)) {
+            data.carros_usados_op.forEach(carro => {
+                const cTrim = String(carro).trim();
+                if (!window.opChoferesPorVehiculo[cTrim]) {
+                    window.opChoferesPorVehiculo[cTrim] = String(data.chofer).trim();
+                }
+            });
+        }
         window.opFotosEvidenciaActuales = Array.isArray(data.fotos_evidencia) ? data.fotos_evidencia : [];
         window.opHabilitadaTemporalmenteFolio = data.habilitada_para_edicion ? data.folio : null;
 
@@ -874,6 +882,15 @@ async function cargarDetalleOPHistorico(folioId) {
             cronogramas: Array.isArray(data.cronogramas_vinculados) ? data.cronogramas_vinculados : []
         };
         window.opFotosEvidenciaActuales = Array.isArray(data.fotos_evidencia) ? data.fotos_evidencia : [];
+        window.opChoferesPorVehiculo = (data.choferes_por_vehiculo && typeof data.choferes_por_vehiculo === 'object') ? JSON.parse(JSON.stringify(data.choferes_por_vehiculo)) : {};
+        if (data.chofer && Array.isArray(data.carros_usados_op)) {
+            data.carros_usados_op.forEach(carro => {
+                const cTrim = String(carro).trim();
+                if (!window.opChoferesPorVehiculo[cTrim]) {
+                    window.opChoferesPorVehiculo[cTrim] = String(data.chofer).trim();
+                }
+            });
+        }
 
         window.currentOPData = data;
         const cats = window.vproCatalogosOP || {};
@@ -980,6 +997,12 @@ async function mandarOPAlHistorial(folio, mostrarConfirmacion = true) {
     }
 
     try {
+        // 💾 Si el usuario tiene el formulario abierto con esta OP, auto-guardar cambios pendientes de choferes, personal o autos
+        const folioAbierto = document.getElementById("op_folio")?.value;
+        if (folioAbierto && String(folioAbierto).trim() === String(folio).trim()) {
+            await guardarOrdenOP(null, true);
+        }
+
         const res = await fetch(`${API_URL}/api/eventos/mandar-al-historial`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1560,8 +1583,8 @@ async function crearNuevoDiaGira(idEvento) {
 // -------------------------------------------------------------
 // Guardado Maestro de la Orden de Producción
 // -------------------------------------------------------------
-async function guardarOrdenOP(event) {
-    if (event) event.preventDefault();
+async function guardarOrdenOP(event, silencioso = false) {
+    if (event && event.preventDefault) event.preventDefault();
 
     const id_evento = document.getElementById("op_id_evento")?.value;
     const folio = document.getElementById("op_folio")?.value;
@@ -1651,6 +1674,7 @@ async function guardarOrdenOP(event) {
         const resultado = await respuesta.json();
 
         if (respuesta.ok && resultado.status === "SUCCESS") {
+            if (silencioso) return true;
             alert(`✅ ¡Orden de Producción "${folio || nombre_evento}" guardada exitosamente!`);
 
             // Si la OP fue habilitada temporalmente desde el histórico, sugerir regresarla al archivo histórico
@@ -1670,7 +1694,9 @@ async function guardarOrdenOP(event) {
                 cargarDetalleOP(folio);
             }
         } else {
-            alert(`❌ Error al guardar: ${resultado.detail || 'Ocurrió un error en el servidor.'}`);
+            if (!silencioso) alert(`❌ Error al guardar: ${resultado.detail || 'Ocurrió un error en el servidor.'}`);
+            return false;
+        }
         }
     } catch (err) {
         console.error("Error al guardar la orden:", err);

@@ -394,6 +394,14 @@ def buscar_op_por_folio(folio: str):
             data["externos_op"] = [reparar_mojibake(e) for e in parse_pg_array(data.get("externos_op")) if reparar_mojibake(e).strip()]
             data["proveedor_op"] = [reparar_mojibake(pr) for pr in parse_pg_array(data.get("proveedor_op")) if reparar_mojibake(pr).strip()]
 
+            # 🛡️ Si hay chofer general y vehículos pero no están en choferes_por_vehiculo, auto-vincular
+            if data.get("chofer") and data.get("carros_usados_op"):
+                autos_lista = data["carros_usados_op"]
+                if isinstance(autos_lista, list) and len(autos_lista) == 1:
+                    auto_unico = autos_lista[0].strip()
+                    if auto_unico and auto_unico not in data["choferes_por_vehiculo"]:
+                        data["choferes_por_vehiculo"][auto_unico] = data["chofer"]
+
             # Autocompletado inteligente para compatibilidad con registros existentes
             if not data["subtitulo_evento"] and data.get("nombre_evento"):
                 m_sub = re.search(r'\(([^)]+)\)', data["nombre_evento"])
@@ -585,11 +593,16 @@ def guardar_o_actualizar_op(op: dict):
         else:
             payload["choferes_por_vehiculo"] = "{}"
 
-        # Si hay choferes por vehículo asignados y no hay chofer general, tomar el primero
-        if isinstance(cpv_val, dict) and cpv_val and not payload["chofer"]:
+        # 🛡️ Sincronizar chofer principal y choferes_por_vehiculo
+        if isinstance(cpv_val, dict) and cpv_val:
             primer_chofer = next((v for v in cpv_val.values() if v and str(v).strip()), "")
             if primer_chofer:
                 payload["chofer"] = str(primer_chofer).strip()
+        elif payload.get("chofer") and payload.get("carros_usados_op"):
+            autos = parse_pg_array(payload.get("carros_usados_op")) if isinstance(payload.get("carros_usados_op"), str) else (payload.get("carros_usados_op") or [])
+            if autos and not cpv_val:
+                cpv_dict = {str(autos[0]).strip(): str(payload["chofer"]).strip()}
+                payload["choferes_por_vehiculo"] = json.dumps(cpv_dict)
 
         roles_val = payload.get("personal_roles_op", [])
         if isinstance(roles_val, (list, dict)):

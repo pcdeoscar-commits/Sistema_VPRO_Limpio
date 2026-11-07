@@ -297,14 +297,12 @@ function alCambiarChoferVehiculo(vehiculo, chofer, isReadOnly = false) {
         delete window.opChoferesPorVehiculo[vehiculo];
     }
 
-    // Sincronizar automáticamente con el campo general op_chofer si éste está vacío
+    // Sincronizar automáticamente con el campo general op_chofer
     const selChoferGen = document.getElementById("op_chofer");
-    if (selChoferGen && (!selChoferGen.value || !selChoferGen.value.trim())) {
-        const primerChofer = Object.values(window.opChoferesPorVehiculo).find(v => v && String(v).trim());
-        if (primerChofer) {
-            selChoferGen.value = primerChofer;
-            if (typeof alCambiarChoferDesignado === 'function') alCambiarChoferDesignado(primerChofer);
-        }
+    if (selChoferGen) {
+        const primerChofer = Object.values(window.opChoferesPorVehiculo).find(v => v && String(v).trim()) || '';
+        selChoferGen.value = primerChofer;
+        if (typeof alCambiarChoferDesignado === 'function') alCambiarChoferDesignado(primerChofer, false);
     }
 
     // Re-renderizar para actualizar de inmediato la lista de descontados en los otros autos
@@ -554,15 +552,30 @@ function actualizarCrewGira(choferGuardado) {
     }
 }
 
-function alCambiarChoferDesignado(nombre) {
+function alCambiarChoferDesignado(nombre, syncVehiculos = true) {
     const badge = document.getElementById("badge-chofer-info");
     const texto = document.getElementById("texto-chofer-designado");
-    if (!badge) return;
-    if (nombre && String(nombre).trim()) {
-        badge.style.display = "flex";
-        if (texto) texto.innerText = String(nombre).trim();
-    } else {
-        badge.style.display = "none";
+    if (badge) {
+        if (nombre && String(nombre).trim()) {
+            badge.style.display = "flex";
+            if (texto) texto.innerText = String(nombre).trim();
+        } else {
+            badge.style.display = "none";
+        }
+    }
+
+    if (syncVehiculos) {
+        const vehiculos = (window.opMultiSelects && window.opMultiSelects.vehiculos) || [];
+        if (vehiculos.length === 1) {
+            const unicoAuto = String(vehiculos[0]).trim();
+            if (!window.opChoferesPorVehiculo) window.opChoferesPorVehiculo = {};
+            if (nombre && String(nombre).trim()) {
+                window.opChoferesPorVehiculo[unicoAuto] = String(nombre).trim();
+            } else {
+                delete window.opChoferesPorVehiculo[unicoAuto];
+            }
+            renderChoferesPorVehiculo(false);
+        }
     }
 }
 

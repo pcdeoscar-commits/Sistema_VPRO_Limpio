@@ -1697,7 +1697,6 @@ async function guardarOrdenOP(event, silencioso = false) {
             if (!silencioso) alert(`❌ Error al guardar: ${resultado.detail || 'Ocurrió un error en el servidor.'}`);
             return false;
         }
-        }
     } catch (err) {
         console.error("Error al guardar la orden:", err);
         alert(`❌ Error de conexión al guardar la orden: ${err.message}`);

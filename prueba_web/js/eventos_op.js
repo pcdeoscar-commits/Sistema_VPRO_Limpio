@@ -590,41 +590,7 @@ async function actualizarVistaCronogramaAccordion(firma, containerId, detallePre
 }
 window.actualizarVistaCronogramaAccordion = actualizarVistaCronogramaAccordion;
 
-function actualizarCrewGira(choferGuardado, isReadOnly = false) {
-    const crewRemoto = (window.opMultiSelects && window.opMultiSelects.personal_remoto) || [];
-    const crewBase = (window.opMultiSelects && window.opMultiSelects.personal_vpro) || [];
-    const crew = crewRemoto.length > 0 ? crewRemoto : crewBase;
-
-    const el = document.getElementById("texto-crew-gira");
-    if (el) {
-        if (crewRemoto.length > 0) {
-            el.innerHTML = `<span style="color: #4338ca; font-weight: 700;">📡 Remoto:</span> ${crewRemoto.join(", ")}`;
-        } else if (crewBase.length > 0) {
-            el.innerHTML = `<span style="color: #64748b; font-weight: 600;">(Personal Base):</span> ${crewBase.join(", ")}`;
-        } else {
-            el.innerText = "Sin personal asignado en la orden ni en locación";
-        }
-    }
-
-    const selectChofer = document.getElementById("op_chofer");
-    if (selectChofer) {
-        const actual = (choferGuardado !== undefined && choferGuardado !== null) ? String(choferGuardado).trim() : (selectChofer.value || '').trim();
-        let html = '<option value="">-- Selecciona chofer del personal asignado --</option>';
-        let found = false;
-        crew.forEach(nombre => {
-            const nTrim = String(nombre).trim();
-            const sel = (nTrim.toLowerCase() === actual.toLowerCase() && actual) ? 'selected' : '';
-            if (sel) found = true;
-            html += `<option value="${nTrim}" ${sel}>${nTrim}</option>`;
-        });
-        // Si viene un chofer asignado previamente desde la base de datos, incluirlo aunque no esté en el multiselect
-        if (choferGuardado && actual && !found) {
-            html += `<option value="${actual}" selected>${actual}</option>`;
-        }
-        selectChofer.innerHTML = html;
-        alCambiarChoferDesignado(selectChofer.value);
-    }
-}
+function actualizarCrewGira() {}
 
 function alCambiarCheckboxPersonalRemoto() {}
 
@@ -1052,33 +1018,6 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
 
                 <!-- Panel Oculto / Desplegable de Bitácora -->
                 <div id="contenedor-bitacora-gira" style="display: none; padding-top: 10px;">
-                    <!-- 🚐 LOGÍSTICA DE TRASLADO Y CONDUCTOR ASIGNADO (CONFIDENCIAL) -->
-                    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-left: 5px solid #0284c7; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
-                            <span style="font-size: 20px;">🚐</span>
-                            <h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0f172a;">Logística de Traslado y Conductor Asignado</h4>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 18px; align-items: flex-start;">
-                            <div>
-                                <label class="op-form-label">CONDUCTOR ASIGNADO (PERSONAL CONVOCADO):</label>
-                                <select id="op_chofer" class="op-select" onchange="alCambiarChoferDesignado(this.value)" ${dis} style="font-weight: 600; color: #0f172a;">
-                                    <option value="">-- Seleccionar conductor del personal convocado --</option>
-                                </select>
-                                <p style="font-size: 11.5px; color: #64748b; margin: 4px 0 0 0;">
-                                    <em>Solo aparecen los colaboradores asignados arriba en <b>"SELECCIONAR PERSONAL VPRO"</b>.</em>
-                                </p>
-                            </div>
-                            <div>
-                                <label class="op-form-label">⏱️ HORAS ESTIMADAS DE CONDUCCIÓN (IDA + VUELTA):</label>
-                                <div style="position: relative;">
-                                    <input type="number" step="0.5" min="0" id="op_horas_manejo_chofer" value="${data.horas_manejo_chofer || ''}" class="op-input" placeholder="Ej. 6.0" style="font-weight: 700; color: #0f172a; padding-right: 40px;" ${dis}>
-                                    <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-weight: 600; color: #64748b; pointer-events: none; font-size: 12px;">hrs</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- 📡 PERSONAL ASIGNADO A TRANSMISIÓN / SEÑAL REMOTA (FUERA DE LA CIUDAD) -->
                     <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-left: 5px solid #6366f1; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
@@ -1086,7 +1025,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                             <div>
                                 <h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0f172a;">Personal Asignado a Transmisión / Señal Remota (Fuera de la Ciudad)</h4>
                                 <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">
-                                    <em>Seleccione a los participantes que estarán en el evento remoto enviando señal al estudio. Este personal queda <b>exento del bloqueo de checkout</b> durante el viaje.</em>
+                                    <em>Seleccione a los colaboradores que viajan al evento remoto a enviar señal al estudio. Este personal queda <b>exento del bloqueo de checkout</b> durante el viaje.</em>
                                 </p>
                             </div>
                         </div>
@@ -1094,12 +1033,8 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                         <div>
                             <label class="op-form-label" style="color: #4338ca; font-weight: 700;">📡 SELECCIONAR PERSONAL EN LOCACIÓN REMOTA (FUERA DE LA CIUDAD):</label>
                             <div id="ms-personal_remoto-${isReadOnly ? 'hist' : 'act'}"></div>
-                            <p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;"><em>Asigna al resto del equipo que viaja a enviar señal remota (excluye al personal de estudio).</em></p>
+                            <p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;"><em>Muestra a todo el personal activo menos los que ya fueron seleccionados arriba en el estudio.</em></p>
                         </div>
-                    </div>
-
-                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; color: #1e40af; font-size: 13.5px;">
-                        <strong>👥 Crew activo en esta locación:</strong> <span id="texto-crew-gira">Cargando convocados...</span>
                     </div>
 
                     <!-- Contenedor dinámico de jornadas guardadas -->

@@ -1552,11 +1552,9 @@ async function guardarJornadaGira(idEvento, fecha) {
 
 async function crearNuevoDiaGira(idEvento) {
     const crewRemoto = window.opMultiSelects?.personal_remoto || [];
-    const crewBase = window.opMultiSelects?.personal_vpro || [];
-    const crew = crewRemoto.length > 0 ? crewRemoto : crewBase;
 
-    if (crew.length === 0) {
-        alert("⚠️ Atención: Debes seleccionar personal en 'SELECCIONAR PERSONAL EN LOCACIÓN REMOTA' o 'SELECCIONAR PERSONAL VPRO' arriba para poder tomar asistencia.");
+    if (crewRemoto.length === 0) {
+        alert("⚠️ Atención: Debes seleccionar al personal en 'SELECCIONAR PERSONAL EN LOCACIÓN REMOTA' para poder registrar su bitácora de asistencia.");
         return;
     }
 
@@ -1567,7 +1565,7 @@ async function crearNuevoDiaGira(idEvento) {
         return;
     }
 
-    const registrosNuevos = crew.map(persona => ({
+    const registrosNuevos = crewRemoto.map(persona => ({
         fecha_jornada: String(fechaSeleccionada),
         num_empleado: 0,
         nombre_empleado: String(persona).trim(),
@@ -1614,7 +1612,7 @@ async function guardarOrdenOP(event, silencioso = false) {
     const quien_solicita = document.getElementById("op_quien_solicita")?.value;
     const resp_de_produccion = document.getElementById("op_resp_de_produccion")?.value;
     const responsable_gastos = document.getElementById("op_responsable_gastos")?.value;
-    const chofer = document.getElementById("op_chofer")?.value;
+    const chofer = (window.opChoferesPorVehiculo && Object.values(window.opChoferesPorVehiculo).find(v => v && String(v).trim())) || document.getElementById("op_chofer")?.value || "";
     const horas_manejo_chofer = parseFloat(document.getElementById("op_horas_manejo_chofer")?.value) || 0.0;
     const es_viaje_foraneo = document.getElementById("contenedor-bitacora-gira")?.style.display !== "none";
     const personal_remoto_foraneo = es_viaje_foraneo 

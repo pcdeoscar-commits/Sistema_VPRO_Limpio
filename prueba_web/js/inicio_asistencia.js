@@ -1114,6 +1114,14 @@ function inicializarLectorKiosco() {
         }
     }, 1200);
 
+    // Auto-actualización periódica de la matriz cada 30 segundos
+    setInterval(() => {
+        const vistaKiosco = document.getElementById("vista-checador");
+        if (vistaKiosco && vistaKiosco.style.display !== "none") {
+            cargarMatrizKiosco();
+        }
+    }, 30000);
+
     inputGafete.addEventListener("keydown", async function(event) {
         if (event.key === "Enter") {
             event.preventDefault();

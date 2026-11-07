@@ -1600,6 +1600,9 @@ async function guardarOrdenOP(event, silencioso = false) {
     const chofer = document.getElementById("op_chofer")?.value;
     const horas_manejo_chofer = parseFloat(document.getElementById("op_horas_manejo_chofer")?.value) || 0.0;
     const es_viaje_foraneo = document.getElementById("contenedor-bitacora-gira")?.style.display !== "none";
+    const personal_remoto_foraneo = es_viaje_foraneo 
+        ? Array.from(document.querySelectorAll('.chk-personal-remoto-op:checked')).map(cb => cb.value.trim())
+        : [];
     const fec_del_evento = document.getElementById("op_fec_del_evento")?.value;
     const fec_fin_evento = document.getElementById("op_fec_fin_evento")?.value;
     const inicio_del_evento = document.getElementById("op_inicio_del_evento")?.value;
@@ -1654,6 +1657,7 @@ async function guardarOrdenOP(event, silencioso = false) {
         organiza: organiza || "",
         vobo: vobo || "",
         personal_convocado_op: window.opMultiSelects.personal_vpro || [],
+        personal_remoto_foraneo: personal_remoto_foraneo,
         carros_usados_op: window.opMultiSelects.vehiculos || [],
         choferes_por_vehiculo: window.opChoferesPorVehiculo || {},
         externos_op: window.opMultiSelects.personal_externo || [],

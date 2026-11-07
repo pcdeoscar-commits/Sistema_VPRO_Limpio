@@ -238,6 +238,57 @@ async function seleccionarFolioParaGastos(folioId) {
                 avisoRestriccion.style.display = "none";
             }
         }
+
+        // 🔒 Validar si todo el personal convocado con checkout ha reportado incidencias en Bodega
+        let incidenciasCompletas = true;
+        let pendientesIncidencias = [];
+        try {
+            const resInc = await fetch(`${API_URL}/api/gastos/verificar-incidencias-op/${idEvento}`);
+            if (resInc.ok) {
+                const dataInc = await resInc.json();
+                incidenciasCompletas = Boolean(dataInc.completas);
+                pendientesIncidencias = dataInc.pendientes || [];
+            }
+        } catch (e) {
+            console.warn("Aviso al verificar incidencias de OP en gastos:", e);
+        }
+
+        if (eventoSeleccionadoGasto) {
+            eventoSeleccionadoGasto._pendientesIncidencias = pendientesIncidencias;
+        }
+
+        const avisoIncidencias = document.getElementById("aviso-incidencias-pendientes-gasto");
+        if (esElAsignado) {
+            if (!incidenciasCompletas && pendientesIncidencias.length > 0) {
+                if (btnEnviarGasto) {
+                    btnEnviarGasto.disabled = true;
+                    btnEnviarGasto.style.opacity = "0.45";
+                    btnEnviarGasto.style.cursor = "not-allowed";
+                    btnEnviarGasto.title = `Bloqueado: Convocados con incidencias pendientes (${pendientesIncidencias.join(', ')})`;
+                }
+                if (avisoIncidencias) {
+                    avisoIncidencias.style.display = "block";
+                    avisoIncidencias.innerHTML = `
+                        <div style="background: #fef2f2; border: 1.5px solid #f87171; border-radius: 8px; padding: 14px 18px; margin-bottom: 14px;">
+                            <strong style="color: #991b1b; display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                                <i class="ph ph-lock-key" style="font-size: 20px;"></i> 🔒 REPORTE DE GASTOS RETENIDO
+                            </strong>
+                            <p style="margin: 6px 0 0 0; color: #b91c1c; font-size: 13px;">
+                                Por política de auditoría, no puedes enviar este reporte porque los siguientes compañeros convocados a esta OP aún no han reportado sus incidencias en Bodega:
+                                <br><b style="color: #7f1d1d; display: inline-block; margin-top: 4px;">• ${pendientesIncidencias.join('<br>• ')}</b>
+                            </p>
+                            <p style="margin: 8px 0 0 0; color: #991b1b; font-size: 12px;">
+                                <em>El botón de envío se habilitará de forma automática en cuanto todo el equipo entregue sus bitácoras.</em>
+                            </p>
+                        </div>
+                    `;
+                }
+            } else {
+                if (avisoIncidencias) avisoIncidencias.style.display = "none";
+            }
+        } else {
+            if (avisoIncidencias) avisoIncidencias.style.display = "none";
+        }
     } catch (e) {
         alert(`❌ Error al cargar datos del evento: ${e.message}`);
     }
@@ -392,6 +443,11 @@ async function guardarInformeGastosProductor() {
     const esElAsignado = miNombreNorm && prodOpNorm && (prodOpNorm.includes(miNombreNorm) || miNombreNorm.includes(prodOpNorm));
     if (!esElAsignado) {
         alert(`⛔ Acción no permitida: Solo el Productor Responsable o Responsable de Gastos asignado a esta OP (${eventoSeleccionadoGasto?.productor_responsable || 'No asignado'}) está facultado para elaborar y remitir este reporte.`);
+        return;
+    }
+
+    if (eventoSeleccionadoGasto?._pendientesIncidencias && eventoSeleccionadoGasto._pendientesIncidencias.length > 0) {
+        alert(`🔒 Acción retenida: No puedes enviar este reporte porque los siguientes compañeros aún no han reportado sus incidencias en Bodega:\n• ${eventoSeleccionadoGasto._pendientesIncidencias.join('\n• ')}`);
         return;
     }
 

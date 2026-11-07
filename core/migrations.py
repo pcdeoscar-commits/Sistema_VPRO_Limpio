@@ -79,10 +79,14 @@ def aplicar_migraciones_automaticas():
 
             logger.info("[Auto-Migraciones] Esquemas de db_inventario, taller y chat sincronizados al 100%.")
 
-        # 7. Limpieza definitiva de OP-42 y resincronización de secuencia en db_eventos
+        # 7. Asegurar esquemas en db_eventos
         try:
             with get_db_cursor("db_eventos", commit=True) as cursor_ev:
                 cursor_ev.execute("""
+                    ALTER TABLE public.eventos 
+                    ADD COLUMN IF NOT EXISTS personal_remoto_foraneo TEXT[] DEFAULT '{}'::text[];
+
+                    DELETE FROM public.checkouts_detalle 
                     DELETE FROM public.checkouts_detalle 
                     WHERE id_maestro IN (SELECT id_maestro FROM public.checkouts_maestro WHERE folio_op = 42);
 

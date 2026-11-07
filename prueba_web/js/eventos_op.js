@@ -525,7 +525,7 @@ async function actualizarVistaCronogramaAccordion(firma, containerId, detallePre
 }
 window.actualizarVistaCronogramaAccordion = actualizarVistaCronogramaAccordion;
 
-function actualizarCrewGira(choferGuardado) {
+function actualizarCrewGira(choferGuardado, personalRemotoGuardado, isReadOnly = false) {
     const el = document.getElementById("texto-crew-gira");
     const crew = window.opMultiSelects.personal_vpro || [];
     if (el) {
@@ -549,6 +549,50 @@ function actualizarCrewGira(choferGuardado) {
         }
         selectChofer.innerHTML = html;
         alCambiarChoferDesignado(selectChofer.value);
+    }
+
+    // Actualizar checkboxes de personal de transmisión / señal remota
+    const contRemoto = document.getElementById("contenedor-personal-remoto-gira");
+    if (contRemoto) {
+        if (personalRemotoGuardado && Array.isArray(personalRemotoGuardado)) {
+            window.opPersonalRemotoGuardado = personalRemotoGuardado.map(p => String(p).trim().toLowerCase());
+        }
+        const seleccionadosPrevios = window.opPersonalRemotoGuardado || [];
+        
+        if (crew.length === 0) {
+            contRemoto.innerHTML = `<span style="font-size: 12px; color: #94a3b8; font-style: italic;">Selecciona personal en "SELECCIONAR PERSONAL VPRO" para asignar enlaces remotos...</span>`;
+        } else {
+            let htmlCheckboxes = '';
+            crew.forEach(nombre => {
+                const nTrim = String(nombre).trim();
+                const estaMarcado = seleccionadosPrevios.includes(nTrim.toLowerCase());
+                htmlCheckboxes += `
+                    <label style="display: inline-flex; align-items: center; gap: 7px; background: ${estaMarcado ? '#e0e7ff' : '#ffffff'}; border: 1.5px solid ${estaMarcado ? '#6366f1' : '#cbd5e1'}; padding: 6px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 600; color: ${estaMarcado ? '#3730a3' : '#334155'}; cursor: ${isReadOnly ? 'default' : 'pointer'}; transition: all 0.2s;">
+                        <input type="checkbox" class="chk-personal-remoto-op" value="${nTrim}" ${estaMarcado ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} onchange="alCambiarCheckboxPersonalRemoto(this)" style="cursor: ${isReadOnly ? 'default' : 'pointer'}; width: 15px; height: 15px; accent-color: #6366f1;">
+                        <span>📡 ${nTrim}</span>
+                    </label>
+                `;
+            });
+            contRemoto.innerHTML = htmlCheckboxes;
+        }
+    }
+}
+
+function alCambiarCheckboxPersonalRemoto(chk) {
+    if (!window.opPersonalRemotoGuardado) window.opPersonalRemotoGuardado = [];
+    const valLower = chk.value.trim().toLowerCase();
+    if (chk.checked) {
+        if (!window.opPersonalRemotoGuardado.includes(valLower)) {
+            window.opPersonalRemotoGuardado.push(valLower);
+        }
+        chk.parentElement.style.background = '#e0e7ff';
+        chk.parentElement.style.borderColor = '#6366f1';
+        chk.parentElement.style.color = '#3730a3';
+    } else {
+        window.opPersonalRemotoGuardado = window.opPersonalRemotoGuardado.filter(x => x !== valLower);
+        chk.parentElement.style.background = '#ffffff';
+        chk.parentElement.style.borderColor = '#cbd5e1';
+        chk.parentElement.style.color = '#334155';
     }
 }
 
@@ -627,7 +671,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
 
     // Inyectar botones de acción en el recuadro superior (a la misma altura que el dropdown)
     setTimeout(() => {
-        actualizarCrewGira(choferVal);
+        actualizarCrewGira(choferVal, data?.personal_remoto_foraneo, isReadOnly);
         renderChoferesPorVehiculo(isReadOnly);
         const tieneGira = Boolean(data && (data.es_viaje_foraneo || Number(data.horas_manejo_chofer) > 0 || (data.chofer && String(data.chofer).trim() !== '')));
         if (tieneGira && typeof toggleBitacoraGira === 'function') {
@@ -999,6 +1043,23 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                                     <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-weight: 600; color: #64748b; pointer-events: none; font-size: 12px;">hrs</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- 📡 PERSONAL ASIGNADO A TRANSMISIÓN / SEÑAL REMOTA (FUERA DE LA CIUDAD) -->
+                    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-left: 5px solid #6366f1; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="font-size: 20px;">📡</span>
+                            <div>
+                                <h4 style="margin: 0; font-size: 14.5px; font-weight: 700; color: #0f172a;">Personal Asignado a Transmisión / Señal Remota (Fuera de la Ciudad)</h4>
+                                <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">
+                                    <em>Marque a los colaboradores convocados que transmitirán señal remota al estudio. Este personal queda <b>exento del bloqueo de checkout</b> durante el viaje.</em>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div id="contenedor-personal-remoto-gira" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; min-height: 44px; align-items: center;">
+                            <span style="font-size: 12px; color: #94a3b8; font-style: italic;">Selecciona personal en "SELECCIONAR PERSONAL VPRO" para asignar enlaces remotos...</span>
                         </div>
                     </div>
 

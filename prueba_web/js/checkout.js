@@ -598,6 +598,42 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
             }
         }
 
+        // 🔒 Gestión de Bloqueo de Checkout por Incidencias Pendientes
+        window.checkoutBloqueadoActual = Boolean(statusPack.checkout_bloqueado);
+        window.opsDeudaIncidenciasActual = statusPack.ops_deuda_incidencias || [];
+
+        const alertaBloqueo = document.getElementById('alerta-bloqueo-salida-checkout');
+        const txtBloqueo = document.getElementById('texto-bloqueo-salida-checkout');
+        const btnFinalizarSalida = document.getElementById('btn-finalizar-salida');
+
+        if (window.checkoutBloqueadoActual && window.opsDeudaIncidenciasActual.length > 0) {
+            const foliosStr = window.opsDeudaIncidenciasActual.map(x => `<b>OP-${x.folio}</b> (${x.evento})`).join(", ");
+            if (alertaBloqueo) {
+                alertaBloqueo.style.display = 'flex';
+                if (txtBloqueo) txtBloqueo.innerHTML = `Tienes pendiente el reporte de incidencias en: ${foliosStr}. Por reglamento de bodega, debes completar tu bitácora antes de retirar nuevo hardware.`;
+            }
+            if (btnFinalizarSalida) {
+                btnFinalizarSalida.style.opacity = '0.5';
+                btnFinalizarSalida.title = "Salida bloqueada por incidencias pendientes de eventos anteriores.";
+            }
+        } else {
+            if (alertaBloqueo) alertaBloqueo.style.display = 'none';
+            if (btnFinalizarSalida) {
+                btnFinalizarSalida.style.opacity = '1';
+                btnFinalizarSalida.removeAttribute('title');
+            }
+        }
+
+        // ⚠️ Si esta OP específica ya fue recibida pero tiene incidencias vacías, mostrar banner de resolución
+        const bannerIncPend = document.getElementById('banner-incidencias-pendientes-checkout');
+        if (bannerIncPend) {
+            if (estadoBodegaCheckoutActual === 'RECIBIDO' && (!incLimpia || esVacia)) {
+                bannerIncPend.style.display = 'flex';
+            } else {
+                bannerIncPend.style.display = 'none';
+            }
+        }
+
         // Si el cargamento ya está DESPACHADO, cambiar a la pestaña de Check-in automáticamente SOLO SI ES COORDINADOR
         if (esCoordinador && estadoBodegaCheckoutActual === 'DESPACHADO' && pestanaActivaCheckout === 'salida' && detalle.length > 0) {
             cambiarPestanaCheckout('checkin');
@@ -936,6 +972,21 @@ async function finalizarSalidaCheckout() {
         return;
     }
 
+    if (window.checkoutBloqueadoActual && window.opsDeudaIncidenciasActual?.length > 0) {
+        const foliosTxt = window.opsDeudaIncidenciasActual.map(x => `OP-${x.folio}`).join(", ");
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: '⛔ Salida Bloqueada',
+                html: `<p style="font-size: 14px; color: #475569;">Tienes pendiente reportar las incidencias de eventos anteriores: <b>${foliosTxt}</b>.</p><p style="font-size: 12.5px; color: #64748b;">Por reglamento de bodega, debes completar tu bitácora de incidencias antes de realizar un nuevo checkout.</p>`,
+                confirmButtonColor: '#ef4444'
+            });
+        } else {
+            alert(`⛔ Salida Bloqueada: Tienes pendiente reportar las incidencias de: ${foliosTxt}. Debes completar tu bitácora antes de retirar nuevo equipo.`);
+        }
+        return;
+    }
+
     if (itemsCheckoutSalida.length === 0) {
         alert("⚠️ La lista de equipos a salir está vacía. Carga un kit o inyecta hardware.");
         return;
@@ -1137,7 +1188,7 @@ async function finalizarCheckinCheckout() {
     }
 
     const notaRecepcionInput = (document.getElementById('checkout-checkin-incidencias')?.value || '').trim();
-    const notaRecepcion = notaRecepcionInput || "Sin incidencias reportadas.";
+    const notaRecepcion = notaRecepcionInput;
 
     // Proveedor
     const provSel = document.getElementById('checkout-checkin-prov')?.value || "--- Ninguno ---";
@@ -1195,4 +1246,59 @@ async function finalizarCheckinCheckout() {
         alert("Error de conexión al finalizar check-in.");
     }
 }
+
+function marcarCheckinSinIncidencias(tipo = 'checkin') {
+    const el = document.getElementById(tipo === 'salida' ? 'checkout-salida-incidencias' : 'checkout-checkin-incidencias');
+    if (el) {
+        el.value = "Evento concluido sin incidencias.";
+    }
+}
+
+async function guardarIncidenciasPendientesCheckout() {
+    const selOP = document.getElementById('checkout-sel-op');
+    const match = selOP?.value?.match(/OP-(\d+)/i);
+    if (!match) return;
+    const idEvento = parseInt(match[1]);
+    const empId = empleadoActivoCheckout || (usuarioLogueado?.id_empleado || "001");
+    
+    const txt = (document.getElementById('checkout-salida-incidencias')?.value || document.getElementById('checkout-checkin-incidencias')?.value || '').trim();
+    if (!txt) {
+        alert("⚠️ Por favor escribe el reporte de incidencias o pulsa 'Concluido Sin Incidencias' antes de guardar.");
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_URL}/api/checkout/guardar-incidencia-pendiente`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                id_evento: idEvento,
+                id_empleado: empId,
+                incidencias: txt
+            })
+        });
+        if (res.ok) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '✅ Incidencias Registradas',
+                    text: 'Se ha registrado la bitácora correctamente. Tus siguientes checkouts han quedado desbloqueados.',
+                    confirmButtonColor: '#16a34a'
+                });
+            } else {
+                alert("✅ Se ha registrado la bitácora correctamente. Tus siguientes checkouts han quedado desbloqueados.");
+            }
+            await cargarStatusCheckoutActual();
+            cargarBadges();
+            if (typeof cargarDatosInicio === 'function') cargarDatosInicio();
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al guardar incidencias: ${err}`);
+        }
+    } catch (e) {
+        console.error("Error al guardar incidencias pendientes:", e);
+        alert("Error de conexión al guardar incidencias.");
+    }
+}
+
 

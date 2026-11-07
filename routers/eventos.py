@@ -390,6 +390,7 @@ def buscar_op_por_folio(folio: str):
             }
 
             data["personal_convocado_op"] = [reparar_mojibake(p) for p in parse_pg_array(data.get("personal_convocado_op")) if reparar_mojibake(p).strip()]
+            data["personal_remoto_foraneo"] = [reparar_mojibake(p) for p in parse_pg_array(data.get("personal_remoto_foraneo")) if reparar_mojibake(p).strip()]
             data["carros_usados_op"] = [reparar_mojibake(c) for c in parse_pg_array(data.get("carros_usados_op")) if reparar_mojibake(c).strip()]
             data["externos_op"] = [reparar_mojibake(e) for e in parse_pg_array(data.get("externos_op")) if reparar_mojibake(e).strip()]
             data["proveedor_op"] = [reparar_mojibake(pr) for pr in parse_pg_array(data.get("proveedor_op")) if reparar_mojibake(pr).strip()]
@@ -544,6 +545,7 @@ def guardar_o_actualizar_op(op: dict):
         payload = dict(op)
         payload["proveedor_op"] = format_pg_array(payload.get("proveedor_op", []))
         payload["personal_convocado_op"] = format_pg_array(payload.get("personal_convocado_op", []))
+        payload["personal_remoto_foraneo"] = format_pg_array(payload.get("personal_remoto_foraneo", []))
         payload["carros_usados_op"] = format_pg_array(payload.get("carros_usados_op", []))
         payload["externos_op"] = format_pg_array(payload.get("externos_op", []))
         payload["reuniones_vinculadas"] = format_pg_array(payload.get("reuniones_vinculadas", []))
@@ -644,6 +646,7 @@ def guardar_o_actualizar_op(op: dict):
                     rol_juegos = :rol_juegos, vehiculo_destino = :vehiculo_destino,
                     nota = :nota, elabora = :elabora, organiza = :organiza, coordina = :coordina, vobo = :vobo, 
                     proveedor_op = CAST(:proveedor_op AS text[]), personal_convocado_op = CAST(:personal_convocado_op AS text[]), 
+                    personal_remoto_foraneo = CAST(:personal_remoto_foraneo AS text[]),
                     carros_usados_op = CAST(:carros_usados_op AS text[]), externos_op = CAST(:externos_op AS text[]), 
                     choferes_por_vehiculo = CAST(:choferes_por_vehiculo AS jsonb),
                     personal_roles_op = CAST(:personal_roles_op AS jsonb),
@@ -662,14 +665,14 @@ def guardar_o_actualizar_op(op: dict):
                     dependencia_solicita, quien_solicita, resp_de_produccion, responsable_gastos, chofer, horas_manejo_chofer, es_viaje_foraneo, fec_del_evento, fec_fin_evento, 
                     inicio_del_evento, hra_de_llamado, detalle_llamado, ubicacion, tipo_de_servicio, produccion, 
                     internet_redes, actividades_de_proveedores, rol_juegos, vehiculo_destino, nota, elabora, organiza, coordina, 
-                    vobo, proveedor_op, personal_convocado_op, carros_usados_op, externos_op, choferes_por_vehiculo, personal_roles_op, reuniones_vinculadas, 
+                    vobo, proveedor_op, personal_convocado_op, personal_remoto_foraneo, carros_usados_op, externos_op, choferes_por_vehiculo, personal_roles_op, reuniones_vinculadas, 
                     cronogramas_vinculados, fotos_evidencia, empleado_que_creo_la_op, fec_de_elaboracion_de_op 
                 ) VALUES (
                     :id_evento, :folio, :para_q_cliente, :nombre_evento, :subtitulo_evento, :locacion, CAST(:fec_de_instalacion AS date), CAST(:hra_de_instalacion AS time), 
                     :dependencia_solicita, :quien_solicita, :resp_de_produccion, :responsable_gastos, :chofer, CAST(:horas_manejo_chofer AS numeric), CAST(:es_viaje_foraneo AS boolean), CAST(:fec_del_evento AS date), CAST(:fec_fin_evento AS date), 
                     CAST(:inicio_del_evento AS time), CAST(:hra_de_llamado AS time), :detalle_llamado, :ubicacion, :tipo_de_servicio, :produccion, 
                     :internet_redes, :actividades_de_proveedores, :rol_juegos, :vehiculo_destino, :nota, :elabora, :organiza, :coordina, 
-                    :vobo, CAST(:proveedor_op AS text[]), CAST(:personal_convocado_op AS text[]), CAST(:carros_usados_op AS text[]), CAST(:externos_op AS text[]), CAST(:choferes_por_vehiculo AS jsonb), CAST(:personal_roles_op AS jsonb), CAST(:reuniones_vinculadas AS text[]), 
+                    :vobo, CAST(:proveedor_op AS text[]), CAST(:personal_convocado_op AS text[]), CAST(:personal_remoto_foraneo AS text[]), CAST(:carros_usados_op AS text[]), CAST(:externos_op AS text[]), CAST(:choferes_por_vehiculo AS jsonb), CAST(:personal_roles_op AS jsonb), CAST(:reuniones_vinculadas AS text[]), 
                     CAST(:cronogramas_vinculados AS text[]), CAST(:fotos_evidencia AS text[]), :empleado_que_creo_la_op, CURRENT_DATE 
                 )
             """)

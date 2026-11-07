@@ -20,6 +20,53 @@ def es_usuario_autorizado_gastos(nombre: str) -> bool:
 
 router = APIRouter(prefix="/api/gastos", tags=["💸 Gastos Operativos"])
 
+def validar_incidencias_op_para_gastos(folio_op: int):
+    """
+    Verifica si todo el personal convocado a la OP que retiró hardware en bodega
+    ha reportado sus incidencias en el Check-in.
+    Retorna (es_valido: bool, pendientes_nombres: list)
+    """
+    try:
+        with engine_eventos.connect() as conn:
+            chks = conn.execute(text("""
+                SELECT TRIM(id_empleado) AS id_emp, incidencias_generales, estado_bodega
+                FROM public.checkouts_maestro
+                WHERE folio_op = :id
+            """), {"id": folio_op}).mappings().fetchall()
+            
+            if not chks:
+                return True, []
+                
+            pendientes_ids = []
+            for c in chks:
+                inc = (c["incidencias_generales"] or "").strip()
+                if not inc:
+                    pendientes_ids.append(str(c["id_emp"]).strip())
+                    
+            if not pendientes_ids:
+                return True, []
+                
+            with engine_personal.connect() as conn_p:
+                ids_str = "', '".join(pendientes_ids)
+                rows = conn_p.execute(text(f"""
+                    SELECT TRIM(id_empleado), encode(nombre::bytea, 'hex')
+                    FROM public.empleados
+                    WHERE id_empleado IN ('{ids_str}')
+                """)).fetchall()
+                nombres_dict = {r[0]: safe_decode_hex(r[1]) for r in rows}
+                
+            pendientes_nombres = [nombres_dict.get(e_id, f"Empleado {e_id}") for e_id in pendientes_ids]
+            return False, pendientes_nombres
+    except Exception as e:
+        print(f"Error en validar_incidencias_op_para_gastos: {e}")
+        return True, []
+
+@router.get("/verificar-incidencias-op/{folio_op}")
+def api_verificar_incidencias_op_gastos(folio_op: int):
+    """Verifica si todos los convocados con checkout han reportado incidencias en bodega."""
+    es_valido, pendientes = validar_incidencias_op_para_gastos(folio_op)
+    return {"completas": es_valido, "pendientes": pendientes}
+
 @router.get("/ultimo-km/{vehiculo}")
 def obtener_ultimo_km_vehiculo(vehiculo: str):
     """Consulta el último odómetro final registrado para un vehículo."""
@@ -199,6 +246,15 @@ def guardar_informe_gastos_completo(payload: dict):
             raise HTTPException(
                 status_code=403,
                 detail=f"Acceso denegado: Solo el Productor Responsable o el Responsable de Gastos asignado a la OP-{folio_vpro} ({responsable_oficial_nom}) está facultado para elaborar y remitir este reporte."
+            )
+
+        # 🔒 NUEVA POLÍTICA: El Responsable de Gastos no puede enviar informe si convocados no han reportado incidencias
+        completas, pendientes_inc = validar_incidencias_op_para_gastos(folio_vpro)
+        if not completas:
+            lista_p = ", ".join(pendientes_inc)
+            raise HTTPException(
+                status_code=400,
+                detail=f"🔒 REPORTE DE GASTOS RETENIDO: No puedes enviar este reporte de la OP-{folio_vpro} porque los siguientes convocados aún no han reportado sus incidencias en Bodega: {lista_p}. Por política de calidad, todo el personal debe cumplir este requisito antes de tramitar gastos."
             )
 
         # Asignar id_empleado oficial al registro para garantizar trazabilidad 100%

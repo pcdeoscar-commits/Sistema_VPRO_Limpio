@@ -89,6 +89,62 @@ def es_coordinador_bodega(id_empleado: str = "", nombre: str = "", rol: str = ""
             
     return False
 
+def empleado_tiene_checkout_bloqueado(id_empleado: str, nombre_empleado: str = "", folio_op_actual: int = None):
+    """
+    Verifica si un operador tiene algún checkout previo en estado 'RECIBIDO'
+    donde NO haya indicado incidencias (quedó en blanco / vacío).
+    
+    EXCEPCIÓN:
+    Si la OP previa fue fuera de la ciudad (es_viaje_foraneo IS TRUE) y el operador
+    estuvo registrado en personal_remoto_foraneo (enlace remoto / campo),
+    entonces esa OP no lo bloquea.
+    """
+    if not id_empleado and not nombre_empleado:
+        return False, []
+        
+    try:
+        from core.utils import parse_pg_array
+        with engine_eventos.connect() as conn:
+            query = text("""
+                SELECT cm.folio_op, cm.incidencias_generales, ev.nombre_evento, 
+                       COALESCE(ev.es_viaje_foraneo, FALSE) AS es_viaje_foraneo,
+                       COALESCE(ev.personal_remoto_foraneo, '{}'::text[]) AS personal_remoto_foraneo
+                FROM public.checkouts_maestro cm
+                LEFT JOIN public.eventos ev ON cm.folio_op = ev.id_evento
+                WHERE TRIM(cm.id_empleado) = :emp
+                  AND cm.estado_bodega = 'RECIBIDO'
+                  AND (cm.incidencias_generales IS NULL OR TRIM(cm.incidencias_generales) = '')
+            """)
+            rows = conn.execute(query, {"emp": str(id_empleado).strip()}).mappings().fetchall()
+            
+            norm_nombre = normalizar_texto(nombre_empleado)
+            
+            ops_bloqueantes = []
+            for r in rows:
+                f_op = r["folio_op"]
+                if folio_op_actual and f_op == folio_op_actual:
+                    continue
+                    
+                es_foraneo = bool(r["es_viaje_foraneo"])
+                remotos = [reparar_mojibake(p).strip() for p in parse_pg_array(r["personal_remoto_foraneo"]) if reparar_mojibake(p).strip()]
+                
+                es_exento_remoto = False
+                if es_foraneo and remotos:
+                    for rem in remotos:
+                        norm_rem = normalizar_texto(rem)
+                        if (norm_nombre and norm_rem and (norm_nombre in norm_rem or norm_rem in norm_nombre)) or (str(id_empleado).strip() == rem.strip()):
+                            es_exento_remoto = True
+                            break
+                            
+                if not es_exento_remoto:
+                    nom_ev = reparar_mojibake(safe_decode_hex(r["nombre_evento"])) if r["nombre_evento"] else f"Evento OP-{f_op}"
+                    ops_bloqueantes.append({"folio": f_op, "evento": nom_ev})
+                    
+            return (len(ops_bloqueantes) > 0), ops_bloqueantes
+    except Exception as e:
+        print(f"Error al verificar bloqueo checkout de empleado: {e}")
+        return False, []
+
 @router.get("/api/checkout/init-data/{id_empleado}")
 def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] = None, rol: Optional[str] = None):
     """Carga los datos iniciales de órdenes, kits y alertas de checkout. El Coordinador o Admin tiene acceso total a todas las OPs activas."""
@@ -345,12 +401,16 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Op
 
                         d["EQUIPO"] = reparar_mojibake(nombre_eq)
 
+        bloqueado, ops_deuda = empleado_tiene_checkout_bloqueado(id_empleado, nom_usuario, id_evento)
+
         return {
             "convocados": convocados, 
             "proveedores_op": proveedores_op, 
             "resp_de_produccion": resp_prod,
             "es_convocado": es_convocado,
             "es_coordinador": es_coord,
+            "checkout_bloqueado": bloqueado,
+            "ops_deuda_incidencias": ops_deuda,
             "id_maestro": m_row[0] if m_row else None, 
             "incidencias_generales": reparar_mojibake(safe_decode_hex(m_row[1]).strip()) if m_row and m_row[1] else "", 
             "estado_bodega": m_row[2] if m_row else "NUEVO", 
@@ -478,6 +538,15 @@ def registrar_finalizacion_checkout(payload: dict):
             raise HTTPException(
                 status_code=403, 
                 detail=f"El operador '{nombre_sujeto}' no está convocado en la OP-{id_op}."
+            )
+
+        # 🔒 NUEVA POLÍTICA: Verificar si el operador tiene checkouts previos sin incidencias
+        bloqueado, ops_deuda = empleado_tiene_checkout_bloqueado(id_sujeto, nombre_sujeto, id_op)
+        if bloqueado:
+            folios_txt = ", ".join([f"OP-{x['folio']}" for x in ops_deuda])
+            raise HTTPException(
+                status_code=400,
+                detail=f"⛔ CHECKOUT BLOQUEADO: El operador '{nombre_sujeto}' tiene pendiente el reporte de incidencias en {folios_txt}. Por política interna de bodega, es obligatorio rendir cuentas de eventos anteriores para poder retirar nuevo hardware."
             )
 
         with engine_eventos.begin() as conn:
@@ -711,6 +780,13 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
                             "estado": "REHABILITADA" if es_hab else estado_actual_bodega
                         })
                         continue
+                    elif estado_actual_bodega == 'RECIBIDO' and not inc_actual:
+                        ops_pendientes.append({
+                            "id_evento": id_ev, 
+                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento} ⚠️ [INCIDENCIAS PENDIENTES]", 
+                            "estado": "INCIDENCIAS_PENDIENTES"
+                        })
+                        continue
 
                 if es_productor and not any(op["id_evento"] == id_ev for op in ops_pendientes):
                     pendientes_crew = conn.execute(
@@ -804,4 +880,27 @@ def obtener_historial_checkouts_op(id_evento: int):
             return {"status": "SUCCESS", "checkouts": resultados}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/checkout/guardar-incidencia-pendiente", tags=["📦 Checkout & Checkin"])
+def guardar_incidencia_pendiente(payload: dict):
+    """Permite al operador o coordinador registrar la bitácora de incidencias pendiente de una OP para desbloquear checkouts."""
+    id_op = int(payload.get("id_evento", 0))
+    id_sujeto = str(payload.get("id_empleado", "")).strip()
+    incidencias = str(payload.get("incidencias", "")).strip()
+    
+    if not id_op or not id_sujeto:
+        raise HTTPException(status_code=400, detail="Faltan datos obligatorios (id_evento, id_empleado).")
+    if not incidencias:
+        raise HTTPException(status_code=400, detail="Debe escribir el reporte de incidencias o indicar que el evento concluyó sin imprevistos.")
+        
+    try:
+        with engine_eventos.begin() as conn:
+            conn.execute(
+                text("UPDATE public.checkouts_maestro SET incidencias_generales = :inc WHERE folio_op = :id AND TRIM(id_empleado) = :emp"),
+                {"inc": incidencias, "id": id_op, "emp": id_sujeto}
+            )
+        return {"status": "SUCCESS", "mensaje": "Incidencias registradas y checkout desbloqueado con éxito."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 

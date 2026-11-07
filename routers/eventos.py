@@ -556,6 +556,13 @@ def guardar_o_actualizar_op(op: dict):
         payload["empleado_que_creo_la_op"] = str(payload.get("empleado_que_creo_la_op") or "").strip()
         payload["para_q_cliente"] = str(payload.get("para_q_cliente") or "").strip()
         payload["nombre_evento"] = str(payload.get("nombre_evento") or "").strip()
+
+        # 🛑 Validación estricta: Cliente y Nombre de Evento obligatorios
+        if not payload["para_q_cliente"] or payload["para_q_cliente"].startswith("->") or "seleccionar" in payload["para_q_cliente"].lower():
+            raise HTTPException(status_code=400, detail="Debe seleccionar un cliente válido antes de guardar la Orden de Producción.")
+        if not payload["nombre_evento"] or payload["nombre_evento"].lower() == "sin nombre":
+            raise HTTPException(status_code=400, detail="Debe ingresar el nombre del evento antes de guardar la Orden de Producción.")
+
         payload["locacion"] = str(payload.get("locacion") or "").strip()
         payload["ubicacion"] = str(payload.get("ubicacion") or "").strip()
         payload["resp_de_produccion"] = str(payload.get("resp_de_produccion") or "").strip()

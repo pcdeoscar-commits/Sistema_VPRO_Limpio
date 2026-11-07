@@ -1552,6 +1552,19 @@ async function guardarJornadaGira(idEvento, fecha) {
 }
 
 async function crearNuevoDiaGira(idEvento) {
+    const inputCliente = (document.getElementById("op_para_q_cliente")?.value || "").trim();
+    const inputNombreEv = (document.getElementById("op_nombre_evento")?.value || "").trim();
+
+    const clienteInvalido = !inputCliente || inputCliente === "->" || inputCliente.startsWith("->") || inputCliente.toLowerCase().includes("seleccionar");
+    if (clienteInvalido) {
+        alert("⚠️ Antes de crear la bitácora debes seleccionar el CLIENTE de la Orden de Producción.");
+        return;
+    }
+    if (!inputNombreEv || inputNombreEv.toLowerCase() === "sin nombre") {
+        alert("⚠️ Antes de crear la bitácora debes ingresar el NOMBRE DEL EVENTO.");
+        return;
+    }
+
     const crewRemoto = window.opMultiSelects?.personal_remoto || [];
 
     if (crewRemoto.length === 0) {
@@ -1569,7 +1582,8 @@ async function crearNuevoDiaGira(idEvento) {
     // 💾 Auto-guardar la OP primero para que el personal remoto quede persistido en la base de datos
     try {
         if (typeof guardarOrdenOP === 'function') {
-            await guardarOrdenOP(null, true);
+            const ok = await guardarOrdenOP(null, true);
+            if (ok === false) return;
         }
     } catch (saveErr) {
         console.warn("Auto-guardado previo de OP:", saveErr);
@@ -1614,8 +1628,20 @@ async function guardarOrdenOP(event, silencioso = false) {
 
     const id_evento = document.getElementById("op_id_evento")?.value;
     const folio = document.getElementById("op_folio")?.value;
-    const para_q_cliente = document.getElementById("op_para_q_cliente")?.value;
-    const nombre_evento = document.getElementById("op_nombre_evento")?.value;
+    const para_q_cliente = (document.getElementById("op_para_q_cliente")?.value || "").trim();
+    const nombre_evento = (document.getElementById("op_nombre_evento")?.value || "").trim();
+
+    // 🛑 VALIDACIÓN ESTRICTA: Cliente y Nombre de Evento
+    const clienteInvalido = !para_q_cliente || para_q_cliente === "->" || para_q_cliente.startsWith("->") || para_q_cliente.toLowerCase().includes("seleccionar");
+    if (clienteInvalido) {
+        if (!silencioso) alert("⚠️ Debes seleccionar un CLIENTE antes de guardar la Orden de Producción.");
+        return false;
+    }
+
+    if (!nombre_evento || nombre_evento.toLowerCase() === "sin nombre") {
+        if (!silencioso) alert("⚠️ Debes ingresar el NOMBRE DEL EVENTO antes de guardar la Orden de Producción.");
+        return false;
+    }
     const locacion = document.getElementById("op_locacion")?.value;
     const fec_de_instalacion = document.getElementById("op_fec_de_instalacion")?.value;
     const hra_de_instalacion = document.getElementById("op_hra_de_instalacion")?.value;

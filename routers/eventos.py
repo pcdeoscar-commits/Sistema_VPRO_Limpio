@@ -120,7 +120,7 @@ def obtener_ops_pendientes_convocados():
                        encode(COALESCE(e.resp_de_produccion, '')::bytea, 'hex'),
                        encode(COALESCE(e.fec_del_evento::text, '')::bytea, 'hex'),
                        encode(COALESCE(e.fec_de_elaboracion_de_op::text, '')::bytea, 'hex'),
-                       COALESCE(e.personal_convocado_op, '{}'::text[])
+                       (COALESCE(e.personal_convocado_op, '{}'::text[]) || COALESCE(e.personal_remoto_foraneo, '{}'::text[]))
                 FROM public.eventos e
                 WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
                   AND NOT EXISTS (

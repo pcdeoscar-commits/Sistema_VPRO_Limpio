@@ -79,16 +79,19 @@ def aplicar_migraciones_automaticas():
 
             logger.info("[Auto-Migraciones] Esquemas de db_inventario, taller y chat sincronizados al 100%.")
 
-        # 7. Asegurar columna personal_remoto_foraneo en db_eventos
+        # 7. Asegurar columnas personal_remoto_foraneo e incidencias_por_dia en db_eventos
         try:
             with get_db_cursor("db_eventos", commit=True) as cursor_ev:
                 cursor_ev.execute("""
                     ALTER TABLE public.eventos 
                     ADD COLUMN IF NOT EXISTS personal_remoto_foraneo TEXT[] DEFAULT '{}'::text[];
+
+                    ALTER TABLE public.eventos 
+                    ADD COLUMN IF NOT EXISTS incidencias_por_dia JSONB DEFAULT '{}'::jsonb;
                 """)
-                logger.info("[Auto-Migraciones] Columna personal_remoto_foraneo asegurada en public.eventos.")
+                logger.info("[Auto-Migraciones] Columnas personal_remoto_foraneo e incidencias_por_dia aseguradas en public.eventos.")
         except Exception as e_col:
-            logger.error(f"[Auto-Migraciones] Error al agregar columna personal_remoto_foraneo: {e_col}")
+            logger.error(f"[Auto-Migraciones] Error al agregar columnas en db_eventos: {e_col}")
 
         # 7.1 Purga de OP-42 (prueba) y resincronización de secuencia
         try:

@@ -599,6 +599,22 @@ def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
                         if h_llam: candidatos.append(h_llam)
                         if h_ini_ev: candidatos.append(h_ini_ev)
 
+                    # 🕒 Prioridad 1: Verificar si en la bitácora de locación se programó un llamado específico para este día
+                    try:
+                        regs_loc = conn_ev.execute(text("""
+                            SELECT nombre_empleado, hora_entrada 
+                            FROM public.asistencia_locacion 
+                            WHERE id_evento = :id_ev 
+                              AND fecha_jornada = :hoy
+                              AND hora_entrada IS NOT NULL 
+                              AND hora_entrada != '00:00:00'
+                        """), {"id_ev": op["id_evento"], "hoy": hoy_date}).mappings().all()
+                        for rl in regs_loc:
+                            if emp_clean in _clean(str(rl.get("nombre_empleado") or "")):
+                                return dict(op), rl["hora_entrada"], f"LLAMADO DÍA ({tipo})"
+                    except Exception as e_loc:
+                        print(f"⚠️ Nota al consultar llamado en asistencia_locacion: {e_loc}")
+
                     h_target = min(candidatos) if candidatos else None
                     return dict(op), h_target, tipo
     except Exception as e:

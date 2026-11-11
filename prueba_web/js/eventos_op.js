@@ -686,6 +686,18 @@ function alCambiarFechaInicioEvento(input) {
     }
 }
 
+function alCambiarFechaInstalacionEvento(input) {
+    if (!input || !input.value) return;
+    const fIni = document.getElementById("op_fec_del_evento");
+    const fFin = document.getElementById("op_fec_fin_evento");
+    if (fIni && !fIni.value) {
+        fIni.value = input.value;
+    }
+    if (fFin && !fFin.value) {
+        fFin.value = fIni ? fIni.value : input.value;
+    }
+}
+
 function copiarPresupuestoReunionAOP(monto) {
     const el = document.getElementById("op_estimado_gasto");
     if (el) {
@@ -906,7 +918,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     </div>
                     <div>
                         <label class="op-form-label">📅 FECHA INSTALACIÓN:</label>
-                        <input type="date" id="op_fec_de_instalacion" value="${fInstalacion}" class="op-input" ${dis}>
+                        <input type="date" id="op_fec_de_instalacion" value="${fInstalacion}" class="op-input" ${dis} onchange="alCambiarFechaInstalacionEvento(this)">
                     </div>
                     <div>
                         <label class="op-form-label">⏰ HORA INSTALACIÓN:</label>
@@ -1104,6 +1116,12 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                             <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;">Selecciona el día de la gira que deseas registrar. Se creará una plantilla vacía para todo el Crew activo.</p>
                             
                             <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                                <div style="width: 100%; margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                    <span style="font-size: 12px; font-weight: 700; color: #475569;">💡 Sugerencias del Evento:</span>
+                                    ${fInstalacion ? `<button type="button" onclick="document.getElementById('input-nueva-fecha-gira').value='${fInstalacion}'; crearNuevoDiaGira(${idEvento});" style="background:#e0e7ff; color:#3730a3; border:1px solid #c7d2fe; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer;">🛠️ Instalación (${fInstalacion})</button>` : ''}
+                                    ${fEvento ? `<button type="button" onclick="document.getElementById('input-nueva-fecha-gira').value='${fEvento}'; crearNuevoDiaGira(${idEvento});" style="background:#dbeafe; color:#1e40af; border:1px solid #bfdbfe; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer;">🎬 Evento (${fEvento})</button>` : ''}
+                                    ${(fEventoFin && fEventoFin !== fEvento) ? `<button type="button" onclick="document.getElementById('input-nueva-fecha-gira').value='${fEventoFin}'; crearNuevoDiaGira(${idEvento});" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer;">🏁 Fin Evento (${fEventoFin})</button>` : ''}
+                                </div>
                                 <div>
                                     <label class="op-form-label">Selecciona la fecha:</label>
                                     <input type="date" id="input-nueva-fecha-gira" value="${hoyStr}" class="op-input" style="width: 220px; background: white;">

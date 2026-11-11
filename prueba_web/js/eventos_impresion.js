@@ -1,3 +1,17 @@
+
+function aplicarLlamadoACrew(fecha) {
+    const hVal = document.getElementById(`llamado-dia-${fecha}`)?.value;
+    if (!hVal) {
+        alert("Por favor indica una hora de llamado válida (HH:MM).");
+        return;
+    }
+    const formatted = hVal.length === 5 ? hVal : hVal.substring(0, 5);
+    const inputs = document.querySelectorAll(`.input-jornada-${fecha}[data-field="hora_entrada"]`);
+    inputs.forEach(inp => {
+        inp.value = formatted;
+    });
+}
+
 // ==============================================================================
 // MÓDULO: eventos_impresion.js
 // 🖨️ Motor PDF/Impresión VPF-PAGL-OP
@@ -839,6 +853,7 @@ async function cargarDetalleOP(folioId) {
         actualizarCrewGira();
 
         // Consultar si tiene jornadas de gira ya registradas
+        window.opIncidenciasPorDiaActual = data.incidencias_por_dia || {};
         cargarJornadasGira(data.id_evento);
 
     } catch (error) {
@@ -919,6 +934,7 @@ async function cargarDetalleOPHistorico(folioId) {
         renderMultiSelectComponent('ms-proveedores-hist', 'proveedores', cats.proveedores, "Sin proveedores", true);
 
         actualizarCrewGira(data.chofer);
+        window.opIncidenciasPorDiaActual = data.incidencias_por_dia || {};
         cargarJornadasGira(data.id_evento, true);
 
     } catch (error) {
@@ -1450,8 +1466,27 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
             });
 
             const fechasOrdenadas = Object.keys(porFecha).sort();
+            const fInstalacionGlobal = document.getElementById("op_fec_de_instalacion")?.value || "";
+            const hInstalacionGlobal = document.getElementById("op_hra_de_instalacion")?.value || "";
+            const hLlamadoGlobal = document.getElementById("op_hra_de_llamado")?.value || "06:00";
+
             contenedor.innerHTML = fechasOrdenadas.map(fecha => {
                 const registros = porFecha[fecha];
+
+                // Detectar hora sugerida de llamado para este día
+                let horaSugerida = "06:00";
+                const primerHoraEntrada = registros.find(r => r.hora_entrada && r.hora_entrada !== '00:00:00')?.hora_entrada;
+                if (primerHoraEntrada) {
+                    horaSugerida = primerHoraEntrada.substring(0, 5);
+                } else if (fecha === fInstalacionGlobal && hInstalacionGlobal) {
+                    horaSugerida = hInstalacionGlobal.substring(0, 5);
+                } else if (hLlamadoGlobal) {
+                    horaSugerida = hLlamadoGlobal.substring(0, 5);
+                }
+
+                // Incidencia guardada para este día
+                const incDiaTexto = (window.opIncidenciasPorDiaActual && window.opIncidenciasPorDiaActual[fecha]) || "";
+
                 const rowsHtml = registros.map(r => `
                     <tr>
                         <td style="font-weight: 600; color: #1e293b;">${r.nombre_empleado}</td>
@@ -1460,20 +1495,42 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
                         <td><input type="number" step="0.5" class="op-input input-jornada-${fecha}" data-field="t_comida" data-emp="${r.nombre_empleado}" value="${r.t_comida || 0}" style="padding: 6px; width: 60px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="number" step="0.5" class="op-input input-jornada-${fecha}" data-field="t_cena" data-emp="${r.nombre_empleado}" value="${r.t_cena || 0}" style="padding: 6px; width: 60px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="text" class="op-input input-jornada-${fecha}" data-field="hora_salida" data-emp="${r.nombre_empleado}" value="${(r.hora_salida || '00:00:00').substring(0, 5)}" style="padding: 6px; width: 70px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
-                        <td><input type="text" class="op-input input-jornada-${fecha}" data-field="observaciones" data-emp="${r.nombre_empleado}" value="${r.observaciones || ''}" style="padding: 6px; width: 100%;" placeholder="Notas..." ${isReadOnly ? 'disabled' : ''}></td>
+                        <td><input type="text" class="op-input input-jornada-${fecha}" data-field="observaciones" data-emp="${r.nombre_empleado}" value="${r.observaciones || ''}" style="padding: 6px; width: 100%;" placeholder="Notas del operador..." ${isReadOnly ? 'disabled' : ''}></td>
                     </tr>
                 `).join('');
 
                 return `
-                    <div style="border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 16px; overflow: hidden; background: white;">
-                        <div style="background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                            <strong style="color: #1e293b;">🔒 Jornada Registrada: ${fecha}</strong>
+                    <div style="border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 16px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <!-- Encabezado de Jornada -->
+                        <div style="background: #f8fafc; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <strong style="color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                                <i class="ph ph-calendar-check" style="color: #ef4444; font-size: 18px;"></i>
+                                Jornada Registrada: ${fecha}
+                            </strong>
                             ${!isReadOnly ? `
-                                <button type="button" onclick="guardarJornadaGira(${idEvento}, '${fecha}')" style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-weight: 600; font-size: 12.5px; cursor: pointer;">
-                                    💾 Guardar Correcciones
+                                <button type="button" onclick="guardarJornadaGira(${idEvento}, '${fecha}')" style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(16,185,129,0.2);">
+                                    💾 Guardar Cambios del Día
                                 </button>
                             ` : ''}
                         </div>
+
+                        <!-- Barra de Llamado Rápido del Día -->
+                        <div style="background: #f1f5f9; padding: 8px 16px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                                <span style="font-weight: 700; color: #334155;">⏰ Llamado Programado para este Día:</span>
+                                <input type="time" id="llamado-dia-${fecha}" class="op-input" style="width: 105px; padding: 4px 8px; text-align: center; background: white;" value="${horaSugerida}" ${isReadOnly ? 'disabled' : ''}>
+                                ${!isReadOnly ? `
+                                    <button type="button" onclick="aplicarLlamadoACrew('${fecha}')" style="background: #3b82f6; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                        ⚡ Aplicar al Personal
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <div style="font-size: 12px; color: #64748b;">
+                                👥 <b>${registros.length}</b> colaboradores convocados
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Asistencia en Locación -->
                         <div class="tabla-container" style="max-height: 250px;">
                             <table class="tabla-vpro">
                                 <thead>
@@ -1484,13 +1541,21 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
                                         <th>Hrs Comida</th>
                                         <th>Hrs Cena</th>
                                         <th>Salida</th>
-                                        <th>Notas</th>
+                                        <th>Notas Individuales</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${rowsHtml}
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- 📋 Incidencias y Novedades Operativas de este Día -->
+                        <div style="padding: 10px 16px; background: #fffdf5; border-top: 1px solid #fef3c7;">
+                            <label style="font-size: 12px; font-weight: 700; color: #92400e; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                <i class="ph ph-warning-circle" style="font-size: 16px;"></i> 📋 Incidencias y Novedades Operativas del Día (${fecha}):
+                            </label>
+                            <textarea class="op-input input-incidencia-dia" id="incidencia-dia-${fecha}" data-fecha="${fecha}" style="width: 100%; min-height: 44px; font-size: 12.5px; background: white; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px;" placeholder="Reportar incidencias técnicas, retrasos de montaje, fallas de equipo o eventualidades específicas de este día..." ${isReadOnly ? 'disabled' : ''}>${incDiaTexto}</textarea>
                         </div>
                     </div>
                 `;
@@ -1512,6 +1577,20 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
 async function guardarJornadaGira(idEvento, fecha) {
     const inputs = document.querySelectorAll(`.input-jornada-${fecha}`);
     if (!inputs || inputs.length === 0) return;
+
+    // Persistir también la incidencia general de este día
+    const txtIncidencia = (document.getElementById(`incidencia-dia-${fecha}`)?.value || "").trim();
+    if (!window.opIncidenciasPorDiaActual) window.opIncidenciasPorDiaActual = {};
+    window.opIncidenciasPorDiaActual[fecha] = txtIncidencia;
+    try {
+        fetch(`${API_URL}/api/eventos/${idEvento}/incidencias-dia`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fecha: fecha, incidencia: txtIncidencia })
+        }).catch(e => console.warn("Error al guardar incidencia del día:", e));
+    } catch (eInc) {
+        console.warn("Excepción al guardar incidencia del día:", eInc);
+    }
 
     // Agrupar por empleado
     const porEmp = {};
@@ -1602,12 +1681,23 @@ async function crearNuevoDiaGira(idEvento) {
         console.warn("Auto-guardado previo de OP:", saveErr);
     }
 
+    const fInstVal = document.getElementById("op_fec_de_instalacion")?.value;
+    const hInstVal = document.getElementById("op_hra_de_instalacion")?.value;
+    const hLlamVal = document.getElementById("op_hra_de_llamado")?.value;
+
+    let hEntradaDefecto = "00:00:00";
+    if (fechaSeleccionada === fInstVal && hInstVal) {
+        hEntradaDefecto = hInstVal.length === 5 ? hInstVal + ":00" : hInstVal;
+    } else if (hLlamVal) {
+        hEntradaDefecto = hLlamVal.length === 5 ? hLlamVal + ":00" : hLlamVal;
+    }
+
     const registrosNuevos = crewRemoto.map(persona => ({
         fecha_jornada: String(fechaSeleccionada),
         num_empleado: 0,
         nombre_empleado: String(persona).trim(),
         depto: "STAFF VPRO",
-        hora_entrada: "00:00:00",
+        hora_entrada: hEntradaDefecto,
         t_desayuno: 0.0,
         t_comida: 0.0,
         t_cena: 0.0,
@@ -1744,6 +1834,14 @@ async function guardarOrdenOP(event, silencioso = false) {
         reuniones_vinculadas: window.opMultiSelects.reuniones || [],
         cronogramas_vinculados: window.opMultiSelects.cronogramas || [],
         fotos_evidencia: window.opFotosEvidenciaActuales || [],
+        incidencias_por_dia: (() => {
+            const incObj = Object.assign({}, window.opIncidenciasPorDiaActual || {});
+            document.querySelectorAll(".input-incidencia-dia").forEach(ta => {
+                const f = ta.getAttribute("data-fecha");
+                if (f) incObj[f] = ta.value.trim();
+            });
+            return incObj;
+        })(),
         empleado_que_creo_la_op: usuarioLogueado ? usuarioLogueado.nombre_completo : ""
     };
 

@@ -181,7 +181,7 @@ def obtener_folios_activos_e_historicos():
     try:
         # Solo OPs activas (o habilitadas explícitamente para edición)
         query_activos_nueva = text("""
-            SELECT folio, fec_del_evento, nombre_evento, COALESCE(habilitada_para_edicion, FALSE) AS habilitada_para_edicion
+            SELECT folio, fec_del_evento, fec_fin_evento, fec_de_instalacion, nombre_evento, COALESCE(habilitada_para_edicion, FALSE) AS habilitada_para_edicion
             FROM public.eventos 
             WHERE habilitada_para_edicion = TRUE
                OR (
@@ -195,7 +195,7 @@ def obtener_folios_activos_e_historicos():
         """)
         # OPs en archivo histórico (solo si no están habilitadas para edición)
         query_historicos_nueva = text("""
-            SELECT folio, fec_del_evento, nombre_evento 
+            SELECT folio, fec_del_evento, fec_fin_evento, fec_de_instalacion, nombre_evento 
             FROM public.eventos 
             WHERE (habilitada_para_edicion IS NOT TRUE)
               AND (
@@ -221,18 +221,35 @@ def obtener_folios_activos_e_historicos():
             def formatear_folio_label(r):
                 folio_val = r['folio'] or ''
                 nom_val = reparar_mojibake(r['nombre_evento'] or 'Sin nombre')
-                fec_val = r.get('fec_del_evento')
-                if fec_val:
-                    if hasattr(fec_val, 'strftime'):
-                        fec_str = fec_val.strftime('%d/%m/%Y')
-                    else:
-                        fec_str = str(fec_val).strip()
-                        if len(fec_str) >= 10 and fec_str[4] == '-' and fec_str[7] == '-':
-                            parts = fec_str[:10].split('-')
-                            fec_str = f"{parts[2]}/{parts[1]}/{parts[0]}"
+                f_inst = r.get('fec_de_instalacion')
+                f_del = r.get('fec_del_evento')
+                f_fin = r.get('fec_fin_evento') or f_del
+
+                if f_inst and f_del and str(f_inst) < str(f_del):
+                    f_ini_global = f_inst
                 else:
-                    fec_str = "S/F"
-                return f"{folio_val} - {fec_str} - {nom_val}"
+                    f_ini_global = f_del or f_inst
+
+                f_fin_global = f_fin or f_del or f_inst
+
+                def _fmt_date(d):
+                    if not d: return ""
+                    if hasattr(d, 'strftime'): return d.strftime('%d/%m/%Y')
+                    s = str(d).strip()
+                    if len(s) >= 10 and s[4] == '-' and s[7] == '-':
+                        p = s[:10].split('-')
+                        return f"{p[2]}/{p[1]}/{p[0]}"
+                    return s
+
+                ini_str = _fmt_date(f_ini_global) or "S/F"
+                fin_str = _fmt_date(f_fin_global) or ini_str
+
+                if ini_str != fin_str and fin_str != "S/F":
+                    rango_str = f"{ini_str} al {fin_str}"
+                else:
+                    rango_str = ini_str
+
+                return f"{folio_val} - {rango_str} - {nom_val}"
 
             folios_activos.extend([
                 formatear_folio_label(r) + (" 🔓 [EN EDICIÓN]" if r.get('habilitada_para_edicion') else "")
@@ -372,6 +389,17 @@ def buscar_op_por_folio(folio: str):
             data["vehiculo_destino"] = reparar_mojibake(data.get("vehiculo_destino") or "")
             data["personal_roles_op"] = data.get("personal_roles_op") or []
             import json
+            raw_inc_dia = data.get("incidencias_por_dia")
+            if isinstance(raw_inc_dia, str):
+                try:
+                    data["incidencias_por_dia"] = json.loads(raw_inc_dia)
+                except Exception:
+                    data["incidencias_por_dia"] = {}
+            elif isinstance(raw_inc_dia, dict):
+                data["incidencias_por_dia"] = raw_inc_dia
+            else:
+                data["incidencias_por_dia"] = {}
+
             raw_cpv = data.get("choferes_por_vehiculo")
             if isinstance(raw_cpv, str):
                 try:
@@ -621,6 +649,14 @@ def guardar_o_actualizar_op(op: dict):
         else:
             payload["personal_roles_op"] = "[]"
 
+        inc_dia_val = payload.get("incidencias_por_dia", {})
+        if isinstance(inc_dia_val, (dict, list)):
+            payload["incidencias_por_dia"] = json.dumps(inc_dia_val)
+        elif isinstance(inc_dia_val, str) and inc_dia_val.strip():
+            payload["incidencias_por_dia"] = inc_dia_val.strip()
+        else:
+            payload["incidencias_por_dia"] = "{}"
+
         if 'estatus' in payload:
             del payload['estatus']
 
@@ -657,6 +693,7 @@ def guardar_o_actualizar_op(op: dict):
                     carros_usados_op = CAST(:carros_usados_op AS text[]), externos_op = CAST(:externos_op AS text[]), 
                     choferes_por_vehiculo = CAST(:choferes_por_vehiculo AS jsonb),
                     personal_roles_op = CAST(:personal_roles_op AS jsonb),
+                    incidencias_por_dia = CAST(:incidencias_por_dia AS jsonb),
                     reuniones_vinculadas = CAST(:reuniones_vinculadas AS text[]), 
                     cronogramas_vinculados = CAST(:cronogramas_vinculados AS text[]),
                     fotos_evidencia = CAST(:fotos_evidencia AS text[]),
@@ -672,14 +709,14 @@ def guardar_o_actualizar_op(op: dict):
                     dependencia_solicita, quien_solicita, resp_de_produccion, responsable_gastos, chofer, horas_manejo_chofer, es_viaje_foraneo, fec_del_evento, fec_fin_evento, 
                     inicio_del_evento, hra_de_llamado, detalle_llamado, ubicacion, tipo_de_servicio, produccion, 
                     internet_redes, actividades_de_proveedores, rol_juegos, vehiculo_destino, nota, elabora, organiza, coordina, 
-                    vobo, proveedor_op, personal_convocado_op, personal_remoto_foraneo, carros_usados_op, externos_op, choferes_por_vehiculo, personal_roles_op, reuniones_vinculadas, 
+                    vobo, proveedor_op, personal_convocado_op, personal_remoto_foraneo, carros_usados_op, externos_op, choferes_por_vehiculo, personal_roles_op, incidencias_por_dia, reuniones_vinculadas, 
                     cronogramas_vinculados, fotos_evidencia, empleado_que_creo_la_op, fec_de_elaboracion_de_op 
                 ) VALUES (
                     :id_evento, :folio, :para_q_cliente, :nombre_evento, :subtitulo_evento, :locacion, CAST(:fec_de_instalacion AS date), CAST(:hra_de_instalacion AS time), 
                     :dependencia_solicita, :quien_solicita, :resp_de_produccion, :responsable_gastos, :chofer, CAST(:horas_manejo_chofer AS numeric), CAST(:es_viaje_foraneo AS boolean), CAST(:fec_del_evento AS date), CAST(:fec_fin_evento AS date), 
                     CAST(:inicio_del_evento AS time), CAST(:hra_de_llamado AS time), :detalle_llamado, :ubicacion, :tipo_de_servicio, :produccion, 
                     :internet_redes, :actividades_de_proveedores, :rol_juegos, :vehiculo_destino, :nota, :elabora, :organiza, :coordina, 
-                    :vobo, CAST(:proveedor_op AS text[]), CAST(:personal_convocado_op AS text[]), CAST(:personal_remoto_foraneo AS text[]), CAST(:carros_usados_op AS text[]), CAST(:externos_op AS text[]), CAST(:choferes_por_vehiculo AS jsonb), CAST(:personal_roles_op AS jsonb), CAST(:reuniones_vinculadas AS text[]), 
+                    :vobo, CAST(:proveedor_op AS text[]), CAST(:personal_convocado_op AS text[]), CAST(:personal_remoto_foraneo AS text[]), CAST(:carros_usados_op AS text[]), CAST(:externos_op AS text[]), CAST(:choferes_por_vehiculo AS jsonb), CAST(:personal_roles_op AS jsonb), CAST(:incidencias_por_dia AS jsonb), CAST(:reuniones_vinculadas AS text[]), 
                     CAST(:cronogramas_vinculados AS text[]), CAST(:fotos_evidencia AS text[]), :empleado_que_creo_la_op, CURRENT_DATE 
                 )
             """)
@@ -1784,3 +1821,26 @@ def descargar_op_pdf(folio: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/{id_evento}/incidencias-dia")
+def guardar_incidencia_dia_evento(id_evento: int, payload: dict):
+    """Guarda o actualiza la incidencia de una fecha específica para la OP."""
+    fecha = str(payload.get("fecha") or "").strip()
+    incidencia = str(payload.get("incidencia") or "").strip()
+    if not fecha:
+        raise HTTPException(status_code=400, detail="Debe proporcionar la fecha de la incidencia.")
+
+    try:
+        with engine_eventos.begin() as conn:
+            conn.execute(text("""
+                UPDATE public.eventos 
+                SET incidencias_por_dia = jsonb_set(
+                    COALESCE(incidencias_por_dia, '{}'::jsonb), 
+                    ARRAY[:fecha], 
+                    to_jsonb(CAST(:incidencia AS text))
+                )
+                WHERE id_evento = :id_evento
+            """), {"id_evento": id_evento, "fecha": fecha, "incidencia": incidencia})
+        return {"status": "OK", "mensaje": f"Incidencia para la fecha {fecha} guardada correctamente."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al guardar incidencia del día: {e}")

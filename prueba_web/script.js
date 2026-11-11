@@ -17639,7 +17639,7 @@ async function finalizarSalidaCheckout() {
 
     const notaIncidenciasInput = (document.getElementById('checkout-salida-incidencias')?.value || '').trim();
 
-    const notaIncidencias = notaIncidenciasInput || "Sin incidencias reportadas.";
+    const notaIncidencias = notaIncidenciasInput;
 
 
 
@@ -17982,8 +17982,14 @@ async function finalizarCheckinCheckout() {
 
 
     const notaRecepcionInput = (document.getElementById('checkout-checkin-incidencias')?.value || '').trim();
+    if (!notaRecepcionInput) {
+        alert("⚠️ Reporte de Incidencias Obligatorio:\n\nEl sistema requiere que el colaborador capture el reporte de incidencias o eventualidades del servicio antes de finalizar el Check-in.\n\n(Si no ocurrió ninguna novedad técnica o logística, capture el reporte o presione 'Concluido Sin Incidencias').");
+        const elInc = document.getElementById('checkout-checkin-incidencias');
+        if (elInc) elInc.focus();
+        return;
+    }
 
-    const notaRecepcion = notaRecepcionInput || "Sin incidencias reportadas.";
+    const notaRecepcion = notaRecepcionInput;
 
 
 

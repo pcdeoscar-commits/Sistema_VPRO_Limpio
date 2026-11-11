@@ -1133,7 +1133,7 @@ async function finalizarSalidaCheckout() {
     const empId = empleadoActivoCheckout || (usuarioLogueado?.id_empleado || "001");
     const selKit = document.getElementById('checkout-sel-kit')?.value || "--- Sin plantilla ---";
     const notaIncidenciasInput = (document.getElementById('checkout-salida-incidencias')?.value || '').trim();
-    const notaIncidencias = notaIncidenciasInput || "Sin incidencias reportadas.";
+    const notaIncidencias = notaIncidenciasInput;
 
     // Proveedor
     const provSel = document.getElementById('checkout-salida-prov')?.value || "--- Ninguno ---";
@@ -1325,7 +1325,31 @@ async function finalizarCheckinCheckout() {
         if (!confirmar) return;
     }
 
+    // 🔒 REGLA DE OBLIGATORIEDAD: No permitir finalizar Check-in si el campo de incidencias está en blanco
+    const diasTextareas = document.querySelectorAll('.checkin-dia-incidencia');
+    if (diasTextareas && diasTextareas.length > 0) {
+        let diasVacios = [];
+        diasTextareas.forEach(ta => {
+            if (!ta.value.trim()) {
+                const eti = ta.getAttribute('data-etiqueta') || ta.getAttribute('data-fecha') || 'Jornada';
+                diasVacios.push(eti);
+            }
+        });
+        if (diasVacios.length > 0) {
+            alert(`⚠️ Reporte de Incidencias Obligatorio:\n\nEl sistema requiere que el colaborador capture el informe operativo de cada jornada.\nFalta capturar incidencias en:\n• ${diasVacios.join('\n• ')}\n\n(Si en ese día no ocurrió ningún percance, presione el botón "Sin incidencias este día" en la tarjeta correspondiente).`);
+            const primerVacio = Array.from(diasTextareas).find(ta => !ta.value.trim());
+            if (primerVacio) primerVacio.focus();
+            return;
+        }
+    }
+
     const notaRecepcionInput = (document.getElementById('checkout-checkin-incidencias')?.value || '').trim();
+    if (!notaRecepcionInput) {
+        alert("⚠️ Reporte de Incidencias Obligatorio:\n\nEl sistema requiere que el colaborador capture el reporte de incidencias o eventualidades del servicio antes de finalizar el Check-in.\n\n(Si no ocurrió ninguna novedad técnica o logística, capture el reporte o presione 'Concluido Sin Incidencias').");
+        const elInc = document.getElementById('checkout-checkin-incidencias');
+        if (elInc) elInc.focus();
+        return;
+    }
     const notaRecepcion = notaRecepcionInput;
 
     // Proveedor

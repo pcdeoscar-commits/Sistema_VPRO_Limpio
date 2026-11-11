@@ -998,6 +998,19 @@ async function mandarOPAlHistorial(folio, mostrarConfirmacion = true) {
     }
 
     if (mostrarConfirmacion) {
+        const autosSeleccionados = (window.opMultiSelects && window.opMultiSelects.vehiculos) || [];
+        if (autosSeleccionados.length > 0) {
+            const sinChofer = autosSeleccionados.filter(auto => {
+                const aTrim = String(auto).trim();
+                const chf = (window.opChoferesPorVehiculo && window.opChoferesPorVehiculo[aTrim]) || '';
+                return !chf || !String(chf).trim();
+            });
+            if (sinChofer.length > 0) {
+                const avisar = confirm(`⚠️ Atención de Logística antes de Archivar:\n\nHay vehículos asignados sin conductor designado:\n• ${sinChofer.join('\n• ')}\n\n¿Deseas enviar al histórico de todos modos o prefieres regresar a asignar choferes?\n\n[Aceptar = Archivar de todos modos | Cancelar = Volver y asignar choferes]`);
+                if (!avisar) return;
+            }
+        }
+
         const confirmar = confirm(`¿Estás seguro de enviar la OP "${folio}" al Archivo Histórico?\n\nLa orden quedará en la Bóveda Histórica en modo de solo lectura.`);
         if (!confirmar) return;
     }
@@ -1625,6 +1638,20 @@ async function crearNuevoDiaGira(idEvento) {
 // -------------------------------------------------------------
 async function guardarOrdenOP(event, silencioso = false) {
     if (event && event.preventDefault) event.preventDefault();
+
+    // 🛡️ Validación de Logística: Si hay vehículos asignados, verificar si tienen chofer designado
+    const autosSeleccionados = (window.opMultiSelects && window.opMultiSelects.vehiculos) || [];
+    if (!silencioso && autosSeleccionados.length > 0) {
+        const sinChofer = autosSeleccionados.filter(auto => {
+            const aTrim = String(auto).trim();
+            const chf = (window.opChoferesPorVehiculo && window.opChoferesPorVehiculo[aTrim]) || '';
+            return !chf || !String(chf).trim();
+        });
+        if (sinChofer.length > 0) {
+            const continuar = confirm(`⚠️ AVISO DE LOGÍSTICA:\n\nHay vehículos asignados sin chofer designado:\n• ${sinChofer.join('\n• ')}\n\n¿Deseas guardar de todos modos o prefieres asignar a los conductores ahora?\n\n[Aceptar = Guardar de todos modos | Cancelar = Volver y asignar choferes]`);
+            if (!continuar) return false;
+        }
+    }
 
     const id_evento = document.getElementById("op_id_evento")?.value;
     const folio = document.getElementById("op_folio")?.value;

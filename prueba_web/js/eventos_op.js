@@ -217,10 +217,25 @@ function renderChoferesPorVehiculo(isReadOnly = false) {
 
     if (!window.opChoferesPorVehiculo) window.opChoferesPorVehiculo = {};
 
-    // Personal convocado para asignar como conductor
+    // Personal convocado elegible para conducir: Estudio Local + Cuadrilla foránea/remota + Externos
     const personalVpro = window.opMultiSelects.personal_vpro || [];
+    const personalRemoto = window.opMultiSelects.personal_remoto || [];
     const personalExt = window.opMultiSelects.personal_externo || [];
-    const poolConductores = [...personalVpro, ...personalExt];
+    
+    // Identificar si viaja en la cuadrilla remota para etiquetarlo con claridad
+    const setRemoto = new Set(personalRemoto.map(p => String(p).trim().toLowerCase()));
+
+    // Pool unificado sin duplicados
+    const poolConductores = [];
+    const vistos = new Set();
+    [...personalVpro, ...personalRemoto, ...personalExt].forEach(p => {
+        const pTrim = String(p).trim();
+        const pLow = pTrim.toLowerCase();
+        if (pTrim && !vistos.has(pLow)) {
+            vistos.add(pLow);
+            poolConductores.push(pTrim);
+        }
+    });
 
     // Catálogo de licencias provisto por el servidor
     const licenciasMap = (window.vproCatalogosOP && window.vproCatalogosOP.licencias) || {};
@@ -274,7 +289,8 @@ function renderChoferesPorVehiculo(isReadOnly = false) {
                 badgeLic = "Licencia ❌";
             }
 
-            opts += `<option value="${cTrim}" ${sel}>${cTrim} (${badgeLic})</option>`;
+            const tagUbicacion = setRemoto.has(cLower) ? "📡 Gira / " : "";
+            opts += `<option value="${cTrim}" ${sel}>${cTrim} (${tagUbicacion}${badgeLic})</option>`;
         });
 
         if (choferActual && !found) {
@@ -283,7 +299,8 @@ function renderChoferesPorVehiculo(isReadOnly = false) {
             if (infoLic && infoLic.vigente) {
                 badgeLic = "Licencia Ok";
             }
-            opts += `<option value="${choferActual}" selected>${choferActual} (${badgeLic})</option>`;
+            const tagUbicacion = setRemoto.has(choferActualLower) ? "📡 Gira / " : "";
+            opts += `<option value="${choferActual}" selected>${choferActual} (${tagUbicacion}${badgeLic})</option>`;
         }
 
         html += `
@@ -365,6 +382,7 @@ function addMultiTag(stateKey, val, containerId) {
     else if (stateKey === 'personal_remoto') { 
         optionsList = cats.staff_vpro; 
         actualizarCrewGira(); 
+        renderChoferesPorVehiculo(false);
         sincronizarPersonalComplementario(containerId);
     }
     else if (stateKey === 'vehiculos') { optionsList = cats.autos; renderChoferesPorVehiculo(false); }
@@ -394,6 +412,7 @@ function removeMultiTag(stateKey, val, containerId) {
     else if (stateKey === 'personal_remoto') { 
         optionsList = cats.staff_vpro; 
         actualizarCrewGira(); 
+        renderChoferesPorVehiculo(false);
         sincronizarPersonalComplementario(containerId);
     }
     else if (stateKey === 'vehiculos') {
@@ -427,6 +446,7 @@ function clearMultiTags(stateKey, containerId) {
     else if (stateKey === 'personal_remoto') { 
         optionsList = cats.staff_vpro; 
         actualizarCrewGira(); 
+        renderChoferesPorVehiculo(false);
         sincronizarPersonalComplementario(containerId);
     }
     else if (stateKey === 'vehiculos') {
@@ -590,7 +610,44 @@ async function actualizarVistaCronogramaAccordion(firma, containerId, detallePre
 }
 window.actualizarVistaCronogramaAccordion = actualizarVistaCronogramaAccordion;
 
-function actualizarCrewGira() {}
+function actualizarCrewGira(choferGuardado, remotoGuardado, isReadOnly = false) {
+    const el = document.getElementById("texto-crew-gira");
+    const crewLocal = (window.opMultiSelects && window.opMultiSelects.personal_vpro) || [];
+    const crewRemoto = (window.opMultiSelects && window.opMultiSelects.personal_remoto) || (Array.isArray(remotoGuardado) ? remotoGuardado : []);
+    
+    const unificados = [];
+    const vistos = new Set();
+    [...crewLocal, ...crewRemoto].forEach(p => {
+        const pTrim = String(p).trim();
+        const pLow = pTrim.toLowerCase();
+        if (pTrim && !vistos.has(pLow)) {
+            vistos.add(pLow);
+            unificados.push(pTrim);
+        }
+    });
+
+    if (el) {
+        el.innerText = unificados.length > 0 ? unificados.join(", ") : "Sin personal asignado en la orden";
+    }
+
+    const selectChofer = document.getElementById("op_chofer");
+    if (selectChofer) {
+        const actual = (choferGuardado !== undefined && choferGuardado !== null) ? String(choferGuardado).trim() : (selectChofer.value || '').trim();
+        let html = '<option value="">-- Selecciona chofer del personal convocado --</option>';
+        let found = false;
+        unificados.forEach(nombre => {
+            const nTrim = String(nombre).trim();
+            const sel = (nTrim.toLowerCase() === actual.toLowerCase() && actual) ? 'selected' : '';
+            if (sel) found = true;
+            html += `<option value="${nTrim}" ${sel}>${nTrim}</option>`;
+        });
+        if (choferGuardado && actual && !found) {
+            html += `<option value="${actual}" selected>${actual}</option>`;
+        }
+        selectChofer.innerHTML = html;
+        alCambiarChoferDesignado(selectChofer.value, false);
+    }
+}
 
 function alCambiarCheckboxPersonalRemoto() {}
 

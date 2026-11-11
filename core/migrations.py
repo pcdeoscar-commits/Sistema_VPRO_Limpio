@@ -90,29 +90,29 @@ def aplicar_migraciones_automaticas():
         except Exception as e_col:
             logger.error(f"[Auto-Migraciones] Error al agregar columna personal_remoto_foraneo: {e_col}")
 
-        # 7.1 Purga de OP-42, OP-52 y resincronización de secuencia
+        # 7.1 Purga de OP-42 (prueba) y resincronización de secuencia
         try:
             with get_db_cursor("db_eventos", commit=True) as cursor_ev:
                 cursor_ev.execute("""
                     DELETE FROM public.checkouts_detalle 
-                    WHERE id_maestro IN (SELECT id_maestro FROM public.checkouts_maestro WHERE folio_op IN (42, 52));
+                    WHERE id_maestro IN (SELECT id_maestro FROM public.checkouts_maestro WHERE folio_op IN (42));
 
-                    DELETE FROM public.checkouts_maestro WHERE folio_op IN (42, 52);
+                    DELETE FROM public.checkouts_maestro WHERE folio_op IN (42);
 
-                    DELETE FROM public.chat_op_mensajes WHERE id_evento IN (42, 52) OR folio IN ('42', '52', 'OP-42', 'OP-52');
+                    DELETE FROM public.chat_op_mensajes WHERE id_evento IN (42) OR folio IN ('42', 'OP-42');
 
-                    DELETE FROM public.asistencia_locacion WHERE id_evento IN (42, 52);
+                    DELETE FROM public.asistencia_locacion WHERE id_evento IN (42);
 
                     DELETE FROM public.informes_gastos_detalle 
-                    WHERE id_informe IN (SELECT id_informe FROM public.informes_gastos_maestro WHERE folio_vpro IN (42, 52));
+                    WHERE id_informe IN (SELECT id_informe FROM public.informes_gastos_maestro WHERE folio_vpro IN (42));
 
-                    DELETE FROM public.informes_gastos_maestro WHERE folio_vpro IN (42, 52);
+                    DELETE FROM public.informes_gastos_maestro WHERE folio_vpro IN (42);
 
                     UPDATE public.reuniones_previas 
                     SET folio_op_generado = NULL, estatus_proyecto = 'PENDIENTE' 
-                    WHERE folio_op_generado IN (42, 52);
+                    WHERE folio_op_generado IN (42);
 
-                    DELETE FROM public.eventos WHERE id_evento IN (42, 52) OR folio IN ('42', '52');
+                    DELETE FROM public.eventos WHERE id_evento IN (42) OR folio IN ('42');
 
                     -- Eliminar cualquier OP fantasma sin cliente ni nombre de evento
                     DELETE FROM public.eventos 

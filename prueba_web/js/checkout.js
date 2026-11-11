@@ -1,3 +1,143 @@
+
+// -------------------------------------------------------------
+// Gestión de Incidencias Multidía en Check-in
+// -------------------------------------------------------------
+function obtenerDiasDelProyecto(statusPack) {
+    if (!statusPack) return [];
+    const fInst = (statusPack.fec_de_instalacion || "").substring(0, 10);
+    const fIni = (statusPack.fec_del_evento || "").substring(0, 10);
+    const fFin = (statusPack.fec_fin_evento || fIni || "").substring(0, 10);
+    const jornadas = Array.isArray(statusPack.fechas_jornadas) ? statusPack.fechas_jornadas : [];
+
+    const setFechas = new Set();
+    if (fInst) setFechas.add(fInst);
+    if (fIni) setFechas.add(fIni);
+    if (fFin) setFechas.add(fFin);
+    jornadas.forEach(j => {
+        if (j) setFechas.add(String(j).substring(0, 10));
+    });
+
+    const lista = Array.from(setFechas).filter(Boolean).sort();
+    if (lista.length === 0) return [];
+
+    return lista.map((f, idx) => {
+        const parts = f.split('-');
+        const fmt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : f;
+        let etiqueta = "Evento";
+        if (fInst && f === fInst && (!fIni || f < fIni)) {
+            etiqueta = "Instalación";
+        } else if (fFin && f === fFin && f !== fIni) {
+            etiqueta = "Cierre / Retorno";
+        } else if (fIni && f === fIni && lista.length > 1) {
+            etiqueta = (fInst && fInst === fIni) ? "Instalación / Evento" : "Día de Evento";
+        }
+        return {
+            idx: idx + 1,
+            fecha_iso: f,
+            fecha_fmt: fmt,
+            etiqueta: etiqueta
+        };
+    });
+}
+
+function parsearIncidenciasGuardadasPorDia(incTexto, dias) {
+    const map = {};
+    if (!incTexto || !incTexto.trim() || !dias || dias.length === 0) return map;
+
+    // Regex para buscar bloques como "📅 [DD/MM/AAAA - ...]: texto" o "📅 [AAAA-MM-DD - ...]: texto"
+    const regex = /📅\s*\[([^\]]+)\]:\s*([\s\S]*?)(?=(?:📅\s*\[|$))/g;
+    let match;
+    let huboBloques = false;
+    while ((match = regex.exec(incTexto)) !== null) {
+        huboBloques = true;
+        const tag = match[1];
+        const contenido = (match[2] || "").trim();
+        const diaEncontrado = dias.find(d => tag.includes(d.fecha_fmt) || tag.includes(d.fecha_iso) || tag.toLowerCase().includes(d.etiqueta.toLowerCase()));
+        if (diaEncontrado) {
+            map[diaEncontrado.fecha_iso] = contenido;
+        } else {
+            const primerSinAsignar = dias.find(d => !map[d.fecha_iso]);
+            if (primerSinAsignar) map[primerSinAsignar.fecha_iso] = contenido;
+        }
+    }
+
+    // Si no contenía bloques pero hay texto libre guardado (texto heredado)
+    if (!huboBloques && incTexto.trim()) {
+        const textoLimpio = incTexto.trim();
+        const diaInstalacion = dias.find(d => d.etiqueta.toLowerCase().includes('instalaci'));
+        if (diaInstalacion) {
+            map[diaInstalacion.fecha_iso] = textoLimpio;
+        } else if (dias.length > 0) {
+            map[dias[0].fecha_iso] = textoLimpio;
+        }
+    }
+
+    return map;
+}
+
+function sincronizarIncidenciasMultidiaCheckin() {
+    const inputsDias = document.querySelectorAll('.checkin-dia-incidencia');
+    const masterTextarea = document.getElementById('checkout-checkin-incidencias');
+    if (!inputsDias || inputsDias.length === 0 || !masterTextarea) return;
+
+    const bloques = [];
+    inputsDias.forEach(inp => {
+        const eti = inp.getAttribute('data-etiqueta') || inp.getAttribute('data-fecha');
+        const txt = inp.value.trim();
+        if (txt) {
+            bloques.push(`📅 [${eti}]:\n${txt}`);
+        }
+    });
+
+    masterTextarea.value = bloques.join('\n\n');
+}
+
+function renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia) {
+    const contenedor = document.getElementById('checkout-checkin-incidencias-container');
+    if (!contenedor) return;
+
+    const dias = obtenerDiasDelProyecto(statusPack);
+
+    // Si es un evento de 1 solo día o sin fechas específicas:
+    if (dias.length <= 1) {
+        contenedor.innerHTML = `
+            <textarea id="checkout-checkin-incidencias" class="op-textarea" rows="4" placeholder="Reporte cualquier percance, detalle técnico o imprevisto ocurrido en el evento (ej. fallas de internet/red, cambios de set, retrasos de programa, etc.)...">${!esVacia ? incLimpia : ''}</textarea>
+        `;
+        return;
+    }
+
+    // Evento Multidía: construir bloques por fecha
+    const mapaDias = parsearIncidenciasGuardadasPorDia(incLimpia, dias);
+
+    let cardsHtml = `
+        <textarea id="checkout-checkin-incidencias" style="display: none;">${!esVacia ? incLimpia : ''}</textarea>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+    `;
+
+    dias.forEach(d => {
+        const valDia = mapaDias[d.fecha_iso] || "";
+        cardsHtml += `
+            <div style="background: white; border: 1px solid #bfdbfe; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 11px 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                    <strong style="color: #1e40af; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-calendar-check" style="font-size: 17px; color: #2563eb;"></i>
+                        📅 Día ${d.idx} (${d.fecha_fmt} - ${d.etiqueta}):
+                    </strong>
+                    <button type="button" onclick="marcarDiaCheckinSinIncidencias('${d.fecha_iso}')" style="background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 5px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background .15s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+                        <i class="ph ph-check-circle"></i> Sin incidencias este día
+                    </button>
+                </div>
+                <textarea class="op-textarea checkin-dia-incidencia" id="checkin-dia-${d.fecha_iso}" data-fecha="${d.fecha_iso}" data-etiqueta="${d.fecha_fmt} - ${d.etiqueta}" rows="2" placeholder="Área de texto para incidencias de ${d.etiqueta.toLowerCase()} (${d.fecha_fmt})..." style="width: 100%; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; background: #f8fafc;" onfocus="this.style.background='#ffffff'; this.style.borderColor='#3b82f6';" onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';" oninput="sincronizarIncidenciasMultidiaCheckin()">${valDia}</textarea>
+            </div>
+        `;
+    });
+
+    cardsHtml += `</div>`;
+    contenedor.innerHTML = cardsHtml;
+
+    sincronizarIncidenciasMultidiaCheckin();
+}
+
 // ==============================================================================
 // MÓDULO: checkout.js
 // 14. Checkout y logística VPF
@@ -552,8 +692,7 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         const esVacia = !incLimpia || ["sin incidencias", "sin incidencias reportadas", "ninguna", "ok", "none", "null"].includes(incLimpia.toLowerCase().trim());
         const incSalida = document.getElementById('checkout-salida-incidencias');
         if (incSalida) incSalida.value = !esVacia ? incLimpia : "";
-        const incCheckin = document.getElementById('checkout-checkin-incidencias');
-        if (incCheckin) incCheckin.value = !esVacia ? incLimpia : "";
+        renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia);
 
         // Cargar ítems de salida y checkin
         const detalle = statusPack.detalle || [];
@@ -1250,6 +1389,24 @@ function marcarCheckinSinIncidencias(tipo = 'checkin') {
     const el = document.getElementById(tipo === 'salida' ? 'checkout-salida-incidencias' : 'checkout-checkin-incidencias');
     if (el) {
         el.value = "Evento concluido sin incidencias.";
+    }
+    // Si hay tarjetas multidía en check-in, marcarlas todas sin incidencias
+    if (tipo === 'checkin') {
+        const diasTextareas = document.querySelectorAll('.checkin-dia-incidencia');
+        if (diasTextareas && diasTextareas.length > 0) {
+            diasTextareas.forEach(t => {
+                t.value = "Sin incidencias reportadas.";
+            });
+            sincronizarIncidenciasMultidiaCheckin();
+        }
+    }
+}
+
+function marcarDiaCheckinSinIncidencias(fecIso) {
+    const ta = document.getElementById(`checkin-dia-${fecIso}`);
+    if (ta) {
+        ta.value = "Sin incidencias reportadas.";
+        sincronizarIncidenciasMultidiaCheckin();
     }
 }
 

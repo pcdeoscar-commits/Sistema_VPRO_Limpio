@@ -328,7 +328,11 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Op
                            encode(COALESCE(resp_de_produccion, '')::bytea, 'hex'),
                            encode(COALESCE(responsable_gastos, '')::bytea, 'hex'),
                            encode(COALESCE(chofer, '')::bytea, 'hex'),
-                           encode(COALESCE(choferes_por_vehiculo::text, '{}')::bytea, 'hex')
+                           encode(COALESCE(choferes_por_vehiculo::text, '{}')::bytea, 'hex'),
+                           fec_de_instalacion,
+                           fec_del_evento,
+                           fec_fin_evento,
+                           encode(COALESCE(nombre_evento, '')::bytea, 'hex')
                     FROM public.eventos WHERE id_evento = :id
                 """), 
                 {"id": id_evento}
@@ -341,6 +345,15 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Op
             choferes_veh = safe_decode_hex(conv_row[5]) if conv_row and len(conv_row) > 5 and conv_row[5] else "{}"
 
             es_convocado = es_coord or usuario_pertenece_a_op(nom_usuario, resp_prod, resp_gast, chofer, convocados, choferes_veh)
+            
+            fechas_jornadas = []
+            try:
+                fechas_jornadas = [str(r[0]) for r in conn.execute(
+                    text("SELECT DISTINCT fecha_jornada FROM public.asistencia_locacion WHERE id_evento = :id ORDER BY fecha_jornada ASC"),
+                    {"id": id_evento}
+                ).fetchall() if r[0]]
+            except Exception as e_jorn:
+                print(f"⚠️ Aviso cargando fechas_jornadas en checkout: {e_jorn}")
             
             m_row = conn.execute(
                 text("SELECT id_maestro, encode(incidencias_generales::text::bytea, 'hex'), estado_bodega, encode(nombre_kit::text::bytea, 'hex') FROM public.checkouts_maestro WHERE folio_op = :id AND TRIM(id_empleado) = :emp"), 
@@ -415,6 +428,11 @@ def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Op
             "incidencias_generales": reparar_mojibake(safe_decode_hex(m_row[1]).strip()) if m_row and m_row[1] else "", 
             "estado_bodega": m_row[2] if m_row else "NUEVO", 
             "nombre_kit": reparar_mojibake(safe_decode_hex(m_row[3]).strip()) if m_row and m_row[3] else "--- Sin plantilla ---",
+            "fec_de_instalacion": str(conv_row[6]) if conv_row and len(conv_row) > 6 and conv_row[6] else "",
+            "fec_del_evento": str(conv_row[7]) if conv_row and len(conv_row) > 7 and conv_row[7] else "",
+            "fec_fin_evento": str(conv_row[8]) if conv_row and len(conv_row) > 8 and conv_row[8] else "",
+            "nombre_evento": safe_decode_hex(conv_row[9]) if conv_row and len(conv_row) > 9 and conv_row[9] else "",
+            "fechas_jornadas": fechas_jornadas,
             "detalle": df_detalle
         }
     except Exception as e:
@@ -615,6 +633,30 @@ def registrar_retorno_checkin(payload: dict):
                     hora = CURRENT_TIME 
                 WHERE id_maestro = :id_m
             """), {"obs": incidencias_gen, "id_m": id_maestro})
+
+            # Sincronizar incidencias por día con la OP si contiene bloques fechados
+            try:
+                import re
+                bloques = re.findall(r'📅\s*\[([^\]]+)\]:\s*(.*?)(?=(?:📅\s*\[|$))', incidencias_gen, re.DOTALL)
+                if bloques:
+                    for tag_fec, txt_inc in bloques:
+                        txt_clean = txt_inc.strip()
+                        fec_match = re.search(r'(\d{4}-\d{2}-\d{2})|(\d{2}[-/]\d{2}[-/]\d{4})', tag_fec)
+                        if fec_match and txt_clean and txt_clean.lower() not in ("sin incidencias", "sin incidencias este día", "sin incidencias reportadas", "ninguna"):
+                            f_raw = fec_match.group(0)
+                            p = re.split(r'[-/]', f_raw)
+                            fec_norm = f"{p[0]}-{p[1].zfill(2)}-{p[2].zfill(2)}" if len(p[0]) == 4 else f"{p[2]}-{p[1].zfill(2)}-{p[0].zfill(2)}"
+                            conn_ev.execute(text("""
+                                UPDATE public.eventos 
+                                SET incidencias_por_dia = jsonb_set(
+                                    COALESCE(incidencias_por_dia, '{}'::jsonb), 
+                                    ARRAY[:fec], 
+                                    to_jsonb(CAST(:inc AS text))
+                                )
+                                WHERE id_evento = :id_op
+                            """), {"fec": fec_norm, "inc": txt_clean, "id_op": id_op})
+            except Exception as e_sync:
+                print(f"⚠️ Nota sincronizando incidencias diarias en OP: {e_sync}")
 
             for item in items:
                 valor_cotejo = bool(item.get("COTEJADO", item.get("cotejado", False)))

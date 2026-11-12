@@ -562,23 +562,22 @@ def registrar_receta_tratamiento_medico(log: dict):
 
                 ticket_id = f"REP-INT-{int(time.time())}"
 
+                reportante_nombre = ""
+                try:
+                    with engine_personal.connect() as conn_p:
+                        row_emp = conn_p.execute(text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"), {"id": emp_id}).first()
+                        if row_emp and row_emp[0]:
+                            reportante_nombre = safe_decode_hex(row_emp[0]).strip()
+                except Exception:
+                    pass
+                nom_reportante_final = reportante_nombre if reportante_nombre else f"Empleado ID: {emp_id}"
 
                 cursor.execute("""
-
-
                     INSERT INTO public.reparaciones 
-
-
                         (num_d_servicio, fecha_d_reporte, equipo_n_reparacion, area_q_pertenece, reportante, estado_actual, etapa_taller, tipo_mantenimiento, descripcion_del_dano, costo_d_reparacion, folio_vpro, fec_d_ent_a_reparacion)
-
-
                     VALUES 
-
-
                         (%s, CURRENT_DATE, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_DATE);
-
-
-                """, (ticket_id, cod_eq, depto, f"Empleado ID: {emp_id}", "⚙️ PENDIENTE", etapa_taller, "CORRECTIVO", desc, costo, fol_vpro))
+                """, (ticket_id, cod_eq, depto, nom_reportante_final, "⚙️ PENDIENTE", etapa_taller, "CORRECTIVO", desc, costo, fol_vpro))
 
 
                 

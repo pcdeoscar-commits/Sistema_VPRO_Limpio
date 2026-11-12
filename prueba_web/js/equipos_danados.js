@@ -870,11 +870,38 @@ function consultarExpedienteManual() {
 // ==============================================================================
 // 7. FORMULARIO REPORTE DIRECTO Y AUTOCOMPLETE
 // ==============================================================================
+window._coincidenciasDirectoActuales = [];
+window._indiceSugerenciaSeleccionada = -1;
+
+function escaparHtmlSeguro(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+async function cargarCatalogoGlobalEquipos() {
+    try {
+        const resCat = await fetch(`${API_URL}/api/inventario/catalogo-global`);
+        if (resCat.ok) {
+            catalogoGlobalEquipos = await resCat.json() || [];
+        }
+    } catch(e) {
+        console.warn("No se pudo cargar catalogo global:", e);
+    }
+}
+
 function alternarFormularioReporteDirecto() {
     const el = document.getElementById("contenedor-form-reporte-directo");
     if (!el) return;
     el.style.display = el.style.display === "none" ? "block" : "none";
     if (el.style.display === "block") {
+        if (!catalogoGlobalEquipos || catalogoGlobalEquipos.length === 0) {
+            cargarCatalogoGlobalEquipos();
+        }
         const inp = document.getElementById("input-danos-equipo-directo");
         if (inp) inp.focus();
     }
@@ -914,14 +941,17 @@ function filtrarSugerenciasDirecto(termino) {
     const t = normalizarTextoBusqueda(termino);
     let coincidencias = [];
     if (!t) {
-        coincidencias = catalogoGlobalEquipos.slice(0, 30);
+        coincidencias = (catalogoGlobalEquipos || []).slice(0, 30);
     } else {
         const palabras = t.split(" ").filter(Boolean);
-        coincidencias = catalogoGlobalEquipos.filter(item => {
+        coincidencias = (catalogoGlobalEquipos || []).filter(item => {
             const norm = normalizarTextoBusqueda(item);
             return palabras.every(pal => norm.includes(pal));
         }).slice(0, 50);
     }
+
+    window._coincidenciasDirectoActuales = coincidencias;
+    window._indiceSugerenciaSeleccionada = -1;
 
     if (coincidencias.length === 0) {
         dropdown.innerHTML = `<div style="padding: 12px; text-align: center; color: #64748b; font-size: 12.5px;">No se encontraron equipos</div>`;
@@ -929,17 +959,20 @@ function filtrarSugerenciasDirecto(termino) {
         return;
     }
 
-    dropdown.innerHTML = coincidencias.map(item => {
+    dropdown.innerHTML = coincidencias.map((item, idx) => {
         const partes = item.split(" - ");
         const codigo = partes[0].trim();
         const nombre = partes.slice(1).join(" - ").trim() || codigo;
         return `
-            <div onclick="seleccionarEquipoDirecto('${codigo.replace(/'/g, "\\'")}', '${item.replace(/'/g, "\\'")}')" 
+            <div id="item-sugerencia-directo-${idx}"
+                 data-idx="${idx}"
+                 onmousedown="seleccionarEquipoDirectoPorIndice(${idx})"
+                 onclick="seleccionarEquipoDirectoPorIndice(${idx})" 
                  style="padding: 9px 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 13px;"
-                 onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='white'">
+                 onmouseover="destacarSugerenciaDirecto(${idx})" onmouseout="this.style.background='white'">
                 <div>
-                    <b>${nombre}</b>
-                    <div style="font-size: 11px; color: #64748b; font-family: monospace;">${codigo}</div>
+                    <b>${escaparHtmlSeguro(nombre)}</b>
+                    <div style="font-size: 11px; color: #64748b; font-family: monospace;">${escaparHtmlSeguro(codigo)}</div>
                 </div>
             </div>
         `;
@@ -948,17 +981,39 @@ function filtrarSugerenciasDirecto(termino) {
     dropdown.style.display = "block";
 }
 
-function ocultarSugerenciasDirecto() {
-    const dropdown = document.getElementById("sugerencias-directo-dropdown");
-    if (dropdown) dropdown.style.display = "none";
+function destacarSugerenciaDirecto(idx) {
+    const items = document.querySelectorAll("#sugerencias-directo-dropdown > div");
+    items.forEach((el, i) => {
+        if (i === idx) {
+            el.style.background = "#eff6ff";
+            window._indiceSugerenciaSeleccionada = idx;
+        } else {
+            el.style.background = "white";
+        }
+    });
+}
+
+function seleccionarEquipoDirectoPorIndice(idx) {
+    if (!window._coincidenciasDirectoActuales || !window._coincidenciasDirectoActuales[idx]) return;
+    const item = window._coincidenciasDirectoActuales[idx];
+    const partes = item.split(" - ");
+    const codigo = partes[0].trim();
+    seleccionarEquipoDirecto(codigo, item);
 }
 
 function seleccionarEquipoDirecto(codigo, itemCompleto) {
     const input = document.getElementById("input-danos-equipo-directo");
     const hidden = document.getElementById("danos-sel-equipo-directo");
-    if (input) input.value = itemCompleto;
+    const btnLimpiar = document.getElementById("btn-limpiar-busqueda-directo");
+    if (input) input.value = itemCompleto || codigo;
     if (hidden) hidden.value = codigo;
+    if (btnLimpiar) btnLimpiar.style.display = "block";
     ocultarSugerenciasDirecto();
+}
+
+function ocultarSugerenciasDirecto() {
+    const dropdown = document.getElementById("sugerencias-directo-dropdown");
+    if (dropdown) dropdown.style.display = "none";
 }
 
 function limpiarBusquedaDirecto() {
@@ -975,7 +1030,39 @@ function limpiarBusquedaDirecto() {
 }
 
 function manejarKeydownSugerenciasDirecto(e) {
-    if (e.key === "Escape") ocultarSugerenciasDirecto();
+    const dropdown = document.getElementById("sugerencias-directo-dropdown");
+    const esVisible = dropdown && dropdown.style.display === "block";
+
+    if (e.key === "Escape") {
+        ocultarSugerenciasDirecto();
+        return;
+    }
+
+    if (esVisible && (window._coincidenciasDirectoActuales || []).length > 0) {
+        const total = window._coincidenciasDirectoActuales.length;
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            let sig = window._indiceSugerenciaSeleccionada + 1;
+            if (sig >= total) sig = 0;
+            destacarSugerenciaDirecto(sig);
+            const el = document.getElementById(`item-sugerencia-directo-${sig}`);
+            if (el) el.scrollIntoView({ block: "nearest" });
+            return;
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            let ant = window._indiceSugerenciaSeleccionada - 1;
+            if (ant < 0) ant = total - 1;
+            destacarSugerenciaDirecto(ant);
+            const el = document.getElementById(`item-sugerencia-directo-${ant}`);
+            if (el) el.scrollIntoView({ block: "nearest" });
+            return;
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            const targetIdx = window._indiceSugerenciaSeleccionada >= 0 ? window._indiceSugerenciaSeleccionada : 0;
+            seleccionarEquipoDirectoPorIndice(targetIdx);
+            return;
+        }
+    }
 }
 
 // Cierre automático al hacer clic fuera
@@ -988,11 +1075,32 @@ document.addEventListener("click", function(e) {
 });
 
 async function guardarReporteDirectoDanado() {
-    const selEq = document.getElementById("danos-sel-equipo-directo")?.value;
+    let selEq = document.getElementById("danos-sel-equipo-directo")?.value;
+    const txtInput = document.getElementById("input-danos-equipo-directo")?.value?.trim() || "";
+
+    // Si no se hizo clic en el dropdown pero el usuario tecleó el código o nombre:
+    if (!selEq && txtInput) {
+        const normInput = normalizarTextoBusqueda(txtInput);
+        const match = (catalogoGlobalEquipos || []).find(item => {
+            const cod = normalizarTextoBusqueda(item.split(" - ")[0]);
+            return cod === normInput;
+        });
+        if (match) {
+            selEq = match.split(" - ")[0].trim();
+            seleccionarEquipoDirecto(selEq, match);
+        } else if (window._coincidenciasDirectoActuales && window._coincidenciasDirectoActuales.length > 0) {
+            const primerMatch = window._coincidenciasDirectoActuales[0];
+            selEq = primerMatch.split(" - ")[0].trim();
+            seleccionarEquipoDirecto(selEq, primerMatch);
+        } else {
+            selEq = txtInput.split(" - ")[0].trim();
+        }
+    }
+
     const tipoEvento = document.getElementById("danos-tipo-evento")?.value;
     const estInicial = document.getElementById("danos-estado-inicial")?.value || "DIAGNOSTICO";
     const costo = parseFloat(document.getElementById("danos-costo-estimado")?.value || 0);
-    const detalle = document.getElementById("danos-txt-detalle")?.value.trim();
+    const detalle = document.getElementById("danos-txt-detalle")?.value?.trim() || "";
 
     if (!selEq || !detalle) {
         alert("⚠️ Por favor selecciona un equipo y escribe el diagnóstico o detalle de la falla.");

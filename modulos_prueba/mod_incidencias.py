@@ -76,9 +76,47 @@ def renderizar_modulo(API_URL):
 
             def clasificar_texto(texto):
                 if not texto: return "✅ Sin Incidencias"
-                t = str(texto).lower().strip()
-                if t.startswith("sin incidencia") or t in ["ninguna", "todo bien", "exito", "ok", "n/a", "none", "---", ""]: 
+                import unicodedata, re
+                nfd = unicodedata.normalize('NFD', str(texto))
+                sin_tildes = ''.join(c for c in nfd if unicodedata.category(c) != 'Mn')
+                t = re.sub(r'[^a-zA-Z0-9\s]', ' ', sin_tildes.lower())
+                t = re.sub(r'\s+', ' ', t).strip()
+                if not t: return "✅ Sin Incidencias"
+
+                patrones_limpios = [
+                    "evento concluido sin incidencias",
+                    "evento concluido sin incidencia",
+                    "concluido sin incidencias",
+                    "concluido sin incidencia",
+                    "sin incidencias reportadas",
+                    "sin incidencia reportada",
+                    "sin incidencias este dia",
+                    "sin incidencias",
+                    "sin incidencia",
+                    "operacion limpia",
+                    "servicio limpio",
+                    "todo bien",
+                    "todo en orden",
+                    "sin novedad",
+                    "sin novedades",
+                    "ninguna novedad",
+                    "ninguna",
+                    "ninguno",
+                    "exito",
+                    "ok",
+                    "n a",
+                    "na",
+                    "none",
+                    "null"
+                ]
+
+                for p in patrones_limpios:
+                    if t == p or t.startswith(p) or t.endswith(p):
+                        return "✅ Sin Incidencias"
+
+                if t.startswith("sin incidencia") or t.startswith("sin incidencias"):
                     return "✅ Sin Incidencias"
+
                 return "⚠️ Con Incidencias"
 
             # 1. Calificamos al Empleado

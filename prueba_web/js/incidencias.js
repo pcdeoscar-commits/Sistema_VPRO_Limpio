@@ -79,10 +79,51 @@ async function cargarModuloIncidencias() {
 
             function clasificarTexto(texto) {
                 if (!texto) return "✅ Sin Incidencias";
-                const t = texto.toLowerCase().trim();
-                if (t.startsWith("sin incidencia") || ["ninguna", "todo bien", "exito", "ok", "n/a", "none", "---", ""].includes(t)) {
+                const t = texto.toLowerCase()
+                    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                    .replace(/[^a-z0-9\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                if (!t) return "✅ Sin Incidencias";
+
+                const patronesLimpios = [
+                    "evento concluido sin incidencias",
+                    "evento concluido sin incidencia",
+                    "concluido sin incidencias",
+                    "concluido sin incidencia",
+                    "sin incidencias reportadas",
+                    "sin incidencia reportada",
+                    "sin incidencias este dia",
+                    "sin incidencias",
+                    "sin incidencia",
+                    "operacion limpia",
+                    "servicio limpio",
+                    "todo bien",
+                    "todo en orden",
+                    "sin novedad",
+                    "sin novedades",
+                    "ninguna novedad",
+                    "ninguna",
+                    "ninguno",
+                    "exito",
+                    "ok",
+                    "n a",
+                    "na",
+                    "none",
+                    "null"
+                ];
+
+                for (let p of patronesLimpios) {
+                    if (t === p || t.startsWith(p) || t.endsWith(p)) {
+                        return "✅ Sin Incidencias";
+                    }
+                }
+
+                if (t.startsWith("sin incidencia") || t.startsWith("sin incidencias")) {
                     return "✅ Sin Incidencias";
                 }
+
                 return "⚠️ Con Incidencias";
             }
 

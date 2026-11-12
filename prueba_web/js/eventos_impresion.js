@@ -1913,24 +1913,6 @@ async function sincronizarConvocadosAJornada(idEvento, fecha) {
     }
 }
 
-    try {
-        const res = await fetch(`${API_URL}/api/asistencia/locacion/${idEvento}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ registros: registrosNuevos })
-        });
-        if (res.ok) {
-            alert(`✅ ¡Día ${fechaSeleccionada} agregado! Ya puedes asignar las horas.`);
-            cargarJornadasGira(idEvento);
-        } else {
-            const errData = await res.json().catch(() => ({}));
-            alert(`❌ Error del servidor al crear la nueva jornada: ${errData.detail || ''}`);
-        }
-    } catch (e) {
-        alert(`❌ Error de conexión: ${e.message}`);
-    }
-}
-
 // -------------------------------------------------------------
 // Guardado Maestro de la Orden de Producción
 // -------------------------------------------------------------

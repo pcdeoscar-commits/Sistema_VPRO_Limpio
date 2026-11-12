@@ -175,7 +175,8 @@ async function cargarDatosInicio() {
                           ((usuarioLogueado?.rol || '').toUpperCase().includes('ADMIN')) ||
                           ((usuarioLogueado?.puesto || '').toUpperCase().includes('ADMIN'));
 
-        const esSeguimientoMantenimiento = ['201', '202'].includes(String(idEmp).trim());
+        const esJefeDanos = esAdminRH || esProductor || ['203'].includes(String(idEmp).trim());
+        const esSeguimientoMantenimiento = true;
 
         // Identificar exclusivamente si el usuario tiene rol de Coordinador o Productor
         const rolUser = (usuarioLogueado?.rol || '').toUpperCase().trim();
@@ -200,7 +201,7 @@ async function cargarDatosInicio() {
             fetch(`${API_URL}/api/rh/vacaciones/${idEmp}`),
             fetch(`${API_URL}/api/gastos/pendientes-auditoria`),
             esAdminRH ? fetch(`${API_URL}/api/rh/permisos/pendientes`) : Promise.resolve({ ok: false }),
-            esSeguimientoMantenimiento ? fetch(`${API_URL}/api/inventario/radar-danos`) : Promise.resolve({ ok: false }),
+            esSeguimientoMantenimiento ? fetch(`${API_URL}/api/inventario/radar-danos?id_empleado=${encodeURIComponent(idEmp)}&rol=${encodeURIComponent(rolUser)}`) : Promise.resolve({ ok: false }),
             esCoordOProductor ? fetch(`${API_URL}/api/eventos/pendientes-convocados`) : Promise.resolve({ ok: false }),
             fetch(`${API_URL}/api/rh/permisos?id_empleado=${idEmp}`)
         ]);
@@ -356,7 +357,7 @@ async function cargarDatosInicio() {
                         color: '#dc2626',
                         bg: '#fef2f2',
                         border: '#ef4444',
-                        titulo: '🛠️ Reportes de Equipos Dañados y Taller (Seguimiento)',
+                        titulo: esJefeDanos ? '🛠️ Reportes de Equipos Dañados y Taller (Seguimiento Global)' : '🛠️ Mis Equipos Dañados Reportados (Seguimiento)', 
                         badge: `${danosActivos.length} equipo${danosActivos.length !== 1 ? 's' : ''}`,
                         badgeColor: '#dc2626',
                         items: danosActivos,

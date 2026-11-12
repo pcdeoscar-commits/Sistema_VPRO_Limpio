@@ -22,7 +22,7 @@ import datetime
 from typing import Dict, Any, List, Optional
 
 
-from fastapi import APIRouter, HTTPException, File, Form, UploadFile, Request
+from fastapi import APIRouter, HTTPException, File, Form, UploadFile, Request, Query
 
 
 from psycopg2.extras import RealDictCursor
@@ -284,9 +284,10 @@ def obtener_inventario_kits():
 
 
 @router.get("/api/inventario/radar-danos")
-
-
-def obtener_radar_danos():
+def obtener_radar_danos(
+    id_empleado: Optional[str] = Query(None, description="ID del empleado que consulta"),
+    rol: Optional[str] = Query(None, description="Rol del usuario que consulta")
+):
 
 
     """Consulta la tabla reparaciones y la cruza con los nombres de personal."""
@@ -401,34 +402,26 @@ def obtener_radar_danos():
 
 
             fila_limpia = dict(row)
-
-
             fila_limpia["REPORTÓ"] = nombre_real
-
-
+            fila_limpia["ID_REPORTANTE"] = id_extraido
             del fila_limpia["REPORTÓ_RAW"]
 
-
-
-
-
             num_serv = str(fila_limpia.get("NUM_SERVICIO") or "").strip()
-
-
             if num_serv:
-
-
                 if num_serv in servicios_vistos:
-
-
                     continue
-
-
                 servicios_vistos.add(num_serv)
 
+            # Filtro de visibilidad:
+            # Los roles PRODUCTOR, ADMIN o Dirección ven todo.
+            # Los demás empleados solo ven los equipos que ellos mismos reportaron.
+            rol_upper = str(rol or "").upper().strip()
+            id_consultante = str(id_empleado or "").strip()
+            es_jefe = any(jefe in rol_upper for jefe in ["ADMIN", "PRODUCTOR"]) or any(jefe in id_consultante for jefe in ["203"])
 
-
-
+            if not es_jefe and id_consultante:
+                if id_extraido != id_consultante:
+                    continue
 
             resultados_finales.append(fila_limpia)
 

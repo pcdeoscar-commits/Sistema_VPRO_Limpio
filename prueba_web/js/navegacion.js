@@ -124,7 +124,9 @@ function cambiarVista(idVista) {
 
 async function cargarBadges() {
     try {
-        const resDanados = await fetch(`${API_URL}/api/inventario/radar-danos`);
+        const idEmpBadge = usuarioLogueado?.id_empleado || '';
+        const rolBadge = usuarioLogueado?.rol || '';
+        const resDanados = await fetch(`${API_URL}/api/inventario/radar-danos?id_empleado=${encodeURIComponent(idEmpBadge)}&rol=${encodeURIComponent(rolBadge)}`);
         if (resDanados.ok) {
             const dataDanados = await resDanados.json();
             const badgeDanados = document.getElementById("badge-danados");

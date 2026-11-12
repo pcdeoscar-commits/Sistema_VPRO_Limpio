@@ -40,7 +40,8 @@ def validar_incidencias_op_para_gastos(folio_op: int):
             pendientes_ids = []
             for c in chks:
                 inc = (c["incidencias_generales"] or "").strip()
-                if not inc:
+                st = (c["estado_bodega"] or "").strip().upper()
+                if not inc or st != 'RECIBIDO':
                     pendientes_ids.append(str(c["id_emp"]).strip())
                     
             if not pendientes_ids:

@@ -474,7 +474,7 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
 
         idMaestroCheckoutActual = statusPack.id_maestro;
         estadoBodegaCheckoutActual = statusPack.estado_bodega || "NUEVO";
-        actualizarBadgeEstadoCheckout(estadoBodegaCheckoutActual);
+        actualizarBadgeEstadoCheckout(estadoBodegaCheckoutActual, statusPack.incidencias_generales);
 
         // Desglosar convocados y proveedores
         const convocados = desglosarArrayPostgres(statusPack.convocados);
@@ -816,24 +816,41 @@ async function cargarKitsEmpleadoActivo(idEmpleado, plantillaSeleccionada = null
     }
 }
 
-function actualizarBadgeEstadoCheckout(estado) {
+function actualizarBadgeEstadoCheckout(estado, incidencias = "") {
     const badge = document.getElementById('checkout-badge-estado');
     if (!badge) return;
 
     badge.className = 'badge-chk';
     const st = (estado || 'NUEVO').toUpperCase().trim();
+    const inc = (incidencias || '').trim();
+    const esIncVacia = !inc || ["sin incidencias", "sin incidencias reportadas", "ninguna", "ok", "none", "null"].includes(inc.toLowerCase());
+
     if (st === 'RECIBIDO') {
-        badge.classList.add('recibido');
-        badge.innerHTML = `<i class="ph ph-check-circle"></i> Estatus: RECIBIDO / LIBERADO`;
+        if (esIncVacia) {
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#991b1b';
+            badge.style.border = '1px solid #f87171';
+            badge.style.padding = '4px 12px';
+            badge.style.borderRadius = '20px';
+            badge.style.fontWeight = '700';
+            badge.innerHTML = `<i class="ph ph-warning-circle"></i> Estatus: RECIBIDO — INCIDENCIAS PENDIENTES`;
+        } else {
+            badge.classList.add('recibido');
+            badge.removeAttribute('style');
+            badge.innerHTML = `<i class="ph ph-check-circle"></i> Estatus: RECIBIDO / TODO AL DÍA`;
+        }
     } else if (st === 'DESPACHADO') {
         badge.classList.add('despachado');
-        badge.innerHTML = `<i class="ph ph-truck"></i> Estatus: DESPACHADO (En Evento)`;
+        badge.removeAttribute('style');
+        badge.innerHTML = `<i class="ph ph-truck"></i> Estatus: DESPACHADO (En Evento / Retorno Pendiente)`;
     } else if (st === 'PENDIENTE') {
         badge.classList.add('pendiente');
-        badge.innerHTML = `<i class="ph ph-clock"></i> Estatus: PENDIENTE AUTORIZACIÓN`;
+        badge.removeAttribute('style');
+        badge.innerHTML = `<i class="ph ph-clock"></i> Estatus: PENDIENTE AUTORIZACIÓN (Salida)`;
     } else {
         badge.classList.add('nuevo');
-        badge.innerHTML = `<i class="ph ph-sparkle"></i> Estatus: NUEVO (Sin Salida)`;
+        badge.removeAttribute('style');
+        badge.innerHTML = `<i class="ph ph-box-arrow-up"></i> Estatus: NUEVO (Salida Pendiente en Bodega)`;
     }
 }
 

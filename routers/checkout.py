@@ -805,45 +805,73 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
                 es_productor = (resp_prod.upper() == target_user.upper())
                 es_convocado = (target_user in convocados)
 
-                if es_convocado:
-                    m_row = conn.execute(
-                        text("SELECT estado_bodega, incidencias_generales FROM public.checkouts_maestro WHERE folio_op = :id AND TRIM(id_empleado) = :emp"), 
-                        {"id": id_ev, "emp": id_empleado.strip()}
-                    ).mappings().first()
+                m_row = conn.execute(
+                    text("SELECT estado_bodega, incidencias_generales FROM public.checkouts_maestro WHERE folio_op = :id AND TRIM(id_empleado) = :emp"), 
+                    {"id": id_ev, "emp": id_empleado.strip()}
+                ).mappings().first()
+                tiene_checkout = bool(m_row)
+
+                if es_convocado or tiene_checkout:
                     estado_actual_bodega = m_row["estado_bodega"] if m_row else "NUEVO"
                     inc_actual = (m_row["incidencias_generales"] if m_row and m_row["incidencias_generales"] else "").strip()
                     
-                    # Si está pendiente o si la OP fue expresamente rehabilitada por el coordinador
+                    # 1. Si está pendiente de salida o fue rehabilitada expresamente
                     if estado_actual_bodega in ["NUEVO", "PENDIENTE"] or es_hab:
                         tag_hab = " 🔓 [REHABILITADA]" if es_hab else ""
                         ops_pendientes.append({
                             "id_evento": id_ev, 
+                            "folio": id_ev,
+                            "cliente": cliente,
+                            "evento": evento,
                             "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}{tag_hab}", 
-                            "estado": "REHABILITADA" if es_hab else estado_actual_bodega
+                            "estado": "REHABILITADA" if es_hab else "SALIDA_PENDIENTE"
                         })
                         continue
+                    # 2. Si el hardware ya salió a evento y está en tránsito / pendiente de entrega (check-in)
+                    elif estado_actual_bodega == 'DESPACHADO':
+                        ops_pendientes.append({
+                            "id_evento": id_ev, 
+                            "folio": id_ev,
+                            "cliente": cliente,
+                            "evento": evento,
+                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}", 
+                            "estado": "DESPACHADO"
+                        })
+                        continue
+                    # 3. Si bodega ya recibió el hardware pero el colaborador NO ha redactado su bitácora de incidencias
                     elif estado_actual_bodega == 'RECIBIDO' and not inc_actual:
                         ops_pendientes.append({
                             "id_evento": id_ev, 
-                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento} ⚠️ [INCIDENCIAS PENDIENTES]", 
+                            "folio": id_ev,
+                            "cliente": cliente,
+                            "evento": evento,
+                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}", 
                             "estado": "INCIDENCIAS_PENDIENTES"
                         })
                         continue
 
+                # 4. Si es productor responsable y miembros de su crew tienen pendientes (salida, retorno o incidencias)
                 if es_productor and not any(op["id_evento"] == id_ev for op in ops_pendientes):
                     pendientes_crew = conn.execute(
                         text("SELECT count(id_maestro) FROM public.checkouts_maestro WHERE folio_op = :id AND estado_bodega != 'RECIBIDO'"),
+                        {"id": id_ev}
+                    ).scalar() or 0
+                    pendientes_inc_crew = conn.execute(
+                        text("SELECT count(id_maestro) FROM public.checkouts_maestro WHERE folio_op = :id AND (incidencias_generales IS NULL OR incidencias_generales = '')"),
                         {"id": id_ev}
                     ).scalar() or 0
                     total_creados = conn.execute(
                         text("SELECT count(id_maestro) FROM public.checkouts_maestro WHERE folio_op = :id"),
                         {"id": id_ev}
                     ).scalar() or 0
-                    if pendientes_crew > 0 or (len(convocados) > total_creados):
+                    if pendientes_crew > 0 or pendientes_inc_crew > 0 or (len(convocados) > total_creados):
                         ops_pendientes.append({
                             "id_evento": id_ev, 
-                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento} (Productor)", 
-                            "estado": "PENDIENTE (Equipo)"
+                            "folio": id_ev,
+                            "cliente": cliente,
+                            "evento": evento,
+                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}", 
+                            "estado": "PENDIENTE_CREW"
                         })
             return ops_pendientes
     except Exception as e: 

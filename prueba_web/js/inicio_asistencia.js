@@ -34,6 +34,104 @@ function obtenerRangoSemanaActual() {
     return { lunes: dias[0], domingo: dias[6], dias };
 }
 
+function obtenerEstiloNotifOP(estado) {
+    const est = (estado || 'PENDIENTE').toUpperCase();
+    
+    // 1. 🟥 Reporte de Incidencias Pendiente (Rojo Alerta)
+    if (est.includes('INCIDENCIA')) {
+        return {
+            colorTexto: '#b91c1c',
+            colorFondo: '#fff5f5',
+            colorBorde: '#fecaca',
+            bordeIzq: '#dc2626',
+            badgeBg: '#fee2e2',
+            badgeColor: '#991b1b',
+            badgeBorder: '#f87171',
+            icono: 'ph-warning-circle',
+            etiqueta: '⚠️ Reporte de Incidencias Pendiente',
+            descripcion: 'Hardware recibido en bodega. Falta capturar tu bitácora operativa.'
+        };
+    }
+    
+    // 2. 🟦 En Tránsito / Despachado (Azul Operativo)
+    if (est.includes('DESPACHADO') || est.includes('TRANSITO')) {
+        return {
+            colorTexto: '#1d4ed8',
+            colorFondo: '#eff6ff',
+            colorBorde: '#bfdbfe',
+            bordeIzq: '#2563eb',
+            badgeBg: '#dbeafe',
+            badgeColor: '#1e40af',
+            badgeBorder: '#60a5fa',
+            icono: 'ph-truck',
+            etiqueta: '🚚 En Evento / Retorno Pendiente',
+            descripcion: 'Equipo despachado en campo. Pendiente de entrega en Bodega (Check-in).'
+        };
+    }
+
+    // 3. 🟪 Pendiente de Equipo / Crew para el Productor (Púrpura / Morado)
+    if (est.includes('CREW') || est.includes('EQUIPO')) {
+        return {
+            colorTexto: '#6d28d9',
+            colorFondo: '#f5f3ff',
+            colorBorde: '#ddd6fe',
+            bordeIzq: '#7c3aed',
+            badgeBg: '#ede9fe',
+            badgeColor: '#5b21b6',
+            badgeBorder: '#a78bfa',
+            icono: 'ph-users-three',
+            etiqueta: '👥 Pendiente de tu Crew (Productor)',
+            descripcion: 'Colaboradores convocados tienen salidas o incidencias pendientes.'
+        };
+    }
+
+    // 4. 🩵 OP Rehabilitada (Teal / Cian)
+    if (est.includes('REHABILITADA')) {
+        return {
+            colorTexto: '#0f766e',
+            colorFondo: '#f0fdfa',
+            colorBorde: '#99f6e4',
+            bordeIzq: '#0d9488',
+            badgeBg: '#ccfbf1',
+            badgeColor: '#115e59',
+            badgeBorder: '#5eead4',
+            icono: 'ph-lock-key-open',
+            etiqueta: '🔓 OP Rehabilitada (Edición Activa)',
+            descripcion: 'Coordinación abrió la OP para modificaciones de último minuto.'
+        };
+    }
+
+    // 5. 🟩 Completada / Liberada (Verde)
+    if (est.includes('RECIBIDO') || est.includes('LIBERAD') || est.includes('COMPLETA')) {
+        return {
+            colorTexto: '#15803d',
+            colorFondo: '#f0fdf4',
+            colorBorde: '#bbf7d0',
+            bordeIzq: '#16a34a',
+            badgeBg: '#dcfce7',
+            badgeColor: '#166534',
+            badgeBorder: '#4ade80',
+            icono: 'ph-check-circle',
+            etiqueta: '✅ Todo al Día / Liberada',
+            descripcion: 'Hardware entregado e incidencias reportadas correctamente.'
+        };
+    }
+
+    // 6. 🟧 Salida Pendiente en Bodega (Ámbar / Naranja)
+    return {
+        colorTexto: '#b45309',
+        colorFondo: '#fffbeb',
+        colorBorde: '#fde68a',
+        bordeIzq: '#d97706',
+        badgeBg: '#fef3c7',
+        badgeColor: '#92400e',
+        badgeBorder: '#f59e0b',
+        icono: 'ph-box-arrow-up',
+        etiqueta: '📦 Salida Pendiente en Bodega',
+        descripcion: 'Aún no acudes a Bodega a retirar el hardware asignado.'
+    };
+}
+
 async function cargarDatosInicio() {
     if (!usuarioLogueado) return;
 
@@ -296,31 +394,60 @@ async function cargarDatosInicio() {
             }
         } catch(e) { console.error('Danos seguimiento notif:', e); }
 
-        // ── B. OPs convocadas (Checkout pendiente) ────────────────────────
+        // ── B. OPs convocadas (Checkout e Incidencias por Color) ─────────
         try {
             if (resCheck.status === 'fulfilled' && resCheck.value.ok) {
                 const ops = await resCheck.value.json();
-                gruposHtml.push(buildDropdownCard({
-                    icon: 'ph-clipboard-text',
-                    color: '#b45309', bg: '#fffbeb', border: '#d97706',
-                    titulo: '📋 Órdenes de Producción asignadas',
-                    badge: `${ops.length} OP${ops.length !== 1 ? 's' : ''}`,
-                    badgeColor: '#b45309',
-                    items: ops,
-                    renderItem: (op) => `
-                        <div style="display:flex;align-items:center;gap:10px;padding:8px 8px;border-radius:8px;margin-bottom:4px;background:#ffffff;border:1px solid #fef3c7;">
-                            <div onclick="abrirCheckoutConOP(${op.id_evento||0}, '${(op.label||'').replace(/'/g, "\'")}')" style="flex:1;cursor:pointer;">
-                                <div style="font-size:13px;font-weight:700;color:#78350f;display:flex;align-items:center;gap:6px;">
-                                    <i class="ph ph-clipboard-text" style="color:#d97706;"></i> ${op.label||op.folio||'Orden pendiente'}
+                if (ops && ops.length > 0) {
+                    const conIncidencias = ops.filter(o => (o.estado || '').includes('INCIDENCIA')).length;
+                    
+                    let badgeTxt = `${ops.length} OP${ops.length !== 1 ? 's' : ''}`;
+                    let badgeCol = '#b45309';
+                    if (conIncidencias > 0) {
+                        badgeTxt = `${ops.length} OP${ops.length !== 1 ? 's' : ''} (${conIncidencias} con incidencias pendientes)`;
+                        badgeCol = '#dc2626';
+                    }
+
+                    gruposHtml.push(buildDropdownCard({
+                        icon: 'ph-clipboard-text',
+                        color: conIncidencias > 0 ? '#dc2626' : '#b45309', 
+                        bg: conIncidencias > 0 ? '#fff5f5' : '#fffbeb', 
+                        border: conIncidencias > 0 ? '#f87171' : '#d97706',
+                        titulo: '📋 Órdenes de Producción asignadas',
+                        badge: badgeTxt,
+                        badgeColor: badgeCol,
+                        items: ops,
+                        renderItem: (op) => {
+                            const cfg = obtenerEstiloNotifOP(op.estado);
+                            const folioTexto = op.folio || op.id_evento || '';
+                            const labelTexto = op.label || `OP-${String(folioTexto).padStart(3, '0')}`;
+                            return `
+                                <div style="display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:8px;margin-bottom:6px;background:${cfg.colorFondo};border:1px solid ${cfg.colorBorde};border-left:5px solid ${cfg.bordeIzq};box-shadow:0 1px 3px rgba(0,0,0,0.03);transition:all .15s ease;">
+                                    <div onclick="abrirCheckoutConOP(${op.id_evento||0}, '${labelTexto.replace(/'/g, "\\'")}')" style="flex:1;cursor:pointer;">
+                                        <div style="font-size:13.5px;font-weight:700;color:${cfg.colorTexto};display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+                                            <i class="ph ${cfg.icono}" style="font-size:16px;color:${cfg.bordeIzq};"></i> 
+                                            <span>${labelTexto}</span>
+                                        </div>
+                                        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;">
+                                            <span style="background:${cfg.badgeBg};color:${cfg.badgeColor};border:1px solid ${cfg.badgeBorder};font-size:11px;font-weight:800;padding:2px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:4px;">
+                                                ${cfg.etiqueta}
+                                            </span>
+                                            <span style="font-size:11.5px;color:#64748b;font-weight:500;">
+                                                ${cfg.descripcion}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="event.stopPropagation(); window.open('chat.html?folio=${op.folio||op.id_evento}', '_blank');" 
+                                            title="Abrir Chat Operativo de esta OP"
+                                            style="background:#059669;color:white;border:none;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;flex-shrink:0;box-shadow:0 2px 4px rgba(5,150,105,0.25);transition:background .15s;"
+                                            onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
+                                        <i class="ph ph-chat-teardrop-dots" style="font-size:15px;"></i> Chat OP
+                                    </button>
                                 </div>
-                                <div style="font-size:11.5px;color:#92400e;margin-top:2px;">Estatus: <b>${op.estado||'PENDIENTE'}</b></div>
-                            </div>
-                            <button type="button" onclick="event.stopPropagation(); window.open('chat.html?folio=${op.folio||op.id_evento}', '_blank');" 
-                                    style="background:#059669;color:white;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;flex-shrink:0;box-shadow:0 2px 4px rgba(5,150,105,0.25);">
-                                <i class="ph ph-chat-teardrop-dots" style="font-size:15px;"></i> Chat OP
-                            </button>
-                        </div>`
-                }));
+                            `;
+                        }
+                    }));
+                }
             }
         } catch(e) { console.error('Checkout notif:', e); }
 

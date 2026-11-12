@@ -36,7 +36,7 @@ BANNER_INST = r'prueba_web\vendor\img\vpro_banner_institucional.png'
 LOGO_ISO = r'prueba_web\vendor\img\vpro_iso_9001_hq.jpg'
 LOGO_VPRO = r'prueba_web\vendor\img\vpro_logo_oficial.png'
 
-FOOTER_SIGNATURE = "Powered By: Vpro - Cuahutémoc Rivera Agundez & Ag; IA. Partners"
+FOOTER_SIGNATURE = "Powered by VPRO — Cuahutémoc Rivera Agúndez & Ag AI Partners"
 SYSTEM_SUBTITLE = "VPRO DASHBOARD ENTERPRISE v2.4.0 • SISTEMA INTEGRAL DIGITAL"
 
 def agregar_fondo(slide, es_oscuro=True):

@@ -217,18 +217,21 @@ function renderChoferesPorVehiculo(isReadOnly = false) {
 
     if (!window.opChoferesPorVehiculo) window.opChoferesPorVehiculo = {};
 
-    // Personal convocado elegible para conducir: Estudio Local + Cuadrilla foránea/remota + Externos
+    // Personal convocado elegible para conducir:
+    // 🚗 REGLA ESTRICTA: Si es viaje foráneo (hay cuadrilla remota), los conductores de los autos que viajan
+    // son EXCLUSIVAMENTE los que viajan en la cuadrilla remota!
     const personalVpro = window.opMultiSelects.personal_vpro || [];
     const personalRemoto = window.opMultiSelects.personal_remoto || [];
     const personalExt = window.opMultiSelects.personal_externo || [];
     
-    // Identificar si viaja en la cuadrilla remota para etiquetarlo con claridad
+    const esViajeForaneo = (personalRemoto && personalRemoto.length > 0);
     const setRemoto = new Set(personalRemoto.map(p => String(p).trim().toLowerCase()));
 
-    // Pool unificado sin duplicados
+    // Pool de conductores: Si es viaje foráneo, SOLO personal de la cuadrilla remota
     const poolConductores = [];
     const vistos = new Set();
-    [...personalVpro, ...personalRemoto, ...personalExt].forEach(p => {
+    const fuenteConductores = esViajeForaneo ? personalRemoto : [...personalVpro, ...personalRemoto, ...personalExt];
+    fuenteConductores.forEach(p => {
         const pTrim = String(p).trim();
         const pLow = pTrim.toLowerCase();
         if (pTrim && !vistos.has(pLow)) {
@@ -252,7 +255,9 @@ function renderChoferesPorVehiculo(isReadOnly = false) {
         <div style="margin-top: 10px; padding: 12px 14px; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px;">
             <div style="font-size: 11.5px; font-weight: 700; color: #334155; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                 <span>🚗 Conductor(es) Designado(s) por Vehículo:</span>
-                <span style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: none;">Un conductor por auto</span>
+                <span style="font-size: 11px; font-weight: 700; color: ${esViajeForaneo ? '#b91c1c' : '#64748b'}; text-transform: none;">
+                    ${esViajeForaneo ? '⚠️ Solo personal asignado a locación remota (fuera de la ciudad)' : 'Un conductor por auto'}
+                </span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
     `;
@@ -633,13 +638,22 @@ function actualizarCrewGira(choferGuardado, remotoGuardado, isReadOnly = false) 
     const selectChofer = document.getElementById("op_chofer");
     if (selectChofer) {
         const actual = (choferGuardado !== undefined && choferGuardado !== null) ? String(choferGuardado).trim() : (selectChofer.value || '').trim();
-        let html = '<option value="">-- Selecciona chofer del personal convocado --</option>';
+        
+        // 🚗 REGLA ESTRICTA DE VIAJE FORÁNEO:
+        // Si hay personal en locación remota (fuera de la ciudad), el chofer asignado SOLO puede ser alguien que viaje al remoto!
+        const esViajeForaneo = (crewRemoto && crewRemoto.length > 0);
+        const candidatosChofer = esViajeForaneo ? crewRemoto : unificados;
+        const placeholderTxt = esViajeForaneo 
+            ? '-- Selecciona chofer (Personal en Remoto) --' 
+            : '-- Selecciona chofer del personal convocado --';
+
+        let html = `<option value="">${placeholderTxt}</option>`;
         let found = false;
-        unificados.forEach(nombre => {
+        candidatosChofer.forEach(nombre => {
             const nTrim = String(nombre).trim();
             const sel = (nTrim.toLowerCase() === actual.toLowerCase() && actual) ? 'selected' : '';
             if (sel) found = true;
-            html += `<option value="${nTrim}" ${sel}>${nTrim}</option>`;
+            html += `<option value="${nTrim}" ${sel}>${nTrim}${esViajeForaneo ? ' (En Remoto)' : ''}</option>`;
         });
         if (choferGuardado && actual && !found) {
             html += `<option value="${actual}" selected>${actual}</option>`;
@@ -684,6 +698,7 @@ function alCambiarFechaInicioEvento(input) {
     if (fFin && (!fFin.value || fFin.value < input.value)) {
         fFin.value = input.value;
     }
+    actualizarSugerenciasFechasGira();
 }
 
 function alCambiarFechaInstalacionEvento(input) {
@@ -695,6 +710,78 @@ function alCambiarFechaInstalacionEvento(input) {
     }
     if (fFin && !fFin.value) {
         fFin.value = fIni ? fIni.value : input.value;
+    }
+    actualizarSugerenciasFechasGira();
+}
+
+function alCambiarFechaFinEvento(input) {
+    actualizarSugerenciasFechasGira();
+}
+
+function actualizarSugerenciasFechasGira() {
+    const fInst = document.getElementById("op_fec_de_instalacion")?.value;
+    const fIni = document.getElementById("op_fec_del_evento")?.value;
+    const fFin = document.getElementById("op_fec_fin_evento")?.value;
+    
+    // Fecha de inicio de actividades (Instalación si existe, o Inicio del Evento)
+    const fechaInicioActividades = fInst || fIni;
+    const fechaFinActividades = fFin || fIni || fInst;
+    
+    const inputNuevaFecha = document.getElementById("input-nueva-fecha-gira");
+    if (inputNuevaFecha && fechaInicioActividades) {
+        inputNuevaFecha.value = fechaInicioActividades;
+    }
+    
+    const contSugerencias = document.getElementById("contenedor-sugerencias-fechas-gira");
+    if (!contSugerencias || !fechaInicioActividades) return;
+
+    try {
+        const idEvento = document.getElementById("op_id_evento")?.value || 0;
+        let dCur = new Date(fechaInicioActividades + 'T00:00:00');
+        const dEnd = new Date(fechaFinActividades + 'T00:00:00');
+        
+        let htmlPills = `<span style="font-size: 12px; font-weight: 700; color: #475569;">💡 Sugerencias del Evento:</span>`;
+        let diaIdx = 1;
+
+        while (dCur <= dEnd) {
+            const y = dCur.getFullYear();
+            const m = String(dCur.getMonth() + 1).padStart(2, '0');
+            const d = String(dCur.getDate()).padStart(2, '0');
+            const iso = `${y}-${m}-${d}`;
+            
+            let etiqueta = `Día ${diaIdx}`;
+            let bg = "#dbeafe";
+            let col = "#1e40af";
+            let bdr = "#bfdbfe";
+            let ico = "🎬";
+
+            if (fInst && iso === fInst) {
+                etiqueta = "Instalación";
+                bg = "#e0e7ff";
+                col = "#3730a3";
+                bdr = "#c7d2fe";
+                ico = "🛠️";
+            } else if (fFin && iso === fFin && iso !== fIni) {
+                etiqueta = `Fin (${diaIdx})`;
+                bg = "#fef3c7";
+                col = "#92400e";
+                bdr = "#fde68a";
+                ico = "🏁";
+            }
+
+            htmlPills += `
+                <button type="button" onclick="document.getElementById('input-nueva-fecha-gira').value='${iso}'; crearNuevoDiaGira(${idEvento});" 
+                        style="background:${bg}; color:${col}; border:1px solid ${bdr}; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:transform .1s;"
+                        onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
+                    ${ico} ${etiqueta} (${iso})
+                </button>
+            `;
+            dCur.setDate(dCur.getDate() + 1);
+            diaIdx++;
+        }
+        contSugerencias.innerHTML = htmlPills;
+    } catch (e) {
+        console.warn("Error generando sugerencias de fechas de gira:", e);
     }
 }
 
@@ -906,7 +993,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                     </div>
                     <div>
                         <label class="op-form-label">🏁 FECHA FIN:</label>
-                        <input type="date" id="op_fec_fin_evento" value="${fEventoFin}" class="op-input" ${dis}>
+                        <input type="date" id="op_fec_fin_evento" value="${fEventoFin}" class="op-input" ${dis} onchange="alCambiarFechaFinEvento(this)">
                     </div>
                     <div>
                         <label class="op-form-label">🚀 H. INICIO:</label>
@@ -1116,7 +1203,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                             <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;">Selecciona el día de la gira que deseas registrar. Se creará una plantilla vacía para todo el Crew activo.</p>
                             
                             <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-                                <div style="width: 100%; margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                <div id="contenedor-sugerencias-fechas-gira" style="width: 100%; margin-bottom: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                                     <span style="font-size: 12px; font-weight: 700; color: #475569;">💡 Sugerencias del Evento:</span>
                                     ${fInstalacion ? `<button type="button" onclick="document.getElementById('input-nueva-fecha-gira').value='${fInstalacion}'; crearNuevoDiaGira(${idEvento});" style="background:#e0e7ff; color:#3730a3; border:1px solid #c7d2fe; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer;">🛠️ Instalación (${fInstalacion})</button>` : ''}
                                     ${fEvento ? `<button type="button" onclick="document.getElementById('input-nueva-fecha-gira').value='${fEvento}'; crearNuevoDiaGira(${idEvento});" style="background:#dbeafe; color:#1e40af; border:1px solid #bfdbfe; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer;">🎬 Evento (${fEvento})</button>` : ''}
@@ -1124,7 +1211,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                                 </div>
                                 <div>
                                     <label class="op-form-label">Selecciona la fecha:</label>
-                                    <input type="date" id="input-nueva-fecha-gira" value="${hoyStr}" class="op-input" style="width: 220px; background: white;">
+                                    <input type="date" id="input-nueva-fecha-gira" value="${fInstalacion || fEvento || hoyStr}" class="op-input" style="width: 220px; background: white;">
                                 </div>
                                 <div style="margin-top: 22px;">
                                     <button type="button" onclick="crearNuevoDiaGira(${idEvento})" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(239,68,68,0.2);">

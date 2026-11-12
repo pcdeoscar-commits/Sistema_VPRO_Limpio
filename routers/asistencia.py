@@ -258,6 +258,19 @@ def guardar_asistencia_evento(id_evento: int, payload: AsistenciaBatch):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.delete("/locacion/{id_evento}/{fecha}", tags=["⏱️ Asistencia Locación"])
+def eliminar_jornada_locacion(id_evento: int, fecha: str):
+    """Elimina una jornada específica de la bitácora de asistencia."""
+    try:
+        with engine_eventos.begin() as conn:
+            conn.execute(text("""
+                DELETE FROM public.asistencia_locacion 
+                WHERE id_evento = :id_evento AND fecha_jornada = :fecha
+            """), {"id_evento": id_evento, "fecha": fecha})
+        return {"status": "success", "msg": f"Jornada {fecha} eliminada correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/auditoria", tags=["⏱️ Asistencia y Kiosco"])
 def obtener_auditoria_asistencia(filtro: FiltroAsistencia):
     """Genera el reporte gerencial de asistencias combinando checador físico y giras en un solo renglón por día."""

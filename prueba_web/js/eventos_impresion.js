@@ -1,12 +1,28 @@
 
-function aplicarLlamadoACrew(fecha) {
-    const hVal = document.getElementById(`llamado-dia-${fecha}`)?.value;
+function aplicarLlamadoACrew(fecha, grupo = 'TODOS') {
+    let inputId = `llamado-dia-${fecha}`;
+    if (grupo === 'REMOTO') inputId = `llamado-remoto-${fecha}`;
+    if (grupo === 'ESTUDIO') inputId = `llamado-estudio-${fecha}`;
+
+    const hVal = document.getElementById(inputId)?.value || document.getElementById(`llamado-dia-${fecha}`)?.value;
     if (!hVal) {
         alert("Por favor indica una hora de llamado válida (HH:MM).");
         return;
     }
     const formatted = hVal.length === 5 ? hVal : hVal.substring(0, 5);
-    const inputs = document.querySelectorAll(`.input-jornada-${fecha}[data-field="hora_entrada"]`);
+
+    let selector = `.input-jornada-${fecha}[data-field="hora_entrada"]`;
+    if (grupo === 'REMOTO') {
+        selector += `[data-grupo="REMOTO"]`;
+    } else if (grupo === 'ESTUDIO') {
+        selector += `[data-grupo="ESTUDIO"]`;
+    }
+
+    const inputs = document.querySelectorAll(selector);
+    if (inputs.length === 0) {
+        alert(`No hay colaboradores asignados al grupo '${grupo}' en este día.`);
+        return;
+    }
     inputs.forEach(inp => {
         inp.value = formatted;
     });
@@ -1466,38 +1482,61 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
             });
 
             const fechasOrdenadas = Object.keys(porFecha).sort();
+            const setRemoto = new Set((window.opMultiSelects?.personal_remoto || []).map(p => String(p).trim().toLowerCase()));
             const fInstalacionGlobal = document.getElementById("op_fec_de_instalacion")?.value || "";
             const hInstalacionGlobal = document.getElementById("op_hra_de_instalacion")?.value || "";
-            const hLlamadoGlobal = document.getElementById("op_hra_de_llamado")?.value || "06:00";
+            const hLlamadoGlobal = document.getElementById("op_hra_de_llamado")?.value || "08:00";
+            const hInicioGlobal = document.getElementById("op_inicio_del_evento")?.value || "16:00";
 
             contenedor.innerHTML = fechasOrdenadas.map(fecha => {
                 const registros = porFecha[fecha];
 
-                // Detectar hora sugerida de llamado para este día
-                let horaSugerida = "06:00";
-                const primerHoraEntrada = registros.find(r => r.hora_entrada && r.hora_entrada !== '00:00:00')?.hora_entrada;
-                if (primerHoraEntrada) {
-                    horaSugerida = primerHoraEntrada.substring(0, 5);
-                } else if (fecha === fInstalacionGlobal && hInstalacionGlobal) {
-                    horaSugerida = hInstalacionGlobal.substring(0, 5);
+                // Detectar horas sugeridas por grupo para este día
+                let horaSugeridaRemoto = "08:00";
+                if (fecha === fInstalacionGlobal && hInstalacionGlobal) {
+                    horaSugeridaRemoto = hInstalacionGlobal.substring(0, 5);
                 } else if (hLlamadoGlobal) {
-                    horaSugerida = hLlamadoGlobal.substring(0, 5);
+                    horaSugeridaRemoto = hLlamadoGlobal.substring(0, 5);
                 }
+                const primerRemoto = registros.find(r => {
+                    const dep = (r.depto || '').toUpperCase();
+                    return (dep.includes('REMOTO') || setRemoto.has(String(r.nombre_empleado || '').trim().toLowerCase())) && r.hora_entrada && r.hora_entrada !== '00:00:00';
+                });
+                if (primerRemoto) horaSugeridaRemoto = primerRemoto.hora_entrada.substring(0, 5);
+
+                let horaSugeridaEstudio = hInicioGlobal ? hInicioGlobal.substring(0, 5) : "16:00";
+                const primerEstudio = registros.find(r => {
+                    const dep = (r.depto || '').toUpperCase();
+                    return (!dep.includes('REMOTO') && !setRemoto.has(String(r.nombre_empleado || '').trim().toLowerCase())) && r.hora_entrada && r.hora_entrada !== '00:00:00';
+                });
+                if (primerEstudio) horaSugeridaEstudio = primerEstudio.hora_entrada.substring(0, 5);
 
                 // Incidencia guardada para este día
                 const incDiaTexto = (window.opIncidenciasPorDiaActual && window.opIncidenciasPorDiaActual[fecha]) || "";
 
-                const rowsHtml = registros.map(r => `
+                const rowsHtml = registros.map(r => {
+                    const deptoVal = String(r.depto || '').toUpperCase();
+                    const esRemoto = deptoVal.includes('REMOTO') || setRemoto.has(String(r.nombre_empleado || '').trim().toLowerCase());
+                    const grupoKey = esRemoto ? 'REMOTO' : 'ESTUDIO';
+                    const badgeGrupo = esRemoto 
+                        ? `<span style="background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="ph ph-broadcast"></i> REMOTO</span>`
+                        : `<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="ph ph-buildings"></i> ESTUDIO</span>`;
+
+                    return `
                     <tr>
-                        <td style="font-weight: 600; color: #1e293b;">${r.nombre_empleado}</td>
-                        <td><input type="text" class="op-input input-jornada-${fecha}" data-field="hora_entrada" data-emp="${r.nombre_empleado}" value="${(r.hora_entrada || '00:00:00').substring(0, 5)}" style="padding: 6px; width: 70px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
+                        <td style="font-weight: 600; color: #1e293b; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                            <span>${r.nombre_empleado}</span>
+                            ${badgeGrupo}
+                        </td>
+                        <td><input type="text" class="op-input input-jornada-${fecha}" data-field="hora_entrada" data-grupo="${grupoKey}" data-emp="${r.nombre_empleado}" value="${(r.hora_entrada || '00:00:00').substring(0, 5)}" style="padding: 6px; width: 70px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="number" step="0.5" class="op-input input-jornada-${fecha}" data-field="t_desayuno" data-emp="${r.nombre_empleado}" value="${r.t_desayuno || 0}" style="padding: 6px; width: 60px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="number" step="0.5" class="op-input input-jornada-${fecha}" data-field="t_comida" data-emp="${r.nombre_empleado}" value="${r.t_comida || 0}" style="padding: 6px; width: 60px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="number" step="0.5" class="op-input input-jornada-${fecha}" data-field="t_cena" data-emp="${r.nombre_empleado}" value="${r.t_cena || 0}" style="padding: 6px; width: 60px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="text" class="op-input input-jornada-${fecha}" data-field="hora_salida" data-emp="${r.nombre_empleado}" value="${(r.hora_salida || '00:00:00').substring(0, 5)}" style="padding: 6px; width: 70px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="text" class="op-input input-jornada-${fecha}" data-field="observaciones" data-emp="${r.nombre_empleado}" value="${r.observaciones || ''}" style="padding: 6px; width: 100%;" placeholder="Notas del operador..." ${isReadOnly ? 'disabled' : ''}></td>
                     </tr>
-                `).join('');
+                    `;
+                }).join('');
 
                 return `
                     <div style="border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 16px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -1508,25 +1547,54 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
                                 Jornada Registrada: ${fecha}
                             </strong>
                             ${!isReadOnly ? `
-                                <button type="button" onclick="guardarJornadaGira(${idEvento}, '${fecha}')" style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(16,185,129,0.2);">
-                                    💾 Guardar Cambios del Día
-                                </button>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button type="button" onclick="guardarJornadaGira(${idEvento}, '${fecha}')" style="background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(16,185,129,0.2);">
+                                        💾 Guardar Cambios del Día
+                                    </button>
+                                    <button type="button" onclick="eliminarJornadaGira(${idEvento}, '${fecha}')" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 10px; border-radius: 4px; font-weight: 600; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Eliminar este día de la bitácora">
+                                        🗑️ Eliminar Día
+                                    </button>
+                                </div>
                             ` : ''}
                         </div>
 
-                        <!-- Barra de Llamado Rápido del Día -->
-                        <div style="background: #f1f5f9; padding: 8px 16px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
-                                <span style="font-weight: 700; color: #334155;">⏰ Llamado Programado para este Día:</span>
-                                <input type="time" id="llamado-dia-${fecha}" class="op-input" style="width: 105px; padding: 4px 8px; text-align: center; background: white;" value="${horaSugerida}" ${isReadOnly ? 'disabled' : ''}>
+                        <!-- Barra de Llamado Rápido Diferenciado: Remoto vs Estudio -->
+                        <div style="background: #f1f5f9; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                                <!-- Llamado Remoto -->
+                                <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; background: #faf5ff; border: 1px solid #e9d5ff; padding: 4px 10px; border-radius: 6px;">
+                                    <span style="font-weight: 700; color: #6b21a8; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="ph ph-broadcast"></i> Remoto:
+                                    </span>
+                                    <input type="time" id="llamado-remoto-${fecha}" class="op-input" style="width: 95px; padding: 3px 6px; text-align: center; background: white;" value="${horaSugeridaRemoto}" ${isReadOnly ? 'disabled' : ''}>
+                                    ${!isReadOnly ? `
+                                        <button type="button" onclick="aplicarLlamadoACrew('${fecha}', 'REMOTO')" style="background: #7c3aed; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                                            ⚡ Aplicar a Remoto
+                                        </button>
+                                    ` : ''}
+                                </div>
+
+                                <!-- Llamado Estudio -->
+                                <div style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; background: #f0f9ff; border: 1px solid #bae6fd; padding: 4px 10px; border-radius: 6px;">
+                                    <span style="font-weight: 700; color: #0369a1; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="ph ph-buildings"></i> Estudio:
+                                    </span>
+                                    <input type="time" id="llamado-estudio-${fecha}" class="op-input" style="width: 95px; padding: 3px 6px; text-align: center; background: white;" value="${horaSugeridaEstudio}" ${isReadOnly ? 'disabled' : ''}>
+                                    ${!isReadOnly ? `
+                                        <button type="button" onclick="aplicarLlamadoACrew('${fecha}', 'ESTUDIO')" style="background: #0284c7; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">
+                                            ⚡ Aplicar a Estudio
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <div style="font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 8px;">
+                                <span>👥 <b>${registros.length}</b> colaboradores convocados</span>
                                 ${!isReadOnly ? `
-                                    <button type="button" onclick="aplicarLlamadoACrew('${fecha}')" style="background: #3b82f6; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                        ⚡ Aplicar al Personal
+                                    <button type="button" onclick="sincronizarConvocadosAJornada(${idEvento}, '${fecha}')" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;" title="Agregar colaboradores de la OP que no estén en este día">
+                                        🔄 Sincronizar Convocados
                                     </button>
                                 ` : ''}
-                            </div>
-                            <div style="font-size: 12px; color: #64748b;">
-                                👥 <b>${registros.length}</b> colaboradores convocados
                             </div>
                         </div>
 
@@ -1597,12 +1665,13 @@ async function guardarJornadaGira(idEvento, fecha) {
     inputs.forEach(inp => {
         const emp = inp.getAttribute('data-emp');
         const field = inp.getAttribute('data-field');
+        const grp = inp.getAttribute('data-grupo') || 'STAFF VPRO';
         if (!porEmp[emp]) {
             porEmp[emp] = {
                 fecha_jornada: fecha,
                 num_empleado: 0,
                 nombre_empleado: emp,
-                depto: "STAFF VPRO",
+                depto: grp,
                 hora_entrada: "00:00:00",
                 t_desayuno: 0.0,
                 t_comida: 0.0,
@@ -1658,9 +1727,10 @@ async function crearNuevoDiaGira(idEvento) {
     }
 
     const crewRemoto = window.opMultiSelects?.personal_remoto || [];
+    const crewEstudio = window.opMultiSelects?.personal_vpro || [];
 
-    if (crewRemoto.length === 0) {
-        alert("⚠️ Atención: Debes seleccionar al personal en 'SELECCIONAR PERSONAL EN LOCACIÓN REMOTA' para poder registrar su bitácora de asistencia.");
+    if (crewRemoto.length === 0 && crewEstudio.length === 0) {
+        alert("⚠️ Atención: Debes seleccionar personal convocado (en Estudio o en Locación Remota) para poder registrar su bitácora de asistencia.");
         return;
     }
 
@@ -1671,7 +1741,7 @@ async function crearNuevoDiaGira(idEvento) {
         return;
     }
 
-    // 💾 Auto-guardar la OP primero para que el personal remoto quede persistido en la base de datos
+    // 💾 Auto-guardar la OP primero para que el personal quede persistido en la base de datos
     try {
         if (typeof guardarOrdenOP === 'function') {
             const ok = await guardarOrdenOP(null, true);
@@ -1684,26 +1754,164 @@ async function crearNuevoDiaGira(idEvento) {
     const fInstVal = document.getElementById("op_fec_de_instalacion")?.value;
     const hInstVal = document.getElementById("op_hra_de_instalacion")?.value;
     const hLlamVal = document.getElementById("op_hra_de_llamado")?.value;
+    const hIniVal = document.getElementById("op_inicio_del_evento")?.value;
 
-    let hEntradaDefecto = "00:00:00";
+    let hEntradaRemoto = "08:00:00";
     if (fechaSeleccionada === fInstVal && hInstVal) {
-        hEntradaDefecto = hInstVal.length === 5 ? hInstVal + ":00" : hInstVal;
+        hEntradaRemoto = hInstVal.length === 5 ? hInstVal + ":00" : hInstVal;
     } else if (hLlamVal) {
-        hEntradaDefecto = hLlamVal.length === 5 ? hLlamVal + ":00" : hLlamVal;
+        hEntradaRemoto = hLlamVal.length === 5 ? hLlamVal + ":00" : hLlamVal;
     }
 
-    const registrosNuevos = crewRemoto.map(persona => ({
-        fecha_jornada: String(fechaSeleccionada),
-        num_empleado: 0,
-        nombre_empleado: String(persona).trim(),
-        depto: "STAFF VPRO",
-        hora_entrada: hEntradaDefecto,
-        t_desayuno: 0.0,
-        t_comida: 0.0,
-        t_cena: 0.0,
-        hora_salida: "00:00:00",
-        observaciones: ""
-    }));
+    let hEntradaEstudio = "16:00:00";
+    if (hIniVal) {
+        hEntradaEstudio = hIniVal.length === 5 ? hIniVal + ":00" : hIniVal;
+    } else if (hLlamVal) {
+        hEntradaEstudio = hLlamVal.length === 5 ? hLlamVal + ":00" : hLlamVal;
+    }
+
+    const registrosNuevos = [];
+    const vistos = new Set();
+
+    // 1. Integrar cuadrilla foránea / remota
+    crewRemoto.forEach(persona => {
+        const pNom = String(persona).trim();
+        if (pNom && !vistos.has(pNom.toLowerCase())) {
+            vistos.add(pNom.toLowerCase());
+            registrosNuevos.push({
+                fecha_jornada: String(fechaSeleccionada),
+                num_empleado: 0,
+                nombre_empleado: pNom,
+                depto: "REMOTO",
+                hora_entrada: hEntradaRemoto,
+                t_desayuno: 0.0,
+                t_comida: 0.0,
+                t_cena: 0.0,
+                hora_salida: "00:00:00",
+                observaciones: ""
+            });
+        }
+    });
+
+    // 2. Integrar personal de estudio / producción local
+    crewEstudio.forEach(persona => {
+        const pNom = String(persona).trim();
+        if (pNom && !vistos.has(pNom.toLowerCase())) {
+            vistos.add(pNom.toLowerCase());
+            registrosNuevos.push({
+                fecha_jornada: String(fechaSeleccionada),
+                num_empleado: 0,
+                nombre_empleado: pNom,
+                depto: "ESTUDIO",
+                hora_entrada: hEntradaEstudio,
+                t_desayuno: 0.0,
+                t_comida: 0.0,
+                t_cena: 0.0,
+                hora_salida: "00:00:00",
+                observaciones: ""
+            });
+        }
+    });
+
+    try {
+        const res = await fetch(`${API_URL}/api/asistencia/locacion/${idEvento}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ registros: registrosNuevos })
+        });
+        if (res.ok) {
+            alert(`✅ ¡Día ${fechaSeleccionada} agregado! Ya puedes asignar las horas.`);
+            cargarJornadasGira(idEvento);
+        } else {
+            const errData = await res.json().catch(() => ({}));
+            alert(`❌ Error del servidor al crear la nueva jornada: ${errData.detail || ''}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de conexión: ${e.message}`);
+    }
+}
+
+async function eliminarJornadaGira(idEvento, fecha) {
+    if (!confirm(`⚠️ ¿Estás seguro de que deseas eliminar la jornada del día ${fecha} de esta OP?`)) {
+        return;
+    }
+    try {
+        const res = await fetch(`${API_URL}/api/asistencia/locacion/${idEvento}/${fecha}`, {
+            method: 'DELETE'
+        });
+        if (res.ok) {
+            await cargarJornadasGira(idEvento);
+        } else {
+            alert("Error al eliminar la jornada del servidor.");
+        }
+    } catch (e) {
+        console.error("Error al eliminar jornada:", e);
+        alert("Error de conexión al eliminar jornada.");
+    }
+}
+
+async function sincronizarConvocadosAJornada(idEvento, fecha) {
+    const inputsExistentes = document.querySelectorAll(`.input-jornada-${fecha}[data-field="hora_entrada"]`);
+    const yaRegistrados = new Set();
+    inputsExistentes.forEach(inp => yaRegistrados.add((inp.getAttribute('data-emp') || '').toLowerCase().trim()));
+
+    const crewRemoto = (window.opMultiSelects?.personal_remoto || []).map(p => String(p).trim());
+    const crewEstudio = (window.opMultiSelects?.personal_vpro || []).map(p => String(p).trim());
+
+    const nuevosParaInsertar = [];
+    crewRemoto.forEach(p => {
+        if (p && !yaRegistrados.has(p.toLowerCase())) {
+            nuevosParaInsertar.push({
+                fecha_jornada: fecha,
+                num_empleado: 0,
+                nombre_empleado: p,
+                depto: "REMOTO",
+                hora_entrada: document.getElementById(`llamado-remoto-${fecha}`)?.value || "08:00",
+                t_desayuno: 0.0,
+                t_comida: 0.0,
+                t_cena: 0.0,
+                hora_salida: "00:00:00",
+                observaciones: ""
+            });
+        }
+    });
+
+    crewEstudio.forEach(p => {
+        if (p && !yaRegistrados.has(p.toLowerCase())) {
+            nuevosParaInsertar.push({
+                fecha_jornada: fecha,
+                num_empleado: 0,
+                nombre_empleado: p,
+                depto: "ESTUDIO",
+                hora_entrada: document.getElementById(`llamado-estudio-${fecha}`)?.value || "16:00",
+                t_desayuno: 0.0,
+                t_comida: 0.0,
+                t_cena: 0.0,
+                hora_salida: "00:00:00",
+                observaciones: ""
+            });
+        }
+    });
+
+    if (nuevosParaInsertar.length === 0) {
+        alert("Todos los colaboradores convocados en la OP ya se encuentran integrados en este día.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/asistencia/locacion/${idEvento}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ registros: nuevosParaInsertar })
+        });
+        if (res.ok) {
+            await cargarJornadasGira(idEvento);
+            alert(`✅ Se agregaron ${nuevosParaInsertar.length} colaborador(es) a la jornada.`);
+        }
+    } catch(e) {
+        console.error("Error sincronizando convocados:", e);
+    }
+}
 
     try {
         const res = await fetch(`${API_URL}/api/asistencia/locacion/${idEvento}`, {

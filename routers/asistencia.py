@@ -602,15 +602,20 @@ def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
                     es_inst = (f_inst == hoy_date)
                     es_ev = (f_ini and f_ini <= hoy_date <= f_fin)
 
+                    def _es_h_val(h):
+                        if not h: return False
+                        s = str(h).strip()
+                        return s not in ["", "None", "00:00:00", "00:00", "0:00"]
+
                     if es_inst:
                         tipo = "INSTALACIÓN"
-                        if h_llam: candidatos.append(h_llam)
-                        if h_inst: candidatos.append(h_inst)
+                        if _es_h_val(h_llam): candidatos.append(h_llam)
+                        if _es_h_val(h_inst): candidatos.append(h_inst)
 
                     if es_ev:
                         tipo = "EVENTO" if not es_inst else "INSTALACIÓN / EVENTO"
-                        if h_llam: candidatos.append(h_llam)
-                        if h_ini_ev: candidatos.append(h_ini_ev)
+                        if _es_h_val(h_llam): candidatos.append(h_llam)
+                        if _es_h_val(h_ini_ev): candidatos.append(h_ini_ev)
 
                     # 🕒 Prioridad 1: Verificar si en la bitácora de locación se programó un llamado específico para este día
                     try:
@@ -619,17 +624,24 @@ def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
                             FROM public.asistencia_locacion 
                             WHERE id_evento = :id_ev 
                               AND fecha_jornada = :hoy
-                              AND hora_entrada IS NOT NULL 
-                              AND hora_entrada != '00:00:00'
                         """), {"id_ev": op["id_evento"], "hoy": hoy_date}).mappings().all()
-                        for rl in regs_loc:
-                            if emp_clean in _clean(str(rl.get("nombre_empleado") or "")):
-                                return dict(op), rl["hora_entrada"], f"LLAMADO DÍA ({tipo})"
+
+                        if regs_loc:
+                            # 📌 Si la OP tiene bitácora registrada para hoy, buscamos el llamado exacto de este colaborador
+                            for rl in regs_loc:
+                                if emp_clean in _clean(str(rl.get("nombre_empleado") or "")):
+                                    h_in_loc = rl.get("hora_entrada")
+                                    if _es_h_val(h_in_loc):
+                                        return dict(op), h_in_loc, f"LLAMADO DÍA ({tipo})"
+                            # Si la bitácora de hoy no tiene llamado programado para este colaborador,
+                            # no se le aplica el llamado foráneo/evento -> Se califica con su horario normal de oficina (09:00 a. m.)
+                            return None, None, None
                     except Exception as e_loc:
                         print(f"⚠️ Nota al consultar llamado en asistencia_locacion: {e_loc}")
 
                     h_target = min(candidatos) if candidatos else None
-                    return dict(op), h_target, tipo
+                    if h_target:
+                        return dict(op), h_target, tipo
     except Exception as e:
         print(f"⚠️ Error al resolver llamado de OP para {nom_emp}: {e}")
 

@@ -941,25 +941,33 @@ function filtrarSugerenciasDirecto(termino) {
     const t = normalizarTextoBusqueda(termino);
     let coincidencias = [];
     if (!t) {
-        coincidencias = (catalogoGlobalEquipos || []).slice(0, 30);
+        coincidencias = (catalogoGlobalEquipos || []).slice(0, 100);
     } else {
         const palabras = t.split(" ").filter(Boolean);
         coincidencias = (catalogoGlobalEquipos || []).filter(item => {
             const norm = normalizarTextoBusqueda(item);
             return palabras.every(pal => norm.includes(pal));
-        }).slice(0, 50);
+        }).slice(0, 80);
     }
 
     window._coincidenciasDirectoActuales = coincidencias;
     window._indiceSugerenciaSeleccionada = -1;
 
+    const totalCat = (catalogoGlobalEquipos || []).length;
+    const headerInfo = `
+        <div style="padding: 7px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 11px; color: #475569; display: flex; justify-content: space-between; align-items: center; font-weight: 600; position: sticky; top: 0; z-index: 10;">
+            <span>📦 Catálogo Total: <b>${totalCat.toLocaleString()}</b> activos (Inventario General + Kits/Plantillas)</span>
+            <span style="color: #2563eb;">${t ? `${coincidencias.length} encontrados` : `Primeros ${coincidencias.length}`}</span>
+        </div>
+    `;
+
     if (coincidencias.length === 0) {
-        dropdown.innerHTML = `<div style="padding: 12px; text-align: center; color: #64748b; font-size: 12.5px;">No se encontraron equipos</div>`;
+        dropdown.innerHTML = headerInfo + `<div style="padding: 12px; text-align: center; color: #64748b; font-size: 12.5px;">No se encontraron equipos que coincidan con la búsqueda</div>`;
         dropdown.style.display = "block";
         return;
     }
 
-    dropdown.innerHTML = coincidencias.map((item, idx) => {
+    dropdown.innerHTML = headerInfo + coincidencias.map((item, idx) => {
         const partes = item.split(" - ");
         const codigo = partes[0].trim();
         const nombre = partes.slice(1).join(" - ").trim() || codigo;

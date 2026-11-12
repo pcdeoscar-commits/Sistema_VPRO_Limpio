@@ -38,11 +38,7 @@ from core.config import DIR_EVIDENCIAS_REAL
 
 
 from core.database import (
-
-
-    engine_inventario, engine_personal, get_db_cursor
-
-
+    engine_inventario, engine_personal, engine_autos, get_db_cursor
 )
 
 
@@ -814,13 +810,21 @@ def obtener_catalogo_global_inventario():
 
 
                 elif cod:
-
-
                     items_globales.add(cod)
 
-
-                
-
+        # 3. Incorporar vehículos de la flota (db_autos) para reportes de mantenimiento
+        try:
+            with engine_autos.connect() as conn_a:
+                rows_autos = conn_a.execute(text("SELECT num_control, marca, modelo FROM public.autos")).fetchall()
+                for a in rows_autos:
+                    nc = str(a[0]).strip() if a[0] else ""
+                    ma = str(a[1]).strip() if a[1] else ""
+                    mo = str(a[2]).strip() if a[2] else ""
+                    if nc:
+                        desc_auto = f"VEHÍCULO - {ma} {mo}".strip()
+                        items_globales.add(f"{nc} - {desc_auto}")
+        except Exception:
+            pass
 
         return sorted(list(items_globales))
 

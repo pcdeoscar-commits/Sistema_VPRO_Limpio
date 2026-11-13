@@ -410,11 +410,12 @@ function esUsuarioAutorizadoOP() {
     if (!usuarioLogueado) return false;
     const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
     const puesto = (usuarioLogueado.puesto || '').toUpperCase().trim();
+    const depto = (usuarioLogueado.depto || '').toUpperCase().trim();
     const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // 1. Rol Administrador
-    const esAdmin = rol === 'ADMIN' || rol.includes('ADMIN');
+    // 1. Rol Administrador o Departamento Administración (incluye a Sra. Ana Lilia, Directivos, etc.)
+    const esAdmin = rol === 'ADMIN' || rol.includes('ADMIN') || depto.includes('ADMIN');
 
     // 2. Rol o puesto Coordinador
     const esCoordinador = rol === 'COORDINADOR' || rol.includes('COORDINADOR') || rol.includes('COORDINACION') ||

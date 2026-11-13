@@ -2074,3 +2074,16 @@ async function guardarOrdenOP(event, silencioso = false) {
     }
 }
 
+// 🌐 Exponer explícitamente las funciones maestras de OP al scope global
+window.cargarDetalleOP = cargarDetalleOP;
+window.cargarDetalleOPHistorico = cargarDetalleOPHistorico;
+window.generarHtmlFormularioOP = generarHtmlFormularioOP;
+window.guardarOrdenOP = guardarOrdenOP;
+window.imprimirOPModal = imprimirOPModal;
+window.crearNuevoDiaGira = crearNuevoDiaGira;
+window.guardarJornadaGira = guardarJornadaGira;
+window.eliminarJornadaGira = eliminarJornadaGira;
+window.sincronizarConvocadosAJornada = sincronizarConvocadosAJornada;
+window.aplicarLlamadoACrew = aplicarLlamadoACrew;
+
+

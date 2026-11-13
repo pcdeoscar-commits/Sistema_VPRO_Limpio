@@ -45,11 +45,19 @@ function cambiarPestanaOP(pestana) {
 
         // Si la lista de históricos aún no tiene selección, seleccionar la primera
         const selectHist = document.getElementById("select-folios-historicos");
+        const ejecutarCargaHist = (fol) => {
+            if (typeof window.cargarDetalleOPHistorico === 'function') {
+                window.cargarDetalleOPHistorico(fol);
+            } else if (typeof cargarDetalleOPHistorico === 'function') {
+                cargarDetalleOPHistorico(fol);
+            }
+        };
+
         if (selectHist && selectHist.value) {
-            cargarDetalleOPHistorico(selectHist.value);
+            ejecutarCargaHist(selectHist.value);
         } else if (selectHist && selectHist.options.length > 1) {
             selectHist.selectedIndex = 1;
-            cargarDetalleOPHistorico(selectHist.value);
+            ejecutarCargaHist(selectHist.value);
         }
     }
 }
@@ -131,14 +139,34 @@ async function inicializarModuloOP(folioDeseado = null) {
         }
 
         selectFolios.value = folioACargar;
-        cargarDetalleOP(folioACargar);
+
+        // 🛡️ Invocación segura y auto-recuperable de cargarDetalleOP
+        const invocarCargaOP = (intentos = 0) => {
+            if (typeof window.cargarDetalleOP === 'function') {
+                window.cargarDetalleOP(folioACargar);
+            } else if (typeof cargarDetalleOP === 'function') {
+                cargarDetalleOP(folioACargar);
+            } else if (intentos < 5) {
+                console.warn(`[OP] Esperando carga de funciones maestras (intento ${intentos + 1}/5)...`);
+                setTimeout(() => invocarCargaOP(intentos + 1), 150);
+            } else {
+                console.error("[OP] No se pudo encontrar cargarDetalleOP tras 5 intentos.");
+            }
+        };
+        invocarCargaOP();
 
     } catch (error) {
-        console.error("Error al conectar con la API de eventos:", error);
+        console.error("Error al inicializar módulo de OPs:", error);
         if (container) {
             container.innerHTML = `
-                <div style="background: #fef2f2; padding: 20px; border-radius: 8px; border-left: 4px solid #ef4444; margin-top: 15px;">
-                    <p style="margin: 0; color: #991b1b; font-weight: 500;">❌ Error al conectar con el servidor de OPs: ${error.message}</p>
+                <div style="background: #fef2f2; padding: 20px; border-radius: 8px; border-left: 4px solid #ef4444; margin-top: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                    <div>
+                        <p style="margin: 0; color: #991b1b; font-weight: 600;">❌ Error al conectar con el servidor de OPs: ${error.message}</p>
+                        <p style="margin: 4px 0 0 0; color: #7f1d1d; font-size: 13px;">Si la pantalla se quedó congelada, presiona el botón para reintentar la conexión.</p>
+                    </div>
+                    <button type="button" onclick="inicializarModuloOP()" style="background: #ef4444; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        🔄 Reintentar
+                    </button>
                 </div>
             `;
         }

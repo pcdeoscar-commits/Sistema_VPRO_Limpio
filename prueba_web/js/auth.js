@@ -79,7 +79,7 @@ async function cargarEmpleados() {
                         if (esBloqueo) {
                             const errorEl = document.getElementById("modal-error");
                             if (errorEl) {
-                                errorEl.innerHTML = `🔒 <b>Sesión bloqueada tras 5 minutos de inactividad.</b><br>Ingresa tu contraseña para reanudar.`;
+                                errorEl.innerHTML = `🔒 <b>Sesión bloqueada tras 15 minutos de inactividad.</b><br>Ingresa tu contraseña para reanudar.`;
                                 errorEl.style.display = "block";
                                 errorEl.style.background = "#fef3c7";
                                 errorEl.style.color = "#92400e";

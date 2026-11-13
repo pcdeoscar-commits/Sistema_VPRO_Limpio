@@ -5,8 +5,8 @@
 // ==============================================================================
 
 const VPRO_INACTIVIDAD_CONFIG = {
-    TIEMPO_TOTAL_MS: 5 * 60 * 1000,    // 5 minutos exactos (300,000 ms)
-    TIEMPO_PREAVISO_MS: 45 * 1000,     // Mostrar alerta 45 segundos antes (a los 4m 15s)
+    TIEMPO_TOTAL_MS: 15 * 60 * 1000,   // 15 minutos exactos (900,000 ms)
+    TIEMPO_PREAVISO_MS: 60 * 1000,     // Mostrar alerta 60 segundos antes (a los 14 minutos)
     THROTTLE_EVENTOS_MS: 1000          // Límite de procesamiento de eventos (1 por segundo)
 };
 
@@ -24,7 +24,7 @@ const vproInactividadState = {
 const VPRO_EVENTOS_ACTIVIDAD = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel'];
 
 /**
- * Determina si el usuario está exento de la regla de inactividad de 5 minutos.
+ * Determina si el usuario está exento de la regla de inactividad de 15 minutos.
  * Excepciones autorizadas:
  * 1. Terminal física de Kiosco Checador en bodega (ID 529).
  * 2. Sra. Ana Lilia Villarreal Uribe (ID 101 / Admon y RH) - Exclusivamente ella queda libre de límite de tiempo.
@@ -129,7 +129,7 @@ function registrarActividadUsuario() {
 }
 
 /**
- * Reinicia las cuentas atrás de 5 minutos y de preaviso.
+ * Reinicia las cuentas atrás de 15 minutos y de preaviso.
  */
 function reiniciarTemporizadorInactividad() {
     if (!vproInactividadState.activo) return;
@@ -144,12 +144,12 @@ function reiniciarTemporizadorInactividad() {
 
     const tiempoHastaAviso = VPRO_INACTIVIDAD_CONFIG.TIEMPO_TOTAL_MS - VPRO_INACTIVIDAD_CONFIG.TIEMPO_PREAVISO_MS;
 
-    // 1. Temporizador del preaviso (dispara a los 4m 15s)
+    // 1. Temporizador del preaviso (dispara a los 14 minutos exactos)
     vproInactividadState.timerPreaviso = setTimeout(() => {
         mostrarAvisoInactividad();
     }, tiempoHastaAviso);
 
-    // 2. Temporizador final (dispara a los 5 minutos exactos)
+    // 2. Temporizador final (dispara a los 15 minutos exactos)
     vproInactividadState.timerTotal = setTimeout(() => {
         ejecutarCierrePorInactividad();
     }, VPRO_INACTIVIDAD_CONFIG.TIEMPO_TOTAL_MS);
@@ -252,7 +252,7 @@ function ocultarAvisoInactividad() {
 }
 
 /**
- * Ejecuta el cierre de sesión seguro cuando se agotan los 5 minutos.
+ * Ejecuta el cierre de sesión seguro cuando se agotan los 15 minutos.
  */
 function ejecutarCierrePorInactividad() {
     const usuario = vproInactividadState.usuarioMonitoreado || (typeof usuarioLogueado !== 'undefined' ? usuarioLogueado : null);
@@ -276,7 +276,7 @@ function ejecutarCierrePorInactividad() {
                     abrirModal(usuario, urlFoto);
                     const errorEl = document.getElementById("modal-error");
                     if (errorEl) {
-                        errorEl.innerHTML = `🔒 <b>Sesión bloqueada tras 5 minutos de inactividad.</b><br>Ingresa tu contraseña para continuar trabajando.`;
+                        errorEl.innerHTML = `🔒 <b>Sesión bloqueada tras 15 minutos de inactividad.</b><br>Ingresa tu contraseña para continuar trabajando.`;
                         errorEl.style.display = "block";
                         errorEl.style.background = "#fef3c7";
                         errorEl.style.color = "#92400e";

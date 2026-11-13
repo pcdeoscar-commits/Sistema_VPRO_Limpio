@@ -1,5 +1,6 @@
 import datetime
 import unicodedata
+import re
 from datetime import date, time
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, HTTPException
@@ -554,6 +555,82 @@ def extraer_estado_asistencia_diaria(id_empleado: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def extraer_hora_de_texto(texto: str):
+    """Convierte fragmentos como '8:00 AM', '3:00 PM', '15:00', '8am' a objeto datetime.time."""
+    if not texto:
+        return None
+    m = re.search(r'(\d{1,2}):(\d{2})(?:\s*([ap]\.?m\.?))?', texto, re.IGNORECASE)
+    if not m:
+        m2 = re.search(r'(\d{1,2})(?:\s*([ap]\.?m\.?))', texto, re.IGNORECASE)
+        if m2:
+            hh = int(m2.group(1))
+            ampm = m2.group(2).lower()
+            if 'p' in ampm and hh < 12: hh += 12
+            elif 'a' in ampm and hh == 12: hh = 0
+            return datetime.time(hh, 0)
+        return None
+
+    hh = int(m.group(1))
+    mm = int(m.group(2))
+    ampm = (m.group(3) or '').lower()
+
+    if 'p' in ampm and hh < 12:
+        hh += 12
+    elif 'a' in ampm and hh == 12:
+        hh = 0
+
+    if 0 <= hh <= 23 and 0 <= mm <= 59:
+        return datetime.time(hh, mm)
+    return None
+
+def resolver_llamado_diferenciado_op(detalle_llamado: str, nom_emp: str, es_remoto_foraneo: bool = False):
+    """
+    Analiza horarios diferenciados en la OP (ej. 'Manuel: 8:00 AM Estudio: 3:00 PM').
+    Prioriza si el colaborador está convocado por su nombre o si pertenece a Estudio/Cabina vs Cancha/Gira.
+    """
+    if not detalle_llamado:
+        return None
+
+    det = str(detalle_llamado).strip()
+    partes = re.split(r'[|\n;/]+', det)
+    if len(partes) == 1 and (':' in det):
+        subpartes = re.findall(r'([^:]+:\s*\d{1,2}(?::\d{2})?\s*(?:[ap]\.?m\.?)?)', det, re.IGNORECASE)
+        if subpartes:
+            partes = subpartes
+
+    nom_clean = ''.join(c for c in unicodedata.normalize('NFD', str(nom_emp).strip().upper()) if unicodedata.category(c) != 'Mn')
+
+    # 1. Coincidencia por nombre individual
+    for p in partes:
+        p_str = p.strip()
+        p_up = ''.join(c for c in unicodedata.normalize('NFD', p_str.upper()) if unicodedata.category(c) != 'Mn')
+        for token in nom_clean.split():
+            if len(token) >= 4 and token in p_up:
+                h = extraer_hora_de_texto(p_str)
+                if h:
+                    etiqueta = p_str.split(':')[0].strip()
+                    return h, f"LLAMADO ESPECÍFICO ({etiqueta})"
+
+    # 2. Coincidencia por grupo: Estudio vs Locación / Cancha
+    h_estudio = None
+    h_cancha = None
+    for p in partes:
+        p_str = p.strip()
+        p_up = p_str.upper()
+        if any(kw in p_up for kw in ['ESTUDIO', 'CABINA', 'MASTER', 'OFICINA']):
+            h = extraer_hora_de_texto(p_str)
+            if h: h_estudio = h
+        elif any(kw in p_up for kw in ['CANCHA', 'LOCACION', 'GIRA', 'FORANEO', 'VIAJE', 'TRANSMISION']):
+            h = extraer_hora_de_texto(p_str)
+            if h: h_cancha = h
+
+    if es_remoto_foraneo and h_cancha:
+        return h_cancha, "LLAMADO EN CANCHA / LOCACIÓN"
+    elif not es_remoto_foraneo and h_estudio:
+        return h_estudio, "LLAMADO EN ESTUDIO DE TV / CABINA"
+
+    return None
+
 def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
     """
     Busca si el empleado está convocado en una OP activa para el día de hoy.
@@ -575,8 +652,9 @@ def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
             candidatas = conn_ev.execute(text("""
                 SELECT id_evento, folio, nombre_evento, fec_de_instalacion, hra_de_instalacion,
                        fec_del_evento, fec_fin_evento, hra_de_llamado, inicio_del_evento, 
-                       vehiculo_destino, para_q_cliente, 
-                       (COALESCE(personal_convocado_op, '{}'::text[]) || COALESCE(personal_remoto_foraneo, '{}'::text[])) AS personal_convocado_op
+                       vehiculo_destino, para_q_cliente, detalle_llamado, resp_de_produccion, chofer,
+                       (COALESCE(personal_convocado_op, '{}'::text[]) || COALESCE(personal_remoto_foraneo, '{}'::text[])) AS personal_convocado_op,
+                       COALESCE(personal_remoto_foraneo, '{}'::text[]) AS personal_remoto_foraneo
                 FROM public.eventos
                 WHERE (UPPER(COALESCE(estatus, 'ACTIVA')) NOT LIKE '%CANCELAD%')
                   AND (
@@ -588,13 +666,29 @@ def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
 
             for op in candidatas:
                 personal_lista = parse_pg_array(str(op.get("personal_convocado_op", ""))) if isinstance(op.get("personal_convocado_op"), str) else (op.get("personal_convocado_op") or [])
-                if any(emp_clean in _clean(str(p)) for p in personal_lista):
+                remotos_lista = parse_pg_array(str(op.get("personal_remoto_foraneo", ""))) if isinstance(op.get("personal_remoto_foraneo"), str) else (op.get("personal_remoto_foraneo") or [])
+                
+                # Considerar también si es responsable de producción o chofer asignado a la OP
+                prod_resp = str(op.get("resp_de_produccion") or "")
+                chofer_op = str(op.get("chofer") or "")
+                esta_convocado = any(emp_clean in _clean(str(p)) for p in personal_lista) or (emp_clean in _clean(prod_resp)) or (emp_clean in _clean(chofer_op))
+                es_remoto_foraneo = any(emp_clean in _clean(str(p)) for p in remotos_lista) or (emp_clean in _clean(prod_resp)) or (emp_clean in _clean(chofer_op))
+
+                if esta_convocado:
                     f_inst = op.get("fec_de_instalacion")
                     h_inst = op.get("hra_de_instalacion")
                     f_ini = op.get("fec_del_evento")
                     f_fin = op.get("fec_fin_evento") or f_ini
                     h_llam = op.get("hra_de_llamado")
                     h_ini_ev = op.get("inicio_del_evento")
+                    det_llam = op.get("detalle_llamado")
+
+                    # 🎯 Prioridad 0: Si la OP tiene 'detalle_llamado' diferenciado (ej. 'Manuel: 8:00 AM Estudio: 3:00 PM')
+                    if det_llam:
+                        resp_dif = resolver_llamado_diferenciado_op(det_llam, nom_emp, es_remoto_foraneo)
+                        if resp_dif:
+                            h_dif, tipo_dif = resp_dif
+                            return dict(op), h_dif, tipo_dif
 
                     candidatos = []
                     tipo = "OP"

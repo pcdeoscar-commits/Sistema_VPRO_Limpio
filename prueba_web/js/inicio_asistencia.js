@@ -16,22 +16,28 @@ function formatearFechaLocal(d) {
 
 function obtenerRangoSemanaActual() {
     const ahora = new Date();
-    const diaSemana = ahora.getDay();
-    // En JS: 0=Domingo, 1=Lunes, ..., 6=Sábado
-    const diffLunes = (diaSemana === 0 ? -6 : 1 - diaSemana);
-    const lunes = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + diffLunes);
-    
     const dias = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + i);
+    const diasNombres = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+    // 🗓️ Ventana móvil de los últimos 7 días (hoy y los 6 días anteriores)
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - i);
         dias.push({
             dateObj: d,
             iso: formatearFechaLocal(d),
             diaSemanaIdx: d.getDay(),
+            nombreDia: diasNombres[d.getDay()],
+            esHoy: (i === 0),
             display: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
         });
     }
-    return { lunes: dias[0], domingo: dias[6], dias };
+    return {
+        inicio: dias[0],
+        fin: dias[6],
+        lunes: dias[0],   // retrocompatibilidad
+        domingo: dias[6], // retrocompatibilidad
+        dias
+    };
 }
 
 function obtenerEstiloNotifOP(estado) {
@@ -739,7 +745,6 @@ const gruposFiltrados = gruposHtml.filter(Boolean);
         });
 
         const registros = resAsist.ok ? await resAsist.json() : [];
-        const diasEspanol = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
         const hoyIso = formatearFechaLocal(new Date());
 
         const nombreUpper = String(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase();
@@ -761,7 +766,7 @@ const gruposFiltrados = gruposHtml.filter(Boolean);
             let obs = reg ? (reg.observaciones || "") : "";
 
             const esPasadoOHoy = fIso <= hoyIso;
-            const esFinDeSemana = (i === 5 || i === 6); // Sábado o Domingo
+            const esFinDeSemana = (diaInfo.diaSemanaIdx === 0 || diaInfo.diaSemanaIdx === 6); // Domingo (0) o Sábado (6)
 
             // Verificar si hubo omisión de comida
             const omitioComida = (!esVillarreal) && (
@@ -779,13 +784,17 @@ const gruposFiltrados = gruposHtml.filter(Boolean);
                 obs = "✅ Al día";
             }
 
-            // Resaltado de marcas faltantes
-            const claseIn = (mIn === "--:--" && esPasadoOHoy && !esFinDeSemana) ? "td-error" : "";
+            // Resaltado de marcas faltantes (no marcar rojo si hubo mañana libre autorizada)
+            const tieneMananaLibre = obs.toUpperCase().includes("MAÑANA LIBRE") || obs.toUpperCase().includes("TURNO VESPERTINO");
+            const claseIn = (mIn === "--:--" && esPasadoOHoy && !esFinDeSemana && !tieneMananaLibre) ? "td-error" : "";
             const claseOut = (mOut === "--:--" && mIn !== "--:--" && !omitioComida) ? "td-error" : "";
 
+            const badgeHoy = diaInfo.esHoy ? `<span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-left: 6px;">HOY</span>` : "";
+            const estiloFila = diaInfo.esHoy ? `style="background: #f8fafc;"` : "";
+
             htmlTabla += `
-                <tr>
-                    <td style="font-weight: 600; color: #1e293b;">${diasEspanol[i]}</td>
+                <tr ${estiloFila}>
+                    <td style="font-weight: 600; color: #1e293b;">${diaInfo.nombreDia} ${badgeHoy}</td>
                     <td>${diaInfo.display}</td>
                     <td class="${claseIn}">${mIn}</td>
                     <td class="${claseOut}">${mOut}</td>

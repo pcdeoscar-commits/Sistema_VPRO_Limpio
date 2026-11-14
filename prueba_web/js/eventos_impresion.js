@@ -1534,6 +1534,13 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
                         <td><input type="number" step="0.5" class="op-input input-jornada-${fecha}" data-field="t_cena" data-emp="${r.nombre_empleado}" value="${r.t_cena || 0}" style="padding: 6px; width: 60px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="text" class="op-input input-jornada-${fecha}" data-field="hora_salida" data-emp="${r.nombre_empleado}" value="${(r.hora_salida || '00:00:00').substring(0, 5)}" style="padding: 6px; width: 70px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="text" class="op-input input-jornada-${fecha}" data-field="observaciones" data-emp="${r.nombre_empleado}" value="${r.observaciones || ''}" style="padding: 6px; width: 100%;" placeholder="Notas del operador..." ${isReadOnly ? 'disabled' : ''}></td>
+                        ${!isReadOnly ? `
+                        <td style="text-align: center; width: 65px;">
+                            <button type="button" onclick="excluirEmpleadoDeJornada(this, '${fecha}')" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;" title="Excluir a este colaborador de este día (No labora hoy)">
+                                ✕ Quitar
+                            </button>
+                        </td>
+                        ` : ''}
                     </tr>
                     `;
                 }).join('');
@@ -1571,6 +1578,9 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
                                         <button type="button" onclick="aplicarLlamadoACrew('${fecha}', 'REMOTO')" style="background: #7c3aed; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">
                                             ⚡ Aplicar a Remoto
                                         </button>
+                                        <button type="button" onclick="excluirGrupoDeJornada('${fecha}', 'REMOTO')" style="background: #ffffff; color: #6b21a8; border: 1px solid #d8b4fe; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;" title="Excluir a todo el personal Remoto este día">
+                                            🚫 No Labora Remoto
+                                        </button>
                                     ` : ''}
                                 </div>
 
@@ -1584,12 +1594,15 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
                                         <button type="button" onclick="aplicarLlamadoACrew('${fecha}', 'ESTUDIO')" style="background: #0284c7; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;">
                                             ⚡ Aplicar a Estudio
                                         </button>
+                                        <button type="button" onclick="excluirGrupoDeJornada('${fecha}', 'ESTUDIO')" style="background: #ffffff; color: #b91c1c; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;" title="Excluir a todo el personal de Estudio este día (Descanso)">
+                                            🚫 No Labora Estudio
+                                        </button>
                                     ` : ''}
                                 </div>
                             </div>
 
                             <div style="font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 8px;">
-                                <span>👥 <b>${registros.length}</b> colaboradores convocados</span>
+                                <span id="conteo-convocados-${fecha}">👥 <b>${registros.length}</b> colaboradores convocados</span>
                                 ${!isReadOnly ? `
                                     <button type="button" onclick="sincronizarConvocadosAJornada(${idEvento}, '${fecha}')" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer;" title="Agregar colaboradores de la OP que no estén en este día">
                                         🔄 Sincronizar Convocados
@@ -1610,6 +1623,7 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
                                         <th>Hrs Cena</th>
                                         <th>Salida</th>
                                         <th>Notas Individuales</th>
+                                        ${!isReadOnly ? `<th style="text-align: center; width: 65px;">Excluir</th>` : ''}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -2074,6 +2088,40 @@ async function guardarOrdenOP(event, silencioso = false) {
     }
 }
 
+// 🛡️ Funciones para Exclusión de Personal por Jornada / Día
+function excluirEmpleadoDeJornada(btn, fecha) {
+    const tr = btn.closest('tr');
+    if (tr) {
+        tr.remove();
+        actualizarConteoConvocadosJornada(fecha);
+    }
+}
+
+function excluirGrupoDeJornada(fecha, grupo) {
+    const inputs = document.querySelectorAll(`.input-jornada-${fecha}[data-grupo="${grupo}"][data-field="hora_entrada"]`);
+    if (!inputs || inputs.length === 0) {
+        alert(`No hay colaboradores de ${grupo} en la lista de esta jornada.`);
+        return;
+    }
+    const labelGrupo = grupo === 'ESTUDIO' ? 'Estudio (Culiacán)' : 'Remoto / Foráneo';
+    if (!confirm(`¿Deseas excluir a todo el personal de ${labelGrupo} de la jornada del ${fecha}?\n\n(No se les programará llamado ni checador para este día; se considerará día de descanso).`)) {
+        return;
+    }
+    inputs.forEach(inp => {
+        const tr = inp.closest('tr');
+        if (tr) tr.remove();
+    });
+    actualizarConteoConvocadosJornada(fecha);
+}
+
+function actualizarConteoConvocadosJornada(fecha) {
+    const count = document.querySelectorAll(`.input-jornada-${fecha}[data-field="hora_entrada"]`).length;
+    const badge = document.getElementById(`conteo-convocados-${fecha}`);
+    if (badge) {
+        badge.innerHTML = `👥 <b>${count}</b> colaboradores convocados`;
+    }
+}
+
 // 🌐 Exponer explícitamente las funciones maestras de OP al scope global
 window.cargarDetalleOP = cargarDetalleOP;
 window.cargarDetalleOPHistorico = cargarDetalleOPHistorico;
@@ -2085,5 +2133,9 @@ window.guardarJornadaGira = guardarJornadaGira;
 window.eliminarJornadaGira = eliminarJornadaGira;
 window.sincronizarConvocadosAJornada = sincronizarConvocadosAJornada;
 window.aplicarLlamadoACrew = aplicarLlamadoACrew;
+window.excluirEmpleadoDeJornada = excluirEmpleadoDeJornada;
+window.excluirGrupoDeJornada = excluirGrupoDeJornada;
+window.actualizarConteoConvocadosJornada = actualizarConteoConvocadosJornada;
+
 
 

@@ -1749,9 +1749,36 @@ async function crearNuevoDiaGira(idEvento) {
     }
 
     const inputFecha = document.getElementById("input-nueva-fecha-gira");
-    const fechaSeleccionada = inputFecha?.value;
+    const fechaSeleccionada = (inputFecha?.value || "").trim();
     if (!fechaSeleccionada) {
         alert("Selecciona una fecha válida.");
+        return;
+    }
+
+    // 🔒 Candado de Seguridad: Validar que la fecha esté dentro del rango permitido de la OP
+    const fInstVal = (document.getElementById("op_fec_de_instalacion")?.value || "").trim();
+    const fIniEvVal = (document.getElementById("op_fec_del_evento")?.value || "").trim();
+    const fFinEvVal = (document.getElementById("op_fec_fin_evento")?.value || "").trim();
+
+    const fechaLimiteFin = fFinEvVal || fIniEvVal;
+    const fechaLimiteInicio = fInstVal || fIniEvVal;
+
+    if (fechaLimiteFin && fechaSeleccionada > fechaLimiteFin) {
+        alert(`⛔ Operación inválida: No se pueden agregar jornadas posteriores al día final del evento (🏁 FECHA FIN: ${fechaLimiteFin}).`);
+        if (inputFecha) inputFecha.value = fechaLimiteFin;
+        return;
+    }
+
+    if (fechaLimiteInicio && fechaSeleccionada < fechaLimiteInicio) {
+        alert(`⛔ Operación inválida: No se pueden agregar jornadas anteriores al inicio de actividades (🛠️ FECHA INICIO: ${fechaLimiteInicio}).`);
+        if (inputFecha) inputFecha.value = fechaLimiteInicio;
+        return;
+    }
+
+    // Verificar si la fecha ya está creada en la pantalla
+    const inputsExistentesFecha = document.querySelectorAll(`.input-jornada-${fechaSeleccionada}`);
+    if (inputsExistentesFecha && inputsExistentesFecha.length > 0) {
+        alert(`⚠️ La jornada del día ${fechaSeleccionada} ya se encuentra registrada en esta OP.`);
         return;
     }
 
@@ -1765,7 +1792,6 @@ async function crearNuevoDiaGira(idEvento) {
         console.warn("Auto-guardado previo de OP:", saveErr);
     }
 
-    const fInstVal = document.getElementById("op_fec_de_instalacion")?.value;
     const hInstVal = document.getElementById("op_hra_de_instalacion")?.value;
     const hLlamVal = document.getElementById("op_hra_de_llamado")?.value;
     const hIniVal = document.getElementById("op_inicio_del_evento")?.value;

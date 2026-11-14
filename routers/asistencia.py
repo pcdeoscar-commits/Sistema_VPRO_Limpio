@@ -191,7 +191,7 @@ def guardar_asistencia_evento(id_evento: int, payload: AsistenciaBatch):
             # 1. Consultar la lista oficial de personal convocado para esta OP (local y remoto)
             op_row = conn.execute(
                 text("""
-                    SELECT folio, nombre_evento, 
+                    SELECT folio, nombre_evento, fec_del_evento, fec_fin_evento, fec_de_instalacion,
                            (COALESCE(personal_convocado_op, '{}'::text[]) || COALESCE(personal_remoto_foraneo, '{}'::text[])) as personal_autorizado
                     FROM public.eventos WHERE id_evento = :id
                 """),
@@ -205,13 +205,33 @@ def guardar_asistencia_evento(id_evento: int, payload: AsistenciaBatch):
             raw_convocados = parse_pg_array(op_row.get("personal_autorizado"))
             personal_autorizado = {str(p).strip().upper() for p in raw_convocados if str(p).strip()}
             
-            # 2. Validar que cada empleado en el payload esté en la lista convocada/remota
+            f_fin_op = op_row.get("fec_fin_evento") or op_row.get("fec_del_evento")
+            f_ini_op = op_row.get("fec_de_instalacion") or op_row.get("fec_del_evento")
+
+            # 2. Validar que cada empleado en el payload esté en la lista convocada/remota y fechas en rango
             for reg in payload.registros:
                 nom_emp = str(reg.nombre_empleado).strip().upper()
                 if personal_autorizado and nom_emp not in personal_autorizado:
                     raise HTTPException(
                         status_code=400,
                         detail=f"⛔ Acceso denegado: El empleado '{reg.nombre_empleado}' NO está seleccionado en el personal convocado ni remoto de la OP-{folio_op}."
+                    )
+                
+                f_reg = reg.fecha_jornada
+                if isinstance(f_reg, str):
+                    try:
+                        f_reg = datetime.date.fromisoformat(f_reg)
+                    except Exception:
+                        pass
+                if f_fin_op and f_reg and f_reg > f_fin_op:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"⛔ Fecha inválida: No se pueden registrar jornadas posteriores al fin del evento (🏁 Fecha Fin OP: {f_fin_op})."
+                    )
+                if f_ini_op and f_reg and f_reg < f_ini_op:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"⛔ Fecha inválida: No se pueden registrar jornadas anteriores al inicio de actividades (🛠️ Fecha Inicio OP: {f_ini_op})."
                     )
 
             fechas_en_batch = list(set([r.fecha_jornada for r in payload.registros]))

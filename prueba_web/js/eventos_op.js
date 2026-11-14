@@ -746,6 +746,20 @@ function alCambiarFechaFinEvento(input) {
     actualizarSugerenciasFechasGira();
 }
 
+function validarRangoFechaGira(input) {
+    if (!input || !input.value) return;
+    const fFin = document.getElementById("op_fec_fin_evento")?.value || document.getElementById("op_fec_del_evento")?.value;
+    const fIni = document.getElementById("op_fec_de_instalacion")?.value || document.getElementById("op_fec_del_evento")?.value;
+    if (fFin && input.value > fFin) {
+        alert(`⛔ Fecha inválida: No se pueden agregar jornadas posteriores al fin del evento (🏁 FECHA FIN: ${fFin}).`);
+        input.value = fFin;
+    } else if (fIni && input.value < fIni) {
+        alert(`⛔ Fecha inválida: No se pueden agregar jornadas anteriores al inicio de actividades (🛠️ FECHA INICIO: ${fIni}).`);
+        input.value = fIni;
+    }
+}
+window.validarRangoFechaGira = validarRangoFechaGira;
+
 function actualizarSugerenciasFechasGira() {
     const fInst = document.getElementById("op_fec_de_instalacion")?.value;
     const fIni = document.getElementById("op_fec_del_evento")?.value;
@@ -756,8 +770,12 @@ function actualizarSugerenciasFechasGira() {
     const fechaFinActividades = fFin || fIni || fInst;
     
     const inputNuevaFecha = document.getElementById("input-nueva-fecha-gira");
-    if (inputNuevaFecha && fechaInicioActividades) {
-        inputNuevaFecha.value = fechaInicioActividades;
+    if (inputNuevaFecha) {
+        if (fechaInicioActividades) inputNuevaFecha.min = fechaInicioActividades;
+        if (fechaFinActividades) inputNuevaFecha.max = fechaFinActividades;
+        if (fechaInicioActividades && (!inputNuevaFecha.value || inputNuevaFecha.value < fechaInicioActividades || inputNuevaFecha.value > fechaFinActividades)) {
+            inputNuevaFecha.value = fechaInicioActividades;
+        }
     }
     
     const contSugerencias = document.getElementById("contenedor-sugerencias-fechas-gira");
@@ -1239,7 +1257,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                                 </div>
                                 <div>
                                     <label class="op-form-label">Selecciona la fecha:</label>
-                                    <input type="date" id="input-nueva-fecha-gira" value="${fInstalacion || fEvento || hoyStr}" class="op-input" style="width: 220px; background: white;">
+                                    <input type="date" id="input-nueva-fecha-gira" value="${fInstalacion || fEvento || hoyStr}" min="${fInstalacion || fEvento || ''}" max="${fEventoFin || fEvento || ''}" onchange="validarRangoFechaGira(this)" class="op-input" style="width: 220px; background: white;">
                                 </div>
                                 <div style="margin-top: 22px;">
                                     <button type="button" onclick="crearNuevoDiaGira(${idEvento})" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(239,68,68,0.2);">

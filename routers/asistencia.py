@@ -951,140 +951,108 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                             "mensaje": f"🌙 JORNADA NOCTURNA REGISTRADA. Salida {ayer_str} 23:59 / Entrada {hoy_str} 00:00 / Salida {hora_str[:5]}. Horas extras enviadas a visto bueno."
                         }
 
-                # 🔍 Verificar si ya existía entrada en gira por el coordinador
+                # 🔍 Consultar nombre del empleado
                 query_emp = text("SELECT nombre FROM public.empleados WHERE TRIM(id_empleado) = :emp LIMIT 1")
                 row_emp = conn.execute(query_emp, {"emp": payload.id_empleado.strip()}).mappings().first()
-                loc_entrada = None
-                if row_emp and row_emp.get("nombre"):
-                    nom_emp = str(row_emp["nombre"]).strip()
-                    try:
-                        with engine_eventos.begin() as conn_ev:
-                            row_loc = conn_ev.execute(text("""
-                                SELECT id_asistencia, hora_entrada, hora_salida 
-                                FROM public.asistencia_locacion 
-                                WHERE fecha_jornada = CAST(:hoy AS date) 
-                                  AND TRIM(nombre_empleado) = :nom
-                                ORDER BY id_asistencia DESC LIMIT 1
-                            """), {"hoy": hoy_str, "nom": nom_emp}).mappings().first()
-                            if row_loc and row_loc.get("hora_entrada"):
-                                h_in_loc = str(row_loc["hora_entrada"]).strip()
-                                h_out_loc = str(row_loc["hora_salida"]).strip() if row_loc.get("hora_salida") else ""
-                                if h_in_loc not in ["", "None", "00:00:00", "00:00"] and h_out_loc in ["", "None", "00:00:00", "00:00"]:
-                                    loc_entrada = h_in_loc
-                                    conn_ev.execute(text("""
-                                        UPDATE public.asistencia_locacion 
-                                        SET hora_salida = CAST(:hora AS time) 
-                                        WHERE id_asistencia = :id
-                                    """), {"hora": hora_str, "id": row_loc["id_asistencia"]})
-                    except Exception as e:
-                        print(f"⚠️ SILENCED ERROR in asistencia.py: {e}")
+                nom_emp = str(row_emp["nombre"]).strip() if row_emp and row_emp.get("nombre") else "Empleado"
 
-                if loc_entrada:
-                    # El empleado ya tenía entrada matutina en gira: esta checada en Kiosco es su SALIDA MATUTINA (comida)
-                    obs_fusion = f"📍 [EN GIRA] Entrada: {loc_entrada[:5]} | Kiosco - Salida Matutina / Comida"
-                    conn.execute(text("""
-                        INSERT INTO public.control_asistencia (id_empleado, fecha, hora_entrada, hora_salida, estatus, observaciones)
-                        VALUES (:emp, CAST(:hoy AS date), CAST(:h_in AS time), CAST(:h_out AS time), 'GIRA / COMIDA', :obs)
-                    """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "h_in": loc_entrada, "h_out": hora_str, "obs": obs_fusion})
-                    return {"status": "SUCCESS", "mensaje": "✅ SALIDA MATUTINA REGISTRADA (Continuación de Gira)"}
+                # 🎯 VINCULACIÓN DINÁMICA CON LLAMADO / INSTALACIÓN DE LA OP (hora_ref = ahora.time())
+                op_hoy, hora_target, tipo_jornada = resolver_llamado_op_empleado(nom_emp, ahora.date(), ahora.time())
+                h_actual_secs = ahora.hour * 3600 + ahora.minute * 60 + ahora.second
+
+                if op_hoy and hora_target:
+                    folio_op = str(op_hoy.get("folio") or op_hoy.get("id_evento") or "").strip()
+                    nom_ev = reparar_mojibake(op_hoy.get("nombre_evento") or "Evento VPRO")
+                    h_target_str = hora_target.strftime("%H:%M")
+                    h_target_secs = hora_target.hour * 3600 + hora_target.minute * 60 + hora_target.second
+                    limite_secs = h_target_secs + (10 * 60)  # 10 minutos exactos de tolerancia oficial VPRO
+
+                    if h_actual_secs <= limite_secs:
+                        estatus_reg = "ASISTENCIA"
+                        obs_op = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev}"
+                        msg_resp = f"A TIEMPO | Llamado OP-{folio_op} a las {h_target_str}"
+                    else:
+                        mins_tarde = (h_actual_secs - h_target_secs) // 60
+                        estatus_reg = "RETARDO"
+                        obs_op = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev} | Retardo {mins_tarde}m"
+                        msg_resp = f"RETARDO ({mins_tarde}m) | Llamado OP-{folio_op} era a las {h_target_str}"
+
+                    op_vinculada_info = {
+                        "id_evento": op_hoy.get("id_evento"),
+                        "folio": folio_op,
+                        "nombre_evento": nom_ev,
+                        "hora_llamado": h_target_str,
+                        "tipo_jornada": tipo_jornada,
+                        "estatus": estatus_reg
+                    }
                 else:
-                    # 🎯 VINCULACIÓN DINÁMICA CON LLAMADO / INSTALACIÓN DE LA OP (hora_ref = ahora.time())
-                    op_hoy, hora_target, tipo_jornada = resolver_llamado_op_empleado(nom_emp, ahora.date(), ahora.time())
-                    h_actual_secs = ahora.hour * 3600 + ahora.minute * 60 + ahora.second
+                    # Horario normal de oficina (09:00 a. m.)
+                    h_base_secs = 9 * 3600
+                    limite_secs = h_base_secs + (10 * 60)  # 10 minutos exactos de tolerancia oficial VPRO (hasta 09:10:00)
 
-                    if op_hoy and hora_target:
-                        folio_op = str(op_hoy.get("folio") or op_hoy.get("id_evento") or "").strip()
-                        nom_ev = reparar_mojibake(op_hoy.get("nombre_evento") or "Evento VPRO")
-                        h_target_str = hora_target.strftime("%H:%M")
-                        h_target_secs = hora_target.hour * 3600 + hora_target.minute * 60 + hora_target.second
-                        limite_secs = h_target_secs + (10 * 60)  # 10 minutos exactos de tolerancia oficial VPRO
+                    # ⏱️ Verificar si tiene Permiso por Horas aprobado para hoy
+                    permiso_h = conn.execute(text("""
+                        SELECT horas_solicitadas, hora_inicio, hora_fin, tipo_permiso
+                        FROM public.rh_permisos
+                        WHERE TRIM(id_empleado) = :emp 
+                          AND fecha_inicio = CAST(:hoy AS date)
+                          AND estatus IN ('APROBADO', 'AUTORIZADO', 'EN_GOCE')
+                          AND modalidad = 'HORAS'
+                        ORDER BY id_permiso DESC
+                        LIMIT 1
+                    """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str}).mappings().first()
+
+                    if permiso_h:
+                        hrs = float(permiso_h["horas_solicitadas"] or 0)
+                        if permiso_h.get("hora_fin"):
+                            h_fin_p = permiso_h["hora_fin"]
+                            h_base_secs = (h_fin_p.hour * 3600) + (h_fin_p.minute * 60)
+                        elif hrs > 0:
+                            h_base_secs = (9 * 3600) + int(hrs * 3600)
+                        limite_secs = h_base_secs + (10 * 60)
 
                         if h_actual_secs <= limite_secs:
                             estatus_reg = "ASISTENCIA"
-                            obs_op = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev}"
-                            msg_resp = f"A TIEMPO | Llamado OP-{folio_op} a las {h_target_str}"
-                        else:
-                            mins_tarde = (h_actual_secs - h_target_secs) // 60
-                            estatus_reg = "RETARDO"
-                            obs_op = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev} | Retardo {mins_tarde}m"
-                            msg_resp = f"RETARDO ({mins_tarde}m) | Llamado OP-{folio_op} era a las {h_target_str}"
-
-                        op_vinculada_info = {
-                            "id_evento": op_hoy.get("id_evento"),
-                            "folio": folio_op,
-                            "nombre_evento": nom_ev,
-                            "hora_llamado": h_target_str,
-                            "tipo_jornada": tipo_jornada,
-                            "estatus": estatus_reg
-                        }
-                    else:
-                        # Horario normal de oficina (09:00 a. m.)
-                        h_base_secs = 9 * 3600
-                        limite_secs = h_base_secs + (10 * 60)  # 10 minutos exactos de tolerancia oficial VPRO (hasta 09:10:00)
-
-                        # ⏱️ Verificar si tiene Permiso por Horas aprobado para hoy
-                        permiso_h = conn.execute(text("""
-                            SELECT horas_solicitadas, hora_inicio, hora_fin, tipo_permiso
-                            FROM public.rh_permisos
-                            WHERE TRIM(id_empleado) = :emp 
-                              AND fecha_inicio = CAST(:hoy AS date)
-                              AND estatus IN ('APROBADO', 'AUTORIZADO', 'EN_GOCE')
-                              AND modalidad = 'HORAS'
-                            ORDER BY id_permiso DESC
-                            LIMIT 1
-                        """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str}).mappings().first()
-
-                        if permiso_h:
-                            hrs = float(permiso_h["horas_solicitadas"] or 0)
-                            if permiso_h.get("hora_fin"):
-                                h_fin_p = permiso_h["hora_fin"]
-                                h_base_secs = (h_fin_p.hour * 3600) + (h_fin_p.minute * 60)
-                            elif hrs > 0:
-                                h_base_secs = (9 * 3600) + int(hrs * 3600)
-                            limite_secs = h_base_secs + (10 * 60)
-
-                            if h_actual_secs <= limite_secs:
-                                estatus_reg = "ASISTENCIA"
-                                obs_op = f"Kiosco HTML | ⏱️ Permiso por Horas Justificado ({hrs}h {permiso_h['tipo_permiso']})"
-                                msg_resp = f"ENTRADA REGISTRADA (Permiso {hrs}h Justificado)"
-                            else:
-                                mins_tarde = (h_actual_secs - h_base_secs) // 60
-                                estatus_reg = "RETARDO"
-                                obs_op = f"Kiosco HTML | Retardo {mins_tarde}m excediendo permiso {hrs}h"
-                                msg_resp = f"ENTRADA REGISTRADA (Retardo {mins_tarde} min vs permiso)"
-                        elif h_actual_secs <= limite_secs:
-                            estatus_reg = "ASISTENCIA"
-                            obs_op = payload.observaciones or "Kiosco HTML"
-                            msg_resp = "ENTRADA MATUTINA REGISTRADA"
+                            obs_op = f"Kiosco HTML | ⏱️ Permiso por Horas Justificado ({hrs}h {permiso_h['tipo_permiso']})"
+                            msg_resp = f"ENTRADA REGISTRADA (Permiso {hrs}h Justificado)"
                         else:
                             mins_tarde = (h_actual_secs - h_base_secs) // 60
                             estatus_reg = "RETARDO"
-                            obs_op = f"Kiosco HTML | Retardo {mins_tarde}m"
-                            msg_resp = f"ENTRADA REGISTRADA (Retardo {mins_tarde} min vs 09:00)"
-                        op_vinculada_info = None
-
-                    # 🌟 Si es su primer toque del día y es llamado vespertino (>= 13:00) o ingresa en la tarde (>= 13:30),
-                    # se registra directo en hora_entrada_v dejando la mañana libre autorizada.
-                    es_primer_toque_vespertino = (hora_target and hora_target >= datetime.time(13, 0)) or (hora_str >= "13:30:00")
-                    if es_primer_toque_vespertino:
-                        obs_op_final = f"{obs_op} | Turno Vespertino (Mañana libre autorizada)".strip(" |")
-                        conn.execute(text("""
-                            INSERT INTO public.control_asistencia (id_empleado, fecha, hora_entrada, hora_salida, hora_entrada_v, estatus, observaciones)
-                            VALUES (:emp, CAST(:hoy AS date), NULL, NULL, CAST(:hora AS time), :est, :obs)
-                        """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "hora": hora_str, "est": estatus_reg, "obs": obs_op_final})
-                        msg_resp = f"ENTRADA VESPERTINA REGISTRADA | {msg_resp}"
+                            obs_op = f"Kiosco HTML | Retardo {mins_tarde}m excediendo permiso {hrs}h"
+                            msg_resp = f"ENTRADA REGISTRADA (Retardo {mins_tarde} min vs permiso)"
+                    elif h_actual_secs <= limite_secs:
+                        estatus_reg = "ASISTENCIA"
+                        obs_op = payload.observaciones or "Kiosco HTML"
+                        msg_resp = "ENTRADA MATUTINA REGISTRADA"
                     else:
-                        conn.execute(text("""
-                            INSERT INTO public.control_asistencia (id_empleado, fecha, hora_entrada, estatus, observaciones)
-                            VALUES (:emp, CAST(:hoy AS date), CAST(:hora AS time), :est, :obs)
-                        """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "hora": hora_str, "est": estatus_reg, "obs": obs_op})
+                        mins_tarde = (h_actual_secs - h_base_secs) // 60
+                        estatus_reg = "RETARDO"
+                        obs_op = f"Kiosco HTML | Retardo {mins_tarde}m"
+                        msg_resp = f"ENTRADA REGISTRADA (Retardo {mins_tarde} min vs 09:00)"
+                    op_vinculada_info = None
 
-                    return {
-                        "status": "SUCCESS" if estatus_reg == "ASISTENCIA" else "WARNING",
-                        "mensaje": f"{'✅' if estatus_reg == 'ASISTENCIA' else '⚠️'} {msg_resp}",
-                        "nombre_empleado": nom_emp,
-                        "op_vinculada": op_vinculada_info
-                    }
+                # 🌟 Si es su primer toque del día y es llamado vespertino (>= 13:00) o ingresa en la tarde (>= 13:30),
+                # se registra directo en hora_entrada_v dejando la mañana libre autorizada.
+                es_primer_toque_vespertino = (hora_target and hora_target >= datetime.time(13, 0)) or (hora_str >= "13:30:00")
+                if es_primer_toque_vespertino:
+                    obs_op_final = f"{obs_op} | Turno Vespertino (Mañana libre autorizada)".strip(" |")
+                    conn.execute(text("""
+                        INSERT INTO public.control_asistencia (id_empleado, fecha, hora_entrada, hora_salida, hora_entrada_v, estatus, observaciones)
+                        VALUES (:emp, CAST(:hoy AS date), NULL, NULL, CAST(:hora AS time), :est, :obs)
+                    """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "hora": hora_str, "est": estatus_reg, "obs": obs_op_final})
+                    msg_resp = f"ENTRADA VESPERTINA REGISTRADA | {msg_resp}"
+                else:
+                    conn.execute(text("""
+                        INSERT INTO public.control_asistencia (id_empleado, fecha, hora_entrada, estatus, observaciones)
+                        VALUES (:emp, CAST(:hoy AS date), CAST(:hora AS time), :est, :obs)
+                    """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "hora": hora_str, "est": estatus_reg, "obs": obs_op})
+
+                return {
+                    "status": "SUCCESS" if estatus_reg == "ASISTENCIA" else "WARNING",
+                    "mensaje": f"{'✅' if estatus_reg == 'ASISTENCIA' else '⚠️'} {msg_resp}",
+                    "nombre_empleado": nom_emp,
+                    "op_vinculada": op_vinculada_info
+                }
 
             id_reg = registro_hoy["id_registro"]
 

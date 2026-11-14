@@ -19,8 +19,8 @@ function obtenerRangoSemanaActual() {
     const dias = [];
     const diasNombres = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-    // 🗓️ Ventana móvil de los últimos 7 días (hoy y los 6 días anteriores)
-    for (let i = 6; i >= 0; i--) {
+    // 🗓️ Ventana móvil de los últimos 7 días con HOY arriba (orden descendente: hoy -> hace 6 días)
+    for (let i = 0; i < 7; i++) {
         const d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - i);
         dias.push({
             dateObj: d,
@@ -32,10 +32,10 @@ function obtenerRangoSemanaActual() {
         });
     }
     return {
-        inicio: dias[0],
-        fin: dias[6],
-        lunes: dias[0],   // retrocompatibilidad
-        domingo: dias[6], // retrocompatibilidad
+        inicio: dias[6],  // fecha más antigua (hace 6 días)
+        fin: dias[0],     // fecha más reciente (hoy)
+        lunes: dias[6],   // retrocompatibilidad para fecha_inicio
+        domingo: dias[0], // retrocompatibilidad para fecha_fin
         dias
     };
 }

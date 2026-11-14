@@ -27224,7 +27224,7 @@ function alSeleccionarArchivosTransferencia(input) {
 
 function procesarNuevosArchivosTransferencia(fileList) {
 
-    const LIMITE_5GB = 5 * 1024 * 1024 * 1024; // 5 GB
+    const LIMITE_10GB = 10 * 1024 * 1024 * 1024; // 10 GB
 
     let totalActual = archivosTransferenciaSeleccionados.reduce((acc, f) => acc + f.size, 0);
 
@@ -27234,9 +27234,9 @@ function procesarNuevosArchivosTransferencia(fileList) {
 
         const file = fileList[i];
 
-        if (totalActual + file.size > LIMITE_5GB) {
+        if (totalActual + file.size > LIMITE_10GB) {
 
-            alert(`⚠️ No se pudo agregar "${file.name}".\nEl tamaño combinado superaría el límite de 5.0 GB.\nTamaño actual acumulado: ${formatearTamanoBytes(totalActual)}.`);
+            alert(`⚠️ No se pudo agregar "${file.name}".\nEl tamaño combinado superaría el límite de 10.0 GB.\nTamaño actual acumulado: ${formatearTamanoBytes(totalActual)}.`);
 
             break;
 
@@ -27476,7 +27476,7 @@ async function enviarTransferenciaArchivos() {
 
     if (archivosTransferenciaSeleccionados.length === 0) {
 
-        alert("Por favor selecciona o arrastra al menos un archivo para transferir (máximo 5.0 GB).");
+        alert("Por favor selecciona o arrastra al menos un archivo para transferir (máximo 10.0 GB).");
 
         return;
 

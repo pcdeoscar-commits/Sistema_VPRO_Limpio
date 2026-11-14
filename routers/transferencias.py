@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/transferencias", tags=["📦 Transferencia de Ar
 CARPETA_TRANSFERENCIAS = BASE_DIR / "Archivos_Compartidos"
 CARPETA_TRANSFERENCIAS.mkdir(parents=True, exist_ok=True)
 
-LIMITE_MAX_BYTES = 5 * 1024 * 1024 * 1024  # 5 GB total (5,368,709,120 bytes)
+LIMITE_MAX_BYTES = 10 * 1024 * 1024 * 1024  # 10 GB total (10,737,418,240 bytes)
 CHUNK_SIZE = 2 * 1024 * 1024  # 2 MB por bloque de streaming
 
 def _asegurar_tabla_transferencias():
@@ -183,7 +183,7 @@ async def subir_archivos_compartidos(
     file: Optional[UploadFile] = File(None)
 ):
     """
-    Recibe y almacena 1 o más archivos compartidos (hasta 5 GB en total) mediante streaming a disco.
+    Recibe y almacena 1 o más archivos compartidos (hasta 10 GB en total) mediante streaming a disco.
     Agrupa los archivos en un mismo folio_paquete para facilitar la entrega al destinatario.
     """
     lista_archivos = []
@@ -228,7 +228,7 @@ async def subir_archivos_compartidos(
                                 pass
                         raise HTTPException(
                             status_code=400,
-                            detail="El peso combinado de los archivos excede el límite máximo permitido de 5.0 GB."
+                            detail="El peso combinado de los archivos excede el límite máximo permitido de 10.0 GB."
                         )
                     buffer.write(chunk)
 
@@ -324,13 +324,13 @@ async def subir_chunk_transferencia(
     chunk: UploadFile = File(...)
 ):
     """
-    Recibe un bloque (chunk de ~20 MB) para permitir transferencias de gran tamaño (hasta 5.0 GB)
+    Recibe un bloque (chunk de ~20 MB) para permitir transferencias de gran tamaño (hasta 10.0 GB)
     a través de Cloudflare o conexiones remotas, eludiendo el límite de 100 MB por petición.
     """
     if tamano_total > LIMITE_MAX_BYTES:
         raise HTTPException(
             status_code=400,
-            detail="El archivo excede el límite máximo permitido de 5.0 GB."
+            detail="El archivo excede el límite máximo permitido de 10.0 GB."
         )
 
     upload_id_clean = re.sub(r'[^a-zA-Z0-9_-]', '', upload_id)
@@ -354,7 +354,7 @@ async def subir_chunk_transferencia(
         peso_real = temp_file_path.stat().st_size
         if peso_real > LIMITE_MAX_BYTES:
             temp_file_path.unlink(missing_ok=True)
-            raise HTTPException(status_code=400, detail="El archivo excede el límite máximo de 5.0 GB.")
+            raise HTTPException(status_code=400, detail="El archivo excede el límite máximo de 10.0 GB.")
 
         nombre_original = os.path.basename(nombre_archivo or "archivo_compartido")
         nombre_limpio = re.sub(r'[^a-zA-Z0-9_.-]', '_', nombre_original)

@@ -1,11 +1,11 @@
 // ==============================================================================
 // MÓDULO: transfer.js
-// 📦 VPRO Transfer (archivos hasta 5GB)
+// 📦 VPRO Transfer (archivos hasta 10GB)
 // Líneas originales: 13466–14248 de script.js
 // ==============================================================================
 
 // ==========================================
-// 📦 MÓDULO VPRO TRANSFER (COMPARTIR ARCHIVOS HASTA 5GB CON BORRADO EN 7H POST-DESCARGA)
+// 📦 MÓDULO VPRO TRANSFER (COMPARTIR ARCHIVOS HASTA 10GB CON BORRADO EN 7H POST-DESCARGA)
 // ==========================================
 let archivosTransferenciaSeleccionados = [];
 let peticionSubidaXHR = null;
@@ -125,13 +125,13 @@ function alSeleccionarArchivosTransferencia(input) {
 }
 
 function procesarNuevosArchivosTransferencia(fileList) {
-    const LIMITE_5GB = 5 * 1024 * 1024 * 1024; // 5 GB
+    const LIMITE_10GB = 10 * 1024 * 1024 * 1024; // 10 GB
     let totalActual = archivosTransferenciaSeleccionados.reduce((acc, f) => acc + f.size, 0);
 
     for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
-        if (totalActual + file.size > LIMITE_5GB) {
-            alert(`⚠️ No se pudo agregar "${file.name}".\nEl tamaño combinado superaría el límite de 5.0 GB.\nTamaño actual acumulado: ${formatearTamanoBytes(totalActual)}.`);
+        if (totalActual + file.size > LIMITE_10GB) {
+            alert(`⚠️ No se pudo agregar "${file.name}".\nEl tamaño combinado superaría el límite de 10.0 GB.\nTamaño actual acumulado: ${formatearTamanoBytes(totalActual)}.`);
             break;
         }
         // Evitar duplicados por nombre y tamaño exacto
@@ -251,7 +251,7 @@ async function enviarTransferenciaArchivos() {
     }
 
     if (archivosTransferenciaSeleccionados.length === 0) {
-        alert("Por favor selecciona o arrastra al menos un archivo para transferir (máximo 5.0 GB).");
+        alert("Por favor selecciona o arrastra al menos un archivo para transferir (máximo 10.0 GB).");
         return;
     }
 

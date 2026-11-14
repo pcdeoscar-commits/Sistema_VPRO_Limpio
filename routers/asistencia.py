@@ -656,12 +656,11 @@ def resolver_llamado_diferenciado_op(detalle_llamado: str, nom_emp: str, es_remo
 
     return None
 
-def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
+def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date, hora_ref: Optional[time] = None):
     """
-    Busca si el empleado está convocado en una OP activa para el día de hoy.
-    Revisa si hoy coincide con:
-      - fec_de_instalacion (Montaje / Instalación previa o del día)
-      - fec_del_evento .. fec_fin_evento (Día del evento / llamado a producción)
+    Busca si el empleado está convocado en una o más OPs activas para el día de hoy.
+    Si se proporciona hora_ref (hora actual de checado), resuelve inteligentemente
+    la OP y horario más cercano a ese momento (ej. OP matutina vs OP vespertina).
     Retorna (op_dict, hora_objetivo, tipo_jornada) o (None, None, None).
     """
     if not nom_emp:
@@ -689,6 +688,7 @@ def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
                 ORDER BY id_evento DESC
             """), {"hoy": hoy_date}).mappings().all()
 
+            opciones_llamados = []
             for op in candidatas:
                 personal_lista = parse_pg_array(str(op.get("personal_convocado_op", ""))) if isinstance(op.get("personal_convocado_op"), str) else (op.get("personal_convocado_op") or [])
                 remotos_lista = parse_pg_array(str(op.get("personal_remoto_foraneo", ""))) if isinstance(op.get("personal_remoto_foraneo"), str) else (op.get("personal_remoto_foraneo") or [])
@@ -713,7 +713,8 @@ def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
                         resp_dif = resolver_llamado_diferenciado_op(det_llam, nom_emp, es_remoto_foraneo)
                         if resp_dif:
                             h_dif, tipo_dif = resp_dif
-                            return dict(op), h_dif, tipo_dif
+                            opciones_llamados.append((dict(op), h_dif, tipo_dif))
+                            continue
 
                     candidatos = []
                     tipo = "OP"
@@ -746,21 +747,28 @@ def resolver_llamado_op_empleado(nom_emp: str, hoy_date: datetime.date):
                         """), {"id_ev": op["id_evento"], "hoy": hoy_date}).mappings().all()
 
                         if regs_loc:
-                            # 📌 Si la OP tiene bitácora registrada para hoy, buscamos el llamado exacto de este colaborador
+                            encontrado_loc = False
                             for rl in regs_loc:
                                 if emp_clean in _clean(str(rl.get("nombre_empleado") or "")):
                                     h_in_loc = rl.get("hora_entrada")
                                     if _es_h_val(h_in_loc):
-                                        return dict(op), h_in_loc, f"LLAMADO DÍA ({tipo})"
-                            # Si la bitácora de hoy no tiene llamado programado para este colaborador,
-                            # no se le aplica el llamado foráneo/evento -> Se califica con su horario normal de oficina (09:00 a. m.)
-                            return None, None, None
+                                        opciones_llamados.append((dict(op), h_in_loc, f"LLAMADO DÍA ({tipo})"))
+                                        encontrado_loc = True
+                                        break
+                            if encontrado_loc:
+                                continue
                     except Exception as e_loc:
                         print(f"⚠️ Nota al consultar llamado en asistencia_locacion: {e_loc}")
 
                     h_target = min(candidatos) if candidatos else None
                     if h_target:
-                        return dict(op), h_target, tipo
+                        opciones_llamados.append((dict(op), h_target, tipo))
+
+            if opciones_llamados:
+                if hora_ref:
+                    actual_secs = hora_ref.hour * 3600 + hora_ref.minute * 60 + hora_ref.second
+                    return min(opciones_llamados, key=lambda x: abs((x[1].hour * 3600 + x[1].minute * 60 + x[1].second) - actual_secs))
+                return opciones_llamados[0]
     except Exception as e:
         print(f"⚠️ Error al resolver llamado de OP para {nom_emp}: {e}")
 
@@ -980,8 +988,8 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                     """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "h_in": loc_entrada, "h_out": hora_str, "obs": obs_fusion})
                     return {"status": "SUCCESS", "mensaje": "✅ SALIDA MATUTINA REGISTRADA (Continuación de Gira)"}
                 else:
-                    # 🎯 VINCULACIÓN DINÁMICA CON LLAMADO / INSTALACIÓN DE LA OP
-                    op_hoy, hora_target, tipo_jornada = resolver_llamado_op_empleado(nom_emp, ahora.date())
+                    # 🎯 VINCULACIÓN DINÁMICA CON LLAMADO / INSTALACIÓN DE LA OP (hora_ref = ahora.time())
+                    op_hoy, hora_target, tipo_jornada = resolver_llamado_op_empleado(nom_emp, ahora.date(), ahora.time())
                     h_actual_secs = ahora.hour * 3600 + ahora.minute * 60 + ahora.second
 
                     if op_hoy and hora_target:
@@ -1055,10 +1063,21 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                             msg_resp = f"ENTRADA REGISTRADA (Retardo {mins_tarde} min vs 09:00)"
                         op_vinculada_info = None
 
-                    conn.execute(text("""
-                        INSERT INTO public.control_asistencia (id_empleado, fecha, hora_entrada, estatus, observaciones)
-                        VALUES (:emp, CAST(:hoy AS date), CAST(:hora AS time), :est, :obs)
-                    """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "hora": hora_str, "est": estatus_reg, "obs": obs_op})
+                    # 🌟 Si es su primer toque del día y es llamado vespertino (>= 13:00) o ingresa en la tarde (>= 13:30),
+                    # se registra directo en hora_entrada_v dejando la mañana libre autorizada.
+                    es_primer_toque_vespertino = (hora_target and hora_target >= datetime.time(13, 0)) or (hora_str >= "13:30:00")
+                    if es_primer_toque_vespertino:
+                        obs_op_final = f"{obs_op} | Turno Vespertino (Mañana libre autorizada)".strip(" |")
+                        conn.execute(text("""
+                            INSERT INTO public.control_asistencia (id_empleado, fecha, hora_entrada, hora_salida, hora_entrada_v, estatus, observaciones)
+                            VALUES (:emp, CAST(:hoy AS date), NULL, NULL, CAST(:hora AS time), :est, :obs)
+                        """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "hora": hora_str, "est": estatus_reg, "obs": obs_op_final})
+                        msg_resp = f"ENTRADA VESPERTINA REGISTRADA | {msg_resp}"
+                    else:
+                        conn.execute(text("""
+                            INSERT INTO public.control_asistencia (id_empleado, fecha, hora_entrada, estatus, observaciones)
+                            VALUES (:emp, CAST(:hoy AS date), CAST(:hora AS time), :est, :obs)
+                        """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str, "hora": hora_str, "est": estatus_reg, "obs": obs_op})
 
                     return {
                         "status": "SUCCESS" if estatus_reg == "ASISTENCIA" else "WARNING",
@@ -1108,12 +1127,126 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                         """), {"hora": hora_str, "obs": obs_extra, "id": id_reg})
                         return {"status": "SUCCESS", "mensaje": "✅ SALIDA VESPERTINA REGISTRADA"}
                 else:
-                    # Checada normal antes de las 16:30:00 -> Salida a comer
-                    conn.execute(text("UPDATE public.control_asistencia SET hora_salida = CAST(:hora AS time) WHERE id_registro = :id"), {"hora": hora_str, "id": id_reg})
-                    return {"status": "SUCCESS", "mensaje": "✅ SALIDA MATUTINA REGISTRADA"}
+                    # 💡 OPCIÓN 3: Detección inteligente de omisión de salida a comer
+                    # Si checa a partir de las 14:30 y tiene llamado vespertino de OP (>= 13:00), o si checa a partir de las 15:00:
+                    op_vesp, h_target_vesp, tipo_vesp = resolver_llamado_op_empleado(nom_emp, ahora.date(), ahora.time())
+                    es_entrada_vesp_automatica = False
+
+                    if hora_str >= "14:30:00" and h_target_vesp and h_target_vesp >= datetime.time(13, 0):
+                        es_entrada_vesp_automatica = True
+                    elif hora_str >= "15:00:00":
+                        es_entrada_vesp_automatica = True
+
+                    if es_entrada_vesp_automatica:
+                        # 1. Regularizar salida matutina a las 14:00 (hora oficial de comida)
+                        h_sal_auto = "14:00:00"
+                        obs_auto = f"Salida matutina ajustada auto 14:00 (omisión detectada al checar entrada vesp {hora_str[:5]})"
+
+                        # 2. Evaluar puntualidad vespertina contra la OP de la tarde (si aplica)
+                        if op_vesp and h_target_vesp:
+                            folio_op = str(op_vesp.get("folio") or op_vesp.get("id_evento") or "").strip()
+                            nom_ev = reparar_mojibake(op_vesp.get("nombre_evento") or "Evento VPRO")
+                            h_target_str = h_target_vesp.strftime("%H:%M")
+                            h_target_secs = h_target_vesp.hour * 3600 + h_target_vesp.minute * 60 + h_target_vesp.second
+                            h_actual_secs = ahora.hour * 3600 + ahora.minute * 60 + ahora.second
+                            limite_secs = h_target_secs + (10 * 60) # 10 minutos tolerancia oficial
+
+                            if h_actual_secs <= limite_secs:
+                                estatus_vesp = "ASISTENCIA"
+                                nota_vesp = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev}"
+                                msg_resp = f"A TIEMPO | Llamado OP-{folio_op} a las {h_target_str}"
+                            else:
+                                mins_tarde = (h_actual_secs - h_target_secs) // 60
+                                estatus_vesp = "RETARDO"
+                                nota_vesp = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev} | Retardo {mins_tarde}m"
+                                msg_resp = f"RETARDO ({mins_tarde}m) | Llamado OP-{folio_op} era a las {h_target_str}"
+
+                            op_vinculada_info = {
+                                "id_evento": op_vesp.get("id_evento"),
+                                "folio": folio_op,
+                                "nombre_evento": nom_ev,
+                                "hora_llamado": h_target_str,
+                                "tipo_jornada": tipo_vesp,
+                                "estatus": estatus_vesp
+                            }
+                        else:
+                            estatus_vesp = "ASISTENCIA"
+                            nota_vesp = f"Kiosco HTML - Entrada Vespertina {hora_str[:5]}"
+                            msg_resp = f"ENTRADA VESPERTINA ({hora_str[:5]})"
+                            op_vinculada_info = None
+
+                        obs_total = f"{obs_auto} | {nota_vesp}".strip(" |")
+                        conn.execute(text("""
+                            UPDATE public.control_asistencia
+                            SET hora_salida = CAST(:h_sal AS time),
+                                hora_entrada_v = CAST(:h_ent_v AS time),
+                                estatus = CASE WHEN estatus = 'RETARDO' THEN 'RETARDO' ELSE :est END,
+                                observaciones = COALESCE(observaciones, '') || ' | ' || :obs
+                            WHERE id_registro = :id
+                        """), {
+                            "h_sal": h_sal_auto,
+                            "h_ent_v": hora_str,
+                            "est": estatus_vesp,
+                            "obs": obs_total,
+                            "id": id_reg
+                        })
+
+                        return {
+                            "status": "SUCCESS" if estatus_vesp == "ASISTENCIA" else "WARNING",
+                            "mensaje": f"{'✅' if estatus_vesp == 'ASISTENCIA' else '⚠️'} {msg_resp}. (Salida matutina ajustada auto a 14:00)",
+                            "nombre_empleado": nom_emp,
+                            "op_vinculada": op_vinculada_info,
+                            "advertencia": f"⚠️ ATENCIÓN {nom_emp}: Omitiste checar salida a comer a las 14:00. El sistema la auto-regularizó para que tu salida nocturna quede exacta."
+                        }
+                    else:
+                        # Checada normal antes de las 14:30 o sin llamado de tarde -> Salida a comer
+                        conn.execute(text("UPDATE public.control_asistencia SET hora_salida = CAST(:hora AS time) WHERE id_registro = :id"), {"hora": hora_str, "id": id_reg})
+                        return {"status": "SUCCESS", "mensaje": "✅ SALIDA MATUTINA REGISTRADA"}
             elif registro_hoy["hora_salida"] is not None and registro_hoy.get("hora_entrada_v") is None:
-                conn.execute(text("UPDATE public.control_asistencia SET hora_entrada_v = CAST(:hora AS time) WHERE id_registro = :id"), {"hora": hora_str, "id": id_reg})
-                return {"status": "SUCCESS", "mensaje": "✅ ENTRADA VESPERTINA REGISTRADA"}
+                # 🎯 Checada normal de regreso de comida / entrada vespertina: vincular OP de la tarde si existe
+                op_vesp, h_target_vesp, tipo_vesp = resolver_llamado_op_empleado(nom_emp, ahora.date(), ahora.time())
+                if op_vesp and h_target_vesp:
+                    folio_op = str(op_vesp.get("folio") or op_vesp.get("id_evento") or "").strip()
+                    nom_ev = reparar_mojibake(op_vesp.get("nombre_evento") or "Evento VPRO")
+                    h_target_str = h_target_vesp.strftime("%H:%M")
+                    h_target_secs = h_target_vesp.hour * 3600 + h_target_vesp.minute * 60 + h_target_vesp.second
+                    h_actual_secs = ahora.hour * 3600 + ahora.minute * 60 + ahora.second
+                    limite_secs = h_target_secs + (10 * 60)
+
+                    if h_actual_secs <= limite_secs:
+                        est_v = "ASISTENCIA"
+                        nota_v = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev}"
+                        msg_v = f"A TIEMPO | Llamado OP-{folio_op} a las {h_target_str}"
+                    else:
+                        mins_tarde = (h_actual_secs - h_target_secs) // 60
+                        est_v = "RETARDO"
+                        nota_v = f"📍 [OP-{folio_op}] Llamado: {h_target_str} | {nom_ev} | Retardo {mins_tarde}m"
+                        msg_v = f"RETARDO ({mins_tarde}m) | Llamado OP-{folio_op} era a las {h_target_str}"
+
+                    conn.execute(text("""
+                        UPDATE public.control_asistencia
+                        SET hora_entrada_v = CAST(:hora AS time),
+                            estatus = CASE WHEN estatus = 'RETARDO' THEN 'RETARDO' ELSE :est END,
+                            observaciones = COALESCE(observaciones, '') || ' | ' || :obs
+                        WHERE id_registro = :id
+                    """), {"hora": hora_str, "est": est_v, "obs": nota_v, "id": id_reg})
+
+                    return {
+                        "status": "SUCCESS" if est_v == "ASISTENCIA" else "WARNING",
+                        "mensaje": f"{'✅' if est_v == 'ASISTENCIA' else '⚠️'} ENTRADA VESPERTINA REGISTRADA | {msg_v}",
+                        "nombre_empleado": nom_emp,
+                        "op_vinculada": {
+                            "id_evento": op_vesp.get("id_evento"),
+                            "folio": folio_op,
+                            "nombre_evento": nom_ev,
+                            "hora_llamado": h_target_str,
+                            "tipo_jornada": tipo_vesp,
+                            "estatus": est_v
+                        }
+                    }
+                else:
+                    conn.execute(text("UPDATE public.control_asistencia SET hora_entrada_v = CAST(:hora AS time) WHERE id_registro = :id"), {"hora": hora_str, "id": id_reg})
+                    return {"status": "SUCCESS", "mensaje": "✅ ENTRADA VESPERTINA REGISTRADA"}
             elif registro_hoy.get("hora_entrada_v") is not None and registro_hoy.get("hora_salida_v") is None:
                 conn.execute(text("UPDATE public.control_asistencia SET hora_salida_v = CAST(:hora AS time), estatus = CASE WHEN estatus = 'RETARDO' THEN 'RETARDO' ELSE 'COMPLETO' END WHERE id_registro = :id"), {"hora": hora_str, "id": id_reg})
                 return {"status": "SUCCESS", "mensaje": "✅ SALIDA VESPERTINA REGISTRADA"}

@@ -447,10 +447,17 @@ def obtener_auditoria_asistencia(filtro: FiltroAsistencia):
                         else:
                             reg['hora_salida'] = max(reg['hora_salida'], gira_out)
 
-                # 3. Unificar Observaciones
+                # 3. Unificar Observaciones (Evitar duplicar OP o nombre de evento)
                 obs_act = reg.get('observaciones', '').strip()
-                if nota_gira and nota_gira not in obs_act and "EN GIRA" not in obs_act.upper():
-                    reg['observaciones'] = f"{obs_act} | {nota_gira}".strip(" |")
+                op_tag = f"OP-{folio}" if folio else ""
+                ya_tiene_op = bool(op_tag and op_tag.upper() in obs_act.upper())
+
+                if not ya_tiene_op and "EN GIRA" not in obs_act.upper():
+                    if nota_gira:
+                        reg['observaciones'] = f"{obs_act} | {nota_gira}".strip(" |")
+                elif ya_tiene_op and texto_comidas and texto_comidas not in obs_act:
+                    # Si ya tiene la OP vinculada, solo anexar viáticos/alimentos si existen
+                    reg['observaciones'] = f"{obs_act} | {texto_comidas.strip()}".strip(" |")
 
         # Asegurar que cualquier salida de fin de jornada (>= 18:00:00) esté en el turno vespertino
         for reg in mapa_combinado.values():

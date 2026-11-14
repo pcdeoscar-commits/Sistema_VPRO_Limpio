@@ -432,24 +432,20 @@ def obtener_auditoria_asistencia(filtro: FiltroAsistencia):
                         reg['hora_entrada'] = min(of_in, gira_in)
 
                 # 2. Unificar Salida Matutina / Jornada
-                if not _es_valida(reg['hora_salida']) and _es_valida(gira_out):
+                if _es_valida(gira_out):
                     if gira_out >= "18:00:00":
                         if not _es_valida(reg['hora_salida_v']):
                             reg['hora_salida_v'] = gira_out
                         else:
                             reg['hora_salida_v'] = max(reg['hora_salida_v'], gira_out)
-                    else:
-                        reg['hora_salida'] = gira_out
-                elif _es_valida(reg['hora_salida']) and _es_valida(gira_out):
-                    if gira_out >= "18:00:00":
-                        if not _es_valida(reg['hora_salida_v']):
-                            reg['hora_salida_v'] = gira_out
-                            if reg['hora_salida'] >= "18:00:00":
-                                reg['hora_salida'] = "--:--"
+                        if _es_valida(reg.get('hora_salida')) and reg['hora_salida'] >= "18:00:00":
+                            reg['hora_salida'] = "--:--"
+                    elif _es_valida(reg.get('hora_entrada')) and gira_out < "15:00:00":
+                        # Solo es salida a comer si realmente hubo entrada matutina
+                        if not _es_valida(reg['hora_salida']):
+                            reg['hora_salida'] = gira_out
                         else:
-                            reg['hora_salida_v'] = max(reg['hora_salida_v'], gira_out)
-                    else:
-                        reg['hora_salida'] = max(reg['hora_salida'], gira_out)
+                            reg['hora_salida'] = max(reg['hora_salida'], gira_out)
 
                 # 3. Unificar Observaciones
                 obs_act = reg.get('observaciones', '').strip()

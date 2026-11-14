@@ -413,9 +413,14 @@ def obtener_auditoria_asistencia(filtro: FiltroAsistencia):
                 of_in = reg['hora_entrada']
                 of_out = reg['hora_salida']
 
-                # 1. Unificar Entrada Matutina
+                # 1. Unificar Entrada Matutina / Vespertina
                 if not _es_valida(of_in) and _es_valida(gira_in):
-                    reg['hora_entrada'] = gira_in
+                    if gira_in < "12:00:00":
+                        reg['hora_entrada'] = gira_in
+                    else:
+                        # Si la hora de gira es >= 12:00:00 y no hay entrada vespertina en oficina, asignarla
+                        if not _es_valida(reg.get('hora_entrada_v')):
+                            reg['hora_entrada_v'] = gira_in
                 elif _es_valida(of_in) and _es_valida(gira_in):
                     # Si checó en oficina después de las 12:00 y la gira empezó antes de las 12:00,
                     # la checada de oficina fue salida matutina (comida), no entrada
@@ -423,7 +428,7 @@ def obtener_auditoria_asistencia(filtro: FiltroAsistencia):
                         if not _es_valida(of_out):
                             reg['hora_salida'] = of_in
                         reg['hora_entrada'] = gira_in
-                    else:
+                    elif gira_in < "12:00:00":
                         reg['hora_entrada'] = min(of_in, gira_in)
 
                 # 2. Unificar Salida Matutina / Jornada

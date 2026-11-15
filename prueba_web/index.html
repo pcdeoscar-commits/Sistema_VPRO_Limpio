@@ -8021,7 +8021,7 @@
 
                     <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-bottom: 20px;">
 
-                        <div class="op-section-card" style="margin-bottom: 0; background: #eff6ff; border-color: #bfdbfe;">
+                        <div class="op-section-card" id="card-checkout-salida-incidencias" style="margin-bottom: 0; background: #eff6ff; border-color: #bfdbfe;">
 
                             <h4 class="op-section-title" style="font-size: 14.5px; margin-bottom: 8px; color: #1e40af;">
 
@@ -8029,14 +8029,9 @@
 
                             </h4>
 
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <label class="op-form-label" style="color: #1e3a8a; margin: 0;">Escriba las incidencias o imprevistos ocurridos durante el evento:</label>
-                                <button type="button" onclick="marcarCheckinSinIncidencias('salida')" style="background: #16a34a; color: white; border: none; padding: 4px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Marcar que el evento concluyó sin imprevistos">
-                                    <i class="ph ph-check-circle"></i> Concluido Sin Incidencias
-                                </button>
+                            <div id="checkout-salida-incidencias-container">
+                                <textarea id="checkout-salida-incidencias" class="op-textarea" rows="4" placeholder="Reporte cualquier percance, detalle técnico o imprevisto ocurrido en el evento..."></textarea>
                             </div>
-
-                            <textarea id="checkout-salida-incidencias" class="op-textarea" rows="4" placeholder="Reporte cualquier percance, detalle técnico o imprevisto ocurrido en el evento (ej. fallas de internet/red, cambios de set, retrasos de programa, etc.)..."></textarea>
 
                         </div>
 
@@ -12475,7 +12470,7 @@
 
     <script src="js/app_init.js"></script>
 
-    <script src="js/checkout.js?v=20261114_checkin_flexible_v16"></script>
+    <script src="js/checkout.js?v=20261114_incidencias_multidia_separadas_v17"></script>
 
     <script src="js/incidencias.js?v=20261111_clasif_v1"></script>
 

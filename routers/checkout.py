@@ -252,11 +252,16 @@ def verificar_salida_coordinador(payload: dict):
     incidencias = payload.get("incidencias_generales")
     items = payload.get("items", [])
     try:
+        inc_limpio = str(incidencias or "").strip()
+        if "despacho autorizado por coordinador" in inc_limpio.lower() or not inc_limpio:
+            sql_update = "UPDATE public.checkouts_maestro SET estado_bodega = 'DESPACHADO' WHERE id_maestro = :id"
+            params_maestro = {"id": id_maestro}
+        else:
+            sql_update = "UPDATE public.checkouts_maestro SET estado_bodega = 'DESPACHADO', incidencias_generales = :inc WHERE id_maestro = :id"
+            params_maestro = {"inc": inc_limpio, "id": id_maestro}
+
         with engine_eventos.begin() as conn: 
-            conn.execute(
-                text("UPDATE public.checkouts_maestro SET estado_bodega = 'DESPACHADO', incidencias_generales = :inc WHERE id_maestro = :id"), 
-                {"inc": incidencias, "id": id_maestro}
-            )
+            conn.execute(text(sql_update), params_maestro)
             for item in items:
                 conn.execute(
                     text("UPDATE public.checkouts_detalle SET cantidad = :cant, observaciones = :obs WHERE id_detalle = :id_det"), 

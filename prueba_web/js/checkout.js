@@ -1,6 +1,6 @@
 
 // -------------------------------------------------------------
-// Gestión de Incidencias Multidía en Check-in
+// Gestión de Incidencias Multidía en Check-in y Salida
 // -------------------------------------------------------------
 function obtenerDiasDelProyecto(statusPack) {
     if (!statusPack) return [];
@@ -13,6 +13,19 @@ function obtenerDiasDelProyecto(statusPack) {
     if (fInst) setFechas.add(fInst);
     if (fIni) setFechas.add(fIni);
     if (fFin) setFechas.add(fFin);
+
+    // Expandir todo el rango continuo entre fecha inicial y fecha final del evento
+    if (fIni && fFin && fIni <= fFin) {
+        try {
+            let curr = new Date(fIni + 'T12:00:00');
+            const finDate = new Date(fFin + 'T12:00:00');
+            while (curr <= finDate) {
+                setFechas.add(curr.toISOString().substring(0, 10));
+                curr.setDate(curr.getDate() + 1);
+            }
+        } catch (e) {}
+    }
+
     jornadas.forEach(j => {
         if (j) setFechas.add(String(j).substring(0, 10));
     });
@@ -20,21 +33,31 @@ function obtenerDiasDelProyecto(statusPack) {
     const lista = Array.from(setFechas).filter(Boolean).sort();
     if (lista.length === 0) return [];
 
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
     return lista.map((f, idx) => {
         const parts = f.split('-');
-        const fmt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : f;
+        let fmtCorta = f;
+        let fmtLarga = f;
+        if (parts.length === 3) {
+            const mIdx = parseInt(parts[1], 10) - 1;
+            const mesStr = (mIdx >= 0 && mIdx < 12) ? meses[mIdx] : parts[1];
+            fmtCorta = `${parts[2]}/${mesStr}`;
+            fmtLarga = `${parts[2]}/${mesStr}/${parts[0]}`;
+        }
         let etiqueta = "Evento";
         if (fInst && f === fInst && (!fIni || f < fIni)) {
             etiqueta = "Instalación";
         } else if (fFin && f === fFin && f !== fIni) {
             etiqueta = "Cierre / Retorno";
         } else if (fIni && f === fIni && lista.length > 1) {
-            etiqueta = (fInst && fInst === fIni) ? "Instalación / Evento" : "Día de Evento";
+            etiqueta = (fInst && fInst === fIni) ? "Instalación / Evento" : "Evento";
         }
         return {
             idx: idx + 1,
             fecha_iso: f,
-            fecha_fmt: fmt,
+            fecha_corta: fmtCorta,
+            fecha_fmt: fmtLarga,
             etiqueta: etiqueta
         };
     });
@@ -44,15 +67,24 @@ function parsearIncidenciasGuardadasPorDia(incTexto, dias) {
     const map = {};
     if (!incTexto || !incTexto.trim() || !dias || dias.length === 0) return map;
 
-    // Regex para buscar bloques como "📅 [DD/MM/AAAA - ...]: texto" o "📅 [AAAA-MM-DD - ...]: texto"
+    // Quitar cualquier residuo de texto antiguo de autorización
+    const textoLimpio = incTexto.replace(/despacho autorizado por coordinador\.?/gi, '').trim();
+    if (!textoLimpio) return map;
+
+    // Regex para buscar bloques como "📅 [DD/Mes - ...]: texto" o "📅 [YYYY-MM-DD]: texto"
     const regex = /📅\s*\[([^\]]+)\]:\s*([\s\S]*?)(?=(?:📅\s*\[|$))/g;
     let match;
     let huboBloques = false;
-    while ((match = regex.exec(incTexto)) !== null) {
+    while ((match = regex.exec(textoLimpio)) !== null) {
         huboBloques = true;
         const tag = match[1];
         const contenido = (match[2] || "").trim();
-        const diaEncontrado = dias.find(d => tag.includes(d.fecha_fmt) || tag.includes(d.fecha_iso) || tag.toLowerCase().includes(d.etiqueta.toLowerCase()));
+        const diaEncontrado = dias.find(d => 
+            tag.includes(d.fecha_corta) || 
+            tag.includes(d.fecha_fmt) || 
+            tag.includes(d.fecha_iso) || 
+            (d.etiqueta && tag.toLowerCase().includes(d.etiqueta.toLowerCase()))
+        );
         if (diaEncontrado) {
             map[diaEncontrado.fecha_iso] = contenido;
         } else {
@@ -61,13 +93,8 @@ function parsearIncidenciasGuardadasPorDia(incTexto, dias) {
         }
     }
 
-    // Si no contenía bloques pero hay texto libre guardado (texto heredado)
-    if (!huboBloques && incTexto.trim()) {
-        const textoLimpio = incTexto.trim();
-        const diaInstalacion = dias.find(d => d.etiqueta.toLowerCase().includes('instalaci'));
-        if (diaInstalacion) {
-            map[diaInstalacion.fecha_iso] = textoLimpio;
-        } else if (dias.length > 0) {
+    if (!huboBloques && textoLimpio) {
+        if (dias.length > 0) {
             map[dias[0].fecha_iso] = textoLimpio;
         }
     }
@@ -76,9 +103,11 @@ function parsearIncidenciasGuardadasPorDia(incTexto, dias) {
 }
 
 function sincronizarIncidenciasMultidiaCheckin() {
-    const inputsDias = document.querySelectorAll('.checkin-dia-incidencia');
-    const masterTextarea = document.getElementById('checkout-checkin-incidencias');
-    if (!inputsDias || inputsDias.length === 0 || !masterTextarea) return;
+    let inputsDias = document.querySelectorAll('#checkout-salida-incidencias-container .checkin-dia-incidencia');
+    if (!inputsDias || inputsDias.length === 0) {
+        inputsDias = document.querySelectorAll('#checkout-checkin-incidencias-container .checkin-dia-incidencia');
+    }
+    if (!inputsDias || inputsDias.length === 0) return;
 
     const bloques = [];
     inputsDias.forEach(inp => {
@@ -89,12 +118,65 @@ function sincronizarIncidenciasMultidiaCheckin() {
         }
     });
 
-    masterTextarea.value = bloques.join('\n\n');
+    const textoFinal = bloques.join('\n\n');
+    const masterTextareaCheckin = document.getElementById('checkout-checkin-incidencias');
+    const masterTextareaSalida = document.getElementById('checkout-salida-incidencias');
+    if (masterTextareaCheckin) masterTextareaCheckin.value = textoFinal;
+    if (masterTextareaSalida) masterTextareaSalida.value = textoFinal;
+}
+
+function alEnfocarTextareaDia(el) {
+    if (el.value.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
+        el.value = "";
+        el.style.color = "#1e293b";
+        el.style.fontWeight = "500";
+        el.style.background = "#ffffff";
+        el.style.borderColor = "#3b82f6";
+    }
+}
+
+function alDesenfocarTextareaDia(el) {
+    if (!el.value.trim()) {
+        el.value = "[ES NECESARIO REPORTAR INCIDENCIAS]";
+        el.style.color = "#b91c1c";
+        el.style.fontWeight = "700";
+        el.style.background = "#fef2f2";
+        el.style.borderColor = "#ef4444";
+    }
+    const fec = el.getAttribute('data-fecha');
+    sincronizarTextareaHermanas(fec, el.value, el.style);
+    sincronizarIncidenciasMultidiaCheckin();
+}
+
+function alEscribirTextareaDia(el) {
+    if (!el.value.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
+        el.style.color = "#1e293b";
+        el.style.fontWeight = "500";
+        el.style.background = "#ffffff";
+        el.style.borderColor = "#94a3b8";
+    }
+    const fec = el.getAttribute('data-fecha');
+    sincronizarTextareaHermanas(fec, el.value, el.style);
+    sincronizarIncidenciasMultidiaCheckin();
+}
+
+function sincronizarTextareaHermanas(fechaIso, nuevoValor, estilo) {
+    const todos = document.querySelectorAll(`[data-fecha="${fechaIso}"]`);
+    todos.forEach(t => {
+        t.value = nuevoValor;
+        if (estilo) {
+            t.style.color = estilo.color;
+            t.style.fontWeight = estilo.fontWeight;
+            t.style.background = estilo.background;
+            t.style.borderColor = estilo.borderColor;
+        }
+    });
 }
 
 function renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia) {
-    const contenedor = document.getElementById('checkout-checkin-incidencias-container');
-    if (!contenedor) return;
+    const contSalida = document.getElementById('checkout-salida-incidencias-container');
+    const contCheckin = document.getElementById('checkout-checkin-incidencias-container');
+    if (!contSalida && !contCheckin) return;
 
     let dias = obtenerDiasDelProyecto(statusPack);
     if (!dias || dias.length === 0) {
@@ -102,61 +184,96 @@ function renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia) {
         dias = [{
             idx: 1,
             fecha_iso: fHoy,
+            fecha_corta: fHoy.substring(5),
             fecha_fmt: fHoy,
             etiqueta: "Evento"
         }];
     }
 
-    // Evento: construir bloques por fecha
+    const estadoBodega = (statusPack?.estado_bodega || estadoBodegaCheckoutActual || "NUEVO").toUpperCase();
+    const esAntesDeSalida = (estadoBodega === 'NUEVO' || estadoBodega === 'BORRADOR' || estadoBodega === 'PENDIENTE_SALIDA');
+
+    // Si aún no sale de bodega, la bitácora de incidencias del evento no debe estar activa
+    if (esAntesDeSalida) {
+        const nombresDias = dias.map(d => `${d.fecha_corta}`).join(', ');
+        const avisoInactivoHtml = `
+            <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 20px 16px; text-align: center; color: #64748b;">
+                <span style="font-size: 28px; display: block; margin-bottom: 6px;">🔒</span>
+                <strong style="color: #334155; font-size: 13.5px; display: block; margin-bottom: 4px;">Bitácora de Incidencias Inactiva durante la Salida</strong>
+                <p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.4;">
+                    Este campo se habilitará con los días separados (<b style="color: #2563eb;">${nombresDias}</b>) una vez concluido el evento y al realizar el Check-in de retorno.
+                </p>
+            </div>
+            <textarea id="checkout-salida-incidencias" style="display: none;"></textarea>
+            <textarea id="checkout-checkin-incidencias" style="display: none;"></textarea>
+        `;
+        if (contSalida) contSalida.innerHTML = avisoInactivoHtml;
+        if (contCheckin) contCheckin.innerHTML = avisoInactivoHtml;
+        return;
+    }
+
+    // Ya salió o está en retorno: Renderizar las tarjetas día por día
     const mapaDias = parsearIncidenciasGuardadasPorDia(incLimpia, dias);
 
-    let cardsHtml = `
-        <div style="background: #fef2f2; border: 1.5px solid #ef4444; border-left: 6px solid #b91c1c; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 22px;">🚨</span>
-                <div>
-                    <strong style="color: #991b1b; font-size: 13.5px; display: block;">OBLIGATORIO: CALIFICAR CADA JORNADA DEL EVENTO</strong>
-                    <span style="color: #7f1d1d; font-size: 12px;">Los días en rojo requieren tu reporte. Sustituye el texto rojo por lo ocurrido o presiona <b>"Sin incidencias este día"</b>. No se permite cerrar con pendientes.</span>
+    function generarHtmlTarjetas(prefixId) {
+        let cardsHtml = `
+            <div style="background: #fef2f2; border: 1.5px solid #ef4444; border-left: 6px solid #b91c1c; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 22px;">🚨</span>
+                    <div>
+                        <strong style="color: #991b1b; font-size: 13.5px; display: block;">OBLIGATORIO: CALIFICAR CADA JORNADA DEL EVENTO</strong>
+                        <span style="color: #7f1d1d; font-size: 12px;">Los días en rojo requieren tu reporte. Escribe lo ocurrido o presiona <b>"Sin incidencias este día"</b>.</span>
+                    </div>
                 </div>
-            </div>
-            <button type="button" onclick="marcarCheckinSinIncidencias('checkin')" style="background: #16a34a; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">
-                <i class="ph ph-check-circle"></i> Marcar TODOS los Días Sin Incidencias
-            </button>
-        </div>
-        <textarea id="checkout-checkin-incidencias" style="display: none;">${!esVacia ? incLimpia : ''}</textarea>
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
-    `;
-
-    dias.forEach(d => {
-        let valDia = (mapaDias[d.fecha_iso] || "").trim();
-        // Si no hay texto o es texto de autorización de despacho viejo, colocar alerta obligatoria
-        if (!valDia || valDia.toLowerCase().includes("despacho autorizado")) {
-            valDia = "[ES NECESARIO REPORTAR INCIDENCIAS]";
-        }
-
-        const esAlertaPendiente = valDia.includes("ES NECESARIO REPORTAR INCIDENCIAS");
-        const estiloInicial = esAlertaPendiente
-            ? "width: 100%; font-size: 13px; border: 1.5px solid #ef4444; border-radius: 6px; padding: 8px 12px; background: #fef2f2; color: #b91c1c; font-weight: 700;"
-            : "width: 100%; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; background: #f8fafc; color: #1e293b; font-weight: 500;";
-
-        cardsHtml += `
-            <div style="background: white; border: 1px solid #bfdbfe; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 11px 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
-                    <strong style="color: #1e40af; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-calendar-check" style="font-size: 17px; color: #2563eb;"></i>
-                        📅 Día ${d.idx} (${d.fecha_fmt} - ${d.etiqueta}):
-                    </strong>
-                    <button type="button" onclick="marcarDiaCheckinSinIncidencias('${d.fecha_iso}')" style="background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 5px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background .15s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
-                        <i class="ph ph-check-circle"></i> Sin incidencias este día
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button type="button" onclick="marcarCheckinSinIncidencias('general')" style="background: #16a34a; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">
+                        <i class="ph ph-check-circle"></i> Marcar TODOS Limpios
+                    </button>
+                    <button type="button" onclick="guardarIncidenciasPendientesCheckout()" style="background: #2563eb; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(37,99,235,0.3);">
+                        <i class="ph ph-floppy-disk"></i> 💾 Guardar Bitácora
                     </button>
                 </div>
-                <textarea class="op-textarea checkin-dia-incidencia" id="checkin-dia-${d.fecha_iso}" data-fecha="${d.fecha_iso}" data-etiqueta="${d.fecha_fmt} - ${d.etiqueta}" rows="2" placeholder="Redacta lo ocurrido en este día o pulsa 'Sin incidencias este día'..." style="${estiloInicial}" onfocus="if(this.value.includes('ES NECESARIO REPORTAR INCIDENCIAS')){this.value=''; this.style.color='#1e293b'; this.style.fontWeight='500'; this.style.background='#ffffff'; this.style.borderColor='#3b82f6';}" onblur="if(!this.value.trim()){this.value='[ES NECESARIO REPORTAR INCIDENCIAS]'; this.style.color='#b91c1c'; this.style.fontWeight='700'; this.style.background='#fef2f2'; this.style.borderColor='#ef4444';} sincronizarIncidenciasMultidiaCheckin();" oninput="if(!this.value.includes('ES NECESARIO REPORTAR INCIDENCIAS')){this.style.color='#1e293b'; this.style.fontWeight='500'; this.style.background='#ffffff';} sincronizarIncidenciasMultidiaCheckin()">${valDia}</textarea>
             </div>
+            <textarea id="checkout-${prefixId}-incidencias" style="display: none;">${!esVacia ? incLimpia : ''}</textarea>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
         `;
-    });
 
-    cardsHtml += `</div>`;
-    contenedor.innerHTML = cardsHtml;
+        dias.forEach(d => {
+            let valDia = (mapaDias[d.fecha_iso] || "").trim();
+            if (!valDia || valDia.toLowerCase().includes("despacho autorizado") || valDia.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
+                valDia = "[ES NECESARIO REPORTAR INCIDENCIAS]";
+            }
+
+            const esAlertaPendiente = valDia.includes("ES NECESARIO REPORTAR INCIDENCIAS");
+            const estiloInicial = esAlertaPendiente
+                ? "width: 100%; font-size: 13px; border: 1.5px solid #ef4444; border-radius: 6px; padding: 8px 12px; background: #fef2f2; color: #b91c1c; font-weight: 700;"
+                : "width: 100%; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; background: #f8fafc; color: #1e293b; font-weight: 500;";
+
+            cardsHtml += `
+                <div style="background: white; border: 1.5px solid ${esAlertaPendiente ? '#fca5a5' : '#bfdbfe'}; border-left: 5px solid ${esAlertaPendiente ? '#ef4444' : '#3b82f6'}; border-radius: 8px; padding: 11px 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                        <strong style="color: ${esAlertaPendiente ? '#991b1b' : '#1e40af'}; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+                            <i class="ph ph-calendar-check" style="font-size: 17px; color: ${esAlertaPendiente ? '#ef4444' : '#2563eb'};"></i>
+                            📅 Día ${d.idx} (${d.fecha_corta}${d.etiqueta ? ' - ' + d.etiqueta : ''}):
+                            ${esAlertaPendiente 
+                                ? '<span style="color:#dc2626; font-weight:800; font-size:11px; background:#fee2e2; border:1px solid #fca5a5; padding:2px 7px; border-radius:4px;">⚠️ REPORTE REQUERIDO</span>' 
+                                : '<span style="color:#16a34a; font-weight:700; font-size:11px; background:#f0fdf4; border:1px solid #bbf7d0; padding:2px 7px; border-radius:4px;">✅ CALIFICADO</span>'}
+                        </strong>
+                        <button type="button" onclick="marcarDiaCheckinSinIncidencias('${d.fecha_iso}')" style="background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 5px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background .15s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+                            <i class="ph ph-check-circle"></i> Sin incidencias este día
+                        </button>
+                    </div>
+                    <textarea class="op-textarea checkin-dia-incidencia" id="${prefixId}-dia-${d.fecha_iso}" data-fecha="${d.fecha_iso}" data-etiqueta="${d.fecha_corta} - ${d.etiqueta}" rows="2" placeholder="Redacta lo ocurrido en este día o pulsa 'Sin incidencias este día'..." style="${estiloInicial}" onfocus="alEnfocarTextareaDia(this)" onblur="alDesenfocarTextareaDia(this)" oninput="alEscribirTextareaDia(this)">${valDia}</textarea>
+                </div>
+            `;
+        });
+
+        cardsHtml += `</div>`;
+        return cardsHtml;
+    }
+
+    if (contSalida) contSalida.innerHTML = generarHtmlTarjetas('salida');
+    if (contCheckin) contCheckin.innerHTML = generarHtmlTarjetas('checkin');
 
     sincronizarIncidenciasMultidiaCheckin();
 }
@@ -712,6 +829,9 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         if (notaProvCheckin) notaProvCheckin.value = provNotaGuardada;
 
         // Asignar el texto a los campos editables
+        if (incLimpia.toLowerCase().includes("despacho autorizado")) {
+            incLimpia = incLimpia.replace(/despacho autorizado por coordinador\.?/gi, "").trim();
+        }
         const esVacia = !incLimpia || ["sin incidencias", "sin incidencias reportadas", "ninguna", "ok", "none", "null"].includes(incLimpia.toLowerCase().trim());
         const incSalida = document.getElementById('checkout-salida-incidencias');
         if (incSalida) incSalida.value = !esVacia ? incLimpia : "";
@@ -1252,7 +1372,7 @@ async function autorizarSalidaCoordinador() {
         return;
     }
 
-    const notaIncidencias = document.getElementById('checkout-salida-incidencias')?.value || "Despacho autorizado por Coordinador.";
+    const notaIncidencias = (document.getElementById('checkout-salida-incidencias')?.value || "").replace(/despacho autorizado por coordinador\.?/gi, "").trim();
 
     const itemsFinales = itemsCheckoutSalida.map(it => ({
         id_detalle: it.id_detalle,
@@ -1455,35 +1575,35 @@ async function finalizarCheckinCheckout() {
     }
 }
 
-function marcarCheckinSinIncidencias(tipo = 'checkin') {
-    const el = document.getElementById(tipo === 'salida' ? 'checkout-salida-incidencias' : 'checkout-checkin-incidencias');
-    if (el) {
-        el.value = "Evento concluido sin incidencias.";
-    }
-    // Si hay tarjetas multidía en check-in, marcarlas todas sin incidencias
-    if (tipo === 'checkin') {
-        const diasTextareas = document.querySelectorAll('.checkin-dia-incidencia');
-        if (diasTextareas && diasTextareas.length > 0) {
-            diasTextareas.forEach(t => {
-                t.value = "Sin incidencias reportadas.";
-                t.style.color = "#15803d";
-                t.style.background = "#f0fdf4";
-                t.style.border = "1.5px solid #86efac";
-                t.style.fontWeight = "600";
-            });
-            sincronizarIncidenciasMultidiaCheckin();
-        }
+function marcarCheckinSinIncidencias(tipo = 'general') {
+    const elSalida = document.getElementById('checkout-salida-incidencias');
+    const elCheckin = document.getElementById('checkout-checkin-incidencias');
+    if (elSalida) elSalida.value = "Evento concluido sin incidencias.";
+    if (elCheckin) elCheckin.value = "Evento concluido sin incidencias.";
+
+    const diasTextareas = document.querySelectorAll('.checkin-dia-incidencia');
+    if (diasTextareas && diasTextareas.length > 0) {
+        diasTextareas.forEach(t => {
+            t.value = "Sin incidencias reportadas.";
+            t.style.color = "#15803d";
+            t.style.background = "#f0fdf4";
+            t.style.border = "1.5px solid #86efac";
+            t.style.fontWeight = "600";
+        });
+        sincronizarIncidenciasMultidiaCheckin();
     }
 }
 
 function marcarDiaCheckinSinIncidencias(fecIso) {
-    const ta = document.getElementById(`checkin-dia-${fecIso}`);
-    if (ta) {
-        ta.value = "Sin incidencias reportadas.";
-        ta.style.color = "#15803d";
-        ta.style.background = "#f0fdf4";
-        ta.style.border = "1.5px solid #86efac";
-        ta.style.fontWeight = "600";
+    const todos = document.querySelectorAll(`[data-fecha="${fecIso}"]`);
+    if (todos && todos.length > 0) {
+        todos.forEach(ta => {
+            ta.value = "Sin incidencias reportadas.";
+            ta.style.color = "#15803d";
+            ta.style.background = "#f0fdf4";
+            ta.style.border = "1.5px solid #86efac";
+            ta.style.fontWeight = "600";
+        });
         sincronizarIncidenciasMultidiaCheckin();
     }
 }

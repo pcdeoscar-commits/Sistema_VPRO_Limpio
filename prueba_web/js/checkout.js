@@ -303,34 +303,6 @@ let radarDanosCheckoutSet = new Set();
 let radarDanosActivosList = [];
 let proveedoresAsignadosOPCheckout = [];
 
-function actualizarVisibilidadProveedoresCheckout(tieneProveedores, listaProveedores = []) {
-    const cardSalida = document.getElementById('card-checkout-salida-prov');
-    const cardCheckin = document.getElementById('card-checkout-checkin-prov');
-    const gridSalida = document.getElementById('grid-incidencias-prov-salida');
-    const gridCheckin = document.getElementById('grid-incidencias-prov-checkin');
-
-    if (cardSalida) cardSalida.style.display = tieneProveedores ? 'block' : 'none';
-    if (cardCheckin) cardCheckin.style.display = tieneProveedores ? 'block' : 'none';
-    if (gridSalida) gridSalida.style.gridTemplateColumns = tieneProveedores ? '1.2fr 1fr' : '1fr';
-    if (gridCheckin) gridCheckin.style.gridTemplateColumns = tieneProveedores ? '1.2fr 1fr' : '1fr';
-
-    const selSalida = document.getElementById('checkout-salida-prov');
-    const selCheckin = document.getElementById('checkout-checkin-prov');
-    if (tieneProveedores) {
-        const opts = `<option value="--- Ninguno ---">--- Ninguno ---</option>` +
-            listaProveedores.map(p => `<option value="${p.toUpperCase()}">${p.toUpperCase()}</option>`).join('');
-        if (selSalida) selSalida.innerHTML = opts;
-        if (selCheckin) selCheckin.innerHTML = opts;
-    } else {
-        if (selSalida) selSalida.innerHTML = `<option value="--- Ninguno ---">--- Ninguno ---</option>`;
-        if (selCheckin) selCheckin.innerHTML = `<option value="--- Ninguno ---">--- Ninguno ---</option>`;
-        const notaSalida = document.getElementById('checkout-salida-prov-nota');
-        const notaCheckin = document.getElementById('checkout-checkin-prov-nota');
-        if (notaSalida) notaSalida.value = '';
-        if (notaCheckin) notaCheckin.value = '';
-    }
-}
-
 function esCoordinadorActivo() {
     const rolUsuario = (usuarioLogueado?.rol || '').toUpperCase().trim();
     const puestoUsuario = (usuarioLogueado?.puesto || '').toUpperCase().trim();
@@ -564,9 +536,7 @@ function limpiarModuloCheckout() {
     estadoBodegaCheckoutActual = "NUEVO";
     itemsCheckoutSalida = [];
     itemsCheckoutCheckin = [];
-    proveedoresAsignadosOPCheckout = [];
     actualizarBadgeEstadoCheckout("NUEVO");
-    actualizarVisibilidadProveedoresCheckout(false, []);
     
     const selEmp = document.getElementById('checkout-sel-empleado');
     if (selEmp) selEmp.innerHTML = `<option value="">--- Seleccione OP primero ---</option>`;
@@ -822,14 +792,13 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         // Cargar kits del empleado activo
         await cargarKitsEmpleadoActivo(empleadoActivoCheckout, statusPack.nombre_kit);
 
-        // Filtrar y actualizar visibilidad de proveedores en salida y check-in
-        const proveedoresValidos = proveedores.filter(p => {
-            if (!p) return false;
-            const pUp = String(p).trim().toUpperCase();
-            return pUp !== '' && pUp !== 'NINGUNO' && pUp !== '--- NINGUNO ---' && pUp !== '---' && pUp !== '[]' && pUp !== 'NULL';
-        });
-        const tieneProveedores = proveedoresValidos.length > 0;
-        actualizarVisibilidadProveedoresCheckout(tieneProveedores, proveedoresValidos);
+        // Poblar dropdowns de proveedores en salida y check-in
+        const optsProv = `<option value="--- Ninguno ---">--- Ninguno ---</option>` +
+            proveedores.map(p => `<option value="${p.toUpperCase()}">${p.toUpperCase()}</option>`).join('');
+        const selProvSalida = document.getElementById('checkout-salida-prov');
+        if (selProvSalida) selProvSalida.innerHTML = optsProv;
+        const selProvCheckin = document.getElementById('checkout-checkin-prov');
+        if (selProvCheckin) selProvCheckin.innerHTML = optsProv;
 
         // Desglosar incidencias y reporte de proveedor guardado
         let incLimpia = statusPack.incidencias_generales || "";

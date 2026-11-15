@@ -113,7 +113,7 @@ def empleado_tiene_checkout_bloqueado(id_empleado: str, nombre_empleado: str = "
                 LEFT JOIN public.eventos ev ON cm.folio_op = ev.id_evento
                 WHERE TRIM(cm.id_empleado) = :emp
                   AND cm.estado_bodega = 'RECIBIDO'
-                  AND (cm.incidencias_generales IS NULL OR TRIM(cm.incidencias_generales) = '')
+                  AND (cm.incidencias_generales IS NULL OR TRIM(cm.incidencias_generales) = '' OR cm.incidencias_generales LIKE '%ES NECESARIO REPORTAR INCIDENCIAS%')
             """)
             rows = conn.execute(query, {"emp": str(id_empleado).strip()}).mappings().fetchall()
             
@@ -622,11 +622,6 @@ def registrar_retorno_checkin(payload: dict):
         id_maestro = int(payload["id_maestro"])
         id_op = int(payload["id_evento"])
         incidencias_gen = str(payload["incidencias_generales"])
-        if "ES NECESARIO REPORTAR INCIDENCIAS" in incidencias_gen.upper():
-            raise HTTPException(
-                status_code=400,
-                detail="⛔ Alerta de Calidad: No has completado el reporte de incidencias. Debes especificar lo ocurrido en cada fecha o declararla 'Sin incidencias'."
-            )
         items = payload["items"]
         
         with engine_eventos.begin() as conn_ev:
@@ -844,7 +839,7 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
                         })
                         continue
                     # 3. Si bodega ya recibió el hardware pero el colaborador NO ha redactado su bitácora de incidencias
-                    elif estado_actual_bodega == 'RECIBIDO' and not inc_actual:
+                    elif estado_actual_bodega == 'RECIBIDO' and (not inc_actual or 'ES NECESARIO REPORTAR INCIDENCIAS' in inc_actual.upper()):
                         ops_pendientes.append({
                             "id_evento": id_ev, 
                             "folio": id_ev,
@@ -862,7 +857,7 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
                         {"id": id_ev}
                     ).scalar() or 0
                     pendientes_inc_crew = conn.execute(
-                        text("SELECT count(id_maestro) FROM public.checkouts_maestro WHERE folio_op = :id AND (incidencias_generales IS NULL OR incidencias_generales = '')"),
+                        text("SELECT count(id_maestro) FROM public.checkouts_maestro WHERE folio_op = :id AND (incidencias_generales IS NULL OR incidencias_generales = '' OR incidencias_generales LIKE '%ES NECESARIO REPORTAR INCIDENCIAS%')"),
                         {"id": id_ev}
                     ).scalar() or 0
                     total_creados = conn.execute(

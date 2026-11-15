@@ -1392,11 +1392,7 @@ async function finalizarCheckinCheckout() {
     }
     sincronizarIncidenciasMultidiaCheckin();
     const notaRecepcion = (document.getElementById('checkout-checkin-incidencias')?.value || notaRecepcionInput || "").trim();
-
-    if (notaRecepcion.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
-        alert("⛔ ALERTA DE CALIDAD: No has terminado de reportar las incidencias.\n\nHay días marcados en rojo con '[ES NECESARIO REPORTAR INCIDENCIAS]'. Debes redactar lo ocurrido en cada fecha o pulsar 'Sin incidencias este día'.");
-        return;
-    }
+    const tienePendientesInc = !notaRecepcion || notaRecepcion.includes("ES NECESARIO REPORTAR INCIDENCIAS");
 
     // Proveedor
     const provSel = document.getElementById('checkout-checkin-prov')?.value || "--- Ninguno ---";
@@ -1441,7 +1437,11 @@ async function finalizarCheckinCheckout() {
         });
 
         if (res.ok) {
-            alert("🔒 ¡Check-in y retorno de hardware registrado con éxito! La OP ha quedado LIBERADA.");
+            if (tienePendientesInc) {
+                alert("🔒 ¡Retorno de hardware registrado en bodega! Como las incidencias quedaron pendientes de redactar, el sistema notificará al personal convocado para que capture su bitácora operativa.");
+            } else {
+                alert("🔒 ¡Check-in y retorno de hardware registrado con éxito! La OP ha quedado LIBERADA.");
+            }
             await cargarStatusCheckoutActual();
             cargarBadges();
             if (typeof cargarDatosInicio === 'function') cargarDatosInicio();

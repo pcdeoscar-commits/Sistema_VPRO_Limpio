@@ -76,27 +76,35 @@ def obtener_resumen_dashboard(
             cursor_ev.execute(query_ops, tuple(params_ops))
             ops_mes = cursor_ev.fetchone()["total"]
 
-            query_chk = "SELECT COUNT(*) as total FROM public.checkouts_maestro WHERE 1=1"
-            query_inc = "SELECT COUNT(*) as total FROM public.checkouts_maestro WHERE incidencias_generales IS NOT NULL AND TRIM(incidencias_generales) != ''"
+            query_chk = "SELECT incidencias_generales FROM public.checkouts_maestro WHERE 1=1"
             params_chk = []
             
             if fecha_inicio and fecha_fin:
                 filtro_fecha = " AND fecha BETWEEN %s AND %s"
                 query_chk += filtro_fecha
-                query_inc += filtro_fecha
                 params_chk.extend([fecha_inicio, fecha_fin])
                 
             if empleado and empleado != "Todos":
                 filtro_emp = " AND id_empleado = %s"
                 query_chk += filtro_emp
-                query_inc += filtro_emp
                 params_chk.append(empleado)
 
             cursor_ev.execute(query_chk, tuple(params_chk))
-            total_checkouts = cursor_ev.fetchone()["total"]
-            
-            cursor_ev.execute(query_inc, tuple(params_chk))
-            checkouts_con_incidencias = cursor_ev.fetchone()["total"]
+            filas_chk = cursor_ev.fetchall()
+            total_checkouts = len(filas_chk)
+            checkouts_con_incidencias = 0
+
+            import re
+            patron_limpio_multidia = r'📅\s*\[[^\]]+\]:\s*(?:sin\s+incidencias?(?:\s+reportadas?)?|operaci[oó]n\s+limpia|todo\s+bien|sin\s+novedad[es]*)[\.\s]*'
+
+            for f in filas_chk:
+                txt_inc = str(f.get("incidencias_generales") or "").strip()
+                if not txt_inc:
+                    continue
+                txt_lower = txt_inc.lower()
+                txt_filtrado = re.sub(patron_limpio_multidia, '', txt_lower, flags=re.IGNORECASE).strip()
+                if txt_filtrado and txt_filtrado not in ["despacho autorizado por coordinador.", "despacho autorizado por coordinador", "evento concluido sin incidencias.", "sin incidencias.", "sin incidencias", "ninguna", "ok", "todo bien", "todo en orden"]:
+                    checkouts_con_incidencias += 1
             
             if total_checkouts > 0:
                 tasa_incidencias = round((checkouts_con_incidencias / total_checkouts) * 100, 1)

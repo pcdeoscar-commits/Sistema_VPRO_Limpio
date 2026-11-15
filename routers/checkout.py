@@ -622,6 +622,11 @@ def registrar_retorno_checkin(payload: dict):
         id_maestro = int(payload["id_maestro"])
         id_op = int(payload["id_evento"])
         incidencias_gen = str(payload["incidencias_generales"])
+        if "ES NECESARIO REPORTAR INCIDENCIAS" in incidencias_gen.upper():
+            raise HTTPException(
+                status_code=400,
+                detail="⛔ Alerta de Calidad: No has completado el reporte de incidencias. Debes especificar lo ocurrido en cada fecha o declararla 'Sin incidencias'."
+            )
         items = payload["items"]
         
         with engine_eventos.begin() as conn_ev:
@@ -960,8 +965,8 @@ def guardar_incidencia_pendiente(payload: dict):
     
     if not id_op or not id_sujeto:
         raise HTTPException(status_code=400, detail="Faltan datos obligatorios (id_evento, id_empleado).")
-    if not incidencias:
-        raise HTTPException(status_code=400, detail="Debe escribir el reporte de incidencias o indicar que el evento concluyó sin imprevistos.")
+    if not incidencias or "ES NECESARIO REPORTAR INCIDENCIAS" in incidencias.upper():
+        raise HTTPException(status_code=400, detail="⛔ Alerta de Calidad: Debe escribir el reporte de incidencias de cada fecha o indicar 'Sin incidencias'.")
         
     try:
         with engine_eventos.begin() as conn:

@@ -96,26 +96,49 @@ function renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia) {
     const contenedor = document.getElementById('checkout-checkin-incidencias-container');
     if (!contenedor) return;
 
-    const dias = obtenerDiasDelProyecto(statusPack);
-
-    // Si es un evento de 1 solo día o sin fechas específicas:
-    if (dias.length <= 1) {
-        contenedor.innerHTML = `
-            <textarea id="checkout-checkin-incidencias" class="op-textarea" rows="4" placeholder="Reporte cualquier percance, detalle técnico o imprevisto ocurrido en el evento (ej. fallas de internet/red, cambios de set, retrasos de programa, etc.)...">${!esVacia ? incLimpia : ''}</textarea>
-        `;
-        return;
+    let dias = obtenerDiasDelProyecto(statusPack);
+    if (!dias || dias.length === 0) {
+        const fHoy = new Date().toISOString().substring(0, 10);
+        dias = [{
+            idx: 1,
+            fecha_iso: fHoy,
+            fecha_fmt: fHoy,
+            etiqueta: "Evento"
+        }];
     }
 
-    // Evento Multidía: construir bloques por fecha
+    // Evento: construir bloques por fecha
     const mapaDias = parsearIncidenciasGuardadasPorDia(incLimpia, dias);
 
     let cardsHtml = `
+        <div style="background: #fef2f2; border: 1.5px solid #ef4444; border-left: 6px solid #b91c1c; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 22px;">🚨</span>
+                <div>
+                    <strong style="color: #991b1b; font-size: 13.5px; display: block;">OBLIGATORIO: CALIFICAR CADA JORNADA DEL EVENTO</strong>
+                    <span style="color: #7f1d1d; font-size: 12px;">Los días en rojo requieren tu reporte. Sustituye el texto rojo por lo ocurrido o presiona <b>"Sin incidencias este día"</b>. No se permite cerrar con pendientes.</span>
+                </div>
+            </div>
+            <button type="button" onclick="marcarCheckinSinIncidencias('checkin')" style="background: #16a34a; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">
+                <i class="ph ph-check-circle"></i> Marcar TODOS los Días Sin Incidencias
+            </button>
+        </div>
         <textarea id="checkout-checkin-incidencias" style="display: none;">${!esVacia ? incLimpia : ''}</textarea>
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
     `;
 
     dias.forEach(d => {
-        const valDia = mapaDias[d.fecha_iso] || "";
+        let valDia = (mapaDias[d.fecha_iso] || "").trim();
+        // Si no hay texto o es texto de autorización de despacho viejo, colocar alerta obligatoria
+        if (!valDia || valDia.toLowerCase().includes("despacho autorizado")) {
+            valDia = "[ES NECESARIO REPORTAR INCIDENCIAS]";
+        }
+
+        const esAlertaPendiente = valDia.includes("ES NECESARIO REPORTAR INCIDENCIAS");
+        const estiloInicial = esAlertaPendiente
+            ? "width: 100%; font-size: 13px; border: 1.5px solid #ef4444; border-radius: 6px; padding: 8px 12px; background: #fef2f2; color: #b91c1c; font-weight: 700;"
+            : "width: 100%; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; background: #f8fafc; color: #1e293b; font-weight: 500;";
+
         cardsHtml += `
             <div style="background: white; border: 1px solid #bfdbfe; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 11px 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
@@ -127,7 +150,7 @@ function renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia) {
                         <i class="ph ph-check-circle"></i> Sin incidencias este día
                     </button>
                 </div>
-                <textarea class="op-textarea checkin-dia-incidencia" id="checkin-dia-${d.fecha_iso}" data-fecha="${d.fecha_iso}" data-etiqueta="${d.fecha_fmt} - ${d.etiqueta}" rows="2" placeholder="Área de texto para incidencias de ${d.etiqueta.toLowerCase()} (${d.fecha_fmt})..." style="width: 100%; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; background: #f8fafc;" onfocus="this.style.background='#ffffff'; this.style.borderColor='#3b82f6';" onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';" oninput="sincronizarIncidenciasMultidiaCheckin()">${valDia}</textarea>
+                <textarea class="op-textarea checkin-dia-incidencia" id="checkin-dia-${d.fecha_iso}" data-fecha="${d.fecha_iso}" data-etiqueta="${d.fecha_fmt} - ${d.etiqueta}" rows="2" placeholder="Redacta lo ocurrido en este día o pulsa 'Sin incidencias este día'..." style="${estiloInicial}" onfocus="if(this.value.includes('ES NECESARIO REPORTAR INCIDENCIAS')){this.value=''; this.style.color='#1e293b'; this.style.fontWeight='500'; this.style.background='#ffffff'; this.style.borderColor='#3b82f6';}" onblur="if(!this.value.trim()){this.value='[ES NECESARIO REPORTAR INCIDENCIAS]'; this.style.color='#b91c1c'; this.style.fontWeight='700'; this.style.background='#fef2f2'; this.style.borderColor='#ef4444';} sincronizarIncidenciasMultidiaCheckin();" oninput="if(!this.value.includes('ES NECESARIO REPORTAR INCIDENCIAS')){this.style.color='#1e293b'; this.style.fontWeight='500'; this.style.background='#ffffff';} sincronizarIncidenciasMultidiaCheckin()">${valDia}</textarea>
             </div>
         `;
     });
@@ -1367,7 +1390,13 @@ async function finalizarCheckinCheckout() {
         if (elInc) elInc.focus();
         return;
     }
-    const notaRecepcion = notaRecepcionInput;
+    sincronizarIncidenciasMultidiaCheckin();
+    const notaRecepcion = (document.getElementById('checkout-checkin-incidencias')?.value || notaRecepcionInput || "").trim();
+
+    if (notaRecepcion.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
+        alert("⛔ ALERTA DE CALIDAD: No has terminado de reportar las incidencias.\n\nHay días marcados en rojo con '[ES NECESARIO REPORTAR INCIDENCIAS]'. Debes redactar lo ocurrido en cada fecha o pulsar 'Sin incidencias este día'.");
+        return;
+    }
 
     // Proveedor
     const provSel = document.getElementById('checkout-checkin-prov')?.value || "--- Ninguno ---";
@@ -1437,6 +1466,10 @@ function marcarCheckinSinIncidencias(tipo = 'checkin') {
         if (diasTextareas && diasTextareas.length > 0) {
             diasTextareas.forEach(t => {
                 t.value = "Sin incidencias reportadas.";
+                t.style.color = "#15803d";
+                t.style.background = "#f0fdf4";
+                t.style.border = "1.5px solid #86efac";
+                t.style.fontWeight = "600";
             });
             sincronizarIncidenciasMultidiaCheckin();
         }
@@ -1447,6 +1480,10 @@ function marcarDiaCheckinSinIncidencias(fecIso) {
     const ta = document.getElementById(`checkin-dia-${fecIso}`);
     if (ta) {
         ta.value = "Sin incidencias reportadas.";
+        ta.style.color = "#15803d";
+        ta.style.background = "#f0fdf4";
+        ta.style.border = "1.5px solid #86efac";
+        ta.style.fontWeight = "600";
         sincronizarIncidenciasMultidiaCheckin();
     }
 }
@@ -1458,9 +1495,10 @@ async function guardarIncidenciasPendientesCheckout() {
     const idEvento = parseInt(match[1]);
     const empId = empleadoActivoCheckout || (usuarioLogueado?.id_empleado || "001");
     
+    sincronizarIncidenciasMultidiaCheckin();
     const txt = (document.getElementById('checkout-salida-incidencias')?.value || document.getElementById('checkout-checkin-incidencias')?.value || '').trim();
-    if (!txt) {
-        alert("⚠️ Por favor escribe el reporte de incidencias o pulsa 'Concluido Sin Incidencias' antes de guardar.");
+    if (!txt || txt.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
+        alert("⛔ ALERTA: Por favor redacta las incidencias de cada fecha o pulsa 'Concluido Sin Incidencias' antes de guardar. No se permiten días pendientes marcados con '[ES NECESARIO REPORTAR INCIDENCIAS]'.");
         return;
     }
     

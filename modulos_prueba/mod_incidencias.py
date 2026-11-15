@@ -119,16 +119,32 @@ def renderizar_modulo(API_URL):
 
                 return "⚠️ Con Incidencias"
 
-            # 1. Calificamos al Empleado
-            evaluaciones.append({
-                "Fecha": fecha,
-                "Evento": evento,
-                "Actor": emp_nombre,
-                "Tipo": "Empleado",
-                "Departamento": depto,
-                "Estatus": clasificar_texto(emp_text),
-                "Nota": emp_text if emp_text.strip() else "Operación Limpia"
-            })
+            # 1. Calificamos al Empleado (desglosado por día si el reporte es multidía)
+            import re
+            bloques_dias = re.findall(r'📅\s*\[([^\]]+)\]:\s*(.*?)(?=(?:📅\s*\[|$))', emp_text, re.DOTALL)
+            if bloques_dias:
+                for tag_fec, txt_dia in bloques_dias:
+                    t_dia_clean = txt_dia.strip()
+                    estatus_dia = clasificar_texto(t_dia_clean)
+                    evaluaciones.append({
+                        "Fecha": fecha,
+                        "Evento": f"{evento} - {tag_fec.strip()}",
+                        "Actor": emp_nombre,
+                        "Tipo": "Empleado",
+                        "Departamento": depto,
+                        "Estatus": estatus_dia,
+                        "Nota": t_dia_clean if t_dia_clean else "Operación Limpia"
+                    })
+            else:
+                evaluaciones.append({
+                    "Fecha": fecha,
+                    "Evento": evento,
+                    "Actor": emp_nombre,
+                    "Tipo": "Empleado",
+                    "Departamento": depto,
+                    "Estatus": clasificar_texto(emp_text),
+                    "Nota": emp_text if emp_text.strip() else "Operación Limpia"
+                })
             
             # 2. Calificamos al Proveedor (Si es que hubo uno reportado)
             if prov_nombre and "--- NINGUNO ---" not in prov_nombre.upper():

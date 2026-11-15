@@ -1533,7 +1533,6 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
                         <td><input type="number" step="0.5" class="op-input input-jornada-${fecha}" data-field="t_comida" data-emp="${r.nombre_empleado}" value="${r.t_comida || 0}" style="padding: 6px; width: 60px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="number" step="0.5" class="op-input input-jornada-${fecha}" data-field="t_cena" data-emp="${r.nombre_empleado}" value="${r.t_cena || 0}" style="padding: 6px; width: 60px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
                         <td><input type="text" class="op-input input-jornada-${fecha}" data-field="hora_salida" data-emp="${r.nombre_empleado}" value="${(r.hora_salida || '00:00:00').substring(0, 5)}" style="padding: 6px; width: 70px; text-align: center;" ${isReadOnly ? 'disabled' : ''}></td>
-                        <td><input type="text" class="op-input input-jornada-${fecha}" data-field="observaciones" data-emp="${r.nombre_empleado}" value="${r.observaciones || ''}" style="padding: 6px; width: 100%;" placeholder="Notas del operador..." ${isReadOnly ? 'disabled' : ''}></td>
                         ${!isReadOnly ? `
                         <td style="text-align: center; width: 65px;">
                             <button type="button" onclick="excluirEmpleadoDeJornada(this, '${fecha}')" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;" title="Excluir a este colaborador de este día (No labora hoy)">
@@ -1622,7 +1621,6 @@ async function cargarJornadasGira(idEvento, isReadOnly = false) {
                                         <th>Hrs Comida</th>
                                         <th>Hrs Cena</th>
                                         <th>Salida</th>
-                                        <th>Notas Individuales</th>
                                         ${!isReadOnly ? `<th style="text-align: center; width: 65px;">Excluir</th>` : ''}
                                     </tr>
                                 </thead>

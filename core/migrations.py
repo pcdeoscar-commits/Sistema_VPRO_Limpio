@@ -181,5 +181,49 @@ def aplicar_migraciones_automaticas():
         except Exception as e_per:
             logger.warning(f"[Auto-Migraciones] Nota en corrección de asistencia: {e_per}")
 
+        # 11. Eliminar solicitud de permiso PER-2026-004 de Cuauhtémoc Rivera Agúndez y limpiar tarjetas de chat
+        try:
+            with get_db_cursor("db_personal", commit=True) as cur_del:
+                cur_del.execute("""
+                    -- 1. Eliminar mensajes y tarjetas vinculadas en chat_admin_mensajes
+                    DELETE FROM public.chat_admin_mensajes
+                    WHERE mensaje LIKE '%PER-2026-004%'
+                       OR metadata_extra->>'folio' = 'PER-2026-004'
+                       OR (metadata_extra->>'id_permiso')::text IN (
+                           SELECT id_permiso::text FROM public.rh_permisos 
+                           WHERE folio_permiso = 'PER-2026-004' 
+                              OR (id_empleado = '201' AND justificacion ILIKE '%pension%')
+                       );
+
+                    -- 2. Eliminar menciones en chat_soporte_mensajes
+                    DELETE FROM public.chat_soporte_mensajes
+                    WHERE mensaje LIKE '%PER-2026-004%';
+
+                    -- 3. Eliminar historial en rh_historial
+                    DELETE FROM public.rh_historial
+                    WHERE descripcion LIKE '%PER-2026-004%' 
+                       OR descripcion ILIKE '%pension%'
+                       OR (referencia_tabla = 'rh_permisos' AND referencia_id IN (
+                           SELECT id_permiso FROM public.rh_permisos 
+                           WHERE folio_permiso = 'PER-2026-004' 
+                              OR (id_empleado = '201' AND justificacion ILIKE '%pension%')
+                       ));
+
+                    -- 4. Revertir asistencia si se hubiera sincronizado
+                    DELETE FROM public.control_asistencia
+                    WHERE id_empleado = '201' 
+                      AND fecha = '2026-11-09' 
+                      AND estatus = 'PERMISO' 
+                      AND observaciones ILIKE '%pension%';
+
+                    -- 5. Eliminar el registro en rh_permisos
+                    DELETE FROM public.rh_permisos
+                    WHERE folio_permiso = 'PER-2026-004'
+                       OR (id_empleado = '201' AND justificacion ILIKE '%pension%');
+                """)
+                logger.info("[Auto-Migraciones] Solicitud de permiso PER-2026-004 eliminada y limpiada exitosamente.")
+        except Exception as e_del_perm:
+            logger.warning(f"[Auto-Migraciones] Nota en borrado permiso PER-2026-004: {e_del_perm}")
+
     except Exception as e:
         logger.warning(f"[Auto-Migraciones] Advertencia al sincronizar esquemas: {e}")

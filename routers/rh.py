@@ -2334,6 +2334,52 @@ def update_permiso(id_permiso: int, payload: PermisoUpdate):
 
 
 
+@router.delete("/permisos/{id_permiso}")
+def delete_permiso(id_permiso: int):
+    """Elimina una solicitud de permiso laboral y sus tarjetas vinculadas en el chat administrativo."""
+    try:
+        with engine_personal.begin() as conn:
+            permiso = conn.execute(
+                text("SELECT * FROM public.rh_permisos WHERE id_permiso = :id"),
+                {"id": id_permiso}
+            ).mappings().first()
+            
+            if not permiso:
+                raise HTTPException(status_code=404, detail="Permiso no encontrado")
+
+            folio = permiso.get("folio_permiso") or ""
+
+            # 1. Eliminar tarjetas y mensajes vinculados al permiso en chat_admin_mensajes
+            conn.execute(text("""
+                DELETE FROM public.chat_admin_mensajes
+                WHERE (metadata_extra->>'id_permiso')::text = :id_str
+                   OR (metadata_extra->>'folio' = :folio AND :folio <> '')
+                   OR mensaje LIKE :folio_pattern
+            """), {"id_str": str(id_permiso), "folio": folio, "folio_pattern": f"%{folio}%" if folio else "NO_MATCH"})
+
+            # 2. Eliminar mensajes en chat_soporte_mensajes si los hubiere
+            if folio:
+                conn.execute(text("""
+                    DELETE FROM public.chat_soporte_mensajes
+                    WHERE mensaje LIKE :folio_pattern
+                """), {"folio_pattern": f"%{folio}%"})
+
+            # 3. Eliminar de rh_historial
+            conn.execute(text("""
+                DELETE FROM public.rh_historial
+                WHERE (referencia_tabla = 'rh_permisos' AND (referencia_id = :id OR referencia_id::text = :id_str))
+                   OR descripcion LIKE :folio_pattern
+            """), {"id": id_permiso, "id_str": str(id_permiso), "folio_pattern": f"%{folio}%" if folio else "NO_MATCH"})
+
+            # 4. Eliminar el registro en rh_permisos
+            conn.execute(text("DELETE FROM public.rh_permisos WHERE id_permiso = :id"), {"id": id_permiso})
+
+            return {"msg": f"Permiso {folio} eliminado correctamente", "id_permiso": id_permiso}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 # --- INCAPACIDADES ---

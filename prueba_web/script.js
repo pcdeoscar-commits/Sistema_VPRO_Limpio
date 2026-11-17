@@ -18263,15 +18263,33 @@ async function cargarModuloIncidencias() {
 
 
             function clasificarTexto(texto) {
-                if (!texto) return "✅ Sin Incidencias";
+                if (!texto) return "⏳ Pendiente de Reportar";
                 const t = texto.toLowerCase()
                     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                     .replace(/[^a-z0-9\s]/g, ' ')
                     .replace(/\s+/g, ' ')
                     .trim();
 
-                if (!t) return "✅ Sin Incidencias";
+                if (!t) return "⏳ Pendiente de Reportar";
 
+                // 1. Patrones explícitos de PENDIENTE DE REPORTAR
+                const patronesPendientes = [
+                    "es necesario reportar incidencias",
+                    "despacho autorizado por coordinador",
+                    "despacho autorizado",
+                    "operacion limpia",
+                    "sin reporte",
+                    "pendiente de reporte",
+                    "pendiente"
+                ];
+
+                for (let p of patronesPendientes) {
+                    if (t.includes(p)) {
+                        return "⏳ Pendiente de Reportar";
+                    }
+                }
+
+                // 2. Patrones de ÉXITO / LIMPIO (Solo si fue expresamente reportado)
                 const frasesExactasOInicio = [
                     "evento concluido sin incidencias",
                     "evento concluido sin incidencia",
@@ -18279,10 +18297,10 @@ async function cargarModuloIncidencias() {
                     "concluido sin incidencia",
                     "sin incidencias reportadas",
                     "sin incidencia reportada",
+                    "sin incidencias en transmision",
                     "sin incidencias este dia",
                     "sin incidencias",
                     "sin incidencia",
-                    "operacion limpia",
                     "servicio limpio",
                     "todo bien",
                     "todo en orden",
@@ -18306,6 +18324,19 @@ async function cargarModuloIncidencias() {
                 }
 
                 return "⚠️ Con Incidencias";
+            }
+
+            function obtenerNotaDisplay(rawTexto, estatus) {
+                if (estatus.includes("Pendiente")) {
+                    if (!rawTexto || !rawTexto.trim() || rawTexto.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
+                        return "[ES NECESARIO REPORTAR INCIDENCIAS]";
+                    }
+                    if (rawTexto.toLowerCase().includes("despacho autorizado")) {
+                        return "[ES NECESARIO REPORTAR INCIDENCIAS] (Despacho de almacén sin reporte de empleado)";
+                    }
+                    return "[ES NECESARIO REPORTAR INCIDENCIAS]";
+                }
+                return rawTexto && rawTexto.trim() ? rawTexto.trim() : "Sin incidencias reportadas.";
             }
 
 
@@ -18336,6 +18367,7 @@ async function cargarModuloIncidencias() {
                     }
 
                     const estatusJornada = clasificarTexto(b.texto);
+                    const notaJornada = obtenerNotaDisplay(b.texto, estatusJornada);
                     rawEvaluacionesIncidencias.push({
                         Fecha: fechaJornada,
                         FechaOP: fecha,
@@ -18347,10 +18379,12 @@ async function cargarModuloIncidencias() {
                         Tipo: "Empleado",
                         Departamento: depto,
                         Estatus: estatusJornada,
-                        Nota: b.texto ? b.texto : "Operación Limpia"
+                        Nota: notaJornada
                     });
                 });
             } else {
+                const estatusEmp = clasificarTexto(empText);
+                const notaEmp = obtenerNotaDisplay(empText, estatusEmp);
                 rawEvaluacionesIncidencias.push({
                     Fecha: fecha,
                     FechaOP: fecha,
@@ -18361,8 +18395,8 @@ async function cargarModuloIncidencias() {
                     Actor: empNombre,
                     Tipo: "Empleado",
                     Departamento: depto,
-                    Estatus: clasificarTexto(empText),
-                    Nota: empText.trim() ? empText.trim() : "Operación Limpia"
+                    Estatus: estatusEmp,
+                    Nota: notaEmp
                 });
             }
 
@@ -19552,17 +19586,23 @@ function actualizarKPIsIncidencias() {
 
     const totalA = evaluacionesFiltradasIncidencias.length;
 
-    const limpiasA = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+    const concluidasA = evaluacionesFiltradasIncidencias.filter(e => !e.Estatus.includes("Pendiente"));
 
-    const fallasA = totalA - limpiasA;
+    const totalConcluidasA = concluidasA.length;
 
-    const eventosA = new Set(evaluacionesFiltradasIncidencias.map(e => e.EventoConFolio || e.Evento)).size;
+    const limpiasA = concluidasA.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+
+    const fallasA = concluidasA.filter(e => e.Estatus.includes("Con Incidencias")).length;
+
+    const pendientesA = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Pendiente")).length;
+
+    const eventosA = new Set(concluidasA.map(e => e.EventoConFolio || e.Evento)).size;
 
 
 
-    const pctLimpiasA = totalA > 0 ? ((limpiasA / totalA) * 100) : 0;
+    const pctLimpiasA = totalConcluidasA > 0 ? ((limpiasA / totalConcluidasA) * 100) : 0;
 
-    const pctFallasA = totalA > 0 ? ((fallasA / totalA) * 100) : 0;
+    const pctFallasA = totalConcluidasA > 0 ? ((fallasA / totalConcluidasA) * 100) : 0;
 
 
 
@@ -19658,36 +19698,6 @@ function actualizarKPIsIncidencias() {
 
             const evPrev = evaluacionesFiltradasIncidencias.filter(e => e.Fecha && e.Fecha < ultSemStr);
 
-            const fallasPrev = evPrev.filter(e => !e.Estatus.includes("Sin Incidencias")).length;
-
-            const promFallasPrev = (numSem > 1) ? (fallasPrev / (numSem - 1)) : fallasUlt;
-
-
-
-            if (elSubTotal) elSubTotal.innerText = `Total en últimas ${numSem} semanas`;
-
-            if (elSubLimpias) elSubLimpias.innerText = `Sin incidencias acumuladas`;
-
-            if (elSubFallas) elSubFallas.innerHTML = `Última sem: <strong>${fallasUlt} fallas</strong> (prom. prev. ${promFallasPrev.toFixed(1)})`;
-
-            if (elSubEventos) elSubEventos.innerText = `Órdenes auditadas en las ${numSem} semanas`;
-
-
-
-        } else if (modoTendenciaActivo && modoTendenciaActivo.tipo === 'meses_ano') {
-
-            if (elSubTotal) elSubTotal.innerText = `Acumulado del año auditado`;
-
-            if (elSubLimpias) elSubLimpias.innerText = `Calidad limpia anual`;
-
-            if (elSubFallas) elSubFallas.innerText = `Incidencias registradas en el año`;
-
-            if (elSubEventos) elSubEventos.innerText = `Órdenes de producción del año`;
-
-
-
-        } else if (modoTendenciaActivo && modoTendenciaActivo.tipo === 'anos_historico') {
-
             if (elSubTotal) elSubTotal.innerText = `Total en histórico multi-anual`;
 
             if (elSubLimpias) elSubLimpias.innerText = `Operaciones limpias multi-año`;
@@ -19700,13 +19710,19 @@ function actualizarKPIsIncidencias() {
 
         } else {
 
-            if (elSubTotal) elSubTotal.innerText = "Total registros auditados";
+            if (elSubTotal) {
+                if (pendientesA > 0) {
+                    elSubTotal.innerHTML = `<span style="color: #b45309; font-weight: 600;"><i class="ph ph-hourglass-simple"></i> ${pendientesA} pendiente(s) de reporte</span>`;
+                } else {
+                    elSubTotal.innerText = "100% de reportes concluidos";
+                }
+            }
 
             if (elSubLimpias) elSubLimpias.innerText = "Operación sin contratiempos";
 
             if (elSubFallas) elSubFallas.innerText = "Reportes de fallas o daños";
 
-            if (elSubEventos) elSubEventos.innerText = "Órdenes de Producción con registro";
+            if (elSubEventos) elSubEventos.innerText = "Órdenes de Producción concluidas";
 
         }
 
@@ -19718,17 +19734,21 @@ function actualizarKPIsIncidencias() {
 
         const totalB = evaluacionesComparativasIncidencias.length;
 
-        const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+        const concluidasB = evaluacionesComparativasIncidencias.filter(e => !e.Estatus.includes("Pendiente"));
 
-        const fallasB = totalB - limpiasB;
+        const totalConcluidasB = concluidasB.length;
 
-        const eventosB = new Set(evaluacionesComparativasIncidencias.map(e => e.EventoConFolio || e.Evento)).size;
+        const limpiasB = concluidasB.filter(e => e.Estatus.includes("Sin Incidencias")).length;
+
+        const fallasB = concluidasB.filter(e => e.Estatus.includes("Con Incidencias")).length;
+
+        const eventosB = new Set(concluidasB.map(e => e.EventoConFolio || e.Evento)).size;
 
 
 
-        const pctLimpiasB = totalB > 0 ? ((limpiasB / totalB) * 100) : 0;
+        const pctLimpiasB = totalConcluidasB > 0 ? ((limpiasB / totalConcluidasB) * 100) : 0;
 
-        const pctFallasB = totalB > 0 ? ((fallasB / totalB) * 100) : 0;
+        const pctFallasB = totalConcluidasB > 0 ? ((fallasB / totalConcluidasB) * 100) : 0;
 
 
 
@@ -20542,13 +20562,13 @@ function renderizarGraficasIncidencias() {
 
 
 
-                const evSem = evaluacionesFiltradasIncidencias.filter(e => e.Fecha && e.Fecha >= iniStr && e.Fecha <= finStr);
+                const evSem = evaluacionesFiltradasIncidencias.filter(e => e.Fecha && e.Fecha >= iniStr && e.Fecha <= finStr && !e.Estatus.includes("Pendiente"));
 
                 const total = evSem.length;
 
                 const limpias = evSem.filter(e => e.Estatus.includes("Sin Incidencias")).length;
 
-                const fallas = total - limpias;
+                const fallas = evSem.filter(e => e.Estatus.includes("Con Incidencias")).length;
 
                 const tasaFallas = total > 0 ? (fallas / total) * 100 : 0;
 
@@ -20722,6 +20742,8 @@ function renderizarGraficasIncidencias() {
 
                     if (!e.Fecha || !e.Fecha.startsWith(mesStr)) return false;
 
+                    if (e.Estatus.includes("Pendiente")) return false;
+
                     const depto = document.getElementById('filtro-inc-depto')?.value || "Todos";
 
                     const actor = document.getElementById('filtro-inc-actor')?.value || "🌟 TODOS (Empleados y Proveedores)";
@@ -20744,7 +20766,7 @@ function renderizarGraficasIncidencias() {
 
                 const limpias = evMes.filter(e => e.Estatus.includes("Sin Incidencias")).length;
 
-                const fallas = total - limpias;
+                const fallas = evMes.filter(e => e.Estatus.includes("Con Incidencias")).length;
 
                 const tasaFallas = total > 0 ? (fallas / total) * 100 : 0;
 
@@ -20934,6 +20956,8 @@ function renderizarGraficasIncidencias() {
 
                     if (!e.Fecha || !e.Fecha.startsWith(anoStr)) return false;
 
+                    if (e.Estatus.includes("Pendiente")) return false;
+
                     const depto = document.getElementById('filtro-inc-depto')?.value || "Todos";
 
                     const actor = document.getElementById('filtro-inc-actor')?.value || "🌟 TODOS (Empleados y Proveedores)";
@@ -20954,7 +20978,7 @@ function renderizarGraficasIncidencias() {
 
                 const limpias = evAno.filter(e => e.Estatus.includes("Sin Incidencias")).length;
 
-                const fallas = total - limpias;
+                const fallas = evAno.filter(e => e.Estatus.includes("Con Incidencias")).length;
 
                 const tasaFallas = total > 0 ? (fallas / total) * 100 : 0;
 
@@ -21458,13 +21482,16 @@ function renderizarGraficasIncidencias() {
 
         evaluacionesFiltradasIncidencias.forEach(e => {
 
+            // POLÍTICA: Los que estén pendientes de reportar incidencias NO se reflejan en la gráfica
+            if (e.Estatus.includes("Pendiente")) return;
+
             const ev = e.EventoConFolio || e.Evento || 'Sin Nombre';
 
             if (!eventosMap[ev]) eventosMap[ev] = { limpias: 0, fallas: 0 };
 
             if (e.Estatus.includes("Sin Incidencias")) eventosMap[ev].limpias++;
 
-            else eventosMap[ev].fallas++;
+            else if (e.Estatus.includes("Con Incidencias")) eventosMap[ev].fallas++;
 
         });
 
@@ -21666,11 +21693,21 @@ function renderizarTablaIncidencias(lista) {
 
         const esLimpio = item.Estatus.includes("Sin Incidencias");
 
-        const badgeEstatus = esLimpio
+        const esPendiente = item.Estatus.includes("Pendiente");
 
-            ? `<span style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-check-circle"></i> Sin Incidencias</span>`
+        let badgeEstatus = "";
+        let colorNota = "#64748b";
 
-            : `<span style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-warning-circle"></i> Con Incidencias</span>`;
+        if (esPendiente) {
+            badgeEstatus = `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-hourglass-simple"></i> Pendiente</span>`;
+            colorNota = "#b45309";
+        } else if (esLimpio) {
+            badgeEstatus = `<span style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-check-circle"></i> Sin Incidencias</span>`;
+            colorNota = "#64748b";
+        } else {
+            badgeEstatus = `<span style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-warning-circle"></i> Con Incidencias</span>`;
+            colorNota = "#b91c1c";
+        }
 
 
 
@@ -21700,6 +21737,8 @@ function renderizarTablaIncidencias(lista) {
             ? `<div style="margin-top: 4px;"><span style="background: #f1f5f9; color: #334155; font-weight: 600; font-size: 11px; padding: 2px 7px; border-radius: 4px; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-calendar-blank"></i> ${item.Jornada}</span></div>`
             : '';
 
+        const textoNota = esPendiente ? `<em>${item.Nota}</em>` : item.Nota;
+
         return `
 
             <tr>
@@ -21714,7 +21753,7 @@ function renderizarTablaIncidencias(lista) {
 
                 <td style="text-align: center;">${badgeEstatus}</td>
 
-                <td style="color: ${esLimpio ? '#64748b' : '#b91c1c'}; font-size: 12.5px; line-height: 1.4;">${item.Nota}</td>
+                <td style="color: ${colorNota}; font-size: 12.5px; line-height: 1.4;">${textoNota}</td>
 
             </tr>
 
@@ -21747,6 +21786,8 @@ function filtrarTablaIncidenciasEnVivo(termino) {
         (item.FolioOP && item.FolioOP.toLowerCase().includes(t)) ||
 
         (item.Actor && item.Actor.toLowerCase().includes(t)) ||
+
+        (item.Estatus && item.Estatus.toLowerCase().includes(t)) ||
 
         (item.Nota && item.Nota.toLowerCase().includes(t)) ||
 

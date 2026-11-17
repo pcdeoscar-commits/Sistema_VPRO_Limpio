@@ -79,13 +79,26 @@ def renderizar_modulo(API_URL):
                     emp_text = texto_raw[:s_idx].strip() + " " + texto_raw[e_idx+1:].strip()
 
             def clasificar_texto(texto):
-                if not texto: return "✅ Sin Incidencias"
+                if not texto: return "⏳ Pendiente de Reportar"
                 import unicodedata, re
                 nfd = unicodedata.normalize('NFD', str(texto))
                 sin_tildes = ''.join(c for c in nfd if unicodedata.category(c) != 'Mn')
                 t = re.sub(r'[^a-zA-Z0-9\s]', ' ', sin_tildes.lower())
                 t = re.sub(r'\s+', ' ', t).strip()
-                if not t: return "✅ Sin Incidencias"
+                if not t: return "⏳ Pendiente de Reportar"
+
+                patrones_pendientes = [
+                    "es necesario reportar incidencias",
+                    "despacho autorizado por coordinador",
+                    "despacho autorizado",
+                    "operacion limpia",
+                    "sin reporte",
+                    "pendiente de reporte",
+                    "pendiente"
+                ]
+                for p in patrones_pendientes:
+                    if p in t:
+                        return "⏳ Pendiente de Reportar"
 
                 frases_exactas_o_inicio = [
                     "evento concluido sin incidencias",
@@ -94,10 +107,10 @@ def renderizar_modulo(API_URL):
                     "concluido sin incidencia",
                     "sin incidencias reportadas",
                     "sin incidencia reportada",
+                    "sin incidencias en transmision",
                     "sin incidencias este dia",
                     "sin incidencias",
                     "sin incidencia",
-                    "operacion limpia",
                     "servicio limpio",
                     "todo bien",
                     "todo en orden",
@@ -119,6 +132,16 @@ def renderizar_modulo(API_URL):
 
                 return "⚠️ Con Incidencias"
 
+            def obtener_nota_display(raw_texto, estatus):
+                if "Pendiente" in estatus:
+                    txt = str(raw_texto or "").strip()
+                    if not txt or "ES NECESARIO REPORTAR INCIDENCIAS" in txt:
+                        return "[ES NECESARIO REPORTAR INCIDENCIAS]"
+                    if "despacho autorizado" in txt.lower():
+                        return "[ES NECESARIO REPORTAR INCIDENCIAS] (Despacho de almacén sin reporte de empleado)"
+                    return "[ES NECESARIO REPORTAR INCIDENCIAS]"
+                return str(raw_texto).strip() if raw_texto and str(raw_texto).strip() else "Sin incidencias reportadas."
+
             # 1. Calificamos al Empleado (desglosado por día si el reporte es multidía)
             import re
             bloques_dias = re.findall(r'📅\s*\[([^\]]+)\]:\s*(.*?)(?=(?:📅\s*\[|$))', emp_text, re.DOTALL)
@@ -129,6 +152,7 @@ def renderizar_modulo(API_URL):
                 for tag_fec, txt_dia in bloques_dias:
                     t_dia_clean = txt_dia.strip()
                     estatus_dia = clasificar_texto(t_dia_clean)
+                    nota_dia = obtener_nota_display(t_dia_clean, estatus_dia)
                     fecha_jornada = fecha
                     m_dia = re.search(r'(\d{1,2})/([a-zA-Z]{3})', tag_fec)
                     if m_dia:
@@ -148,9 +172,11 @@ def renderizar_modulo(API_URL):
                         "Tipo": "Empleado",
                         "Departamento": depto,
                         "Estatus": estatus_dia,
-                        "Nota": t_dia_clean if t_dia_clean else "Operación Limpia"
+                        "Nota": nota_dia
                     })
             else:
+                estatus_emp = clasificar_texto(emp_text)
+                nota_emp = obtener_nota_display(emp_text, estatus_emp)
                 evaluaciones.append({
                     "Fecha": fecha,
                     "FechaOP": fecha,
@@ -161,8 +187,8 @@ def renderizar_modulo(API_URL):
                     "Actor": emp_nombre,
                     "Tipo": "Empleado",
                     "Departamento": depto,
-                    "Estatus": clasificar_texto(emp_text),
-                    "Nota": emp_text if emp_text.strip() else "Operación Limpia"
+                    "Estatus": estatus_emp,
+                    "Nota": nota_emp
                 })
             
             # 2. Calificamos al Proveedor (Si es que hubo uno reportado)
@@ -242,22 +268,25 @@ def renderizar_modulo(API_URL):
         # ==========================================
         # 🧮 MÉTRICAS (Basadas en Actores Evaluados)
         # ==========================================
+        df_concluidas = df_filtrado[~df_filtrado['Estatus'].str.contains("Pendiente")]
         total_evaluaciones = len(df_filtrado)
-        exitos = len(df_filtrado[df_filtrado['Estatus'] == "✅ Sin Incidencias"])
-        fallas = total_evaluaciones - exitos
-        eventos_involucrados = df_filtrado['EventoConFolio'].nunique()
+        total_concluidas = len(df_concluidas)
+        exitos = len(df_concluidas[df_concluidas['Estatus'] == "✅ Sin Incidencias"])
+        fallas = len(df_concluidas[df_concluidas['Estatus'] == "⚠️ Con Incidencias"])
+        pendientes = len(df_filtrado[df_filtrado['Estatus'].str.contains("Pendiente")])
+        eventos_involucrados = df_concluidas['EventoConFolio'].nunique()
 
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Evaluaciones Realizadas", total_evaluaciones)
-        col2.metric("Evaluaciones LIMPIAS", exitos, delta=f"{(exitos/total_evaluaciones*100):.1f}%" if total_evaluaciones > 0 else "0%")
-        col3.metric("Evaluaciones CON INCIDENCIAS", fallas, delta=f"-{(fallas/total_evaluaciones*100):.1f}%" if total_evaluaciones > 0 else "0%", delta_color="inverse")
+        col1.metric("Evaluaciones Realizadas", total_evaluaciones, delta=f"{pendientes} pendientes" if pendientes > 0 else "100% concluidas", delta_color="off" if pendientes == 0 else "inverse")
+        col2.metric("Evaluaciones LIMPIAS", exitos, delta=f"{(exitos/total_concluidas*100):.1f}%" if total_concluidas > 0 else "0%")
+        col3.metric("Evaluaciones CON INCIDENCIAS", fallas, delta=f"-{(fallas/total_concluidas*100):.1f}%" if total_concluidas > 0 else "0%", delta_color="inverse")
         col4.metric("Eventos Únicos Auditados", eventos_involucrados)
 
         st.markdown("### 📊 Análisis Gráfico de Calidad Operativa")
 
-        # 1️⃣ GRÁFICA 1: Balance General
-        if total_evaluaciones > 0:
-            df_comp = df_filtrado['Estatus'].value_counts(normalize=True).reset_index()
+        # 1️⃣ GRÁFICA 1: Balance General (Solo concluidas)
+        if total_concluidas > 0:
+            df_comp = df_concluidas['Estatus'].value_counts(normalize=True).reset_index()
             df_comp.columns = ['Estatus', 'Porcentaje']
             df_comp['Porcentaje'] = df_comp['Porcentaje'] * 100
             df_comp['Total'] = "Balance General"
@@ -272,9 +301,9 @@ def renderizar_modulo(API_URL):
 
         st.write("") 
 
-        # 2️⃣ GRÁFICA 2: Detalle por Evento (BARRA VERDE Y ROJA JUNTAS)
-        if total_evaluaciones > 0:
-            df_trend = df_filtrado.groupby(['EventoConFolio', 'Estatus']).size().reset_index(name='Cuenta')
+        # 2️⃣ GRÁFICA 2: Detalle por Evento (BARRA VERDE Y ROJA JUNTAS, sin pendientes)
+        if total_concluidas > 0:
+            df_trend = df_concluidas.groupby(['EventoConFolio', 'Estatus']).size().reset_index(name='Cuenta')
             
             fig_trend = px.bar(
                 df_trend, x='EventoConFolio', y='Cuenta', color='Estatus',

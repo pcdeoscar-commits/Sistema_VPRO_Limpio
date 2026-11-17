@@ -174,33 +174,35 @@ async function cargarDatosInicio() {
     if (contenedorNotif) {
         contenedorNotif.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:12px;font-size:13px;">⏳ Cargando notificaciones...</div>`;
 
-        const idEmp = usuarioLogueado.id_empleado;
+        try {
+            const idEmp = usuarioLogueado.id_empleado;
 
-        // Determinar si el usuario tiene rol administrativo o directivo
-        const esAdminRH = (typeof esUsuarioAutorizadoDireccion === 'function' && esUsuarioAutorizadoDireccion()) || 
-                          ((usuarioLogueado?.rol || '').toUpperCase().includes('ADMIN')) ||
-                          ((usuarioLogueado?.puesto || '').toUpperCase().includes('ADMIN'));
+            // Identificar rol y puesto del colaborador
+            const rolUser = (usuarioLogueado?.rol || '').toUpperCase().trim();
+            const puestoUser = (usuarioLogueado?.puesto || '').toUpperCase().trim();
+            const idUser = String(idEmp || '').trim();
 
-        const esJefeDanos = esAdminRH || esProductor || ['203'].includes(String(idEmp).trim());
-        const esSeguimientoMantenimiento = true;
+            // Determinar si el usuario tiene rol administrativo o directivo
+            const esAdminRH = (typeof esUsuarioAutorizadoDireccion === 'function' && esUsuarioAutorizadoDireccion()) || 
+                              ((usuarioLogueado?.rol || '').toUpperCase().includes('ADMIN')) ||
+                              ((usuarioLogueado?.puesto || '').toUpperCase().includes('ADMIN'));
 
-        // Identificar exclusivamente si el usuario tiene rol de Coordinador o Productor
-        const rolUser = (usuarioLogueado?.rol || '').toUpperCase().trim();
-        const puestoUser = (usuarioLogueado?.puesto || '').toUpperCase().trim();
-        const idUser = String(idEmp || '').trim();
+            // Identificar roles de Coordinador y Productor
+            const esCoordinador = rolUser === 'COORDINADOR' || rolUser.includes('COORDINADOR') || rolUser.includes('COORDINACION') ||
+                                  puestoUser.includes('COORDINADOR') || puestoUser.includes('COORDINACION') ||
+                                  idUser === '124' || idUser === '000';
 
-        const esCoordinador = rolUser === 'COORDINADOR' || rolUser.includes('COORDINADOR') || rolUser.includes('COORDINACION') ||
-                              puestoUser.includes('COORDINADOR') || puestoUser.includes('COORDINACION') ||
-                              idUser === '124' || idUser === '000';
+            const esProductor = rolUser === 'PRODUCTOR' || rolUser.includes('PRODUCTOR') ||
+                                puestoUser.includes('PRODUCTOR') ||
+                                idUser === '107' || idUser === '119';
 
-        const esProductor = rolUser === 'PRODUCTOR' || rolUser.includes('PRODUCTOR') ||
-                            puestoUser.includes('PRODUCTOR') ||
-                            idUser === '107' || idUser === '119';
+            const esCoordOProductor = esCoordinador || esProductor;
 
-        const esCoordOProductor = esCoordinador || esProductor;
+            const esJefeDanos = esAdminRH || esProductor || ['203'].includes(idUser);
+            const esSeguimientoMantenimiento = true;
 
-        // Lanzar todas las peticiones en paralelo
-        const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos, resOpsSinConv, resMisPermisos] = await Promise.allSettled([
+            // Lanzar todas las peticiones en paralelo
+            const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos, resOpsSinConv, resMisPermisos] = await Promise.allSettled([
             fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${idEmp}`),
             fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '')}`),
             fetch(`${API_URL}/api/rh/alertas?id_empleado=${idEmp}`),
@@ -715,7 +717,7 @@ async function cargarDatosInicio() {
             }
         } catch(e) { console.error('Error al cargar mis permisos:', e); }
 
-const gruposFiltrados = gruposHtml.filter(Boolean);
+        const gruposFiltrados = gruposHtml.filter(Boolean);
         if (gruposFiltrados.length > 0) {
             contenedorNotif.innerHTML = gruposFiltrados.join('');
         } else {
@@ -725,7 +727,15 @@ const gruposFiltrados = gruposHtml.filter(Boolean);
                     <span style="font-size:14px;color:#065f46;font-weight:600;">✅ Todo al día — Sin notificaciones pendientes.</span>
                 </div>`;
         }
+    } catch (errNotif) {
+        console.error("Error al cargar Centro de Notificaciones:", errNotif);
+        contenedorNotif.innerHTML = `
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:#f0fdf4;border-left:4px solid #34d399;border-radius:10px;">
+                <i class="ph ph-check-circle" style="font-size:24px;color:#059669;"></i>
+                <span style="font-size:14px;color:#065f46;font-weight:600;">✅ Todo al día — Sin notificaciones pendientes.</span>
+            </div>`;
     }
+}
 
     // 2. Asistencia Semanal y Detección de Advertencia de Conducta
     const tbody = document.getElementById("inicio-tabla-asistencia");

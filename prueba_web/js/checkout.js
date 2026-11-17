@@ -240,7 +240,7 @@ function renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia) {
 
         dias.forEach(d => {
             let valDia = (mapaDias[d.fecha_iso] || "").trim();
-            if (!valDia || valDia.toLowerCase().includes("despacho autorizado") || valDia.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
+            if (!valDia || valDia.toLowerCase().includes("despacho autorizado") || valDia.toLowerCase().includes("operacion limpia") || valDia.toLowerCase().includes("operación limpia") || valDia.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
                 valDia = "[ES NECESARIO REPORTAR INCIDENCIAS]";
             }
 
@@ -832,7 +832,10 @@ async function cargarStatusCheckout(idEvento, empIdOverride = null) {
         if (incLimpia.toLowerCase().includes("despacho autorizado")) {
             incLimpia = incLimpia.replace(/despacho autorizado por coordinador\.?/gi, "").trim();
         }
-        const esVacia = !incLimpia || ["sin incidencias", "sin incidencias reportadas", "ninguna", "ok", "none", "null"].includes(incLimpia.toLowerCase().trim());
+        if (incLimpia.toLowerCase().includes("operacion limpia") || incLimpia.toLowerCase().includes("operación limpia")) {
+            incLimpia = incLimpia.replace(/operaci[oó]n limpia\.?/gi, "").trim();
+        }
+        const esVacia = !incLimpia || incLimpia.includes("ES NECESARIO REPORTAR INCIDENCIAS") || ["sin incidencias", "sin incidencias reportadas", "ninguna", "ok", "none", "null"].includes(incLimpia.toLowerCase().trim());
         const incSalida = document.getElementById('checkout-salida-incidencias');
         if (incSalida) incSalida.value = !esVacia ? incLimpia : "";
         renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia);

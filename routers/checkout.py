@@ -113,7 +113,13 @@ def empleado_tiene_checkout_bloqueado(id_empleado: str, nombre_empleado: str = "
                 LEFT JOIN public.eventos ev ON cm.folio_op = ev.id_evento
                 WHERE TRIM(cm.id_empleado) = :emp
                   AND cm.estado_bodega = 'RECIBIDO'
-                  AND (cm.incidencias_generales IS NULL OR TRIM(cm.incidencias_generales) = '' OR cm.incidencias_generales LIKE '%ES NECESARIO REPORTAR INCIDENCIAS%')
+                  AND (
+                      cm.incidencias_generales IS NULL 
+                      OR TRIM(cm.incidencias_generales) = '' 
+                      OR cm.incidencias_generales LIKE '%ES NECESARIO REPORTAR INCIDENCIAS%'
+                      OR cm.incidencias_generales ILIKE '%DESPACHO AUTORIZADO%'
+                      OR cm.incidencias_generales ILIKE '%OPERACION LIMPIA%'
+                  )
             """)
             rows = conn.execute(query, {"emp": str(id_empleado).strip()}).mappings().fetchall()
             
@@ -197,7 +203,15 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
             ).fetchall()
             
             pendientes_raw = conn.execute(
-                text("SELECT id_empleado, folio_op FROM public.checkouts_maestro WHERE (incidencias_generales IS NULL OR incidencias_generales = '') AND estado_bodega = 'RECIBIDO'")
+                text("""SELECT id_empleado, folio_op FROM public.checkouts_maestro 
+                        WHERE estado_bodega = 'RECIBIDO' 
+                          AND (
+                              incidencias_generales IS NULL 
+                              OR TRIM(incidencias_generales) = '' 
+                              OR incidencias_generales LIKE '%ES NECESARIO REPORTAR INCIDENCIAS%'
+                              OR incidencias_generales ILIKE '%DESPACHO AUTORIZADO%'
+                              OR incidencias_generales ILIKE '%OPERACION LIMPIA%'
+                          )""")
             ).fetchall()
         
         ordenes = []
@@ -844,7 +858,12 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
                         })
                         continue
                     # 3. Si bodega ya recibió el hardware pero el colaborador NO ha redactado su bitácora de incidencias
-                    elif estado_actual_bodega == 'RECIBIDO' and (not inc_actual or 'ES NECESARIO REPORTAR INCIDENCIAS' in inc_actual.upper()):
+                    elif estado_actual_bodega == 'RECIBIDO' and (
+                        not inc_actual or 
+                        'ES NECESARIO REPORTAR INCIDENCIAS' in inc_actual.upper() or
+                        'DESPACHO AUTORIZADO' in inc_actual.upper() or
+                        'OPERACION LIMPIA' in inc_actual.upper()
+                    ):
                         ops_pendientes.append({
                             "id_evento": id_ev, 
                             "folio": id_ev,
@@ -862,7 +881,14 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
                         {"id": id_ev}
                     ).scalar() or 0
                     pendientes_inc_crew = conn.execute(
-                        text("SELECT count(id_maestro) FROM public.checkouts_maestro WHERE folio_op = :id AND (incidencias_generales IS NULL OR incidencias_generales = '' OR incidencias_generales LIKE '%ES NECESARIO REPORTAR INCIDENCIAS%')"),
+                        text("""SELECT count(id_maestro) FROM public.checkouts_maestro 
+                                WHERE folio_op = :id AND (
+                                    incidencias_generales IS NULL OR 
+                                    TRIM(incidencias_generales) = '' OR 
+                                    incidencias_generales LIKE '%ES NECESARIO REPORTAR INCIDENCIAS%' OR
+                                    incidencias_generales ILIKE '%DESPACHO AUTORIZADO%' OR
+                                    incidencias_generales ILIKE '%OPERACION LIMPIA%'
+                                )"""),
                         {"id": id_ev}
                     ).scalar() or 0
                     total_creados = conn.execute(

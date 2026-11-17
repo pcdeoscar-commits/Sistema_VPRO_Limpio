@@ -51,6 +51,10 @@ def renderizar_modulo(API_URL):
             evento = row['nombre_evento']
             fecha = row['fecha']
             depto = row['depto_real']
+            raw_folio = str(row['folio_op']).strip() if pd.notna(row.get('folio_op')) else ""
+            folio_op = raw_folio if raw_folio not in ['', 'None', 'nan', '0'] else ""
+            prefijo_op = f"[{folio_op}] " if folio_op.upper().startswith("OP") else (f"[OP-{folio_op}] " if folio_op else (f"[{fecha}] " if fecha else ""))
+            evento_con_folio = f"{prefijo_op}{evento}"
             
             # Variables de separación
             prov_nombre = None
@@ -135,7 +139,10 @@ def renderizar_modulo(API_URL):
 
                     evaluaciones.append({
                         "Fecha": fecha_jornada,
+                        "FechaOP": fecha,
                         "Evento": evento,
+                        "EventoConFolio": evento_con_folio,
+                        "FolioOP": folio_op,
                         "Jornada": tag_fec.strip(),
                         "Actor": emp_nombre,
                         "Tipo": "Empleado",
@@ -146,7 +153,10 @@ def renderizar_modulo(API_URL):
             else:
                 evaluaciones.append({
                     "Fecha": fecha,
+                    "FechaOP": fecha,
                     "Evento": evento,
+                    "EventoConFolio": evento_con_folio,
+                    "FolioOP": folio_op,
                     "Jornada": "",
                     "Actor": emp_nombre,
                     "Tipo": "Empleado",
@@ -159,7 +169,10 @@ def renderizar_modulo(API_URL):
             if prov_nombre and "--- NINGUNO ---" not in prov_nombre.upper():
                 evaluaciones.append({
                     "Fecha": fecha,
+                    "FechaOP": fecha,
                     "Evento": evento,
+                    "EventoConFolio": evento_con_folio,
+                    "FolioOP": folio_op,
                     "Jornada": "",
                     "Actor": prov_nombre,
                     "Tipo": "Proveedor",
@@ -232,7 +245,7 @@ def renderizar_modulo(API_URL):
         total_evaluaciones = len(df_filtrado)
         exitos = len(df_filtrado[df_filtrado['Estatus'] == "✅ Sin Incidencias"])
         fallas = total_evaluaciones - exitos
-        eventos_involucrados = df_filtrado['Evento'].nunique()
+        eventos_involucrados = df_filtrado['EventoConFolio'].nunique()
 
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Evaluaciones Realizadas", total_evaluaciones)
@@ -261,10 +274,10 @@ def renderizar_modulo(API_URL):
 
         # 2️⃣ GRÁFICA 2: Detalle por Evento (BARRA VERDE Y ROJA JUNTAS)
         if total_evaluaciones > 0:
-            df_trend = df_filtrado.groupby(['Evento', 'Estatus']).size().reset_index(name='Cuenta')
+            df_trend = df_filtrado.groupby(['EventoConFolio', 'Estatus']).size().reset_index(name='Cuenta')
             
             fig_trend = px.bar(
-                df_trend, x='Evento', y='Cuenta', color='Estatus',
+                df_trend, x='EventoConFolio', y='Cuenta', color='Estatus',
                 color_discrete_map={"✅ Sin Incidencias": "#2ecc71", "⚠️ Con Incidencias": "#e74c3c"},
                 barmode='group' # Esto hace que se pongan una al lado de la otra
             )

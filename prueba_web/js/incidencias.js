@@ -55,6 +55,19 @@ async function cargarModuloIncidencias() {
             const evento = row.nombre_evento || "Evento General";
             const fecha = row.fecha || "";
             const depto = (row.depto_real || "Sin Departamento").trim();
+            const folioOp = (row.folio_op !== null && row.folio_op !== undefined && String(row.folio_op).trim() !== "" && String(row.folio_op).trim() !== "0")
+                ? String(row.folio_op).trim()
+                : "";
+
+            let prefijoOP = "";
+            if (folioOp) {
+                prefijoOP = folioOp.toUpperCase().startsWith("OP") ? `[${folioOp}] ` : `[OP-${folioOp}] `;
+            } else if (fecha) {
+                const fPartes = fecha.split('-');
+                const fCorta = fPartes.length === 3 ? `${fPartes[2]}/${fPartes[1]}` : fecha;
+                prefijoOP = `[${fCorta}] `;
+            }
+            const eventoConFolio = `${prefijoOP}${evento}`;
 
             let provNombre = null;
             let provNota = "";
@@ -151,7 +164,10 @@ async function cargarModuloIncidencias() {
                     const estatusJornada = clasificarTexto(b.texto);
                     rawEvaluacionesIncidencias.push({
                         Fecha: fechaJornada,
+                        FechaOP: fecha,
                         Evento: evento,
+                        EventoConFolio: eventoConFolio,
+                        FolioOP: folioOp,
                         Jornada: b.etiqueta,
                         Actor: empNombre,
                         Tipo: "Empleado",
@@ -163,7 +179,10 @@ async function cargarModuloIncidencias() {
             } else {
                 rawEvaluacionesIncidencias.push({
                     Fecha: fecha,
+                    FechaOP: fecha,
                     Evento: evento,
+                    EventoConFolio: eventoConFolio,
+                    FolioOP: folioOp,
                     Jornada: "",
                     Actor: empNombre,
                     Tipo: "Empleado",
@@ -177,7 +196,10 @@ async function cargarModuloIncidencias() {
             if (provNombre && !provNombre.toUpperCase().includes("--- NINGUNO ---")) {
                 rawEvaluacionesIncidencias.push({
                     Fecha: fecha,
+                    FechaOP: fecha,
                     Evento: evento,
+                    EventoConFolio: eventoConFolio,
+                    FolioOP: folioOp,
                     Jornada: "",
                     Actor: provNombre,
                     Tipo: "Proveedor",
@@ -764,7 +786,7 @@ function actualizarKPIsIncidencias() {
     const totalA = evaluacionesFiltradasIncidencias.length;
     const limpiasA = evaluacionesFiltradasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
     const fallasA = totalA - limpiasA;
-    const eventosA = new Set(evaluacionesFiltradasIncidencias.map(e => e.Evento)).size;
+    const eventosA = new Set(evaluacionesFiltradasIncidencias.map(e => e.EventoConFolio || e.Evento)).size;
 
     const pctLimpiasA = totalA > 0 ? ((limpiasA / totalA) * 100) : 0;
     const pctFallasA = totalA > 0 ? ((fallasA / totalA) * 100) : 0;
@@ -847,7 +869,7 @@ function actualizarKPIsIncidencias() {
         const totalB = evaluacionesComparativasIncidencias.length;
         const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
         const fallasB = totalB - limpiasB;
-        const eventosB = new Set(evaluacionesComparativasIncidencias.map(e => e.Evento)).size;
+        const eventosB = new Set(evaluacionesComparativasIncidencias.map(e => e.EventoConFolio || e.Evento)).size;
 
         const pctLimpiasB = totalB > 0 ? ((limpiasB / totalB) * 100) : 0;
         const pctFallasB = totalB > 0 ? ((fallasB / totalB) * 100) : 0;
@@ -1662,8 +1684,8 @@ function renderizarGraficasIncidencias() {
         const totalB = evaluacionesComparativasIncidencias.length;
         const limpiasB = evaluacionesComparativasIncidencias.filter(e => e.Estatus.includes("Sin Incidencias")).length;
         const fallasB = totalB - limpiasB;
-        const eventosA = new Set(evaluacionesFiltradasIncidencias.map(e => e.Evento)).size;
-        const eventosB = new Set(evaluacionesComparativasIncidencias.map(e => e.Evento)).size;
+        const eventosA = new Set(evaluacionesFiltradasIncidencias.map(e => e.EventoConFolio || e.Evento)).size;
+        const eventosB = new Set(evaluacionesComparativasIncidencias.map(e => e.EventoConFolio || e.Evento)).size;
 
         chartIncComparativaInstance = new Chart(ctxComp, {
             type: 'bar',
@@ -1715,7 +1737,7 @@ function renderizarGraficasIncidencias() {
 
         const eventosMap = {};
         evaluacionesFiltradasIncidencias.forEach(e => {
-            const ev = e.Evento || 'Sin Nombre';
+            const ev = e.EventoConFolio || e.Evento || 'Sin Nombre';
             if (!eventosMap[ev]) eventosMap[ev] = { limpias: 0, fallas: 0 };
             if (e.Estatus.includes("Sin Incidencias")) eventosMap[ev].limpias++;
             else eventosMap[ev].fallas++;
@@ -1728,7 +1750,7 @@ function renderizarGraficasIncidencias() {
         chartIncEventosInstance = new Chart(ctxEventos, {
             type: 'bar',
             data: {
-                labels: labels.map(l => l.length > 28 ? l.substring(0, 26) + '...' : l),
+                labels: labels.map(l => l.length > 30 ? l.substring(0, 28) + '...' : l),
                 datasets: [
                     {
                         label: 'Sin Incidencias',
@@ -1833,6 +1855,10 @@ function renderizarTablaIncidencias(lista) {
                 : `<span style="background: #ffedd5; color: #c2410c; font-weight: 800; font-size: 10px; padding: 1px 5px; border-radius: 4px; margin-right: 4px;">P-B</span>`)
             : '';
 
+        const badgeFolio = item.FolioOP
+            ? `<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 700; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 6px; display: inline-flex; align-items: center; gap: 3px;"><i class="ph ph-receipt"></i> OP-${String(item.FolioOP).replace(/^OP-?/i, '')}</span>`
+            : '';
+
         const badgeJornada = item.Jornada
             ? `<div style="margin-top: 4px;"><span style="background: #f1f5f9; color: #334155; font-weight: 600; font-size: 11px; padding: 2px 7px; border-radius: 4px; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-calendar-blank"></i> ${item.Jornada}</span></div>`
             : '';
@@ -1840,7 +1866,7 @@ function renderizarTablaIncidencias(lista) {
         return `
             <tr>
                 <td style="font-family: monospace; font-size: 12px; color: #64748b;">${badgePeriodo}${item.Fecha || '--'}</td>
-                <td style="font-weight: 600; color: #0f172a; font-size: 13px;">${item.Evento}${badgeJornada}</td>
+                <td style="font-weight: 600; color: #0f172a; font-size: 13px;">${badgeFolio}${item.Evento}${badgeJornada}</td>
                 <td style="text-align: center;">${badgeTipo}</td>
                 <td style="font-weight: 500; font-size: 13px;">${item.Actor}</td>
                 <td style="text-align: center;">${badgeEstatus}</td>
@@ -1858,6 +1884,8 @@ function filtrarTablaIncidenciasEnVivo(termino) {
     }
     const filtrados = evaluacionesFiltradasIncidencias.filter(item =>
         (item.Evento && item.Evento.toLowerCase().includes(t)) ||
+        (item.EventoConFolio && item.EventoConFolio.toLowerCase().includes(t)) ||
+        (item.FolioOP && item.FolioOP.toLowerCase().includes(t)) ||
         (item.Actor && item.Actor.toLowerCase().includes(t)) ||
         (item.Nota && item.Nota.toLowerCase().includes(t)) ||
         (item.Tipo && item.Tipo.toLowerCase().includes(t)) ||

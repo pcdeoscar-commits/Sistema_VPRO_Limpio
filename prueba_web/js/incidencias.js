@@ -77,17 +77,17 @@ async function cargarModuloIncidencias() {
                 }
             }
 
-            function clasificarTexto(texto) {
+                        function clasificarTexto(texto) {
                 if (!texto) return "✅ Sin Incidencias";
                 const t = texto.toLowerCase()
-                    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                     .replace(/[^a-z0-9\s]/g, ' ')
                     .replace(/\s+/g, ' ')
                     .trim();
 
                 if (!t) return "✅ Sin Incidencias";
 
-                const patronesLimpios = [
+                const frasesExactasOInicio = [
                     "evento concluido sin incidencias",
                     "evento concluido sin incidencia",
                     "concluido sin incidencias",
@@ -103,46 +103,82 @@ async function cargarModuloIncidencias() {
                     "todo en orden",
                     "sin novedad",
                     "sin novedades",
-                    "ninguna novedad",
-                    "ninguna",
-                    "ninguno",
-                    "exito",
-                    "ok",
-                    "n a",
-                    "na",
-                    "none",
-                    "null"
+                    "ninguna novedad"
                 ];
 
-                for (let p of patronesLimpios) {
-                    if (t === p || t.startsWith(p) || t.endsWith(p)) {
+                const palabrasBrevesExactas = [
+                    "ninguna", "ninguno", "exito", "ok", "n a", "na", "none", "null"
+                ];
+
+                for (let f of frasesExactasOInicio) {
+                    if (t === f || t.startsWith(f)) {
                         return "✅ Sin Incidencias";
                     }
                 }
 
-                if (t.startsWith("sin incidencia") || t.startsWith("sin incidencias")) {
+                if (palabrasBrevesExactas.includes(t)) {
                     return "✅ Sin Incidencias";
                 }
 
                 return "⚠️ Con Incidencias";
             }
 
-            // 1. Empleado
-            rawEvaluacionesIncidencias.push({
-                Fecha: fecha,
-                Evento: evento,
-                Actor: empNombre,
-                Tipo: "Empleado",
-                Departamento: depto,
-                Estatus: clasificarTexto(empText),
-                Nota: empText.trim() ? empText.trim() : "Operación Limpia"
-            });
+            // 1. Empleado (Desglose quirurgico por jornada si es reporte multidia)
+            const bloquesDiasRegex = /📅\s*\[([^\]]+)\]:\s*([\s\S]*?)(?=(?:📅\s*\[|$))/g;
+            const bloquesEncontrados = [];
+            let mBloque;
+            while ((mBloque = bloquesDiasRegex.exec(empText)) !== null) {
+                bloquesEncontrados.push({
+                    etiqueta: mBloque[1].trim(),
+                    texto: mBloque[2].trim()
+                });
+            }
+
+            if (bloquesEncontrados.length > 0) {
+                const mesesMap = { ene: '01', feb: '02', mar: '03', abr: '04', may: '05', jun: '06', jul: '07', ago: '08', sep: '09', oct: '10', nov: '11', dic: '12' };
+                const anoBase = fecha.length >= 4 ? fecha.substring(0, 4) : '2026';
+
+                bloquesEncontrados.forEach(b => {
+                    let fechaJornada = fecha;
+                    const mDia = b.etiqueta.match(/(\d{1,2})\/([a-zA-Z]{3})/);
+                    if (mDia) {
+                        const numDia = mDia[1].padStart(2, '0');
+                        const mesStr = mDia[2].toLowerCase();
+                        const numMes = mesesMap[mesStr] || '11';
+                        fechaJornada = `${anoBase}-${numMes}-${numDia}`;
+                    }
+
+                    const estatusJornada = clasificarTexto(b.texto);
+                    rawEvaluacionesIncidencias.push({
+                        Fecha: fechaJornada,
+                        Evento: evento,
+                        Jornada: b.etiqueta,
+                        Actor: empNombre,
+                        Tipo: "Empleado",
+                        Departamento: depto,
+                        Estatus: estatusJornada,
+                        Nota: b.texto ? b.texto : "Operación Limpia"
+                    });
+                });
+            } else {
+                rawEvaluacionesIncidencias.push({
+                    Fecha: fecha,
+                    Evento: evento,
+                    Jornada: "",
+                    Actor: empNombre,
+                    Tipo: "Empleado",
+                    Departamento: depto,
+                    Estatus: clasificarTexto(empText),
+                    Nota: empText.trim() ? empText.trim() : "Operación Limpia"
+                });
+            }
 
             // 2. Proveedor si fue reportado
             if (provNombre && !provNombre.toUpperCase().includes("--- NINGUNO ---")) {
                 rawEvaluacionesIncidencias.push({
                     Fecha: fecha,
                     Evento: evento,
+                    Jornada: "",
                     Actor: provNombre,
                     Tipo: "Proveedor",
                     Departamento: "Externo (Proveedor)",
@@ -1797,10 +1833,14 @@ function renderizarTablaIncidencias(lista) {
                 : `<span style="background: #ffedd5; color: #c2410c; font-weight: 800; font-size: 10px; padding: 1px 5px; border-radius: 4px; margin-right: 4px;">P-B</span>`)
             : '';
 
+        const badgeJornada = item.Jornada
+            ? `<div style="margin-top: 4px;"><span style="background: #f1f5f9; color: #334155; font-weight: 600; font-size: 11px; padding: 2px 7px; border-radius: 4px; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-calendar-blank"></i> ${item.Jornada}</span></div>`
+            : '';
+
         return `
             <tr>
                 <td style="font-family: monospace; font-size: 12px; color: #64748b;">${badgePeriodo}${item.Fecha || '--'}</td>
-                <td style="font-weight: 600; color: #0f172a; font-size: 13px;">${item.Evento}</td>
+                <td style="font-weight: 600; color: #0f172a; font-size: 13px;">${item.Evento}${badgeJornada}</td>
                 <td style="text-align: center;">${badgeTipo}</td>
                 <td style="font-weight: 500; font-size: 13px;">${item.Actor}</td>
                 <td style="text-align: center;">${badgeEstatus}</td>
@@ -1821,7 +1861,8 @@ function filtrarTablaIncidenciasEnVivo(termino) {
         (item.Actor && item.Actor.toLowerCase().includes(t)) ||
         (item.Nota && item.Nota.toLowerCase().includes(t)) ||
         (item.Tipo && item.Tipo.toLowerCase().includes(t)) ||
-        (item.Fecha && item.Fecha.includes(t))
+        (item.Fecha && item.Fecha.includes(t)) ||
+        (item.Jornada && item.Jornada.toLowerCase().includes(t))
     );
     renderizarTablaIncidencias(filtrados);
 }

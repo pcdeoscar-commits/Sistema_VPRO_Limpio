@@ -83,7 +83,7 @@ def renderizar_modulo(API_URL):
                 t = re.sub(r'\s+', ' ', t).strip()
                 if not t: return "✅ Sin Incidencias"
 
-                patrones_limpios = [
+                frases_exactas_o_inicio = [
                     "evento concluido sin incidencias",
                     "evento concluido sin incidencia",
                     "concluido sin incidencias",
@@ -99,22 +99,18 @@ def renderizar_modulo(API_URL):
                     "todo en orden",
                     "sin novedad",
                     "sin novedades",
-                    "ninguna novedad",
-                    "ninguna",
-                    "ninguno",
-                    "exito",
-                    "ok",
-                    "n a",
-                    "na",
-                    "none",
-                    "null"
+                    "ninguna novedad"
                 ]
 
-                for p in patrones_limpios:
-                    if t == p or t.startswith(p) or t.endswith(p):
+                palabras_breves_exactas = [
+                    "ninguna", "ninguno", "exito", "ok", "n a", "na", "none", "null"
+                ]
+
+                for f in frases_exactas_o_inicio:
+                    if t == f or t.startswith(f):
                         return "✅ Sin Incidencias"
 
-                if t.startswith("sin incidencia") or t.startswith("sin incidencias"):
+                if t in palabras_breves_exactas:
                     return "✅ Sin Incidencias"
 
                 return "⚠️ Con Incidencias"
@@ -123,12 +119,24 @@ def renderizar_modulo(API_URL):
             import re
             bloques_dias = re.findall(r'📅\s*\[([^\]]+)\]:\s*(.*?)(?=(?:📅\s*\[|$))', emp_text, re.DOTALL)
             if bloques_dias:
+                meses_map = {'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04', 'may': '05', 'jun': '06', 'jul': '07', 'ago': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12'}
+                ano_base = str(fecha)[:4] if len(str(fecha)) >= 4 else '2026'
+
                 for tag_fec, txt_dia in bloques_dias:
                     t_dia_clean = txt_dia.strip()
                     estatus_dia = clasificar_texto(t_dia_clean)
+                    fecha_jornada = fecha
+                    m_dia = re.search(r'(\d{1,2})/([a-zA-Z]{3})', tag_fec)
+                    if m_dia:
+                        num_dia = m_dia.group(1).zfill(2)
+                        mes_str = m_dia.group(2).lower()
+                        num_mes = meses_map.get(mes_str, '11')
+                        fecha_jornada = f"{ano_base}-{num_mes}-{num_dia}"
+
                     evaluaciones.append({
-                        "Fecha": fecha,
-                        "Evento": f"{evento} - {tag_fec.strip()}",
+                        "Fecha": fecha_jornada,
+                        "Evento": evento,
+                        "Jornada": tag_fec.strip(),
                         "Actor": emp_nombre,
                         "Tipo": "Empleado",
                         "Departamento": depto,
@@ -139,6 +147,7 @@ def renderizar_modulo(API_URL):
                 evaluaciones.append({
                     "Fecha": fecha,
                     "Evento": evento,
+                    "Jornada": "",
                     "Actor": emp_nombre,
                     "Tipo": "Empleado",
                     "Departamento": depto,
@@ -151,6 +160,7 @@ def renderizar_modulo(API_URL):
                 evaluaciones.append({
                     "Fecha": fecha,
                     "Evento": evento,
+                    "Jornada": "",
                     "Actor": prov_nombre,
                     "Tipo": "Proveedor",
                     "Departamento": "Externo (Proveedor)",

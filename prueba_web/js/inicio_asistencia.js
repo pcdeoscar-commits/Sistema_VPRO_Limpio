@@ -789,14 +789,31 @@ async function cargarDatosInicio() {
                 advertenciaConductaDetectada = true;
                 obs = "🚨 Práctica indebida: Omisión de registro de comida";
             } else if (esPasadoOHoy && mIn === "--:--" && mOut === "--:--" && vIn === "--:--" && vOut === "--:--") {
-                obs = esFinDeSemana ? "Descanso" : "❌ Sin registro";
+                const tieneDescansoEspecial = obs && (
+                    obs.toUpperCase().includes("DESCANSO") || 
+                    obs.toUpperCase().includes("FESTIVO") || 
+                    obs.toUpperCase().includes("REVOLUCIÓN") || 
+                    obs.toUpperCase().includes("PERMISO") || 
+                    obs.toUpperCase().includes("VACACIONES") || 
+                    obs.toUpperCase().includes("INCAPACIDAD")
+                );
+                if (!tieneDescansoEspecial) {
+                    obs = esFinDeSemana ? "Descanso" : "❌ Sin registro";
+                }
             } else if (esPasadoOHoy && !obs && (mIn !== "--:--" || vOut !== "--:--")) {
                 obs = "✅ Al día";
             }
 
-            // Resaltado de marcas faltantes (no marcar rojo si hubo mañana libre autorizada)
-            const tieneMananaLibre = obs.toUpperCase().includes("MAÑANA LIBRE") || obs.toUpperCase().includes("TURNO VESPERTINO");
-            const claseIn = (mIn === "--:--" && esPasadoOHoy && !esFinDeSemana && !tieneMananaLibre) ? "td-error" : "";
+            // Resaltado de marcas faltantes (no marcar rojo si hubo mañana libre autorizada o día de descanso/festivo/permiso)
+            const esJustificado = obs.toUpperCase().includes("MAÑANA LIBRE") || 
+                                  obs.toUpperCase().includes("TURNO VESPERTINO") || 
+                                  obs.toUpperCase().includes("DESCANSO") || 
+                                  obs.toUpperCase().includes("FESTIVO") || 
+                                  obs.toUpperCase().includes("REVOLUCIÓN") || 
+                                  obs.toUpperCase().includes("PERMISO") || 
+                                  obs.toUpperCase().includes("VACACIONES") || 
+                                  obs.toUpperCase().includes("INCAPACIDAD");
+            const claseIn = (mIn === "--:--" && esPasadoOHoy && !esFinDeSemana && !esJustificado) ? "td-error" : "";
             const claseOut = (mOut === "--:--" && mIn !== "--:--" && !omitioComida) ? "td-error" : "";
 
             const badgeHoy = diaInfo.esHoy ? `<span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-left: 6px;">HOY</span>` : "";

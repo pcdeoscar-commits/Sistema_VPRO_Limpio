@@ -786,6 +786,10 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
 
     try:
         with engine_personal.begin() as conn:
+            # 🔍 Consultar datos del colaborador de forma global para todos los flujos
+            row_emp = conn.execute(text("SELECT nombre FROM public.empleados WHERE TRIM(id_empleado) = :emp LIMIT 1"), {"emp": payload.id_empleado.strip()}).mappings().first()
+            nom_emp = str(row_emp["nombre"]).strip() if row_emp and row_emp.get("nombre") else "Empleado"
+
             # 🌴 Validar si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad activa hoy
             rh_activo = conn.execute(text("""
                 SELECT 'VACACIONES' as tipo, fecha_inicio_goce as f_ini, fecha_fin_goce as f_fin

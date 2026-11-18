@@ -176,6 +176,8 @@ class EmpleadoUpdate(BaseModel):
 
     rol: Optional[str] = None
 
+    registrado_por: Optional[str] = None
+
 
 
 # Solicitudes
@@ -755,7 +757,20 @@ def get_empleado(id_empleado: str):
 
 def update_empleado(id_empleado: str, payload: EmpleadoUpdate):
 
-    update_data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    registrado_por = payload.registrado_por or "SISTEMA"
+    raw_data = payload.model_dump()
+
+    update_data = {}
+    for k, v in raw_data.items():
+        if k == "registrado_por":
+            continue
+        if v is not None:
+            if isinstance(v, str):
+                v = v.strip()
+                # Si una fecha o string vacío se envía, pasarlo como None a columnas date
+                if v == "" and k in ("fecha_nac", "fecha_ing", "fecha_baja", "licencia_vence"):
+                    v = None
+            update_data[k] = v
 
     if not update_data:
 
@@ -791,7 +806,7 @@ def update_empleado(id_empleado: str, payload: EmpleadoUpdate):
 
             desc = f"Actualización de datos: {', '.join(update_data.keys())}"
 
-            _registrar_historial(conn, id_empleado, "ACTUALIZACION_DATOS", desc, "empleados", id_empleado, "SISTEMA")
+            _registrar_historial(conn, id_empleado, "ACTUALIZACION_DATOS", desc, "empleados", id_empleado, registrado_por)
 
             
 

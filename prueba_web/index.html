@@ -9699,9 +9699,14 @@
 
                             </div>
 
-                            <div style="text-align: right;">
+                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; margin-top: 10px;">
 
-                                <button type="button" onclick="guardarDatosGeneralesRH()" style="background: var(--accent-color); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                                <div id="aviso-permiso-expediente-rh" style="display: none; align-items: center; gap: 8px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;">
+                                    <i class="ph ph-lock-key" style="font-size: 18px; color: #d97706;"></i>
+                                    <span><b>Modo Solo Lectura:</b> Únicamente la <b>Sra. Ana Lilia Villarreal</b> (Administración / RRHH) tiene autorización para modificar el expediente.</span>
+                                </div>
+
+                                <button type="button" id="btn-guardar-expediente-rh" onclick="guardarDatosGeneralesRH()" style="background: var(--accent-color); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
 
                                     <i class="ph ph-floppy-disk"></i> 💾 Guardar Cambios en el Expediente
 
@@ -12451,7 +12456,7 @@
 
     <script src="js/core.js"></script>
 
-    <script src="js/auth.js?v=20261113_op_segura_v12"></script>
+    <script src="js/auth.js?v=20261118_analilia_perm_v1"></script>
 
     <script src="js/inactividad.js?v=20261112_15min"></script>
 
@@ -12481,7 +12486,7 @@
 
     <script src="js/analitica.js"></script>
 
-    <script src="js/rh.js?v=20261106_dictamen_horas_v2"></script>
+    <script src="js/rh.js?v=20261118_expediente_analilia_v3"></script>
 
     <script src="js/audio.js"></script>
 

@@ -778,6 +778,31 @@ async function seleccionarEmpleadoRH(idEmpleado) {
 
         setVal("rh-gen-motivo-baja", emp.motivo_baja);
 
+        // Control de permisos de edición del expediente (exclusivo para la Sra. Ana Lilia Villarreal)
+        const puedeEditarExp = typeof puedeModificarExpedienteRH === 'function' ? puedeModificarExpedienteRH() : false;
+        const camposExpediente = [
+            "rh-gen-nombre", "rh-gen-email", "rh-gen-cel", "rh-gen-rfc", "rh-gen-curp", "rh-gen-nss",
+            "rh-gen-depto", "rh-gen-puesto", "rh-gen-tipo-contrato", "rh-gen-salario", "rh-gen-escolaridad",
+            "rh-gen-estado-civil", "rh-gen-domicilio", "rh-gen-ciudad", "rh-gen-cp", "rh-gen-contacto-emergencia",
+            "rh-gen-tel-emergencia", "rh-gen-parentesco", "rh-gen-estatus-empleado", "rh-gen-fecha-baja", "rh-gen-motivo-baja"
+        ];
+        camposExpediente.forEach(idCampo => {
+            const el = document.getElementById(idCampo);
+            if (el) {
+                if (el.tagName === 'SELECT') {
+                    el.disabled = !puedeEditarExp;
+                } else {
+                    el.readOnly = !puedeEditarExp;
+                }
+                el.style.backgroundColor = puedeEditarExp ? '' : '#f8fafc';
+                el.style.cursor = puedeEditarExp ? 'text' : 'not-allowed';
+            }
+        });
+        const btnGuardarExp = document.getElementById("btn-guardar-expediente-rh");
+        if (btnGuardarExp) btnGuardarExp.style.display = puedeEditarExp ? "inline-flex" : "none";
+        const avisoPermisoExp = document.getElementById("aviso-permiso-expediente-rh");
+        if (avisoPermisoExp) avisoPermisoExp.style.display = puedeEditarExp ? "none" : "inline-flex";
+
 
 
         // 3. Contratos
@@ -1162,6 +1187,11 @@ async function seleccionarEmpleadoRH(idEmpleado) {
 
 
 async function guardarDatosGeneralesRH() {
+
+    if (typeof puedeModificarExpedienteRH === 'function' && !puedeModificarExpedienteRH()) {
+        alert("⛔ Acceso Restringido: Únicamente la Sra. Ana Lilia Villarreal Uribe (Administración y Recursos Humanos) tiene autorización para modificar y guardar expedientes de colaboradores.");
+        return;
+    }
 
     if (!idEmpleadoRHActual) {
 

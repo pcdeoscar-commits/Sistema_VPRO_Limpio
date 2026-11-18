@@ -2347,10 +2347,8 @@
 
             </div>
 
-            <div class="nav-item" data-roles="ADMIN,RRHH,COORDINADOR" onclick="cambiarVista('vista-rh')">
-
+            <div class="nav-item" id="nav-item-rh" data-roles="ADMIN,RRHH" onclick="cambiarVista('vista-rh')">
                 <div class="nav-label"><i class="ph ph-users"></i> <span class="nav-text">Recursos Humanos</span></div>
-
             </div>
 
             <div class="nav-item" data-roles="todos" onclick="cambiarVista('vista-checador')">
@@ -4918,12 +4916,6 @@
 
                         </button>
 
-                        <button class="subcat-tab-btn" id="btn-subcat-empleados" onclick="abrirSubcatalogo('empleados')">
-
-                            <i class="ph ph-identification-badge" style="color: #f59e0b;"></i> 🦺 Empleados (<span id="tab-count-emp">0</span>)
-
-                        </button>
-
                         <button class="subcat-tab-btn" id="btn-subcat-reuniones" onclick="abrirSubcatalogo('reuniones')">
 
                             <i class="ph ph-handshake" style="color: #ec4899;"></i> 🤝 Reuniones (<span id="tab-count-reu">0</span>)
@@ -4942,7 +4934,7 @@
 
 
 
-                <!-- 🗂️ HUB PRINCIPAL DE CATÁLOGOS (6 TARJETAS / ICONOS) -->
+                <!-- 🗂️ HUB PRINCIPAL DE CATÁLOGOS (5 TARJETAS / ICONOS) -->
 
                 <div id="subcat-hub" class="subcat-container">
 
@@ -5086,37 +5078,7 @@
 
 
 
-                        <!-- Tarjeta 5: Catálogo de Empleados -->
-
-                        <div class="cat-card" onclick="abrirSubcatalogo('empleados')">
-
-                            <div style="width: 68px; height: 68px; border-radius: 16px; background: rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-
-                                <i class="ph ph-identification-badge" style="font-size: 34px; color: #f59e0b;"></i>
-
-                            </div>
-
-                            <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 17px; font-weight: 700;">Catálogo de Empleados</h3>
-
-                            <p style="margin: 0 0 16px 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.4; flex-grow: 1;">
-
-                                Plantilla de personal, accesos al sistema y contraseñas.
-
-                            </p>
-
-                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 14px; border-top: 1px solid #f1f5f9;">
-
-                                <span id="hub-count-emp" style="font-size: 12px; font-weight: 600; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 20px; border: 1px solid #e2e8f0;">0 colaboradores</span>
-
-                                <span style="color: #f59e0b; font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 4px;">Abrir Empleados →</span>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- Tarjeta 6: Reuniones / Prospectos -->
+                        <!-- Tarjeta 5: Reuniones / Prospectos -->
 
                         <div class="cat-card" onclick="abrirSubcatalogo('reuniones')">
 
@@ -6502,321 +6464,7 @@
 
 
 
-                <!-- 🦺 SUB-MÓDULO 5: EMPLEADOS (PLANTILLA Y ACCESOS) -->
-
-                <div id="subcat-empleados" class="subcat-container" style="display: none;">
-
-                    <div style="background: linear-gradient(90deg, #064e3b, #059669); padding: 14px 22px; border-radius: 12px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
-
-                        <div>
-
-                            <span style="color: white; font-size: 17px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
-
-                                <i class="ph ph-identification-badge"></i> Catálogo de Empleados y Accesos
-
-                            </span>
-
-                            <span style="color: #a7f3d0; font-size: 13px; margin-left: 12px;">Alta al sistema · Contraseñas · Plantilla activa</span>
-
-                        </div>
-
-                    </div>
-
-
-
-                    <div class="info-banner" style="margin-bottom: 20px;">
-
-                        <i class="ph ph-info"></i>
-
-                        <span>Este módulo gestiona el acceso al sistema VPRO y credenciales operativas. Para editar expedientes completos (RFC, CURP, contratos, etc.) se utiliza el módulo de <strong>Recursos Humanos</strong>.</span>
-
-                    </div>
-
-
-
-                    <!-- Métricas de Colaboradores -->
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
-
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; text-align: center;">
-
-                            <div style="font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 4px;">👥 Total Plantilla</div>
-
-                            <div id="emp-metric-total" style="font-size: 26px; font-weight: 800; color: #0f172a;">0</div>
-
-                        </div>
-
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; text-align: center;">
-
-                            <div style="font-size: 13px; color: #166534; font-weight: 600; margin-bottom: 4px;">✅ Activos</div>
-
-                            <div id="emp-metric-activos" style="font-size: 26px; font-weight: 800; color: #15803d;">0</div>
-
-                        </div>
-
-                        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px; text-align: center;">
-
-                            <div style="font-size: 13px; color: #991b1b; font-weight: 600; margin-bottom: 4px;">🚪 Bajas</div>
-
-                            <div id="emp-metric-bajas" style="font-size: 26px; font-weight: 800; color: #b91c1c;">0</div>
-
-                        </div>
-
-                    </div>
-
-
-
-                    <!-- Acordeón Resumen Empleados -->
-
-                    <button class="cat-accordion-btn" onclick="toggleAcordeonCat('acc-empleados')">
-
-                        <span style="display: flex; align-items: center; gap: 8px;">
-
-                            <i class="ph ph-users-three"></i> Ver Plantilla Completa (<span id="badge-count-empleados">0</span> colaboradores)
-
-                        </span>
-
-                        <i class="ph ph-caret-down" id="caret-acc-empleados"></i>
-
-                    </button>
-
-                    <div class="cat-accordion-content" id="acc-empleados">
-
-                        <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
-
-                            <input type="text" id="filtro-empleados" class="form-input" style="max-width: 380px;" placeholder="🔍 Buscar por nombre, ID, departamento, rol..." oninput="filtrarTablaEmpleados()">
-
-                            <span style="font-size: 12px; color: var(--text-muted);"><i class="ph ph-info"></i> Filtro en tiempo real</span>
-
-                        </div>
-
-                        <div class="cat-table-wrap">
-
-                            <table class="tabla-vpro">
-
-                                <thead>
-
-                                    <tr>
-
-                                        <th>ID</th>
-
-                                        <th>Nombre Completo</th>
-
-                                        <th>Departamento</th>
-
-                                        <th>Rol</th>
-
-                                        <th>Celular</th>
-
-                                        <th>Email</th>
-
-                                        <th>Fecha Ingreso</th>
-
-                                        <th>Licencia Vence</th>
-
-                                        <th>Estatus</th>
-
-                                    </tr>
-
-                                </thead>
-
-                                <tbody id="tabla-empleados-body">
-
-                                    <tr><td colspan="9" style="text-align: center; padding: 20px;">Cargando plantilla...</td></tr>
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    </div>
-
-
-
-                    <!-- Editor / Formulario de Empleados -->
-
-                    <div class="op-section-card" style="margin-top: 16px;">
-
-                        <h3 class="op-section-title"><i class="ph ph-user-gear"></i> Gestión y Acceso de Colaborador</h3>
-
-                        <label class="op-form-label">Seleccione un colaborador para editarlo/cambiar credenciales, o 'Alta de Nuevo Empleado':</label>
-
-                        <select id="selector-emp-editor" class="form-input" style="font-weight: 600; margin-bottom: 20px;" onchange="alCambiarSelectorEmpleado()">
-
-                            <option value="nuevo">➕ Alta de Nuevo Empleado al Sistema</option>
-
-                        </select>
-
-
-
-                        <!-- Formulario 2 Columnas -->
-
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-
-                            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
-
-                                <h4 style="margin: 0 0 14px 0; color: #1e293b; font-size: 14px;"><i class="ph ph-user"></i> Datos del Colaborador</h4>
-
-                                
-
-                                <label class="op-form-label">ID / No. de Empleado*</label>
-
-                                <input type="text" id="emp-id" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. 105">
-
-                                
-
-                                <label class="op-form-label">Nombre Completo*</label>
-
-                                <input type="text" id="emp-nombre" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. Carlos López Pérez">
-
-                                
-
-                                <label class="op-form-label">Departamento*</label>
-
-                                <select id="emp-depto" class="form-input" style="margin-bottom: 12px;">
-
-                                    <option value="ADMINISTRACION">ADMINISTRACION</option>
-
-                                    <option value="EDICION">EDICION</option>
-
-                                    <option value="PRODUCCION">PRODUCCION</option>
-
-                                    <option value="SISTEMAS">SISTEMAS</option>
-
-                                    <option value="VENTAS">VENTAS</option>
-
-                                </select>
-
-
-
-                                <label class="op-form-label">Rol de Acceso*</label>
-
-                                <select id="emp-rol" class="form-input">
-
-                                    <option value="ADMIN">ADMIN</option>
-
-                                    <option value="PRODUCCION">PRODUCCION</option>
-
-                                    <option value="COORDINADOR">COORDINADOR</option>
-
-                                    <option value="PRODUCTOR">PRODUCTOR</option>
-
-                                    <option value="CHOFER">CHOFER</option>
-
-                                    <option value="PROVEEDOR">PROVEEDOR</option>
-
-                                    <option value="BAJA">BAJA</option>
-
-                                </select>
-
-                            </div>
-
-
-
-                            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
-
-                                <h4 style="margin: 0 0 14px 0; color: #1e293b; font-size: 14px;"><i class="ph ph-lock-key"></i> Contacto y Credenciales</h4>
-
-                                
-
-                                <label class="op-form-label">📱 Celular / WhatsApp</label>
-
-                                <input type="text" id="emp-cel" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. 6621234567">
-
-                                
-
-                                <label class="op-form-label">✉️ Correo Electrónico</label>
-
-                                <input type="email" id="emp-email" class="form-input" style="margin-bottom: 12px;" placeholder="Ej. colaborador@vpro.mx">
-
-                                
-
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-
-                                    <div>
-
-                                        <label class="op-form-label">📅 Fecha Ingreso</label>
-
-                                        <input type="date" id="emp-fecha-ing" class="form-input">
-
-                                    </div>
-
-                                    <div>
-
-                                        <label class="op-form-label">🎂 Fecha Nacimiento</label>
-
-                                        <input type="date" id="emp-fecha-nac" class="form-input">
-
-                                    </div>
-
-                                </div>
-
-
-
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-
-                                    <div>
-
-                                        <label class="op-form-label">🚗 Licencia Vence</label>
-
-                                        <input type="date" id="emp-licencia-vence" class="form-input">
-
-                                    </div>
-
-                                    <div style="position: relative;">
-
-                                        <label class="op-form-label">🔑 Contraseña de Acceso*</label>
-
-                                        <div style="display: flex; align-items: center; position: relative;">
-
-                                            <input type="password" id="emp-password" class="form-input" placeholder="Contraseña" style="padding-right: 35px;" oninput="document.getElementById('toggle-emp-password').style.display = this.value.length > 0 ? 'block' : 'none'">
-
-                                            <i class="ph ph-eye" id="toggle-emp-password" style="position: absolute; right: 10px; cursor: pointer; color: #64748b; display: none; font-size: 18px;" onclick="alternarVisibilidadPassword(this, 'emp-password')" title="Mostrar/Ocultar contraseña"></i>
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- Botones de Acción Empleados -->
-
-                        <div class="cat-actions-bar">
-
-                            <button type="button" class="btn-cat-save" id="btn-guardar-emp" onclick="guardarEmpleadoForm()">
-
-                                <i class="ph ph-floppy-disk"></i> <span id="lbl-btn-guardar-emp">Dar de Alta al Sistema</span>
-
-                            </button>
-
-                            <button type="button" class="btn-cat-del" id="btn-eliminar-emp" style="display: none;" onclick="confirmarBajaEmpleado()">
-
-                                <i class="ph ph-trash"></i> Eliminar Registro
-
-                            </button>
-
-                            <button type="button" class="btn-cat-new" onclick="limpiarFormEmpleado()">
-
-                                <i class="ph ph-plus-circle"></i> Nuevo / Limpiar
-
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-
-                <!-- 🤝 SUB-MÓDULO 6: REUNIONES / PROSPECTOS -->
+                <!-- 🤝 SUB-MÓDULO: REUNIONES / PROSPECTOS -->
 
                 <div id="subcat-reuniones" class="subcat-container" style="display: none;">
 
@@ -9247,7 +8895,59 @@
 
 
 
-                <!-- Selector de Colaborador con Búsqueda Inteligente -->
+                                <!-- 📊 MÉTRICAS Y DIRECTORIO GENERAL DE PLANTILLA (MIGRADO DE ABC) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 4px;">👥 Total Plantilla</div>
+                        <div id="rh-metric-total" style="font-size: 26px; font-weight: 800; color: #0f172a;">0</div>
+                    </div>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size: 13px; color: #166534; font-weight: 600; margin-bottom: 4px;">✅ Colaboradores Activos</div>
+                        <div id="rh-metric-activos" style="font-size: 26px; font-weight: 800; color: #15803d;">0</div>
+                    </div>
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="font-size: 13px; color: #991b1b; font-weight: 600; margin-bottom: 4px;">🚪 Bajas / Inactivos</div>
+                        <div id="rh-metric-bajas" style="font-size: 26px; font-weight: 800; color: #b91c1c;">0</div>
+                    </div>
+                </div>
+
+                <!-- Acordeón Directorio Completo de Plantilla -->
+                <button type="button" id="btn-acc-rh-plantilla" onclick="toggleAcordeonRH('acc-rh-plantilla')" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; margin-bottom: 20px; font-weight: 700; font-size: 14px; color: #0f172a; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: background 0.2s;">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-users-three" style="color: #0284c7; font-size: 20px;"></i> 👥 Ver Directorio y Plantilla Completa (<span id="rh-badge-count-empleados">0</span> colaboradores)
+                    </span>
+                    <i class="ph ph-caret-down" id="caret-acc-rh-plantilla"></i>
+                </button>
+
+                <div id="acc-rh-plantilla" style="display: none; background: white; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+                    <div style="margin-bottom: 14px; display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                        <input type="text" id="filtro-rh-plantilla" class="form-input" style="max-width: 420px; padding: 9px 14px; border-radius: 8px; border: 1.5px solid #cbd5e1; font-size: 13.5px;" placeholder="🔍 Buscar por nombre, ID, departamento, rol o puesto..." oninput="filtrarTablaPlantillaRH()">
+                        <span style="font-size: 12.5px; color: #64748b;"><i class="ph ph-cursor-click"></i> Clic en cualquier colaborador para cargar su expediente</span>
+                    </div>
+                    <div style="overflow-x: auto; max-height: 480px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <table class="tabla-vpro" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Departamento</th>
+                                    <th>Puesto</th>
+                                    <th>Rol Sistema</th>
+                                    <th>Celular</th>
+                                    <th>Email</th>
+                                    <th>Fecha Ingreso</th>
+                                    <th>Licencia</th>
+                                    <th>Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-rh-plantilla-body">
+                                <tr><td colspan="10" style="text-align: center; padding: 20px;">Cargando plantilla...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+<!-- Selector de Colaborador con Búsqueda Inteligente -->
 
                 <div id="contenedor-selector-rh" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
 
@@ -9325,7 +9025,13 @@
 
                             </select>
 
-                            <button type="button" id="btn-ver-expediente-completo-rh" onclick="abrirExpedienteCompletoRH()"
+                                                        <button type="button" id="btn-alta-nuevo-emp-rh" onclick="prepararAltaNuevoColaboradorRH()"
+                                style="height: 44px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25); transition: all 0.2s; white-space: nowrap;"
+                                title="Registrar un nuevo colaborador en la plantilla y accesos del sistema">
+                                <i class="ph ph-user-plus" style="font-size: 19px;"></i>
+                                <span>➕ Alta de Nuevo Colaborador</span>
+                            </button>
+<button type="button" id="btn-ver-expediente-completo-rh" onclick="abrirExpedienteCompletoRH()"
 
                                 style="width: 100%; height: 44px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; border: none; padding: 0 16px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25); transition: all 0.2s;"
 
@@ -9453,7 +9159,26 @@
 
                             <h4 style="margin: 0 0 16px 0; color: #0f172a;">📋 Ficha de Datos Personales y Laborales</h4>
 
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+                                                        <!-- Fila Clave: ID y Fechas Oficiales -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <div>
+                                    <label class="op-form-label">ID / No. Empleado*:</label>
+                                    <input type="text" id="rh-gen-id" class="op-input" placeholder="Ej. 105" style="font-weight: 700; color: #0284c7;">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">📅 Fecha de Ingreso:</label>
+                                    <input type="date" id="rh-gen-fecha-ing" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">🎂 Fecha de Nacimiento:</label>
+                                    <input type="date" id="rh-gen-fecha-nac" class="op-input">
+                                </div>
+                                <div>
+                                    <label class="op-form-label">🚗 Licencia Manejo Vence:</label>
+                                    <input type="date" id="rh-gen-licencia-vence" class="op-input">
+                                </div>
+                            </div>
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
 
                                 <div>
 
@@ -9699,14 +9424,52 @@
 
                             </div>
 
-                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; margin-top: 10px;">
+                                                        <!-- 🔐 CREDENCIALES Y ROL DE ACCESO AL SISTEMA VPRO (MIGRADO DE ABC) -->
+                            <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 18px 22px; margin-bottom: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                                <h4 style="margin: 0 0 14px 0; color: #0f172a; font-size: 14.5px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="ph ph-shield-check" style="color: #059669; font-size: 20px;"></i>
+                                    <span>Credenciales de Acceso al Sistema VPRO & Gafete QR</span>
+                                </h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center;">
+                                    <div>
+                                        <label class="op-form-label">Rol de Acceso al Sistema*:</label>
+                                        <select id="rh-gen-rol" class="op-select" style="font-weight: 600;">
+                                            <option value="ADMIN">ADMIN</option>
+                                            <option value="COORDINADOR">COORDINADOR</option>
+                                            <option value="PRODUCCION">PRODUCCION</option>
+                                            <option value="PRODUCTOR">PRODUCTOR</option>
+                                            <option value="CHOFER">CHOFER</option>
+                                            <option value="PROVEEDOR">PROVEEDOR</option>
+                                            <option value="BAJA">BAJA</option>
+                                        </select>
+                                    </div>
+                                    <div style="position: relative;">
+                                        <label class="op-form-label">🔑 Contraseña de Acceso:</label>
+                                        <div style="display: flex; align-items: center; position: relative;">
+                                            <input type="password" id="rh-gen-password" class="op-input" placeholder="Teclea para asignar o cambiar contraseña..." style="padding-right: 38px;" oninput="document.getElementById('toggle-rh-password').style.display = this.value.length > 0 ? 'block' : 'none'">
+                                            <i class="ph ph-eye" id="toggle-rh-password" style="position: absolute; right: 12px; cursor: pointer; color: #64748b; display: none; font-size: 19px;" onclick="alternarVisibilidadPassword(this, 'rh-gen-password')" title="Mostrar/Ocultar contraseña"></i>
+                                        </div>
+                                        <span style="font-size: 11.5px; color: #64748b; margin-top: 3px; display: block;">Encriptada con Bcrypt. Déjalo en blanco si no deseas cambiarla.</span>
+                                    </div>
+                                </div>
+                            </div>
+<div style="display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; margin-top: 10px;">
 
                                 <div id="aviso-permiso-expediente-rh" style="display: none; align-items: center; gap: 8px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;">
                                     <i class="ph ph-lock-key" style="font-size: 18px; color: #d97706;"></i>
                                     <span><b>Modo Solo Lectura:</b> Únicamente la <b>Sra. Ana Lilia Villarreal</b> (Administración / RRHH) tiene autorización para modificar el expediente.</span>
                                 </div>
 
-                                <button type="button" id="btn-guardar-expediente-rh" onclick="guardarDatosGeneralesRH()" style="background: var(--accent-color); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                                                                <button type="button" id="btn-limpiar-exp-rh" onclick="prepararAltaNuevoColaboradorRH()" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 11px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                                    <i class="ph ph-plus-circle"></i> Nuevo / Limpiar
+                                </button>
+                                <button type="button" id="btn-qr-exp-rh" onclick="descargarGafeteQREmpleadoRH()" style="background: #0284c7; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                                    <i class="ph ph-qr-code"></i> Gafete QR
+                                </button>
+                                <button type="button" id="btn-eliminar-exp-rh" onclick="confirmarEliminarEmpleadoRH()" style="background: #ef4444; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px;">
+                                    <i class="ph ph-trash"></i> Eliminar
+                                </button>
+<button type="button" id="btn-guardar-expediente-rh" onclick="guardarDatosGeneralesRH()" style="background: var(--accent-color); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
 
                                     <i class="ph ph-floppy-disk"></i> 💾 Guardar Cambios en el Expediente
 
@@ -12330,22 +12093,6 @@
 
         </div>
 
-    </div>
-
-
-
-    <!-- MODAL DE IMPRESIÓN Y VISTA OFICIAL DE CRONOGRAMA DE EVENTO -->
-
-    <div class="modal-overlay" id="modal-cronograma-impresion" style="display: none; z-index: 1200;">
-
-        <div class="modal-box" style="max-width: 1100px; width: 95%; max-height: 94vh; text-align: left; display: flex; flex-direction: column; padding: 24px; border-radius: 14px; background: #ffffff;">
-
-            <!-- Cabecera no imprimible -->
-
-            <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 16px;">
-
-                <div style="display: flex; align-items: center; gap: 10px;">
-
                     <div style="width: 40px; height: 40px; border-radius: 8px; background: #0284c7; color: white; display: flex; align-items: center; justify-content: center; font-size: 22px;">
 
                         <i class="ph ph-calendar-check"></i>
@@ -12476,7 +12223,7 @@
 
     <script src="js/manual.js"></script>
 
-    <script src="js/catalogos.js?v=20261118_evidencias_chat_v1"></script>
+    <script src="js/catalogos.js?v=20261118_fusion_rrhh_v1"></script>
 
     <script src="js/app_init.js"></script>
 
@@ -12486,7 +12233,7 @@
 
     <script src="js/analitica.js"></script>
 
-    <script src="js/rh.js?v=20261118_expediente_analilia_v3"></script>
+    <script src="js/rh.js?v=20261118_fusion_rrhh_v1"></script>
 
     <script src="js/audio.js"></script>
 

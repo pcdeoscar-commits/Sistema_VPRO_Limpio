@@ -108,6 +108,20 @@ function cambiarVista(idVista) {
         } else if (idVista === 'vista-analitica') {
             cargarModuloAnalitica();
         } else if (idVista === 'vista-rh') {
+            if (typeof esUsuarioAutorizadoRH === 'function' && !esUsuarioAutorizadoRH()) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'info',
+                        title: '🔒 Acceso Restringido',
+                        html: '<p style="color: #475569; font-size: 14px;">El módulo de <b>Recursos Humanos & Expediente Digital</b> está reservado para Dirección y Administración.<br><br>Para solicitar permisos, faltas justificadas o vacaciones, utiliza el botón <b>📝 Solicitar Permiso / Ausencia</b> ubicado en la <b>Página de Inicio</b>.</p>',
+                        confirmButtonColor: '#0284c7'
+                    });
+                } else {
+                    alert("🔒 Acceso Restringido: El módulo de Recursos Humanos está reservado para Dirección y Administración. Puedes tramitar solicitudes desde la Página de Inicio.");
+                }
+                cambiarVista('vista-inicio');
+                return;
+            }
             cargarModuloRH();
         } else if (idVista === 'vista-transferencias') {
             cargarTransferenciasModulo();

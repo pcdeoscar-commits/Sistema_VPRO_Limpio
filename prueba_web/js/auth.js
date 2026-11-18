@@ -406,6 +406,21 @@ function esUsuarioAutorizadoGastos() {
     return Boolean(esProductor);
 }
 
+function esUsuarioAutorizadoRH() {
+    if (!usuarioLogueado) return false;
+    const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
+    if (rol === 'ADMIN' || rol === 'RRHH' || rol.includes('ADMIN')) return true;
+    return esUsuarioAutorizadoDireccion();
+}
+window.esUsuarioAutorizadoRH = esUsuarioAutorizadoRH;
+
+function actualizarVisibilidadMenuRH() {
+    const navRH = document.getElementById("nav-item-rh") || document.querySelector('.sidebar-menu .nav-item[onclick*="vista-rh"]');
+    if (navRH) {
+        navRH.style.display = esUsuarioAutorizadoRH() ? 'flex' : 'none';
+    }
+}
+
 function actualizarVisibilidadMenuGastos() {
     const navGastos = document.getElementById("nav-item-gastos") || document.querySelector('.sidebar-menu .nav-item[onclick*="vista-gastos"]');
     if (navGastos) {
@@ -482,6 +497,7 @@ function filtrarMenuPorRol(rolUsuario) {
     actualizarVisibilidadMenuIncidencias();
     actualizarVisibilidadAgendaDrive();
     actualizarVisibilidadMenuGastos();
+    actualizarVisibilidadMenuRH();
     actualizarVisibilidadMenuOP();
     actualizarVisibilidadPestanasChecador();
 }

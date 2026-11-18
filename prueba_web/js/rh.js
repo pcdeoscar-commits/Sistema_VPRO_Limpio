@@ -230,6 +230,24 @@ async function cargarModuloRH() {
 
             listaEmpleadosRHCache = rawEmps;
 
+            // 📊 Sincronizar métricas de personal y tabla de plantilla (migrado de ABC)
+            const total = rawEmps.length;
+            const activos = rawEmps.filter(e => (e.rol || '').toUpperCase() !== 'BAJA' && (e.estatus_empleado || '').toUpperCase() !== 'BAJA').length;
+            const bajas = total - activos;
+
+            const elTotal = document.getElementById("rh-metric-total");
+            const elActivos = document.getElementById("rh-metric-activos");
+            const elBajas = document.getElementById("rh-metric-bajas");
+            const elBadgeTotal = document.getElementById("rh-badge-count-empleados");
+
+            if (elTotal) elTotal.innerText = total;
+            if (elActivos) elActivos.innerText = activos;
+            if (elBajas) elBajas.innerText = bajas;
+            if (elBadgeTotal) elBadgeTotal.innerText = total;
+
+            renderTablaPlantillaRH(rawEmps);
+
+
 
 
             const selEmp = document.getElementById("sel-rh-empleado");
@@ -736,6 +754,20 @@ async function seleccionarEmpleadoRH(idEmpleado) {
 
 
 
+        setVal("rh-gen-id", emp.id_empleado || idEmpleado);
+        const elGenId = document.getElementById("rh-gen-id");
+        if (elGenId) elGenId.readOnly = true;
+
+        setVal("rh-gen-fecha-ing", emp.fecha_ing ? String(emp.fecha_ing).substring(0, 10) : "");
+        setVal("rh-gen-fecha-nac", emp.fecha_nac ? String(emp.fecha_nac).substring(0, 10) : "");
+        setVal("rh-gen-licencia-vence", emp.licencia_vence ? String(emp.licencia_vence).substring(0, 10) : "");
+        setVal("rh-gen-rol", emp.rol || "ADMIN");
+        const elGenPwd = document.getElementById("rh-gen-password");
+        if (elGenPwd) {
+            elGenPwd.value = "";
+            elGenPwd.placeholder = "Ingresa nueva contraseña para actualizar o definir acceso...";
+        }
+
         setVal("rh-gen-nombre", emp.nombre);
 
         setVal("rh-gen-email", emp.email);
@@ -799,7 +831,16 @@ async function seleccionarEmpleadoRH(idEmpleado) {
             }
         });
         const btnGuardarExp = document.getElementById("btn-guardar-expediente-rh");
-        if (btnGuardarExp) btnGuardarExp.style.display = puedeEditarExp ? "inline-flex" : "none";
+        if (btnGuardarExp) {
+            btnGuardarExp.innerHTML = '<i class="ph ph-floppy-disk"></i> 💾 Guardar Cambios en el Expediente';
+            btnGuardarExp.style.display = puedeEditarExp ? "inline-flex" : "none";
+        }
+        const btnQRExp = document.getElementById("btn-qr-exp-rh");
+        if (btnQRExp) btnQRExp.style.display = "inline-flex";
+
+        const btnDelExp = document.getElementById("btn-eliminar-exp-rh");
+        if (btnDelExp) btnDelExp.style.display = puedeEditarExp ? "inline-flex" : "none";
+
         const avisoPermisoExp = document.getElementById("aviso-permiso-expediente-rh");
         if (avisoPermisoExp) avisoPermisoExp.style.display = puedeEditarExp ? "none" : "inline-flex";
 
@@ -1187,110 +1228,93 @@ async function seleccionarEmpleadoRH(idEmpleado) {
 
 
 async function guardarDatosGeneralesRH() {
-
     if (typeof puedeModificarExpedienteRH === 'function' && !puedeModificarExpedienteRH()) {
         alert("⛔ Acceso Restringido: Únicamente la Sra. Ana Lilia Villarreal Uribe (Administración y Recursos Humanos) tiene autorización para modificar y guardar expedientes de colaboradores.");
         return;
     }
 
-    if (!idEmpleadoRHActual) {
-
-        alert("⚠️ No hay un colaborador seleccionado.");
-
-        return;
-
-    }
-
-
-
     const getVal = (id) => document.getElementById(id)?.value?.trim() || "";
 
+    const esAlta = (idEmpleadoRHActual === 'nuevo');
+    const idCapturado = esAlta ? getVal("rh-gen-id") : idEmpleadoRHActual;
 
-
-    const payload = {
-
-        nombre: getVal("rh-gen-nombre"),
-
-        email: getVal("rh-gen-email"),
-
-        cel: getVal("rh-gen-cel"),
-
-        rfc: getVal("rh-gen-rfc"),
-
-        curp: getVal("rh-gen-curp"),
-
-        nss: getVal("rh-gen-nss"),
-
-        depto: getVal("rh-gen-depto"),
-
-        puesto: getVal("rh-gen-puesto"),
-
-        tipo_contrato: getVal("rh-gen-tipo-contrato"),
-
-        salario_mensual: parseFloat(getVal("rh-gen-salario") || 0),
-
-        escolaridad: getVal("rh-gen-escolaridad"),
-
-        estado_civil: getVal("rh-gen-estado-civil"),
-
-        domicilio: getVal("rh-gen-domicilio"),
-
-        ciudad: getVal("rh-gen-ciudad"),
-
-        cp: getVal("rh-gen-cp"),
-
-        contacto_emergencia: getVal("rh-gen-contacto-emergencia"),
-
-        tel_emergencia: getVal("rh-gen-tel-emergencia"),
-
-        parentesco_emergencia: getVal("rh-gen-parentesco"),
-
-        estatus_empleado: getVal("rh-gen-estatus-empleado"),
-
-        fecha_baja: getVal("rh-gen-fecha-baja") || null,
-
-        motivo_baja: getVal("rh-gen-motivo-baja") || null,
-
-        registrado_por: usuarioLogueado?.nombre_completo || "RH"
-
-    };
-
-
-
-    try {
-
-        const res = await fetch(`${API_URL}/api/rh/empleados/${idEmpleadoRHActual}`, {
-
-            method: "PUT",
-
-            headers: { "Content-Type": "application/json" },
-
-            body: JSON.stringify(payload)
-
-        });
-
-
-
-        if (res.ok) {
-
-            alert("✅ ¡Expediente actualizado exitosamente en base de datos!");
-
-            seleccionarEmpleadoRH(idEmpleadoRHActual);
-
-        } else {
-
-            const err = await res.text();
-
-            alert(`❌ Error al actualizar expediente: ${err}`);
-
-        }
-
-    } catch (e) {
-
-        alert(`❌ Error de comunicación: ${e.message}`);
-
+    if (!idCapturado) {
+        alert("⚠️ Por favor ingresa el ID del colaborador (Ej. 105).");
+        document.getElementById("rh-gen-id")?.focus();
+        return;
     }
 
+    const nombreCapturado = getVal("rh-gen-nombre");
+    if (!nombreCapturado) {
+        alert("⚠️ Por favor ingresa el Nombre Completo del colaborador.");
+        document.getElementById("rh-gen-nombre")?.focus();
+        return;
+    }
+
+    const payload = {
+        id_empleado: idCapturado,
+        nombre: nombreCapturado,
+        email: getVal("rh-gen-email"),
+        cel: getVal("rh-gen-cel"),
+        fecha_ing: getVal("rh-gen-fecha-ing") || null,
+        fecha_nac: getVal("rh-gen-fecha-nac") || null,
+        licencia_vence: getVal("rh-gen-licencia-vence") || null,
+        rol: getVal("rh-gen-rol") || "ADMIN",
+        password: getVal("rh-gen-password") || (esAlta ? "vpro2026" : null),
+        rfc: getVal("rh-gen-rfc"),
+        curp: getVal("rh-gen-curp"),
+        nss: getVal("rh-gen-nss"),
+        depto: getVal("rh-gen-depto") || "ADMINISTRACION",
+        puesto: getVal("rh-gen-puesto"),
+        tipo_contrato: getVal("rh-gen-tipo-contrato") || "PLANTA",
+        salario_mensual: parseFloat(getVal("rh-gen-salario") || 0),
+        escolaridad: getVal("rh-gen-escolaridad"),
+        estado_civil: getVal("rh-gen-estado-civil"),
+        domicilio: getVal("rh-gen-domicilio"),
+        ciudad: getVal("rh-gen-ciudad"),
+        cp: getVal("rh-gen-cp"),
+        contacto_emergencia: getVal("rh-gen-contacto-emergencia"),
+        tel_emergencia: getVal("rh-gen-tel-emergencia"),
+        parentesco_emergencia: getVal("rh-gen-parentesco"),
+        estatus_empleado: getVal("rh-gen-estatus-empleado") || "ACTIVO",
+        fecha_baja: getVal("rh-gen-fecha-baja") || null,
+        motivo_baja: getVal("rh-gen-motivo-baja") || null,
+        registrado_por: usuarioLogueado?.nombre_completo || "RH"
+    };
+
+    try {
+        const url = esAlta ? `${API_URL}/api/rh/empleados` : `${API_URL}/api/rh/empleados/${idEmpleadoRHActual}`;
+        const method = esAlta ? "POST" : "PUT";
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            const dataRes = await res.json().catch(() => ({}));
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: esAlta ? '✅ Colaborador Registrado' : '✅ Expediente Actualizado',
+                    text: esAlta ? `El colaborador ${nombreCapturado} (ID: ${idCapturado}) fue registrado exitosamente con sus accesos.` : 'Los cambios en el expediente y credenciales se guardaron exitosamente.',
+                    confirmButtonColor: '#059669'
+                });
+            } else {
+                alert(esAlta ? `✅ Colaborador '${nombreCapturado}' dado de alta exitosamente.` : "✅ Expediente actualizado exitosamente en base de datos.");
+            }
+
+            idEmpleadoRHActual = idCapturado;
+            await cargarModuloRH();
+            seleccionarEmpleadoRH(idCapturado);
+        } else {
+            const err = await res.text();
+            alert(`❌ Error al ${esAlta ? 'dar de alta' : 'actualizar'} colaborador: ${err}`);
+        }
+    } catch (e) {
+        alert(`❌ Error de comunicación: ${e.message}`);
+    }
 }
 
 
@@ -4939,3 +4963,282 @@ async function abrirModalDictamenPermiso(idPermiso) {
         }
     }
 }
+
+
+// ==============================================================================
+// 👥 FUNCIONES INTEGRADAS DE PLANTILLA, ALTA Y ACCESOS (FUSIÓN MÓDULO ABC -> RRHH)
+// ==============================================================================
+
+function toggleAcordeonRH(accId) {
+    const acc = document.getElementById(accId);
+    const caret = document.getElementById(`caret-${accId}`);
+    if (!acc) return;
+    const estaAbierto = acc.style.display !== 'none';
+    acc.style.display = estaAbierto ? 'none' : 'block';
+    if (caret) {
+        caret.className = estaAbierto ? 'ph ph-caret-down' : 'ph ph-caret-up';
+    }
+}
+
+function renderTablaPlantillaRH(lista) {
+    const tbody = document.getElementById("tabla-rh-plantilla-body");
+    if (!tbody) return;
+
+    if (!lista || lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px; color: #64748b;">No hay colaboradores registrados.</td></tr>';
+        return;
+    }
+
+    const filas = lista.map(emp => {
+        const esBaja = (emp.rol || '').toUpperCase() === 'BAJA' || (emp.estatus_empleado || '').toUpperCase() === 'BAJA';
+        const badgeRol = `<span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: #e0f2fe; color: #0369a1;">${emp.rol || 'ADMIN'}</span>`;
+        const badgeEst = esBaja
+            ? '<span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: #fee2e2; color: #991b1b;">🚪 BAJA</span>'
+            : '<span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: #dcfce7; color: #166534;">✅ ACTIVO</span>';
+
+        return `
+            <tr onclick="seleccionarEmpleadoRHOpcion('${emp.id_empleado}')" style="cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">
+                <td style="font-weight: 700; color: #0284c7;">#${emp.id_empleado}</td>
+                <td style="font-weight: 600; color: #0f172a;">${emp.nombre || '--'}</td>
+                <td>${emp.depto || '--'}</td>
+                <td>${emp.puesto || '--'}</td>
+                <td>${badgeRol}</td>
+                <td>${emp.cel || '--'}</td>
+                <td>${emp.email || '--'}</td>
+                <td>${emp.fecha_ing ? String(emp.fecha_ing).substring(0, 10) : '--'}</td>
+                <td>${emp.licencia_vence ? String(emp.licencia_vence).substring(0, 10) : '--'}</td>
+                <td>${badgeEst}</td>
+            </tr>
+        `;
+    }).join("");
+
+    tbody.innerHTML = filas;
+}
+
+function filtrarTablaPlantillaRH() {
+    const q = (document.getElementById("filtro-rh-plantilla")?.value || "").toLowerCase().trim();
+    if (!listaEmpleadosRHCache || listaEmpleadosRHCache.length === 0) return;
+
+    if (!q) {
+        renderTablaPlantillaRH(listaEmpleadosRHCache);
+        return;
+    }
+
+    const filtrados = listaEmpleadosRHCache.filter(e => {
+        return (e.nombre || '').toLowerCase().includes(q) ||
+               String(e.id_empleado || '').toLowerCase().includes(q) ||
+               (e.depto || '').toLowerCase().includes(q) ||
+               (e.puesto || '').toLowerCase().includes(q) ||
+               (e.rol || '').toLowerCase().includes(q) ||
+               (e.email || '').toLowerCase().includes(q) ||
+               (e.cel || '').toLowerCase().includes(q);
+    });
+
+    renderTablaPlantillaRH(filtrados);
+}
+
+function prepararAltaNuevoColaboradorRH() {
+    if (typeof puedeModificarExpedienteRH === 'function' && !puedeModificarExpedienteRH()) {
+        alert("⛔ Acceso Restringido: Únicamente la Sra. Ana Lilia Villarreal Uribe tiene autorización para dar de alta nuevos colaboradores.");
+        return;
+    }
+
+    idEmpleadoRHActual = "nuevo";
+
+    // Mostrar contenedor de expediente
+    const cont = document.getElementById("rh-expediente-container");
+    if (cont) cont.style.display = "block";
+
+    // Ficha cabecera
+    const elNom = document.getElementById("rh-ficha-nombre");
+    const elId = document.getElementById("rh-ficha-id");
+    const elDep = document.getElementById("rh-ficha-depto");
+    const elPuesto = document.getElementById("rh-ficha-puesto");
+    const elEdad = document.getElementById("rh-ficha-edad");
+    const elAnt = document.getElementById("rh-ficha-antiguedad");
+    const elEst = document.getElementById("rh-ficha-estatus");
+    const elFoto = document.getElementById("rh-ficha-foto");
+
+    if (elNom) elNom.innerText = "➕ Alta de Nuevo Colaborador";
+    if (elId) elId.innerText = "NUEVO";
+    if (elDep) elDep.innerText = "--";
+    if (elPuesto) elPuesto.innerText = "--";
+    if (elEdad) elEdad.innerText = "--";
+    if (elAnt) elAnt.innerText = "--";
+    if (elEst) elEst.innerText = "NUEVO REGISTRO";
+    if (elFoto) elFoto.src = "vendor/img/avatar_default.png";
+
+    // Limpiar campos de datos generales
+    const camposLimpiar = [
+        "rh-gen-nombre", "rh-gen-email", "rh-gen-cel", "rh-gen-rfc", "rh-gen-curp", "rh-gen-nss",
+        "rh-gen-depto", "rh-gen-puesto", "rh-gen-salario", "rh-gen-domicilio", "rh-gen-ciudad", "rh-gen-cp",
+        "rh-gen-contacto-emergencia", "rh-gen-tel-emergencia", "rh-gen-parentesco", "rh-gen-fecha-baja",
+        "rh-gen-motivo-baja", "rh-gen-fecha-ing", "rh-gen-fecha-nac", "rh-gen-licencia-vence"
+    ];
+    camposLimpiar.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+
+    const elIdGen = document.getElementById("rh-gen-id");
+    if (elIdGen) {
+        elIdGen.value = "";
+        elIdGen.readOnly = false;
+        elIdGen.placeholder = "Asigna ID (ej. 105)";
+        elIdGen.focus();
+    }
+
+    const elPwd = document.getElementById("rh-gen-password");
+    if (elPwd) {
+        elPwd.value = "vpro2026";
+        elPwd.placeholder = "Contraseña inicial (predeterminada: vpro2026)";
+    }
+
+    const elRol = document.getElementById("rh-gen-rol");
+    if (elRol) elRol.value = "ADMIN";
+
+    const elContrato = document.getElementById("rh-gen-tipo-contrato");
+    if (elContrato) elContrato.value = "PLANTA";
+
+    const elEstatus = document.getElementById("rh-gen-estatus-empleado");
+    if (elEstatus) elEstatus.value = "ACTIVO";
+
+    // Actualizar botones
+    const btnGuardar = document.getElementById("btn-guardar-expediente-rh");
+    if (btnGuardar) btnGuardar.innerHTML = '<i class="ph ph-user-plus"></i> ➕ Registrar Colaborador al Sistema';
+
+    const btnQR = document.getElementById("btn-qr-exp-rh");
+    if (btnQR) btnQR.style.display = "none";
+
+    const btnDel = document.getElementById("btn-eliminar-exp-rh");
+    if (btnDel) btnDel.style.display = "none";
+
+    // Cambiar a pestaña de datos
+    if (typeof cambiarPestanaRH === 'function') {
+        cambiarPestanaRH('datos');
+    }
+
+    // Scroll suave hacia el formulario
+    cont.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function confirmarEliminarEmpleadoRH() {
+    if (typeof puedeModificarExpedienteRH === 'function' && !puedeModificarExpedienteRH()) {
+        alert("⛔ Acceso Restringido: Únicamente la Sra. Ana Lilia Villarreal Uribe tiene autorización para eliminar registros de colaboradores.");
+        return;
+    }
+
+    if (!idEmpleadoRHActual || idEmpleadoRHActual === 'nuevo') {
+        alert("⚠️ No hay un colaborador seleccionado para eliminar.");
+        return;
+    }
+
+    const emp = listaEmpleadosRHCache.find(e => String(e.id_empleado) === String(idEmpleadoRHActual));
+    const nom = emp ? emp.nombre : `ID: ${idEmpleadoRHActual}`;
+
+    const confirmar = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/rh/empleados/${encodeURIComponent(idEmpleadoRHActual)}`, {
+                method: "DELETE"
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err);
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Colaborador Eliminado',
+                    text: `El colaborador ${nom} (ID: ${idEmpleadoRHActual}) fue eliminado correctamente.`,
+                    confirmButtonColor: '#059669'
+                });
+            } else {
+                alert(`✅ Colaborador ${nom} eliminado correctamente.`);
+            }
+
+            idEmpleadoRHActual = null;
+            document.getElementById("rh-expediente-container").style.display = "none";
+            await cargarModuloRH();
+        } catch (e) {
+            alert(`❌ Error al eliminar colaborador: ${e.message}`);
+        }
+    };
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '¿Eliminar Colaborador?',
+            html: `¿Estás seguro de que deseas eliminar permanentemente a <b>${nom}</b> (ID: #${idEmpleadoRHActual})?<br><br><span style="color: #b91c1c; font-size: 12.5px;">⚠️ Esta acción eliminará su registro de la plantilla y sus accesos al sistema.</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Sí, eliminar permanentemente',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) confirmar();
+        });
+    } else {
+        if (confirm(`¿Estás seguro de eliminar permanentemente a ${nom} (ID: ${idEmpleadoRHActual})?`)) {
+            confirmar();
+        }
+    }
+}
+
+async function descargarGafeteQREmpleadoRH() {
+    if (!idEmpleadoRHActual || idEmpleadoRHActual === 'nuevo') {
+        alert("⚠️ Selecciona primero un colaborador para generar su gafete QR.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/rh/empleados/${encodeURIComponent(idEmpleadoRHActual)}/qr`);
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(err);
+        }
+        const data = await res.json();
+        const qrBase64 = data.qr_base64;
+        const emp = listaEmpleadosRHCache.find(e => String(e.id_empleado) === String(idEmpleadoRHActual)) || {};
+        const nom = emp.nombre || `Colaborador #${idEmpleadoRHActual}`;
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: `🪪 Gafete QR Digital`,
+                html: `
+                    <div style="text-align: center; padding: 10px;">
+                        <h4 style="margin: 0 0 6px 0; color: #0f172a;">${nom}</h4>
+                        <div style="font-size: 13px; color: #64748b; margin-bottom: 16px;">ID Colaborador: <b>#${idEmpleadoRHActual}</b> · ${emp.depto || 'VPRO'}</div>
+                        <div style="display: inline-block; padding: 16px; background: white; border-radius: 12px; border: 2px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                            <img src="${qrBase64}" alt="Código QR Gafete" style="width: 220px; height: 220px; display: block;">
+                        </div>
+                        <p style="font-size: 12px; color: #64748b; margin: 16px 0 0 0;">Utiliza este código QR en el lector del <b>Kiosco de Asistencia</b> o guárdalo como credencial digital.</p>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#0284c7',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '📥 Descargar Imagen QR',
+                cancelButtonText: 'Cerrar'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    const a = document.createElement("a");
+                    a.href = qrBase64;
+                    a.download = `QR_Gafete_${idEmpleadoRHActual}_${(nom || '').replace(/\s+/g, '_')}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+            });
+        }
+    } catch (e) {
+        alert(`❌ Error al generar gafete QR: ${e.message}`);
+    }
+}
+
+window.toggleAcordeonRH = toggleAcordeonRH;
+window.renderTablaPlantillaRH = renderTablaPlantillaRH;
+window.filtrarTablaPlantillaRH = filtrarTablaPlantillaRH;
+window.prepararAltaNuevoColaboradorRH = prepararAltaNuevoColaboradorRH;
+window.confirmarEliminarEmpleadoRH = confirmarEliminarEmpleadoRH;
+window.descargarGafeteQREmpleadoRH = descargarGafeteQREmpleadoRH;

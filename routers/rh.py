@@ -123,59 +123,62 @@ def calcular_dias_vacaciones_lft(fecha_ing: Optional[date]) -> int:
 # --- MODELOS PYDANTIC ---
 
 # Empleados
+class EmpleadoCreate(BaseModel):
+    id_empleado: str
+    nombre: str
+    depto: Optional[str] = "ADMINISTRACION"
+    puesto: Optional[str] = None
+    rol: Optional[str] = "ADMIN"
+    email: Optional[str] = None
+    cel: Optional[str] = None
+    fecha_nac: Optional[date] = None
+    fecha_ing: Optional[date] = None
+    licencia_vence: Optional[date] = None
+    password: Optional[str] = None
+    rfc: Optional[str] = None
+    curp: Optional[str] = None
+    nss: Optional[str] = None
+    salario_mensual: Optional[float] = None
+    tipo_contrato: Optional[str] = "PLANTA"
+    escolaridad: Optional[str] = None
+    estado_civil: Optional[str] = None
+    domicilio: Optional[str] = None
+    ciudad: Optional[str] = None
+    cp: Optional[str] = None
+    contacto_emergencia: Optional[str] = None
+    tel_emergencia: Optional[str] = None
+    parentesco_emergencia: Optional[str] = None
+    estatus_empleado: Optional[str] = "ACTIVO"
+    registrado_por: Optional[str] = None
 
 class EmpleadoUpdate(BaseModel):
-
     nombre: Optional[str] = None
-
     depto: Optional[str] = None
-
     email: Optional[str] = None
-
     cel: Optional[str] = None
-
     fecha_nac: Optional[date] = None
-
     fecha_ing: Optional[date] = None
-
+    licencia_vence: Optional[date] = None
+    password: Optional[str] = None
     rfc: Optional[str] = None
-
     curp: Optional[str] = None
-
     nss: Optional[str] = None
-
     estado_civil: Optional[str] = None
-
     domicilio: Optional[str] = None
-
     ciudad: Optional[str] = None
-
     cp: Optional[str] = None
-
     contacto_emergencia: Optional[str] = None
-
     tel_emergencia: Optional[str] = None
-
     parentesco_emergencia: Optional[str] = None
-
     escolaridad: Optional[str] = None
-
     puesto: Optional[str] = None
-
     tipo_contrato: Optional[str] = None
-
     salario_mensual: Optional[float] = None
-
     foto_url: Optional[str] = None
-
     estatus_empleado: Optional[str] = None
-
     fecha_baja: Optional[date] = None
-
     motivo_baja: Optional[str] = None
-
     rol: Optional[str] = None
-
     registrado_por: Optional[str] = None
 
 
@@ -753,10 +756,93 @@ def get_empleado(id_empleado: str):
 
 
 
+@router.post("/empleados")
+def create_empleado(payload: EmpleadoCreate):
+    registrado_por = payload.registrado_por or "RH"
+    data = payload.model_dump()
+    id_empleado = (data.get("id_empleado") or "").strip()
+    nombre = (data.get("nombre") or "").strip()
+    if not id_empleado:
+        raise HTTPException(status_code=400, detail="El ID del colaborador es obligatorio.")
+    if not nombre:
+        raise HTTPException(status_code=400, detail="El nombre del colaborador es obligatorio.")
+
+    pwd = (data.get("password") or "vpro2026").strip()
+    if not pwd.startswith("$2b$"):
+        from core.security import encriptar_password
+        pwd = encriptar_password(pwd)
+    data["password"] = pwd
+
+    try:
+        with engine_personal.begin() as conn:
+            chk = conn.execute(text("SELECT id_empleado FROM public.empleados WHERE TRIM(id_empleado) = :id"), {"id": id_empleado}).first()
+            if chk:
+                raise HTTPException(status_code=400, detail=f"Ya existe un colaborador con el ID {id_empleado}.")
+
+            cols = [
+                "id_empleado", "nombre", "depto", "puesto", "rol", "email", "cel",
+                "fecha_nac", "fecha_ing", "licencia_vence", "password", "rfc", "curp", "nss",
+                "salario_mensual", "tipo_contrato", "escolaridad", "estado_civil",
+                "domicilio", "ciudad", "cp", "contacto_emergencia", "tel_emergencia",
+                "parentesco_emergencia", "estatus_empleado"
+            ]
+            insert_params = {c: data.get(c) for c in cols}
+            insert_params["id_empleado"] = id_empleado
+            insert_params["nombre"] = nombre
+
+            for f in ("fecha_nac", "fecha_ing", "licencia_vence"):
+                if insert_params.get(f) == "":
+                    insert_params[f] = None
+
+            query = text(f"""
+                INSERT INTO public.empleados ({', '.join(cols)})
+                VALUES ({', '.join(':' + c for c in cols)})
+            """)
+            conn.execute(query, insert_params)
+
+            _registrar_historial(conn, id_empleado, "ALTA_EMPLEADO", f"Alta de colaborador: {nombre} (Rol: {data.get('rol', 'ADMIN')})", "empleados", id_empleado, registrado_por)
+
+        return {"status": "ok", "msg": f"Colaborador {nombre} dado de alta exitosamente", "id_empleado": id_empleado}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al registrar colaborador: {str(e)}")
+
+@router.delete("/empleados/{id_empleado}")
+def delete_empleado(id_empleado: str):
+    try:
+        with engine_personal.begin() as conn:
+            conn.execute(text("DELETE FROM public.empleados WHERE TRIM(id_empleado) = :id"), {"id": id_empleado.strip()})
+        return {"status": "ok", "msg": f"Colaborador {id_empleado} eliminado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar colaborador: {str(e)}")
+
+@router.get("/empleados/{id_empleado}/qr")
+def get_empleado_qr(id_empleado: str):
+    import qrcode
+    from io import BytesIO
+    import base64
+    try:
+        with engine_personal.connect() as conn:
+            chk = conn.execute(text("SELECT id_empleado FROM public.empleados WHERE TRIM(id_empleado) = :id"), {"id": id_empleado.strip()}).first()
+            if not chk:
+                raise HTTPException(status_code=404, detail="Colaborador no encontrado")
+
+        qr = qrcode.QRCode(version=1, box_size=10, border=2)
+        qr.add_data(id_empleado.strip())
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        return {"status": "SUCCESS", "qr_base64": f"data:image/png;base64,{img_str}"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.put("/empleados/{id_empleado}")
-
 def update_empleado(id_empleado: str, payload: EmpleadoUpdate):
-
     registrado_por = payload.registrado_por or "SISTEMA"
     raw_data = payload.model_dump()
 
@@ -770,50 +856,35 @@ def update_empleado(id_empleado: str, payload: EmpleadoUpdate):
                 # Si una fecha o string vacío se envía, pasarlo como None a columnas date
                 if v == "" and k in ("fecha_nac", "fecha_ing", "fecha_baja", "licencia_vence"):
                     v = None
+            if k == "password":
+                if not v:
+                    continue  # No sobrescribir password si viene vacío
+                if not v.startswith("$2b$"):
+                    from core.security import encriptar_password
+                    v = encriptar_password(v)
             update_data[k] = v
 
     if not update_data:
-
         return {"msg": "No hay campos para actualizar"}
 
-        
-
     set_clauses = []
-
     params = {"id_empleado": id_empleado}
-
     for k, v in update_data.items():
-
         set_clauses.append(f"{k} = :{k}")
-
         params[k] = v
-
-        
 
     query_str = f"UPDATE public.empleados SET {', '.join(set_clauses)} WHERE id_empleado = :id_empleado"
 
-    
-
     try:
-
         with engine_personal.begin() as conn:
-
             conn.execute(text(query_str), params)
 
-            
-
             # Historial
-
             desc = f"Actualización de datos: {', '.join(update_data.keys())}"
-
             _registrar_historial(conn, id_empleado, "ACTUALIZACION_DATOS", desc, "empleados", id_empleado, registrado_por)
 
-            
-
             return {"msg": "Empleado actualizado exitosamente"}
-
     except Exception as e:
-
         raise HTTPException(status_code=500, detail=str(e))
 
 

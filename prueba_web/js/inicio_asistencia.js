@@ -666,31 +666,27 @@ async function cargarDatosInicio() {
             }
         } catch(e) { console.error('Error al renderizar permisos pendientes:', e); }
 
-        // ─── G. Mis Solicitudes de Permiso Recientes (Para el Colaborador) ───
+        // ─── G. Mis Solicitudes de Permiso en Revisión (Para el Colaborador) ───
         try {
             if (resMisPermisos && resMisPermisos.status === 'fulfilled' && resMisPermisos.value.ok) {
-                const misPermisos = await resMisPermisos.value.json();
-                if (Array.isArray(misPermisos) && misPermisos.length > 0) {
-                    const pendCount = misPermisos.filter(p => (p.estatus||'').toUpperCase() === 'PENDIENTE').length;
+                const todosMisPermisos = await resMisPermisos.value.json();
+                // 🛡️ Solo mostrar solicitudes PENDIENTES de evaluación por RRHH. Una vez evaluadas pertenecen al expediente/archivo de RRHH.
+                const misPermisosPendientes = Array.isArray(todosMisPermisos)
+                    ? todosMisPermisos.filter(p => (p.estatus || '').toUpperCase() === 'PENDIENTE')
+                    : [];
+
+                if (misPermisosPendientes.length > 0) {
                     gruposHtml.push(buildDropdownCard({
                         icon: 'ph-calendar-check',
-                        color: pendCount > 0 ? '#d97706' : '#059669',
-                        bg: pendCount > 0 ? '#fffbeb' : '#f0fdf4',
-                        border: pendCount > 0 ? '#f59e0b' : '#34d399',
-                        titulo: '📋 Mis Solicitudes de Permiso y Ausencias',
-                        badge: pendCount > 0 ? `${pendCount} en revisión` : `${misPermisos.length} registrada${misPermisos.length !== 1 ? 's' : ''}`,
-                        badgeColor: pendCount > 0 ? '#d97706' : '#059669',
-                        items: misPermisos.slice(0, 5),
+                        color: '#d97706',
+                        bg: '#fffbeb',
+                        border: '#f59e0b',
+                        titulo: '📋 Mis Solicitudes de Permiso en Revisión',
+                        badge: `${misPermisosPendientes.length} en revisión`,
+                        badgeColor: '#d97706',
+                        items: misPermisosPendientes.slice(0, 5),
                         renderItem: (p) => {
-                            const est = (p.estatus || 'PENDIENTE').toUpperCase();
-                            let badgeHtml = '';
-                            if (est === 'PENDIENTE') {
-                                badgeHtml = `<span style="background:#fef3c7;color:#b45309;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">⏳ En Revisión RH</span>`;
-                            } else if (est === 'APROBADO') {
-                                badgeHtml = `<span style="background:#dcfce7;color:#15803d;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">✅ Aprobado (${p.con_goce_de_sueldo ? 'Con Goce' : 'Sin Goce'})</span>`;
-                            } else {
-                                badgeHtml = `<span style="background:#fee2e2;color:#b91c1c;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">❌ No Autorizado</span>`;
-                            }
+                            const badgeHtml = `<span style="background:#fef3c7;color:#b45309;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">⏳ En Revisión RH</span>`;
                             return `
                                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-radius:8px;background:white;border:1px solid #e2e8f0;margin-bottom:6px;flex-wrap:wrap;">
                                     <div style="flex:1;min-width:220px;">
@@ -704,7 +700,6 @@ async function cargarDatosInicio() {
                                                 : `Del <b>${p.fecha_inicio}</b> al <b>${p.fecha_fin}</b> (${p.dias_solicitados || 1} día${(p.dias_solicitados || 1) !== 1 ? 's' : ''})`}
                                         </div>
                                         ${p.justificacion ? `<div style="font-size:11px;color:#64748b;font-style:italic;margin-top:2px;">"${p.justificacion}"</div>` : ''}
-                                        ${p.motivo_rechazo ? `<div style="font-size:11px;color:#dc2626;font-weight:600;margin-top:2px;">Motivo rechazo: ${p.motivo_rechazo}</div>` : ''}
                                     </div>
                                     <div style="display:flex;align-items:center;gap:8px;">
                                         ${badgeHtml}
@@ -715,7 +710,7 @@ async function cargarDatosInicio() {
                     }));
                 }
             }
-        } catch(e) { console.error('Error al cargar mis permisos:', e); }
+        } catch(e) { console.error('Error al cargar mis permisos pendientes:', e); }
 
         const gruposFiltrados = gruposHtml.filter(Boolean);
         if (gruposFiltrados.length > 0) {

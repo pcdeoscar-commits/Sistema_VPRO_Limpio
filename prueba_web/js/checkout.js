@@ -334,20 +334,14 @@ function renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia) {
         // Recuadro independiente para Observaciones Generales de Logística, Viaje o Traslado (Opcional)
         cardsHtml += `
             <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 5px solid #475569; border-radius: 8px; padding: 12px 15px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                <div style="margin-bottom: 8px;">
                     <strong style="color: #1e293b; font-size: 13.5px; display: flex; align-items: center; gap: 7px;">
                         <i class="ph ph-path" style="font-size: 18px; color: #475569;"></i>
                         <span>🛣️ Observaciones Generales de Logística, Viaje o Traslado (Opcional):</span>
                     </strong>
-                    <span style="font-size: 11px; font-weight: 700; color: #475569; background: #e2e8f0; padding: 2px 8px; border-radius: 12px;">
-                        Ruta / Logística
-                    </span>
                 </div>
-                <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; line-height: 1.4;">
-                    Anota aquí situaciones de transporte o viáticos (ej. ponchaduras de llanta, retrasos en casetas, fallas mecánicas de camioneta, clima en carretera). <i>No afecta la calificación técnica de la transmisión.</i>
-                </p>
                 <textarea class="op-textarea checkin-obs-generales" id="${prefixId}-obs-generales" rows="2" 
-                          placeholder="Ej. En el traslado de regreso se ponchó una llanta de la unidad en la carretera... (Dejar en blanco si el viaje fue sin novedad)"
+                          placeholder="Observaciones de ruta, traslado o viaje (opcional)..."
                           style="width: 100%; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; background: #ffffff; color: #1e293b; font-weight: 500;"
                           oninput="alEscribirObsGenerales(this)">${valObsGenerales || ''}</textarea>
             </div>

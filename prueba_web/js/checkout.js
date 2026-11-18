@@ -64,14 +64,22 @@ function obtenerDiasDelProyecto(statusPack) {
 }
 
 function parsearIncidenciasGuardadasPorDia(incTexto, dias) {
-    const map = {};
-    if (!incTexto || !incTexto.trim() || !dias || dias.length === 0) return map;
+    const res = { dias: {}, obsGenerales: "" };
+    if (!incTexto || !incTexto.trim() || !dias || dias.length === 0) return res;
 
     // Quitar cualquier residuo de texto antiguo de autorización
-    const textoLimpio = incTexto.replace(/despacho autorizado por coordinador\.?/gi, '').trim();
-    if (!textoLimpio) return map;
+    let textoLimpio = incTexto.replace(/despacho autorizado por coordinador\.?/gi, '').trim();
+    if (!textoLimpio) return res;
 
-    // Regex para buscar bloques como "📅 [DD/Mes - ...]: texto" o "📅 [YYYY-MM-DD]: texto"
+    // 1. Extraer bloque de Logística y Traslado si existe
+    const regexObs = /(?:🛣️\s*)?\[(?:LOG[IÍ]STICA Y TRASLADO|OBSERVACIONES GENERALES|LOGISTICA)\]:\s*([\s\S]*?)(?=(?:📅\s*\[|$))/i;
+    const matchObs = regexObs.exec(textoLimpio);
+    if (matchObs) {
+        res.obsGenerales = (matchObs[1] || "").trim();
+        textoLimpio = textoLimpio.replace(matchObs[0], '').trim();
+    }
+
+    // 2. Extraer bloques de días 📅 [DD/Mes - ...]: texto
     const regex = /📅\s*\[([^\]]+)\]:\s*([\s\S]*?)(?=(?:📅\s*\[|$))/g;
     let match;
     let huboBloques = false;
@@ -86,20 +94,65 @@ function parsearIncidenciasGuardadasPorDia(incTexto, dias) {
             (d.etiqueta && tag.toLowerCase().includes(d.etiqueta.toLowerCase()))
         );
         if (diaEncontrado) {
-            map[diaEncontrado.fecha_iso] = contenido;
+            res.dias[diaEncontrado.fecha_iso] = contenido;
         } else {
-            const primerSinAsignar = dias.find(d => !map[d.fecha_iso]);
-            if (primerSinAsignar) map[primerSinAsignar.fecha_iso] = contenido;
+            const primerSinAsignar = dias.find(d => !res.dias[d.fecha_iso]);
+            if (primerSinAsignar) res.dias[primerSinAsignar.fecha_iso] = contenido;
         }
     }
 
     if (!huboBloques && textoLimpio) {
         if (dias.length > 0) {
-            map[dias[0].fecha_iso] = textoLimpio;
+            res.dias[dias[0].fecha_iso] = textoLimpio;
         }
     }
 
-    return map;
+    return res;
+}
+
+function actualizarBadgeAcordeonIncidencias() {
+    let inputsDias = document.querySelectorAll('#checkout-salida-incidencias-container .checkin-dia-incidencia');
+    if (!inputsDias || inputsDias.length === 0) {
+        inputsDias = document.querySelectorAll('#checkout-checkin-incidencias-container .checkin-dia-incidencia');
+    }
+    if (!inputsDias || inputsDias.length === 0) return;
+
+    let pend = 0;
+    const total = inputsDias.length;
+    inputsDias.forEach(t => {
+        const val = t.value.trim();
+        if (!val || val.includes("ES NECESARIO REPORTAR INCIDENCIAS")) {
+            pend++;
+        }
+    });
+
+    const badges = document.querySelectorAll('.badge-resumen-incidencias-acordeon');
+    badges.forEach(b => {
+        if (pend === 0) {
+            b.style.background = '#dcfce7';
+            b.style.color = '#15803d';
+            b.style.border = '1px solid #86efac';
+            b.innerHTML = `✅ ${total}/${total} CALIFICADO`;
+        } else {
+            b.style.background = '#fee2e2';
+            b.style.color = '#991b1b';
+            b.style.border = '1px solid #fca5a5';
+            b.innerHTML = `⚠️ ${pend} PENDIENTE${pend !== 1 ? 'S' : ''}`;
+        }
+    });
+
+    const detailsCards = document.querySelectorAll('.details-incidencias-checkout');
+    detailsCards.forEach(d => {
+        d.style.borderLeftColor = (pend === 0) ? '#10b981' : '#2563eb';
+    });
+}
+
+function alEscribirObsGenerales(el) {
+    const todos = document.querySelectorAll('.checkin-obs-generales');
+    todos.forEach(t => {
+        if (t !== el) t.value = el.value;
+    });
+    sincronizarIncidenciasMultidiaCheckin();
 }
 
 function sincronizarIncidenciasMultidiaCheckin() {
@@ -118,11 +171,19 @@ function sincronizarIncidenciasMultidiaCheckin() {
         }
     });
 
+    const inpObs = document.querySelector('#checkout-salida-incidencias-container .checkin-obs-generales') ||
+                   document.querySelector('#checkout-checkin-incidencias-container .checkin-obs-generales');
+    if (inpObs && inpObs.value.trim()) {
+        bloques.push(`🛣️ [LOGÍSTICA Y TRASLADO]:\n${inpObs.value.trim()}`);
+    }
+
     const textoFinal = bloques.join('\n\n');
     const masterTextareaCheckin = document.getElementById('checkout-checkin-incidencias');
     const masterTextareaSalida = document.getElementById('checkout-salida-incidencias');
     if (masterTextareaCheckin) masterTextareaCheckin.value = textoFinal;
     if (masterTextareaSalida) masterTextareaSalida.value = textoFinal;
+
+    actualizarBadgeAcordeonIncidencias();
 }
 
 function alEnfocarTextareaDia(el) {
@@ -213,7 +274,9 @@ function renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia) {
     }
 
     // Ya salió o está en retorno: Renderizar las tarjetas día por día
-    const mapaDias = parsearIncidenciasGuardadasPorDia(incLimpia, dias);
+    const parsed = parsearIncidenciasGuardadasPorDia(incLimpia, dias);
+    const mapaDias = parsed.dias;
+    const valObsGenerales = parsed.obsGenerales;
 
     function generarHtmlTarjetas(prefixId) {
         let cardsHtml = `
@@ -267,6 +330,28 @@ function renderTarjetasIncidenciasCheckin(statusPack, incLimpia, esVacia) {
                 </div>
             `;
         });
+
+        // Recuadro independiente para Observaciones Generales de Logística, Viaje o Traslado (Opcional)
+        cardsHtml += `
+            <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 5px solid #475569; border-radius: 8px; padding: 12px 15px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                    <strong style="color: #1e293b; font-size: 13.5px; display: flex; align-items: center; gap: 7px;">
+                        <i class="ph ph-path" style="font-size: 18px; color: #475569;"></i>
+                        <span>🛣️ Observaciones Generales de Logística, Viaje o Traslado (Opcional):</span>
+                    </strong>
+                    <span style="font-size: 11px; font-weight: 700; color: #475569; background: #e2e8f0; padding: 2px 8px; border-radius: 12px;">
+                        Ruta / Logística
+                    </span>
+                </div>
+                <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; line-height: 1.4;">
+                    Anota aquí situaciones de transporte o viáticos (ej. ponchaduras de llanta, retrasos en casetas, fallas mecánicas de camioneta, clima en carretera). <i>No afecta la calificación técnica de la transmisión.</i>
+                </p>
+                <textarea class="op-textarea checkin-obs-generales" id="${prefixId}-obs-generales" rows="2" 
+                          placeholder="Ej. En el traslado de regreso se ponchó una llanta de la unidad en la carretera... (Dejar en blanco si el viaje fue sin novedad)"
+                          style="width: 100%; font-size: 12.5px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; background: #ffffff; color: #1e293b; font-weight: 500;"
+                          oninput="alEscribirObsGenerales(this)">${valObsGenerales || ''}</textarea>
+            </div>
+        `;
 
         cardsHtml += `</div>`;
         return cardsHtml;

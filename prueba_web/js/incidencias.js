@@ -168,10 +168,18 @@ async function cargarModuloIncidencias() {
             }
 
             // 1. Empleado (Desglose quirurgico por jornada si es reporte multidia)
+            let empTextLimpio = empText || "";
+            let logisticaTexto = "";
+            const matchLogistica = empTextLimpio.match(/(?:🛣️\s*)?\[(?:LOG[IÍ]STICA Y TRASLADO|OBSERVACIONES GENERALES|LOGISTICA)\]:\s*([\s\S]*?)(?=(?:📅\s*\[|$))/i);
+            if (matchLogistica) {
+                logisticaTexto = matchLogistica[1].trim();
+                empTextLimpio = empTextLimpio.replace(matchLogistica[0], '').trim();
+            }
+
             const bloquesDiasRegex = /📅\s*\[([^\]]+)\]:\s*([\s\S]*?)(?=(?:📅\s*\[|$))/g;
             const bloquesEncontrados = [];
             let mBloque;
-            while ((mBloque = bloquesDiasRegex.exec(empText)) !== null) {
+            while ((mBloque = bloquesDiasRegex.exec(empTextLimpio)) !== null) {
                 bloquesEncontrados.push({
                     etiqueta: mBloque[1].trim(),
                     texto: mBloque[2].trim()
@@ -205,12 +213,13 @@ async function cargarModuloIncidencias() {
                         Tipo: "Empleado",
                         Departamento: depto,
                         Estatus: estatusJornada,
-                        Nota: notaJornada
+                        Nota: notaJornada,
+                        Logistica: logisticaTexto
                     });
                 });
             } else {
-                const estatusEmp = clasificarTexto(empText);
-                const notaEmp = obtenerNotaDisplay(empText, estatusEmp);
+                const estatusEmp = clasificarTexto(empTextLimpio);
+                const notaEmp = obtenerNotaDisplay(empTextLimpio, estatusEmp);
                 rawEvaluacionesIncidencias.push({
                     Fecha: fecha,
                     FechaOP: fecha,
@@ -222,7 +231,8 @@ async function cargarModuloIncidencias() {
                     Tipo: "Empleado",
                     Departamento: depto,
                     Estatus: estatusEmp,
-                    Nota: notaEmp
+                    Nota: notaEmp,
+                    Logistica: logisticaTexto
                 });
             }
 
@@ -1925,6 +1935,10 @@ function renderizarTablaIncidencias(lista) {
             ? `<div style="margin-top: 4px;"><span style="background: #f1f5f9; color: #334155; font-weight: 600; font-size: 11px; padding: 2px 7px; border-radius: 4px; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 4px;"><i class="ph ph-calendar-blank"></i> ${item.Jornada}</span></div>`
             : '';
 
+        const badgeLogistica = item.Logistica
+            ? `<div style="margin-top: 5px;"><span style="background: #f8fafc; color: #334155; font-size: 11.5px; padding: 3px 8px; border-radius: 5px; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 5px; line-height: 1.3;"><i class="ph ph-path" style="color: #475569; font-size: 13px;"></i> <b>Logística / Traslado:</b> ${item.Logistica}</span></div>`
+            : '';
+
         const textoNota = esPendiente ? `<em>${item.Nota}</em>` : item.Nota;
 
         return `
@@ -1934,7 +1948,7 @@ function renderizarTablaIncidencias(lista) {
                 <td style="text-align: center;">${badgeTipo}</td>
                 <td style="font-weight: 500; font-size: 13px;">${item.Actor}</td>
                 <td style="text-align: center;">${badgeEstatus}</td>
-                <td style="color: ${colorNota}; font-size: 12.5px; line-height: 1.4;">${textoNota}</td>
+                <td style="color: ${colorNota}; font-size: 12.5px; line-height: 1.4;">${textoNota}${badgeLogistica}</td>
             </tr>
         `;
     }).join('');
@@ -1953,6 +1967,7 @@ function filtrarTablaIncidenciasEnVivo(termino) {
         (item.Actor && item.Actor.toLowerCase().includes(t)) ||
         (item.Estatus && item.Estatus.toLowerCase().includes(t)) ||
         (item.Nota && item.Nota.toLowerCase().includes(t)) ||
+        (item.Logistica && item.Logistica.toLowerCase().includes(t)) ||
         (item.Tipo && item.Tipo.toLowerCase().includes(t)) ||
         (item.Fecha && item.Fecha.includes(t)) ||
         (item.Jornada && item.Jornada.toLowerCase().includes(t))

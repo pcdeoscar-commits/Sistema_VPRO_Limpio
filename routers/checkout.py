@@ -656,7 +656,9 @@ def registrar_retorno_checkin(payload: dict):
             # Sincronizar incidencias por día con la OP si contiene bloques fechados
             try:
                 import re
-                bloques = re.findall(r'📅\s*\[([^\]]+)\]:\s*(.*?)(?=(?:📅\s*\[|$))', incidencias_gen, re.DOTALL)
+                texto_dias = incidencias_gen
+                texto_dias = re.sub(r'(?:🛣️\s*)?\[(?:LOG[IÍ]STICA Y TRASLADO|OBSERVACIONES GENERALES)\].*$', '', texto_dias, flags=re.IGNORECASE | re.DOTALL)
+                bloques = re.findall(r'📅\s*\[([^\]]+)\]:\s*(.*?)(?=(?:📅\s*\[|$))', texto_dias, re.DOTALL)
                 if bloques:
                     for tag_fec, txt_inc in bloques:
                         txt_clean = txt_inc.strip()

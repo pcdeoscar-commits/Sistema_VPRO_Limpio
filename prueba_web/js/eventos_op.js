@@ -1125,6 +1125,12 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                                 <span>➕ Subir Fotos o Videos MP4</span>
                                 <input type="file" id="input-fotos-evidencia-${data.id_evento}" multiple accept="image/jpeg,image/png,image/webp,video/mp4" style="display: none;" onchange="alSubirFotosEvidenciaOP(this, ${data.id_evento})">
                             </label>
+                            ${esCoordinadorOAdmin ? `
+                                <button type="button" id="btn-importar-chat-evidencia-${data.id_evento}" onclick="importarEvidenciasDesdeChatOP(${data.id_evento})" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; border: none; border-radius: 6px; padding: 9px 18px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; box-shadow: 0 2px 4px rgba(5,150,105,0.25); transition: opacity 0.2s;" title="Extraer automáticamente fotografías y videos MP4 compartidos en el canal de chat de esta OP">
+                                    <i class="ph ph-chats-circle" style="font-size: 18px;"></i>
+                                    <span>💬📥 Extraer del Chat de la OP</span>
+                                </button>
+                            ` : ''}
                             <span style="font-size: 12px; color: #64748b; line-height: 1.4;">
                                 <i class="ph ph-shield-check" style="color: #0284c7;"></i> Límite estricto: <strong>Fotos máx. 1 MB</strong> (JPG, PNG, WebP) | <strong>Videos máx. 5 MB</strong> (MP4) para evitar saturación de disco.
                             </span>

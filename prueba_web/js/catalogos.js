@@ -2095,6 +2095,11 @@ function generarHtmlGaleriaFotosEvidencia(fotos, isReadOnly = false, idEvento = 
                     <span style="position: absolute; top: 5px; left: 5px; background: rgba(2, 132, 199, 0.92); color: white; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; backdrop-filter: blur(2px);">
                         <i class="ph ph-video-camera"></i> MP4
                     </span>
+                    ${urlLimpia.includes('/chat_op/') ? `
+                        <span style="position: absolute; top: 26px; left: 5px; background: rgba(5, 150, 105, 0.92); color: white; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; backdrop-filter: blur(2px);">
+                            <i class="ph ph-chat-circle-dots"></i> Chat OP
+                        </span>
+                    ` : ''}
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(15, 23, 42, 0.9)); padding: 4px 6px; color: white; font-size: 10px; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                         ${nombreLegible}
                     </div>
@@ -2110,6 +2115,11 @@ function generarHtmlGaleriaFotosEvidencia(fotos, isReadOnly = false, idEvento = 
         return `
             <div class="foto-evidencia-card" style="position: relative; border-radius: 8px; overflow: hidden; background: #0f172a; box-shadow: 0 3px 8px rgba(0,0,0,0.12); aspect-ratio: 4/3; cursor: pointer; border: 1px solid #cbd5e1;" onclick="abrirVisorEvidencia('${urlLimpia}', '${nombreLegible}', 'foto')">
                 <img src="${urlLimpia}" alt="Evidencia" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.25s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+                ${urlLimpia.includes('/chat_op/') ? `
+                    <span style="position: absolute; top: 5px; left: 5px; background: rgba(5, 150, 105, 0.92); color: white; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; backdrop-filter: blur(2px);">
+                        <i class="ph ph-chat-circle-dots"></i> Chat OP
+                    </span>
+                ` : ''}
                 <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(15, 23, 42, 0.85)); padding: 4px 6px; color: white; font-size: 10px; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                     ${nombreLegible}
                 </div>
@@ -2239,6 +2249,52 @@ async function confirmarEliminarFotoEvidencia(idEvento, url) {
         }
     } catch (e) {
         alert("Error de conexión al eliminar archivo: " + e.message);
+    }
+}
+
+async function importarEvidenciasDesdeChatOP(idEvento) {
+    if (!idEvento) return;
+    const btn = document.getElementById(`btn-importar-chat-evidencia-${idEvento}`);
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="ph ph-spinner ph-spin" style="font-size: 18px;"></i> <span>Sincronizando Chat...</span>`;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/api/eventos/importar_evidencias_chat/${idEvento}`, {
+            method: "POST"
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({ detail: res.statusText }));
+            alert("⚠️ " + (errData.detail || "Error al extraer evidencias del chat."));
+            return;
+        }
+
+        const data = await res.json();
+        if (data.status === "SUCCESS") {
+            window.opFotosEvidenciaActuales = data.fotos_evidencia || [];
+            const galeria = document.getElementById('galeria-fotos-evidencia-act');
+            if (galeria) {
+                galeria.innerHTML = generarHtmlGaleriaFotosEvidencia(window.opFotosEvidenciaActuales, false, idEvento);
+            }
+            const badge = document.getElementById('op-fotos-badge-act');
+            if (badge) {
+                badge.innerText = formatearTextoBadgeEvidencias(window.opFotosEvidenciaActuales);
+            }
+            alert(`🎉 ¡Éxito!\n${data.mensaje}`);
+        } else {
+            alert(`ℹ️ Información:\n${data.mensaje}`);
+        }
+    } catch (e) {
+        console.error("Error al importar desde chat:", e);
+        alert("❌ Error de comunicación al importar evidencias del chat.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 }
 

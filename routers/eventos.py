@@ -913,6 +913,92 @@ async def subir_foto_evidencia(id_evento: int, file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/importar_evidencias_chat/{id_evento}")
+def importar_evidencias_chat(id_evento: int):
+    """
+    Busca todas las fotografías y videos MP4 compartidos en el chat operativo
+    de esta OP y los integra automáticamente a la galería de fotos_evidencia
+    sin duplicar archivos ya vinculados.
+    """
+    try:
+        with engine_eventos.connect() as conn:
+            # 1. Obtener la lista actual de evidencias de la OP
+            row_ev = conn.execute(
+                text("SELECT id_evento, folio, fotos_evidencia FROM public.eventos WHERE id_evento = :id"),
+                {"id": id_evento}
+            ).mappings().fetchone()
+
+            if not row_ev:
+                raise HTTPException(status_code=404, detail="Orden de Producción no encontrada.")
+
+            fotos_actuales = [f.strip() for f in parse_pg_array(row_ev["fotos_evidencia"]) if f and str(f).strip()]
+
+            # 2. Consultar mensajes del chat de esta OP que contengan adjunto multimedia
+            mensajes_chat = conn.execute(
+                text("""
+                    SELECT id, autor_nombre, autor_rol, archivo_url, tipo_mensaje, mensaje,
+                           to_char(fecha_hora, 'YYYY-MM-DD HH24:MI:SS') as fecha_hora_str
+                    FROM public.chat_op_mensajes
+                    WHERE id_evento = :id_ev
+                      AND archivo_url IS NOT NULL 
+                      AND TRIM(archivo_url) != ''
+                    ORDER BY id ASC
+                """),
+                {"id_ev": id_evento}
+            ).mappings().fetchall()
+
+        formatos_validos = {".jpg", ".jpeg", ".png", ".webp", ".mp4"}
+        fotos_set = set(fotos_actuales)
+        nuevas_fotos = []
+
+        for m in mensajes_chat:
+            url_raw = str(m["archivo_url"] or "").strip()
+            if not url_raw:
+                continue
+            ext = os.path.splitext(url_raw.lower())[1]
+            if ext in formatos_validos:
+                # Comprobar si ya está en la lista por URL exacta o por nombre de archivo
+                nombre_base = os.path.basename(url_raw)
+                ya_existe = any(os.path.basename(fa) == nombre_base or fa == url_raw for fa in fotos_set)
+                if not ya_existe:
+                    fotos_set.add(url_raw)
+                    nuevas_fotos.append(url_raw)
+
+        if not nuevas_fotos:
+            return {
+                "status": "SIN_CAMBIOS",
+                "importadas": 0,
+                "total": len(fotos_actuales),
+                "fotos_evidencia": fotos_actuales,
+                "mensaje": "No se encontraron nuevas fotos o videos en el chat de esta OP para importar."
+            }
+
+        lista_final = fotos_actuales + nuevas_fotos
+
+        def format_pg_array_local(data):
+            if not data:
+                return "{}"
+            sanitizados = ['"' + str(x).replace('"', '\\"') + '"' for x in data]
+            return "{" + ",".join(sanitizados) + "}"
+
+        with engine_eventos.begin() as conn:
+            conn.execute(
+                text("UPDATE public.eventos SET fotos_evidencia = CAST(:arr AS text[]) WHERE id_evento = :id_ev"),
+                {"arr": format_pg_array_local(lista_final), "id_ev": id_evento}
+            )
+
+        return {
+            "status": "SUCCESS",
+            "importadas": len(nuevas_fotos),
+            "total": len(lista_final),
+            "fotos_evidencia": lista_final,
+            "mensaje": f"Se integraron {len(nuevas_fotos)} nueva(s) evidencia(s) multimedia desde el chat de la OP."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al importar evidencias del chat: {str(e)}")
+
 @router.delete("/op/{id_evento}")
 def eliminar_op_por_completo(id_evento: int):
     """
@@ -1009,13 +1095,14 @@ def eliminar_foto_evidencia(id_evento: int, url: str):
                 WHERE id_evento = :id_evento
             """), {"id_evento": id_evento, "url": url_clean})
             
-        # Intentar remover el archivo físico
+        # Intentar remover el archivo físico (solo si fue subido directamente a la OP, no borrar si es del chat de la OP)
         try:
-            from core.config import FOTOS_EVENTOS_DIR
-            nombre_archivo = os.path.basename(url_clean)
-            archivo_fisico = FOTOS_EVENTOS_DIR / nombre_archivo
-            if archivo_fisico.exists():
-                archivo_fisico.unlink()
+            if "chat_op" not in url_clean.lower():
+                from core.config import FOTOS_EVENTOS_DIR
+                nombre_archivo = os.path.basename(url_clean)
+                archivo_fisico = FOTOS_EVENTOS_DIR / nombre_archivo
+                if archivo_fisico.exists():
+                    archivo_fisico.unlink()
         except Exception:
             pass
 

@@ -8895,57 +8895,7 @@
 
 
 
-                                <!-- 📊 MÉTRICAS Y DIRECTORIO GENERAL DE PLANTILLA (MIGRADO DE ABC) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                        <div style="font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 4px;">👥 Total Plantilla</div>
-                        <div id="rh-metric-total" style="font-size: 26px; font-weight: 800; color: #0f172a;">0</div>
-                    </div>
-                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                        <div style="font-size: 13px; color: #166534; font-weight: 600; margin-bottom: 4px;">✅ Colaboradores Activos</div>
-                        <div id="rh-metric-activos" style="font-size: 26px; font-weight: 800; color: #15803d;">0</div>
-                    </div>
-                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                        <div style="font-size: 13px; color: #991b1b; font-weight: 600; margin-bottom: 4px;">🚪 Bajas / Inactivos</div>
-                        <div id="rh-metric-bajas" style="font-size: 26px; font-weight: 800; color: #b91c1c;">0</div>
-                    </div>
-                </div>
 
-                <!-- Acordeón Directorio Completo de Plantilla -->
-                <button type="button" id="btn-acc-rh-plantilla" onclick="toggleAcordeonRH('acc-rh-plantilla')" style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; margin-bottom: 20px; font-weight: 700; font-size: 14px; color: #0f172a; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: background 0.2s;">
-                    <span style="display: flex; align-items: center; gap: 8px;">
-                        <i class="ph ph-users-three" style="color: #0284c7; font-size: 20px;"></i> 👥 Ver Directorio y Plantilla Completa (<span id="rh-badge-count-empleados">0</span> colaboradores)
-                    </span>
-                    <i class="ph ph-caret-down" id="caret-acc-rh-plantilla"></i>
-                </button>
-
-                <div id="acc-rh-plantilla" style="display: none; background: white; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
-                    <div style="margin-bottom: 14px; display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-                        <input type="text" id="filtro-rh-plantilla" class="form-input" style="max-width: 420px; padding: 9px 14px; border-radius: 8px; border: 1.5px solid #cbd5e1; font-size: 13.5px;" placeholder="🔍 Buscar por nombre, ID, departamento, rol o puesto..." oninput="filtrarTablaPlantillaRH()">
-                        <span style="font-size: 12.5px; color: #64748b;"><i class="ph ph-cursor-click"></i> Clic en cualquier colaborador para cargar su expediente</span>
-                    </div>
-                    <div style="overflow-x: auto; max-height: 480px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <table class="tabla-vpro" style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre Completo</th>
-                                    <th>Departamento</th>
-                                    <th>Puesto</th>
-                                    <th>Rol Sistema</th>
-                                    <th>Celular</th>
-                                    <th>Email</th>
-                                    <th>Fecha Ingreso</th>
-                                    <th>Licencia</th>
-                                    <th>Estatus</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-rh-plantilla-body">
-                                <tr><td colspan="10" style="text-align: center; padding: 20px;">Cargando plantilla...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
 
 <!-- Selector de Colaborador con Búsqueda Inteligente -->
 

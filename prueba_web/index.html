@@ -11101,22 +11101,13 @@
 
                         <!-- ZONA DRAG & DROP MULTI-ARCHIVO Y CARPETAS -->
 
-                        <div id="transfer-dropzone" style="border: 2px dashed #94a3b8; border-radius: 12px; padding: 32px 20px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; margin-bottom: 20px;" onclick="document.getElementById('transfer-input-file').click()">
+                        <div id="transfer-dropzone" style="border: 2px dashed #94a3b8; border-radius: 12px; padding: 36px 20px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; margin-bottom: 20px;" onclick="document.getElementById('transfer-input-file').click()">
 
                             <i class="ph ph-folder-notch-open" style="font-size: 48px; color: var(--accent-color); margin-bottom: 10px;"></i>
 
-                            <h4 style="margin: 0 0 6px 0; color: #1e293b; font-size: 15px;">Arrastra tus archivos o carpetas completas aquí</h4>
+                            <h4 style="margin: 0 0 6px 0; color: #1e293b; font-size: 15px;">Arrastra tus archivos o carpetas completas aquí o haz clic para explorar</h4>
 
-                            <p style="margin: 0 0 14px 0; color: #64748b; font-size: 13px;">Soporta arrastrar carpetas enteras de Windows, múltiples archivos o usar los botones de selección.</p>
-
-                            <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;" onclick="event.stopPropagation()">
-                                <button type="button" onclick="document.getElementById('transfer-input-file').click()" style="background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #334155; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                                    <i class="ph ph-file-plus" style="font-size: 16px; color: var(--accent-color);"></i> Seleccionar Archivos
-                                </button>
-                                <button type="button" onclick="document.getElementById('transfer-input-folder').click()" style="background: #eef2ff; border: 1px solid #c7d2fe; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #3730a3; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                                    <i class="ph ph-folder-plus" style="font-size: 16px; color: #4f46e5;"></i> Seleccionar Carpeta
-                                </button>
-                            </div>
+                            <p style="margin: 0 0 12px 0; color: #64748b; font-size: 13px;">Soporta arrastrar carpetas enteras de Windows, múltiples archivos o hacer clic para seleccionar.</p>
 
                             <span style="display: inline-block; background: #e0e7ff; color: #3730a3; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
 
@@ -11135,7 +11126,7 @@
 
                         <div id="transfer-archivos-seleccionados-box" style="display: none; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
 
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
 
                                 <div>
 
@@ -11145,14 +11136,11 @@
 
                                 </div>
 
-                                <div style="display: flex; gap: 8px;">
-                                    <button type="button" onclick="document.getElementById('transfer-input-file').click()" style="background: white; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; color: #334155; display: inline-flex; align-items: center; gap: 4px;">
-                                        <i class="ph ph-file-plus"></i> + Archivos
-                                    </button>
-                                    <button type="button" onclick="document.getElementById('transfer-input-folder').click()" style="background: #eef2ff; border: 1px solid #c7d2fe; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; color: #3730a3; display: inline-flex; align-items: center; gap: 4px;">
-                                        <i class="ph ph-folder-plus"></i> + Carpeta
-                                    </button>
-                                </div>
+                                <button type="button" onclick="document.getElementById('transfer-input-file').click()" style="background: white; border: 1px solid #cbd5e1; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; color: #334155; display: inline-flex; align-items: center; gap: 4px;">
+
+                                    <i class="ph ph-plus"></i> Agregar más
+
+                                </button>
 
                             </div>
 
@@ -12216,7 +12204,7 @@
 
     <script src="js/audio.js"></script>
 
-    <script src="js/transfer.js?v=20261120_folder_drag_10gb"></script>
+    <script src="js/transfer.js?v=20261120_clean_ui_10gb"></script>
 
     <script src="js/cotizaciones.js"></script>
 

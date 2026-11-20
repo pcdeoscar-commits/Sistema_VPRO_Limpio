@@ -1355,38 +1355,51 @@ function toggleFormularioVacacionesRH() {
 
 
 
+function calcularDiasLaboralesVacaciones(fInicioStr, fFinStr) {
+    if (!fInicioStr || !fFinStr) return { diasLaborales: 1, domingos: 0 };
+    const parts1 = fInicioStr.split("-").map(Number);
+    const parts2 = fFinStr.split("-").map(Number);
+    const cur = new Date(parts1[0], parts1[1] - 1, parts1[2]);
+    const fin = new Date(parts2[0], parts2[1] - 1, parts2[2]);
+    if (fin < cur) return { diasLaborales: 1, domingos: 0 };
+    let diasLaborales = 0;
+    let domingos = 0;
+    while (cur <= fin) {
+        if (cur.getDay() === 0) { // 0 es Domingo en JS
+            domingos++;
+        } else {
+            diasLaborales++;
+        }
+        cur.setDate(cur.getDate() + 1);
+    }
+    return { diasLaborales: Math.max(1, diasLaborales), domingos };
+}
+
 function alCambiarFechasVacacionesRH() {
-
     const fInicio = document.getElementById("rh-vac-inicio")?.value;
-
     const fFin = document.getElementById("rh-vac-fin")?.value;
-
     const inDias = document.getElementById("rh-vac-dias");
 
-
-
     if (fInicio && fFin && inDias) {
+        const res = calcularDiasLaboralesVacaciones(fInicio, fFin);
+        inDias.value = res.diasLaborales;
 
-        const d1 = new Date(fInicio);
-
-        const d2 = new Date(fFin);
-
-        if (d2 >= d1) {
-
-            const diffTime = Math.abs(d2 - d1);
-
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-            inDias.value = diffDays;
-
-        } else {
-
-            inDias.value = 1;
-
+        let badgeDomingo = document.getElementById("rh-vac-domingo-badge");
+        if (!badgeDomingo && inDias.parentNode) {
+            badgeDomingo = document.createElement("div");
+            badgeDomingo.id = "rh-vac-domingo-badge";
+            badgeDomingo.style.fontSize = "12px";
+            badgeDomingo.style.marginTop = "6px";
+            inDias.parentNode.appendChild(badgeDomingo);
         }
-
+        if (badgeDomingo) {
+            if (res.domingos > 0) {
+                badgeDomingo.innerHTML = `<span style="color:#0f766e; background:#ccfbf1; padding:3px 8px; border-radius:6px; font-weight:600; display:inline-block;">⚖️ LFT: Se excluyen <b>${res.domingos} domingo(s)</b> de descanso legal. Días a descontar: <b>${res.diasLaborales} laborables</b>.</span>`;
+            } else {
+                badgeDomingo.innerHTML = "";
+            }
+        }
     }
-
 }
 
 
@@ -4803,6 +4816,8 @@ async function abrirModalDictamenPermiso(idPermiso) {
 
     const nombreColab = permiso.empleado_nombre || document.getElementById("expediente-nombre")?.innerText || `Colaborador ID: ${permiso.id_empleado}`;
     const tieneDoc = !!permiso.archivo_justificante;
+    const esVacacionesModal = (permiso.tipo_permiso || '').toUpperCase().includes('VACACIONES');
+    const infoDiasVac = esVacacionesModal && permiso.fecha_inicio && permiso.fecha_fin ? calcularDiasLaboralesVacaciones(permiso.fecha_inicio, permiso.fecha_fin) : null;
 
     const htmlModal = `
         <div style="text-align: left; font-size: 13px; color: #1e293b; line-height: 1.5;">
@@ -4820,7 +4835,9 @@ async function abrirModalDictamenPermiso(idPermiso) {
                 <div style="color: #475569; font-size: 12px; margin-bottom: 4px;">
                     <strong>Horario / Periodo:</strong> ${(permiso.modalidad || '').toUpperCase() === 'HORAS' || (permiso.horas_solicitadas && permiso.horas_solicitadas > 0)
                         ? `El <b>${permiso.fecha_inicio}</b> · <b style="color:#0f766e;">${permiso.horas_solicitadas} hora(s)</b> ${(permiso.hora_inicio && permiso.hora_fin ? `(${permiso.hora_inicio} a ${permiso.hora_fin})` : '')}`
-                        : `Del <b>${permiso.fecha_inicio}</b> al <b>${permiso.fecha_fin}</b> (${permiso.dias_solicitados} día${permiso.dias_solicitados !== 1 ? 's' : ''})`}
+                        : (esVacacionesModal && infoDiasVac
+                            ? `Del <b>${permiso.fecha_inicio}</b> al <b>${permiso.fecha_fin}</b> (<b style="color:#0f766e;">${infoDiasVac.diasLaborales} días laborables</b>${infoDiasVac.domingos > 0 ? ` · ${infoDiasVac.domingos} domingo(s) de descanso excluido` : ''})`
+                            : `Del <b>${permiso.fecha_inicio}</b> al <b>${permiso.fecha_fin}</b> (${permiso.dias_solicitados} día${permiso.dias_solicitados !== 1 ? 's' : ''})`)}
                 </div>
                 <div style="color: #334155; font-size: 12px; background: white; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 6px; margin-top: 6px; font-style: italic;">
                     "${permiso.justificacion || 'Sin justificación detallada'}"
@@ -4834,15 +4851,28 @@ async function abrirModalDictamenPermiso(idPermiso) {
                     </div>` : '<div style="margin-top:6px; font-size:11px; color:#94a3b8;">Sin comprobante adjunto.</div>'}
             </div>
 
-            <div style="margin-bottom: 12px;">
-                <label style="display: block; font-weight: 700; font-size: 12px; color: #0f172a; margin-bottom: 4px;">
-                    Decisión de Pago (Goce de Sueldo) *:
-                </label>
-                <select id="swal-dict-goce" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1.5px solid #6366f1; font-size: 13px; font-weight: 700; background: white;">
-                    <option value="true" ${permiso.con_goce_de_sueldo ? 'selected' : ''}>✅ CON GOCE DE SUELDO (Permiso Pagado)</option>
-                    <option value="false" ${!permiso.con_goce_de_sueldo ? 'selected' : ''}>❌ SIN GOCE DE SUELDO (Descuento / No Pagado)</option>
-                </select>
-            </div>
+            ${esVacacionesModal ? `
+                <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;">
+                    <div style="font-size: 13px; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-check-circle" style="font-size: 18px; color: #16a34a;"></i>
+                        <span>🏖️ Vacaciones Laborales (LFT) — Con Goce de Sueldo Obligatorio</span>
+                    </div>
+                    <div style="font-size: 11.5px; color: #15803d; margin-top: 3px; line-height: 1.4;">
+                        Por mandato de la Ley Federal del Trabajo, el período vacacional es <b>100% remunerado (con goce de sueldo)</b> y se descuenta únicamente sobre días laborables (los domingos de descanso están protegidos).
+                    </div>
+                    <input type="hidden" id="swal-dict-goce" value="true">
+                </div>
+            ` : `
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 700; font-size: 12px; color: #0f172a; margin-bottom: 4px;">
+                        Decisión de Pago (Goce de Sueldo) *:
+                    </label>
+                    <select id="swal-dict-goce" style="width: 100%; padding: 8px 10px; border-radius: 6px; border: 1.5px solid #6366f1; font-size: 13px; font-weight: 700; background: white;">
+                        <option value="true" ${permiso.con_goce_de_sueldo ? 'selected' : ''}>✅ CON GOCE DE SUELDO (Permiso Pagado)</option>
+                        <option value="false" ${!permiso.con_goce_de_sueldo ? 'selected' : ''}>❌ SIN GOCE DE SUELDO (Descuento / No Pagado)</option>
+                    </select>
+                </div>
+            `}
 
             <div style="margin-bottom: 12px;">
                 <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #1e293b; cursor: pointer;">

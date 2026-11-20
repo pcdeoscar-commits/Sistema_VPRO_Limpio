@@ -1594,6 +1594,7 @@ window.recalcularDiasModalPermiso = function() {
     const elIni = document.getElementById('swal-per-inicio');
     const elFin = document.getElementById('swal-per-fin');
     const elBadge = document.getElementById('swal-per-dias-badge');
+    const tipo = document.getElementById('swal-per-tipo')?.value || '';
     if (!elIni || !elFin || !elBadge) return;
 
     if (elIni.value) {
@@ -1605,14 +1606,34 @@ window.recalcularDiasModalPermiso = function() {
 
     if (!elIni.value || !elFin.value) return;
 
-    const d1 = new Date(elIni.value + 'T00:00:00');
-    const d2 = new Date(elFin.value + 'T00:00:00');
-    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return;
+    const parts1 = elIni.value.split('-').map(Number);
+    const parts2 = elFin.value.split('-').map(Number);
+    const cur = new Date(parts1[0], parts1[1] - 1, parts1[2]);
+    const fin = new Date(parts2[0], parts2[1] - 1, parts2[2]);
+    if (isNaN(cur.getTime()) || isNaN(fin.getTime())) return;
 
-    const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-    if (diff < 1) {
+    if (fin < cur) {
         elBadge.innerHTML = `<span style="color:#dc2626;font-weight:700;">⚠️ La fecha de fin no puede ser anterior a la de inicio</span>`;
+        return;
+    }
+
+    const esVac = tipo === 'VACACIONES';
+    if (esVac) {
+        let diasLab = 0;
+        let domingos = 0;
+        let iter = new Date(cur);
+        while (iter <= fin) {
+            if (iter.getDay() === 0) { // Domingo
+                domingos++;
+            } else {
+                diasLab++;
+            }
+            iter.setDate(iter.getDate() + 1);
+        }
+        diasLab = Math.max(1, diasLab);
+        elBadge.innerHTML = `📅 Días de vacaciones: <b style="color:#0f766e;font-size:14px;background:#ccfbf1;padding:2px 8px;border-radius:6px;">${diasLab} día(s) laborables</b> ${domingos > 0 ? `<span style="font-size:12px;color:#047857;margin-left:4px;">(⚖️ ${domingos} domingo(s) de descanso legal excluido)</span>` : ''}`;
     } else {
+        const diff = Math.round((fin - cur) / (1000 * 60 * 60 * 24)) + 1;
         elBadge.innerHTML = `📅 Días a solicitar: <b style="color:#0f766e;font-size:14px;background:#ccfbf1;padding:2px 8px;border-radius:6px;">${diff} día${diff !== 1 ? 's' : ''}</b>`;
     }
 };
@@ -1856,9 +1877,24 @@ window.abrirModalSolicitarPermisoInicio = async function(tipoDefault = '', diasD
                     return false;
                 }
 
-                const d1 = new Date(inicio + 'T00:00:00');
-                const d2 = new Date(fin + 'T00:00:00');
-                const dias = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+                const parts1 = inicio.split('-').map(Number);
+                const parts2 = fin.split('-').map(Number);
+                const cur = new Date(parts1[0], parts1[1] - 1, parts1[2]);
+                const end = new Date(parts2[0], parts2[1] - 1, parts2[2]);
+                let dias = 0;
+
+                if (tipo === 'VACACIONES') {
+                    let iter = new Date(cur);
+                    while (iter <= end) {
+                        if (iter.getDay() !== 0) { // Excluir domingo
+                            dias++;
+                        }
+                        iter.setDate(iter.getDate() + 1);
+                    }
+                    dias = Math.max(1, dias);
+                } else {
+                    dias = Math.round((end - cur) / (1000 * 60 * 60 * 24)) + 1;
+                }
 
                 return {
                     modalidad: 'DIAS',
@@ -1913,13 +1949,14 @@ window.procesarEnvioPermisoDesdeInicio = async function(idEmp, nomEmp, datos) {
         }
 
         const hoy = new Date().toISOString().split('T')[0];
+        const esVac = (datos.tipo || '').toUpperCase().includes('VAC');
         const payload = {
             id_empleado: String(idEmp),
             tipo_permiso: datos.tipo,
             fecha_solicitud: hoy,
             fecha_inicio: datos.inicio,
             fecha_fin: datos.fin,
-            con_goce_de_sueldo: false, // Sujeto a dictamen de RH
+            con_goce_de_sueldo: esVac ? true : false, // Vacaciones son siempre con goce por LFT
             justificacion: datos.motivo,
             archivo_justificante: archivoUrl,
             estatus: "PENDIENTE",

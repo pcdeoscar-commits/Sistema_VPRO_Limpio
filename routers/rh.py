@@ -69,52 +69,45 @@ def calcular_anios_trabajados(fecha_ing: Optional[date]) -> int:
 
 
 def calcular_dias_vacaciones_lft(fecha_ing: Optional[date]) -> int:
-
     anios = calcular_anios_trabajados(fecha_ing)
-
     if anios == 0:
-
         return 0
-
     elif anios == 1:
-
         return 12
-
     elif anios == 2:
-
         return 14
-
     elif anios == 3:
-
         return 16
-
     elif anios == 4:
-
         return 18
-
     elif 5 <= anios <= 9:
-
         return 20
-
     elif 10 <= anios <= 14:
-
         return 22
-
     elif 15 <= anios <= 19:
-
         return 24
-
     elif 20 <= anios <= 24:
-
         return 26
-
     elif 25 <= anios <= 29:
-
         return 28
-
     else:
+        return 30
 
-        return 28 + 2 * ((anios - 30) // 5)
+
+def calcular_dias_laborales_vacaciones(fecha_inicio: date, fecha_fin: date) -> int:
+    """
+    Calcula los días laborables para vacaciones según la Ley Federal del Trabajo (LFT).
+    Excluye domingos por ser día de descanso obligatorio semanal (Art. 69 LFT).
+    """
+    if not fecha_inicio or not fecha_fin or fecha_fin < fecha_inicio:
+        return 1
+    dias = 0
+    cur = fecha_inicio
+    while cur <= fecha_fin:
+        if cur.weekday() != 6:  # 6 es Domingo en Python (0 = Lunes)
+            dias += 1
+        cur += datetime.timedelta(days=1)
+    return max(1, dias)
 
 
 
@@ -374,17 +367,13 @@ class VacacionCreate(BaseModel):
 
 
 class VacacionUpdate(BaseModel):
-
+    dias_tomados: Optional[int] = None
+    dias_pendientes: Optional[int] = None
     estatus: Optional[str] = None
-
     aprobado_por: Optional[str] = None
-
     fecha_aprobacion: Optional[date] = None
-
     notificado_admon: Optional[bool] = None
-
     fecha_notif_admon: Optional[date] = None
-
     observaciones: Optional[str] = None
 
 
@@ -1774,29 +1763,21 @@ def create_vacacion(payload: VacacionCreate):
                 
 
             dias_corresp = calcular_dias_vacaciones_lft(emp["fecha_ing"])
-
-            
+            dias_laborales_tomar = calcular_dias_laborales_vacaciones(payload.fecha_inicio_goce, payload.fecha_fin_goce)
 
             # Sumar días previamente tomados
-
             query_hist = text("SELECT dias_tomados FROM public.rh_vacaciones WHERE id_empleado = :id AND estatus IN ('APROBADO', 'EN_GOCE', 'FINALIZADO')")
-
             rows_prev = conn.execute(query_hist, {"id": payload.id_empleado}).mappings().fetchall()
-
             dias_previos = sum([r["dias_tomados"] for r in rows_prev])
 
-            dias_totales_tomados = dias_previos + payload.dias_tomados
-
+            dias_a_registrar = dias_laborales_tomar if (payload.dias_tomados <= 0 or payload.dias_tomados > dias_laborales_tomar) else payload.dias_tomados
+            dias_totales_tomados = dias_previos + dias_a_registrar
             dias_pendientes = max(0, dias_corresp - dias_totales_tomados)
 
-            
-
             data = payload.model_dump()
-
+            data["dias_tomados"] = dias_a_registrar
             data["dias_correspondientes"] = dias_corresp
-
             data["dias_pendientes"] = dias_pendientes
-
             data["estatus"] = "APROBADO"
 
             
@@ -1974,11 +1955,18 @@ def dictaminar_permiso(id_permiso: int, payload: DictamenPermisoPayload):
             if nuevo_estatus not in ("APROBADO", "RECHAZADO"):
                 raise HTTPException(status_code=400, detail="Estatus debe ser APROBADO o RECHAZADO")
 
+            es_vacaciones = (p.get("tipo_permiso") or "").upper() == "VACACIONES"
+            con_goce_final = True if es_vacaciones else payload.con_goce_de_sueldo
+            dias_solicitados_final = p.get("dias_solicitados")
+            if es_vacaciones and p.get("fecha_inicio") and p.get("fecha_fin"):
+                dias_solicitados_final = calcular_dias_laborales_vacaciones(p["fecha_inicio"], p["fecha_fin"])
+
             conn.execute(text("""
                 UPDATE public.rh_permisos
                 SET 
                     estatus = :estatus,
                     con_goce_de_sueldo = :con_goce,
+                    dias_solicitados = :dias_sol,
                     impacta_asistencia = :impacta,
                     observaciones_rh = :obs,
                     motivo_rechazo = :motivo_rec,
@@ -1988,12 +1976,47 @@ def dictaminar_permiso(id_permiso: int, payload: DictamenPermisoPayload):
             """), {
                 "id": id_permiso,
                 "estatus": nuevo_estatus,
-                "con_goce": payload.con_goce_de_sueldo,
+                "con_goce": con_goce_final,
+                "dias_sol": dias_solicitados_final,
                 "impacta": payload.impacta_asistencia if payload.impacta_asistencia is not None else True,
                 "obs": payload.observaciones_rh or "",
                 "motivo_rec": payload.motivo_rechazo if nuevo_estatus == "RECHAZADO" else None,
                 "aprobador": payload.dictaminado_por
             })
+
+            # Si se aprueban vacaciones, sincronizar formalmente en public.rh_vacaciones descontando días laborales (sin domingos)
+            if nuevo_estatus == "APROBADO" and es_vacaciones:
+                try:
+                    q_emp = text("SELECT fecha_ing FROM public.empleados WHERE id_empleado = :id")
+                    r_emp = conn.execute(q_emp, {"id": p["id_empleado"]}).mappings().first()
+                    d_corresp = calcular_dias_vacaciones_lft(r_emp["fecha_ing"]) if r_emp else 12
+                    
+                    q_prev = text("SELECT dias_tomados FROM public.rh_vacaciones WHERE id_empleado = :id AND estatus IN ('APROBADO', 'EN_GOCE', 'FINALIZADO')")
+                    d_previos = sum([r["dias_tomados"] for r in conn.execute(q_prev, {"id": p["id_empleado"]}).mappings().fetchall()])
+                    d_pend = max(0, d_corresp - (d_previos + dias_solicitados_final))
+                    
+                    conn.execute(text("""
+                        INSERT INTO public.rh_vacaciones (
+                            id_empleado, anio_periodo, dias_correspondientes, dias_tomados, dias_pendientes,
+                            fecha_inicio_goce, fecha_fin_goce, tipo, estatus, aprobado_por, fecha_aprobacion, observaciones, registrado_por
+                        ) VALUES (
+                            :id, :anio, :corresp, :tomados, :pend,
+                            :f_ini, :f_fin, 'DÍAS SUELTOS / FRACCIONADOS', 'APROBADO', :aprobador, CURRENT_DATE, :obs, :reg_por
+                        )
+                    """), {
+                        "id": p["id_empleado"],
+                        "anio": p["fecha_inicio"].year,
+                        "corresp": d_corresp,
+                        "tomados": dias_solicitados_final,
+                        "pend": d_pend,
+                        "f_ini": p["fecha_inicio"],
+                        "f_fin": p["fecha_fin"],
+                        "aprobador": payload.dictaminado_por,
+                        "obs": f"Vacaciones autorizadas vía Folio {p['folio_permiso']} ({dias_solicitados_final} días laborales, domingos de descanso excluidos)",
+                        "reg_por": payload.dictaminado_por
+                    })
+                except Exception as e_sync_vac:
+                    print(f"[WARN] Error al sincronizar vacaciones en dictamen: {e_sync_vac}")
 
             # Si se aprueba e impacta asistencia, justificar en control_asistencia
             modalidad = (p.get("modalidad") or "DIAS").upper()
@@ -2022,29 +2045,41 @@ def dictaminar_permiso(id_permiso: int, payload: DictamenPermisoPayload):
                                     DO UPDATE SET observaciones = EXCLUDED.observaciones
                                 """), {"emp": p["id_empleado"], "f": f_cur, "obs": obs_txt})
                         else:
+                            if es_vacaciones:
+                                if f_cur.weekday() == 6:
+                                    est_asist = "DESCANSO"
+                                    obs_asist = f"🗓️ Descanso Semanal Obligatorio (LFT Art. 69) | Período Vacacional"
+                                else:
+                                    est_asist = "VACACIONES"
+                                    obs_asist = f"🌴 Vacaciones (LFT): Con Goce - Dictaminó: {payload.dictaminado_por}"
+                            else:
+                                est_asist = "PERMISO"
+                                obs_asist = f"📋 Permiso RH ({p['tipo_permiso']}: {'Con Goce' if con_goce_final else 'Sin Goce'}) - Dictaminó: {payload.dictaminado_por}"
+
                             conn.execute(text("""
                                 INSERT INTO public.control_asistencia (id_empleado, fecha, estatus, observaciones)
-                                VALUES (:emp, :f, 'PERMISO', :obs)
+                                VALUES (:emp, :f, :est, :obs)
                                 ON CONFLICT (id_empleado, fecha) 
-                                DO UPDATE SET estatus = 'PERMISO', observaciones = EXCLUDED.observaciones
+                                DO UPDATE SET estatus = EXCLUDED.estatus, observaciones = EXCLUDED.observaciones
                             """), {
                                 "emp": p["id_empleado"],
                                 "f": f_cur,
-                                "obs": f"📋 Permiso RH ({p['tipo_permiso']}: {'Con Goce' if payload.con_goce_de_sueldo else 'Sin Goce'}) - Dictaminó: {payload.dictaminado_por}"
+                                "est": est_asist,
+                                "obs": obs_asist
                             })
                     except Exception as e_asist:
                         print(f"[WARN] Error al sincronizar asistencia permiso: {e_asist}")
                     f_cur += datetime.timedelta(days=1)
 
             # Inyectar notificación de resolución en el Chat Administrativo
-            tipo_goce_txt = "Con goce de sueldo" if payload.con_goce_de_sueldo else "Sin goce de sueldo"
+            tipo_goce_txt = "Con goce de sueldo" if con_goce_final else "Sin goce de sueldo"
             if modalidad == "HORAS":
                 h_ini_txt = str(p.get("hora_inicio"))[:5] if p.get("hora_inicio") else ""
                 h_fin_txt = str(p.get("hora_fin"))[:5] if p.get("hora_fin") else ""
                 rango_txt = f" de {h_ini_txt} a {h_fin_txt}" if (h_ini_txt and h_fin_txt) else ""
                 periodo_res = f"El {p['fecha_inicio']} ({p.get('horas_solicitadas') or 0} hr(s){rango_txt})"
             else:
-                periodo_res = f"Del {p['fecha_inicio']} al {p['fecha_fin']} ({p['dias_solicitados']} día(s))"
+                periodo_res = f"Del {p['fecha_inicio']} al {p['fecha_fin']} ({dias_solicitados_final} día(s) laborables)"
 
             if nuevo_estatus == "APROBADO":
                 mensaje_resolucion = (
@@ -2182,11 +2217,19 @@ def create_permiso(payload: PermisoCreate):
 
             modalidad = (data.get("modalidad") or "DIAS").upper()
             data["modalidad"] = modalidad
+            es_vacaciones = (data.get("tipo_permiso") or "").upper() == "VACACIONES"
+            if es_vacaciones:
+                # Vacaciones son por ley 100% con goce de sueldo
+                data["con_goce_de_sueldo"] = True
+
             if modalidad == "HORAS":
                 data["dias_solicitados"] = 0
                 data["fecha_fin"] = data["fecha_inicio"]
             else:
-                data["dias_solicitados"] = max(1, (data["fecha_fin"] - data["fecha_inicio"]).days + 1)
+                if es_vacaciones:
+                    data["dias_solicitados"] = calcular_dias_laborales_vacaciones(data["fecha_inicio"], data["fecha_fin"])
+                else:
+                    data["dias_solicitados"] = max(1, (data["fecha_fin"] - data["fecha_inicio"]).days + 1)
                 data["horas_solicitadas"] = None
                 data["hora_inicio"] = None
                 data["hora_fin"] = None

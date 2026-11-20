@@ -65,12 +65,27 @@ async function cargarTransferenciasModulo() {
             dropzone.style.borderColor = "#94a3b8";
             dropzone.style.background = "#f8fafc";
         });
-        dropzone.addEventListener("drop", (e) => {
+        dropzone.addEventListener("drop", async (e) => {
             e.preventDefault();
             dropzone.style.borderColor = "#94a3b8";
             dropzone.style.background = "#f8fafc";
-            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                procesarNuevosArchivosTransferencia(e.dataTransfer.files);
+            
+            try {
+                if (e.dataTransfer && e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+                    const archivosExtraidos = await extraerArchivosDeDataTransfer(e.dataTransfer.items);
+                    if (archivosExtraidos && archivosExtraidos.length > 0) {
+                        procesarNuevosArchivosTransferencia(archivosExtraidos);
+                        return;
+                    }
+                }
+                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    procesarNuevosArchivosTransferencia(e.dataTransfer.files);
+                }
+            } catch (err) {
+                console.error("Error al procesar arrastre de archivos/carpetas:", err);
+                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    procesarNuevosArchivosTransferencia(e.dataTransfer.files);
+                }
             }
         });
     }
@@ -118,6 +133,78 @@ function formatearTamanoBytes(bytes) {
     }
 }
 
+function esArchivoValidoTransferencia(file) {
+    if (!file || !file.name) return false;
+    const n = file.name.toLowerCase();
+    // Excluir archivos temporales o del sistema operativo
+    if (n === "thumbs.db" || n === ".ds_store" || n === "desktop.ini" || n.startsWith("~$")) {
+        return false;
+    }
+    return true;
+}
+
+async function extraerArchivosDeDataTransfer(items) {
+    const archivos = [];
+    const queue = [];
+
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (typeof item.webkitGetAsEntry === "function") {
+            const entry = item.webkitGetAsEntry();
+            if (entry) queue.push(entry);
+        } else if (item.kind === "file") {
+            const f = item.getAsFile();
+            if (f && esArchivoValidoTransferencia(f)) archivos.push(f);
+        }
+    }
+
+    async function procesarEntry(entry) {
+        if (!entry) return;
+        if (entry.isFile) {
+            return new Promise((resolve) => {
+                entry.file((file) => {
+                    if (file && esArchivoValidoTransferencia(file)) {
+                        archivos.push(file);
+                    }
+                    resolve();
+                }, (err) => {
+                    console.warn("No se pudo leer archivo de carpeta:", err);
+                    resolve();
+                });
+            });
+        } else if (entry.isDirectory) {
+            const dirReader = entry.createReader();
+            const subEntries = await new Promise((resolve) => {
+                let todas = [];
+                function leerBloque() {
+                    dirReader.readEntries((entries) => {
+                        if (!entries || entries.length === 0) {
+                            resolve(todas);
+                        } else {
+                            todas = todas.concat(Array.from(entries));
+                            leerBloque();
+                        }
+                    }, (err) => {
+                        console.warn("Error al leer directorio:", err);
+                        resolve(todas);
+                    });
+                }
+                leerBloque();
+            });
+
+            for (const sub of subEntries) {
+                await procesarEntry(sub);
+            }
+        }
+    }
+
+    for (const entry of queue) {
+        await procesarEntry(entry);
+    }
+
+    return archivos;
+}
+
 function alSeleccionarArchivosTransferencia(input) {
     if (!input.files || input.files.length === 0) return;
     procesarNuevosArchivosTransferencia(input.files);
@@ -130,6 +217,8 @@ function procesarNuevosArchivosTransferencia(fileList) {
 
     for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
+        if (!file || !esArchivoValidoTransferencia(file)) continue;
+
         if (totalActual + file.size > LIMITE_10GB) {
             alert(`⚠️ No se pudo agregar "${file.name}".\nEl tamaño combinado superaría el límite de 10.0 GB.\nTamaño actual acumulado: ${formatearTamanoBytes(totalActual)}.`);
             break;
@@ -156,6 +245,8 @@ function limpiarArchivosTransferencia() {
     archivosTransferenciaSeleccionados = [];
     const input = document.getElementById("transfer-input-file");
     if (input) input.value = "";
+    const inputFolder = document.getElementById("transfer-input-folder");
+    if (inputFolder) inputFolder.value = "";
     renderizarListaArchivosSeleccionados();
 }
 

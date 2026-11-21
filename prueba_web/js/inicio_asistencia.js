@@ -255,7 +255,7 @@ async function cargarDatosInicio() {
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 13px; border-radius:8px; margin-bottom:6px; background:#ffffff; border:1px solid #fee2e2; box-shadow:0 1px 3px rgba(0,0,0,0.04); flex-wrap:wrap;">
                                 <div style="flex:1; min-width:240px;">
                                     <div style="font-size:13.5px; font-weight:700; color:#991b1b; display:flex; align-items:center; gap:6px;">
-                                        <i class="ph ph-warning-circle" style="color:#ef4444; font-size:17px;"></i> OP-${String(op.id_evento).padStart(3, '0')} | ${op.cliente || 'Sin Cliente'}
+                                        <i class="ph ph-warning-circle" style="color:#ef4444; font-size:17px;"></i> OP-${op.folio || op.id_evento} | ${op.cliente || 'Sin Cliente'}
                                     </div>
                                     <div style="font-size:12.5px; font-weight:600; color:#1e293b; margin-top:2px;">
                                         ${op.nombre_evento || 'Evento sin nombre'}

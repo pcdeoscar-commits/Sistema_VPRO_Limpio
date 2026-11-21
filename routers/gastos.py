@@ -104,7 +104,8 @@ def listar_folios_pendientes_gastos():
                e.fec_del_evento,
                e.fec_de_instalacion,
                e.fec_fin_evento,
-               0.0 AS estimado_gasto
+               0.0 AS estimado_gasto,
+               e.folio
         FROM public.eventos e
         WHERE UPPER(COALESCE(e.estatus, '')) != 'CERRADA (HISTÓRICO)'
           AND NOT EXISTS (
@@ -123,7 +124,8 @@ def listar_folios_pendientes_gastos():
                     "nombre_evento": safe_decode_hex(r[2]),
                     "productor": safe_decode_hex(r[3]),
                     "fec_evento": f"{r[4]} al {r[6]}" if (r[4] and r[6] and r[4] != r[6]) else (str(r[4]) if r[4] else (str(r[5]) if r[5] else "")),
-                    "estimado_gasto": float(r[7] or 0.0)
+                    "estimado_gasto": float(r[7] or 0.0),
+                    "folio": str(r[8]) if r[8] is not None else str(r[0])
                 } for r in rows
             ]
     except Exception as e: 
@@ -144,7 +146,8 @@ def obtener_datos_evento_gasto(id_evento: int):
                0.0 AS estimado_gasto,
                quien_solicita,
                dependencia_solicita,
-               encode(COALESCE(responsable_gastos, '')::bytea, 'hex')
+               encode(COALESCE(responsable_gastos, '')::bytea, 'hex'),
+               folio
         FROM public.eventos WHERE id_evento = :id
     """)
     try:
@@ -183,7 +186,8 @@ def obtener_datos_evento_gasto(id_evento: int):
                     "fec_fin_evento": str(res[7]) if res[7] else (str(res[6]) if res[6] else None),
                     "estimado_gasto": float(res[8] or 0.0),
                     "quien_solicita": str(res[9] or ""),
-                    "dependencia_solicita": str(res[10] or "")
+                    "dependencia_solicita": str(res[10] or ""),
+                    "folio": str(res[12]) if res[12] is not None else str(id_evento)
                 }
             raise HTTPException(status_code=404, detail="Evento no mapeado")
     except Exception as e: 
@@ -407,10 +411,13 @@ def guardar_informe_gastos_completo(payload: dict):
 def obtener_expediente_informe_completo(id_informe: int):
     """Consulta el expediente completo de un informe de gastos."""
     query_m = text("""
-        SELECT id_informe, folio_vpro, id_empleado, periodo_desde, periodo_hasta, 
-               encode(vehiculo::bytea, 'hex'), km_inicial, km_final, encode(departamento::bytea, 'hex'), 
-               num_personas, subtotal, monto_entregado, restante, revisado 
-        FROM public.informes_gastos_maestro WHERE id_informe = :id
+        SELECT m.id_informe, m.folio_vpro, m.id_empleado, m.periodo_desde, m.periodo_hasta, 
+               encode(m.vehiculo::bytea, 'hex'), m.km_inicial, m.km_final, encode(m.departamento::bytea, 'hex'), 
+               m.num_personas, m.subtotal, m.monto_entregado, m.restante, m.revisado,
+               e.folio
+        FROM public.informes_gastos_maestro m
+        LEFT JOIN public.eventos e ON m.folio_vpro = e.id_evento
+        WHERE m.id_informe = :id
     """)
     query_d = text("""
         SELECT dia_num, hotel, transporte, combustible, casetas, desayuno, comida, cenas, varios, total_dia 
@@ -427,9 +434,11 @@ def obtener_expediente_informe_completo(id_informe: int):
             emp_row = conn_p.execute(text("SELECT encode(nombre::bytea, 'hex') FROM public.empleados WHERE TRIM(id_empleado) = :id"), {"id": str(m[2]).strip()}).first()
         nombre_emp = safe_decode_hex(emp_row[0]) if emp_row else f"ID: {m[2]}"
 
+        folio_real = str(m[14]) if m[14] is not None else str(m[1])
+
         return {
             "maestro": {
-                "id_informe": m[0], "folio_vpro": m[1], "nombre_empleado": nombre_emp, 
+                "id_informe": m[0], "folio_vpro": m[1], "folio_real": folio_real, "nombre_empleado": nombre_emp, 
                 "periodo_desde": str(m[3]), "periodo_hasta": str(m[4]),
                 "vehiculo": safe_decode_hex(m[5]), "km_inicial": m[6], "km_final": m[7], 
                 "departamento": safe_decode_hex(m[8]), "num_personas": m[9], 
@@ -481,7 +490,7 @@ def obtener_gastos_pendientes_auditoria():
     try:
         with engine_eventos.connect() as conn:
             query = text("""
-                SELECT igm.folio_vpro, igm.id_empleado, encode(e.nombre_evento::bytea, 'hex'), encode(e.para_q_cliente::bytea, 'hex') 
+                SELECT igm.folio_vpro, igm.id_empleado, encode(e.nombre_evento::bytea, 'hex'), encode(e.para_q_cliente::bytea, 'hex'), e.folio 
                 FROM public.informes_gastos_maestro igm 
                 LEFT JOIN public.eventos e ON igm.folio_vpro = e.id_evento 
                 WHERE igm.revisado IS FALSE OR igm.revisado IS NULL
@@ -491,8 +500,10 @@ def obtener_gastos_pendientes_auditoria():
             for r in res:
                 cliente_str = safe_decode_hex(r[3]) if r[3] else ""
                 evento_str = safe_decode_hex(r[2]) if r[2] else "Evento Desconocido"
+                folio_real = str(r[4]) if r[4] is not None else str(r[0])
                 lista_pendientes.append({
-                    "folio_op": r[0], 
+                    "folio_op": folio_real, 
+                    "id_evento": r[0],
                     "id_empleado": str(r[1]).strip(), 
                     "evento": f"{cliente_str} - {evento_str}".strip(" -")
                 })
@@ -506,7 +517,7 @@ def listar_informes_auditoria():
     try:
         with engine_eventos.connect() as conn:
             query = text("""
-                SELECT m.id_informe, m.folio_vpro, m.revisado, m.id_empleado, encode(e.nombre_evento::bytea, 'hex')
+                SELECT m.id_informe, m.folio_vpro, m.revisado, m.id_empleado, encode(e.nombre_evento::bytea, 'hex'), e.folio
                 FROM public.informes_gastos_maestro m 
                 LEFT JOIN public.eventos e ON m.folio_vpro = e.id_evento 
                 ORDER BY m.id_informe DESC
@@ -521,9 +532,11 @@ def listar_informes_auditoria():
         for r in rows:
             id_emp = str(r[3]).strip()
             nombre_ev = safe_decode_hex(r[4]) if r[4] else "Evento Desconocido"
+            folio_real = str(r[5]) if r[5] is not None else str(r[1])
             lista_final.append({
                 "id_informe": r[0], 
                 "folio_vpro": r[1], 
+                "folio_real": folio_real,
                 "revisado": bool(r[2]), 
                 "nombre_empleado": dict_emps.get(id_emp, f"ID: {id_emp}"), 
                 "nombre_evento": nombre_ev
@@ -575,7 +588,11 @@ def obtener_gastos_historicos_op(id_evento: str):
     """Consulta el informe financiero histórico detallado de una OP."""
     try:
         with engine_eventos.connect() as conn:
-            q_maestro = text("SELECT * FROM public.informes_gastos_maestro WHERE CAST(folio_vpro AS TEXT) = :id")
+            q_maestro = text("""
+                SELECT * FROM public.informes_gastos_maestro 
+                WHERE CAST(folio_vpro AS TEXT) = :id 
+                   OR folio_vpro = (SELECT id_evento FROM public.eventos WHERE folio = :id LIMIT 1)
+            """)
             m_row = conn.execute(q_maestro, {"id": str(id_evento).strip()}).mappings().first()
             
             if not m_row: 

@@ -78,7 +78,8 @@ async function cargarModuloGastos() {
                 if (misOps.length > 0) {
                     optionsHtml += `<optgroup label="⭐ MIS ÓRDENES DE PRODUCCIÓN ASIGNADAS (${misOps.length})">`;
                     misOps.forEach(f => {
-                        optionsHtml += `<option value="${f.id_evento}">OP-${f.id_evento} | ${f.nombre_evento} (${f.cliente}) - Productor: ${f.productor}</option>`;
+                        const folioVisual = f.folio || f.id_evento;
+                        optionsHtml += `<option value="${f.id_evento}">OP-${folioVisual} | ${f.nombre_evento} (${f.cliente}) - Productor: ${f.productor}</option>`;
                     });
                     optionsHtml += `</optgroup>`;
                 }
@@ -87,7 +88,8 @@ async function cargarModuloGastos() {
                     const labelGrupo = misOps.length > 0 ? "OTRAS ÓRDENES PENDIENTES DE GASTOS" : "ÓRDENES DE PRODUCCIÓN PENDIENTES";
                     optionsHtml += `<optgroup label="📋 ${labelGrupo} (${otrasOps.length})">`;
                     otrasOps.forEach(f => {
-                        optionsHtml += `<option value="${f.id_evento}">OP-${f.id_evento} | ${f.nombre_evento} (${f.cliente}) - Productor: ${f.productor || 'No asignado'}</option>`;
+                        const folioVisual = f.folio || f.id_evento;
+                        optionsHtml += `<option value="${f.id_evento}">OP-${folioVisual} | ${f.nombre_evento} (${f.cliente}) - Productor: ${f.productor || 'No asignado'}</option>`;
                     });
                     optionsHtml += `</optgroup>`;
                 }
@@ -136,7 +138,8 @@ async function seleccionarFolioParaGastos(folioId) {
         const elDesde = document.getElementById("gastos-input-desde");
         const elHasta = document.getElementById("gastos-input-hasta");
 
-        if (elFolio) elFolio.innerText = `OP-${folioId}`;
+        const folioMostrar = evData.folio || folioId;
+        if (elFolio) elFolio.innerText = `OP-${folioMostrar}`;
         if (elCliente) elCliente.innerText = evData.cliente || "--";
         if (elEvento) elEvento.innerText = evData.nombre_evento || "--";
         if (elProductor) elProductor.innerText = evData.productor_responsable || "No asignado";
@@ -564,7 +567,7 @@ function renderizarTablaGastosAuditoria(lista) {
         return `
             <tr>
                 <td style="font-weight: 700;">#${inf.id_informe}</td>
-                <td><b>OP-${inf.folio_vpro}</b></td>
+                <td><b>OP-${inf.folio_real || inf.folio_vpro}</b></td>
                 <td style="color: #0f172a; font-weight: 500;">${inf.nombre_evento || 'Evento'}</td>
                 <td>${inf.nombre_empleado || 'Responsable'}</td>
                 <td>${stBadge}</td>
@@ -587,7 +590,7 @@ function filtrarTablaGastosAuditoria(termino) {
     const filtrados = informesAuditoriaCache.filter(inf =>
         (inf.nombre_evento && inf.nombre_evento.toLowerCase().includes(t)) ||
         (inf.nombre_empleado && inf.nombre_empleado.toLowerCase().includes(t)) ||
-        String(inf.folio_vpro).includes(t) ||
+        String(inf.folio_real || inf.folio_vpro).includes(t) ||
         String(inf.id_informe).includes(t)
     );
     renderizarTablaGastosAuditoria(filtrados);
@@ -604,8 +607,9 @@ async function abrirModalGastoExpediente(idInforme) {
         informeAuditoriaSeleccionado = idInforme;
         window.eventoActualVincular = m.id_evento;
 
+        const folioExpediente = m.folio_real || m.folio_vpro;
         const titulo = document.getElementById("modal-gasto-titulo");
-        if (titulo) titulo.innerHTML = `<i class="ph ph-receipt" style="color: #3b82f6;"></i> Expediente de Comprobación: #${m.id_informe} (OP-${m.folio_vpro})`;
+        if (titulo) titulo.innerHTML = `<i class="ph ph-receipt" style="color: #3b82f6;"></i> Expediente de Comprobación: #${m.id_informe} (OP-${folioExpediente})`;
 
         const cont = document.getElementById("modal-gasto-contenido");
         if (cont) {

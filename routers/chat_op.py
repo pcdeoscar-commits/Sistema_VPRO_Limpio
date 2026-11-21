@@ -1,4 +1,6 @@
 import asyncio
+from core.notificaciones_ws import despachar_notificacion_op
+import asyncio
 import datetime
 import os
 import shutil
@@ -445,6 +447,12 @@ async def enviar_mensaje_op(id_evento: int, payload: MensajeNuevoPayload):
             "tipo": "NUEVO_MENSAJE",
             "mensaje": mensaje_dict
         })
+        asyncio.create_task(despachar_notificacion_op(
+            id_evento=id_evento,
+            autor_id=str(payload.id_empleado or ''),
+            autor_nombre=payload.autor_nombre,
+            mensaje=texto_limpio
+        ))
 
         return {"status": "success", "mensaje": mensaje_dict}
 
@@ -540,6 +548,13 @@ async def subir_adjunto_chat_op(
             "tipo": "NUEVO_MENSAJE",
             "mensaje": mensaje_dict
         })
+        asyncio.create_task(despachar_notificacion_op(
+            id_evento=id_evento,
+            autor_id=str(id_empleado or ''),
+            autor_nombre=autor_nombre,
+            mensaje="📸 Foto o archivo adjunto",
+            foto_url=url_publica
+        ))
 
         return {"status": "success", "mensaje": mensaje_dict}
 

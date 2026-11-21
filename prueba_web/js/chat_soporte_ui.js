@@ -100,8 +100,14 @@ async function cargarCanalSoporte() {
                 };
             seleccionarSoporteChat(miCanal);
         } else {
-            // Si es TI / Sistemas: si ya tenía una seleccionada, conservarla; sino seleccionar la primera que tenga mensajes
-            if (soporteChatState.chatActual) {
+            // Si es TI / Sistemas: revisar si viene por URL (?id=...)
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetSoporteId = urlParams.get('id');
+            const matchSoporte = targetSoporteId ? soporteChatState.conversaciones.find(c => String(c.id_empleado_consulta) === String(targetSoporteId)) : null;
+
+            if (matchSoporte) {
+                seleccionarSoporteChat(matchSoporte);
+            } else if (soporteChatState.chatActual) {
                 const existe = soporteChatState.conversaciones.find(c => String(c.id_empleado_consulta) === String(soporteChatState.chatActual.id_empleado_consulta));
                 if (existe) {
                     seleccionarSoporteChat(existe);

@@ -56,7 +56,8 @@ from routers import (
     chat_op,
     chat_admin,
     chat_soporte,
-    chat_directo
+    chat_directo,
+    notificaciones
 )
 
 # 🔄 CICLO DE VIDA DE LA APLICACIÓN (Lifespan Context Manager)
@@ -113,7 +114,8 @@ app.include_router(cotizaciones.router)
 app.include_router(chat_op.router)
 app.include_router(chat_admin.router)
 app.include_router(chat_soporte.router)
-app.include_router(chat_directo.router)
+app.include_router(chat_directo.router)
+app.include_router(notificaciones.router)
 
 @app.get("/health", tags=["Sistema"])
 def health_check():

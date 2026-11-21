@@ -280,6 +280,9 @@ function iniciarSesionExitosa(usuario) {
     if (typeof iniciarMonitoreoInactividad === 'function') {
         iniciarMonitoreoInactividad(usuario);
     }
+    if (typeof iniciarNotificacionesVPRO === 'function') {
+        iniciarNotificacionesVPRO();
+    }
     cambiarVista('vista-inicio'); 
 }
 

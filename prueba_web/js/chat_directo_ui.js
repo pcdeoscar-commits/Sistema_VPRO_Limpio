@@ -65,8 +65,25 @@ async function cargarCanalDirecto() {
             inputMsg.focus();
         }
 
-        // Si ya hay una conversación seleccionada, conservarla; sino seleccionar la primera si existe
-        if (directoChatState.chatActual) {
+        // Atajo directo desde notificación URL (?id=...)
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetDirectoId = urlParams.get('id');
+
+        if (targetDirectoId) {
+            const existeDirecto = directoChatState.conversaciones.find(c => String(c.companero_id) === String(targetDirectoId));
+            if (existeDirecto) {
+                seleccionarDirectoChat(existeDirecto);
+            } else {
+                const enDirectorio = directoChatState.directorio.find(d => String(d.id_empleado) === String(targetDirectoId));
+                if (enDirectorio && typeof iniciarConversacionCon === 'function') {
+                    iniciarConversacionCon(enDirectorio);
+                } else if (directoChatState.conversaciones.length > 0) {
+                    seleccionarDirectoChat(directoChatState.conversaciones[0]);
+                } else {
+                    mostrarBienvenidaDirecto();
+                }
+            }
+        } else if (directoChatState.chatActual) {
             const existe = directoChatState.conversaciones.find(c => String(c.companero_id) === String(directoChatState.chatActual.companero_id));
             if (existe) {
                 seleccionarDirectoChat(existe);

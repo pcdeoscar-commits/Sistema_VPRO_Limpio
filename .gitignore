@@ -35,3 +35,8 @@ slide_bg_test.png
 slides_preview/
 slides_preview_emails/
 
+
+# Base de datos y backups locales
+backups/
+*.db
+*.pdf

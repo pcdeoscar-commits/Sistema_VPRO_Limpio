@@ -107,6 +107,7 @@ app.include_router(chat_op.router)
 app.include_router(chat_admin.router)
 app.include_router(chat_soporte.router)
 app.include_router(chat_directo.router)
+app.include_router(notificaciones.router)
 
 @app.get("/health", tags=["Sistema"])
 def health_check():

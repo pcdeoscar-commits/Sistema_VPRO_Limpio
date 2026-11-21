@@ -1,3 +1,5 @@
+import asyncio
+from core.notificaciones_ws import despachar_notificacion_ayuda_redes
 import datetime
 import os
 import shutil
@@ -537,6 +539,13 @@ async def enviar_mensaje_conversacion_soporte(
             "id_empleado_consulta": emp_consulta_str,
             "mensaje": msg_obj
         })
+        asyncio.create_task(despachar_notificacion_ayuda_redes(
+            autor_id=aut_id_str,
+            autor_nombre=payload.autor_nombre,
+            id_empleado_consulta=emp_consulta_str,
+            mensaje=texto_limpio,
+            foto_url=foto_emp
+        ))
 
         return {"status": "success", "mensaje": msg_obj}
 

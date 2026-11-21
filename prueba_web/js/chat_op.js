@@ -276,6 +276,8 @@ async function inicializarChatOP() {
 
     if (aristaParam === 'soporte') {
         cambiarAristaChat('soporte');
+    } else if (aristaParam === 'directo') {
+        cambiarAristaChat('directo');
     } else if (aristaParam === 'admin' || (esAdmin && !urlParams.get("op"))) {
         cambiarAristaChat('admin');
     } else {

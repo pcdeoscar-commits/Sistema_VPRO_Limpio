@@ -1,3 +1,5 @@
+import asyncio
+from core.notificaciones_ws import despachar_notificacion_rrhh
 import datetime
 import os
 import shutil
@@ -351,6 +353,13 @@ async def enviar_mensaje_chat_admin(
 
         # Transmitir por WebSocket en vivo
         await ws_admin_manager.broadcast_to_room(str(id_empleado), msg_obj)
+        asyncio.create_task(despachar_notificacion_rrhh(
+            autor_id=str(payload.autor_id),
+            autor_nombre=payload.autor_nombre,
+            id_empleado_hilo=str(id_empleado),
+            mensaje=payload.mensaje,
+            foto_url=foto_emp
+        ))
 
         return {"msg": "Mensaje enviado", "data": msg_obj}
     except Exception as e:

@@ -249,6 +249,16 @@ async function cargarListaAdminChat() {
         adminChatState.conversaciones = data || [];
         renderizarListaAdmin();
 
+        // Atajo directo desde notificación URL (?id=...)
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetAdminId = urlParams.get('id');
+        if (esAdmin && targetAdminId) {
+            const matchAdmin = adminChatState.conversaciones.find(c => String(c.id_empleado) === String(targetAdminId));
+            if (matchAdmin && typeof seleccionarAdminChat === 'function') {
+                seleccionarAdminChat(matchAdmin);
+            }
+        }
+
         // Actualizar badge de notificaciones de Admon & RH
         const totalAlertas = adminChatState.conversaciones.reduce((acc, c) => acc + (c.no_leidos || 0) + (c.permisos_pendientes || 0), 0);
         const badgeEl = document.getElementById("badge-admin-no-leidos");

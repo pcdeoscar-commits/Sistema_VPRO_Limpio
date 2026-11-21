@@ -54,10 +54,57 @@ function cambiarAristaChat(arista) {
     const searchBar = document.querySelector(".chat-search-bar");
     const inputMsg = document.getElementById("chat-input-mensaje");
 
-    if (arista === 'soporte') {
+    if (arista === 'directo') {
+        if (btnOps) { btnOps.style.background = "#111b21"; btnOps.style.color = "#8696a0"; }
+        if (btnAdmin) { btnAdmin.style.background = "#111b21"; btnAdmin.style.color = "#8696a0"; }
+        if (btnSoporte) { btnSoporte.style.background = "#111b21"; btnSoporte.style.color = "#8696a0"; }
+        if (btnDirecto) { btnDirecto.style.background = "#8b5cf6"; btnDirecto.style.color = "#ffffff"; }
+        if (tabsBar) tabsBar.style.display = "none";
+        
+        const searchInput = document.getElementById("chat-input-busqueda");
+        if (searchBar) {
+            searchBar.style.display = "block";
+            if (searchInput) {
+                searchInput.value = "";
+                searchInput.placeholder = "Buscar compañero o chat directo...";
+                searchInput.oninput = (e) => {
+                    if (typeof filtrarDirectoChat === 'function') {
+                        filtrarDirectoChat(e.target.value);
+                    }
+                };
+            }
+        }
+        if (listOps) listOps.style.display = "none";
+        if (listAdmin) listAdmin.style.display = "none";
+        if (listSoporte) listSoporte.style.display = "none";
+        if (listDirecto) listDirecto.style.display = "block";
+        if (inputMsg) inputMsg.placeholder = "Escribe un mensaje directo privado...";
+
+        if (chatState.ws) {
+            try { chatState.ws.close(); } catch(e){}
+            chatState.ws = null;
+        }
+        if (adminChatState.ws) {
+            try { adminChatState.ws.close(); } catch(e){}
+            adminChatState.ws = null;
+        }
+        if (typeof soporteChatState !== 'undefined' && soporteChatState.ws) {
+            try { soporteChatState.ws.close(); } catch(e){}
+            soporteChatState.ws = null;
+        }
+        if (typeof directoChatState !== 'undefined' && directoChatState.ws) {
+            try { directoChatState.ws.close(); } catch(e){}
+            directoChatState.ws = null;
+        }
+
+        if (typeof cargarCanalDirecto === 'function') {
+            cargarCanalDirecto();
+        }
+    } else if (arista === 'soporte') {
         if (btnOps) { btnOps.style.background = "#111b21"; btnOps.style.color = "#8696a0"; }
         if (btnAdmin) { btnAdmin.style.background = "#111b21"; btnAdmin.style.color = "#8696a0"; }
         if (btnSoporte) { btnSoporte.style.background = "#0284c7"; btnSoporte.style.color = "#ffffff"; }
+        if (btnDirecto) { btnDirecto.style.background = "#111b21"; btnDirecto.style.color = "#8696a0"; }
         if (tabsBar) tabsBar.style.display = "none";
         const esTI = (typeof esPersonalSistemasOAdmin === 'function') ? esPersonalSistemasOAdmin() : false;
         const searchInput = document.getElementById("chat-input-busqueda");
@@ -76,6 +123,7 @@ function cambiarAristaChat(arista) {
         if (listOps) listOps.style.display = "none";
         if (listAdmin) listAdmin.style.display = "none";
         if (listSoporte) listSoporte.style.display = "block";
+        if (listDirecto) listDirecto.style.display = "none";
         if (inputMsg) inputMsg.placeholder = "¿Dudas de internet, sistemas o equipos? Escribe aquí...";
 
         // Desconectar WebSocket de OP
@@ -96,6 +144,7 @@ function cambiarAristaChat(arista) {
         if (btnOps) { btnOps.style.background = "#111b21"; btnOps.style.color = "#8696a0"; }
         if (btnAdmin) { btnAdmin.style.background = "#6366f1"; btnAdmin.style.color = "#ffffff"; }
         if (btnSoporte) { btnSoporte.style.background = "#111b21"; btnSoporte.style.color = "#8696a0"; }
+        if (btnDirecto) { btnDirecto.style.background = "#111b21"; btnDirecto.style.color = "#8696a0"; }
         if (tabsBar) tabsBar.style.display = "none";
         
         const esAdmin = (typeof esUsuarioAdminChat === 'function') ? esUsuarioAdminChat() : false;
@@ -129,17 +178,23 @@ function cambiarAristaChat(arista) {
             try { soporteChatState.ws.close(); } catch(e){}
             soporteChatState.ws = null;
         }
+        if (typeof directoChatState !== 'undefined' && directoChatState.ws) {
+            try { directoChatState.ws.close(); } catch(e){}
+            directoChatState.ws = null;
+        }
 
         cargarListaAdminChat();
     } else {
         if (btnOps) { btnOps.style.background = "#00a884"; btnOps.style.color = "#ffffff"; }
         if (btnAdmin) { btnAdmin.style.background = "#111b21"; btnAdmin.style.color = "#8696a0"; }
         if (btnSoporte) { btnSoporte.style.background = "#111b21"; btnSoporte.style.color = "#8696a0"; }
+        if (btnDirecto) { btnDirecto.style.background = "#111b21"; btnDirecto.style.color = "#8696a0"; }
         if (tabsBar) tabsBar.style.display = "flex";
         if (searchBar) searchBar.style.display = "block";
         if (listOps) listOps.style.display = "block";
         if (listAdmin) listAdmin.style.display = "none";
         if (listSoporte) listSoporte.style.display = "none";
+        if (listDirecto) listDirecto.style.display = "none";
         if (inputMsg) inputMsg.placeholder = "Escribe un mensaje técnico de la OP...";
 
         // Desconectar WebSocket de Admin
@@ -151,6 +206,10 @@ function cambiarAristaChat(arista) {
         if (typeof soporteChatState !== 'undefined' && soporteChatState.ws) {
             try { soporteChatState.ws.close(); } catch(e){}
             soporteChatState.ws = null;
+        }
+        if (typeof directoChatState !== 'undefined' && directoChatState.ws) {
+            try { directoChatState.ws.close(); } catch(e){}
+            directoChatState.ws = null;
         }
 
         // Si ya había una OP seleccionada, restaurar su cabecera y mensajes

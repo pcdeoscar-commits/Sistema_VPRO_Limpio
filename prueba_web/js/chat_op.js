@@ -521,6 +521,9 @@ function regresarAListaOPsMovil() {
         if (typeof renderizarListaAdmin === 'function') renderizarListaAdmin();
     } else if (chatState.arista === 'soporte') {
         if (typeof renderizarSidebarSoporte === 'function') renderizarSidebarSoporte();
+    } else if (chatState.arista === 'directo') {
+        if (typeof directoChatState !== 'undefined') directoChatState.chatActual = null;
+        if (typeof renderizarSidebarDirecto === 'function') renderizarSidebarDirecto();
     } else {
         chatState.opActual = null;
         renderizarListaOPs();
@@ -914,6 +917,12 @@ function actualizarBannerFijados(fijados) {
 // ENVIAR MENSAJE
 // ==============================================================================
 async function enviarMensajeChat() {
+    if (chatState.arista === 'directo') {
+        if (typeof enviarMensajeDirecto === 'function') {
+            await enviarMensajeDirecto();
+        }
+        return;
+    }
     if (chatState.arista === 'soporte') {
         if (typeof enviarMensajeSoporte === 'function') {
             await enviarMensajeSoporte();
@@ -981,6 +990,14 @@ async function seleccionarYSubirAdjunto() {
 async function procesarAdjuntoSeleccionado(inputEl) {
     if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
     const archivo = inputEl.files[0];
+
+    if (chatState.arista === 'directo') {
+        if (typeof subirArchivoDirecto === 'function') {
+            await subirArchivoDirecto(archivo);
+        }
+        inputEl.value = '';
+        return;
+    }
 
     if (chatState.arista === 'soporte') {
         if (typeof subirArchivoSoporte === 'function') {

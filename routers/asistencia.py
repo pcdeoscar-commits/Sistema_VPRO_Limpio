@@ -1341,11 +1341,6 @@ def sellar_asistencia_ruta_exacta(payload: SellarRutaExactaPayload):
 @router.post("/guardar-cambios", tags=["🕒 Checador Asistencia"])
 def guardar_cambios_asistencia_admin(logs: List[dict]):
     """Permite a los administradores corregir y guardar cambios de asistencias."""
-    query = text("""
-        UPDATE public.control_asistencia
-        SET hora_entrada = CAST(:hora_entrada AS time), hora_salida = CAST(:hora_salida AS time), estatus = :estatus, observaciones = :observaciones
-        WHERE id_registro = :id_registro
-    """)
     try:
         with engine_personal.begin() as conn:
             for log in logs:
@@ -1356,13 +1351,40 @@ def guardar_cambios_asistencia_admin(logs: List[dict]):
                 if h_sal in ["", "None", "En Set", "??:??"]:
                     h_sal = None
                 
-                conn.execute(query, {
+                set_clauses = [
+                    "hora_entrada = CAST(:hora_entrada AS time)",
+                    "hora_salida = CAST(:hora_salida AS time)",
+                    "estatus = :estatus",
+                    "observaciones = :observaciones"
+                ]
+                params = {
                     "hora_entrada": h_ent,
                     "hora_salida": h_sal,
                     "estatus": str(log.get("estatus", "ASISTENCIA")).strip().upper(),
                     "observaciones": str(log.get("observaciones", "")).strip(),
                     "id_registro": int(log.get("id_registro"))
-                })
+                }
+
+                if "hora_entrada_v" in log:
+                    h_ent_v = str(log.get("hora_entrada_v", "")).strip()
+                    if h_ent_v in ["", "None", "??:??", "--:--"]:
+                        h_ent_v = None
+                    set_clauses.append("hora_entrada_v = CAST(:hora_entrada_v AS time)")
+                    params["hora_entrada_v"] = h_ent_v
+
+                if "hora_salida_v" in log:
+                    h_sal_v = str(log.get("hora_salida_v", "")).strip()
+                    if h_sal_v in ["", "None", "En Set", "??:??", "--:--"]:
+                        h_sal_v = None
+                    set_clauses.append("hora_salida_v = CAST(:hora_salida_v AS time)")
+                    params["hora_salida_v"] = h_sal_v
+
+                query = text(f"""
+                    UPDATE public.control_asistencia
+                    SET {', '.join(set_clauses)}
+                    WHERE id_registro = :id_registro
+                """)
+                conn.execute(query, params)
         return {"status": "SUCCESS"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

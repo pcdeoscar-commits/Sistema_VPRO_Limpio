@@ -10,8 +10,12 @@
 let registrosAuditoriaCache = [];
 
 async function cargarAuditoriaAsistencia() {
-    // Candado estricto para Dirección (Villarreal / Agundez)
-    if (typeof esUsuarioAutorizadoDireccion === 'function' && !esUsuarioAutorizadoDireccion()) {
+    // Candado estricto: Consulta y Auditoría de Asistencia solo para rol ADMIN
+    const esAdmin = (typeof esUsuarioRolAdmin === 'function') 
+        ? esUsuarioRolAdmin() 
+        : ((usuarioLogueado?.rol || '').toUpperCase().includes('ADMIN'));
+
+    if (!esAdmin) {
         const view = document.getElementById("subvista-checador-auditoria");
         if (view) view.style.display = "none";
         if (typeof cambiarPestanaChecador === 'function') cambiarPestanaChecador('kiosco');

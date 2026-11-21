@@ -1133,9 +1133,11 @@ function reproducirBeepKiosco(tipo = 'ok') {
 }
 
 function cambiarPestanaChecador(tab) {
-    // Protección estricta: Auditoría de Asistencia solo permitida para Villarreal o Agundez
+    // Protección estricta: Consulta y Auditoría de Asistencia solo permitida para rol ADMIN
     if (tab === 'auditoria') {
-        const autorizado = (typeof esUsuarioAutorizadoDireccion === 'function') ? esUsuarioAutorizadoDireccion() : false;
+        const autorizado = (typeof esUsuarioRolAdmin === 'function') 
+            ? esUsuarioRolAdmin() 
+            : ((usuarioLogueado?.rol || '').toUpperCase().includes('ADMIN'));
         if (!autorizado) {
             tab = 'kiosco';
         }

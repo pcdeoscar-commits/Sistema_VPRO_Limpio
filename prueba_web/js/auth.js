@@ -435,10 +435,17 @@ function actualizarVisibilidadMenuIncidencias() {
     }
 }
 
+function esUsuarioRolAdmin() {
+    if (!usuarioLogueado) return false;
+    const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
+    return rol === 'ADMIN' || rol.includes('ADMIN');
+}
+window.esUsuarioRolAdmin = esUsuarioRolAdmin;
+
 function actualizarVisibilidadPestanasChecador() {
     const btnAuditoria = document.getElementById("tab-checador-btn-auditoria");
     if (btnAuditoria) {
-        btnAuditoria.style.display = esUsuarioAutorizadoDireccion() ? 'flex' : 'none';
+        btnAuditoria.style.display = esUsuarioRolAdmin() ? 'flex' : 'none';
     }
 }
 

@@ -82,6 +82,13 @@ function cambiarVista(idVista) {
             }
             cargarModuloGastos();
         } else if (idVista === 'vista-auditoria') {
+            const esAdmin = (typeof esUsuarioRolAdmin === 'function') 
+                ? esUsuarioRolAdmin() 
+                : ((usuarioLogueado?.rol || '').toUpperCase().includes('ADMIN'));
+            if (!esAdmin) {
+                cambiarVista('vista-inicio');
+                return;
+            }
             cambiarVista('vista-checador');
             cambiarPestanaChecador('auditoria');
             return;

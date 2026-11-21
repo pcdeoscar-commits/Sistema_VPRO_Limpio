@@ -140,7 +140,7 @@ def obtener_directorio_colaboradores(usuario_id: str):
     try:
         with engine_personal.connect() as conn:
             sql = text("""
-                SELECT 
+                SELECT DISTINCT
                     e.id_empleado,
                     e.nombre,
                     e.puesto,
@@ -148,8 +148,23 @@ def obtener_directorio_colaboradores(usuario_id: str):
                     e.foto_url,
                     e.cel
                 FROM public.empleados e
+                LEFT JOIN public.control_asistencia a 
+                    ON TRIM(e.id_empleado) = TRIM(a.id_empleado)
+                    AND a.fecha >= CURRENT_DATE - INTERVAL '15 days'
+                    AND (a.hora_entrada IS NOT NULL OR a.hora_salida IS NOT NULL)
                 WHERE (e.estatus_empleado = 'ACTIVO' OR e.estatus_empleado IS NULL)
                   AND e.id_empleado != :uid
+                  AND e.id_empleado NOT IN ('000', '529')
+                  AND UPPER(e.nombre) NOT LIKE '%CELULAR%'
+                  AND UPPER(e.nombre) NOT LIKE '%KIOSCO%'
+                  AND UPPER(e.nombre) NOT LIKE '%KIOSKO%'
+                  AND UPPER(e.nombre) NOT LIKE '%LIVE STREAM%'
+                  AND (
+                      a.id_registro IS NOT NULL
+                      OR UPPER(e.nombre) LIKE '%VILLAR%'
+                      OR UPPER(e.nombre) LIKE '%VILAR%'
+                      OR UPPER(e.nombre) LIKE '%AGUNDEZ%'
+                  )
                 ORDER BY e.nombre ASC
             """)
             rows = conn.execute(sql, {"uid": uid_str}).mappings().fetchall()

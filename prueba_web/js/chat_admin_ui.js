@@ -1,3 +1,24 @@
+
+function limpiarVentanaConversacion() {
+    const elFolio = document.getElementById("chat-header-folio");
+    const elTit = document.getElementById("chat-header-titulo");
+    const elDet = document.getElementById("chat-header-detalles");
+    const elLlam = document.getElementById("chat-header-llamado");
+    const area = document.getElementById("chat-area-mensajes");
+    if (elFolio) { elFolio.innerText = "OP-00"; elFolio.style.background = "#00a884"; }
+    if (elTit) elTit.innerText = "Selecciona una Orden de Producción";
+    if (elDet) elDet.innerText = "Canal de comunicación técnica";
+    if (elLlam) elLlam.innerHTML = "";
+    if (area) {
+        area.innerHTML = `
+            <div class="chat-empty-state">
+                <i class="ph ph-chats-teardrop"></i>
+                <h2>VPRO Chat Operativo</h2>
+                <p>Selecciona una Orden de Producción de la lista para ver la conversación técnica, compartir notas y fotos del evento.</p>
+            </div>
+        `;
+    }
+}
 // ==============================================================================
 // MÓDULO: chat_admin_ui.js
 // Arista de Chat Administrativo & Recursos Humanos (Canal 1 a 1 Empleado <-> Admon)
@@ -45,26 +66,59 @@ function cambiarAristaChat(arista) {
     const btnOps = document.getElementById("btn-arista-ops");
     const btnAdmin = document.getElementById("btn-arista-admin");
     const btnSoporte = document.getElementById("btn-arista-soporte");
+    const btnDirecto = document.getElementById("btn-arista-directo");
+
     const listOps = document.getElementById("chat-lista-ops");
     const listAdmin = document.getElementById("chat-lista-admin");
     const listSoporte = document.getElementById("chat-lista-soporte");
+    const listDirecto = document.getElementById("chat-lista-directo");
+
     const tabsBar = document.getElementById("chat-tabs-bar");
     const searchBar = document.querySelector(".chat-search-bar");
+    const searchInput = document.getElementById("chat-input-busqueda");
     const inputMsg = document.getElementById("chat-input-mensaje");
 
+    const panelLat = document.getElementById("chat-panel-lateral");
+    const panelConv = document.getElementById("chat-panel-conversacion");
+
+    // En pantallas móviles, al cambiar de arista siempre mostrar la lista lateral
+    if (window.innerWidth <= 768 && panelLat && panelConv) {
+        panelLat.style.display = "flex";
+        panelConv.style.display = "none";
+    }
+
+    // Resetear estilos de todos los botones
+    [btnOps, btnAdmin, btnSoporte, btnDirecto].forEach(b => {
+        if (b) {
+            b.style.background = "#111b21";
+            b.style.color = "#8696a0";
+            b.classList.remove("active");
+        }
+    });
+
+    // Ocultar todas las listas por defecto
+    [listOps, listAdmin, listSoporte, listDirecto].forEach(l => {
+        if (l) l.style.display = "none";
+    });
+
+    // Cerrar WebSockets previos de otras salas si estaban abiertos
+    if (chatState.ws) { try { chatState.ws.close(); } catch(e){} chatState.ws = null; }
+    if (adminChatState.ws) { try { adminChatState.ws.close(); } catch(e){} adminChatState.ws = null; }
+    if (typeof soporteChatState !== 'undefined' && soporteChatState.ws) { try { soporteChatState.ws.close(); } catch(e){} soporteChatState.ws = null; }
+    if (typeof directoChatState !== 'undefined' && directoChatState.ws) { try { directoChatState.ws.close(); } catch(e){} directoChatState.ws = null; }
+
     if (arista === 'directo') {
-        if (btnOps) { btnOps.style.background = "#111b21"; btnOps.style.color = "#8696a0"; }
-        if (btnAdmin) { btnAdmin.style.background = "#111b21"; btnAdmin.style.color = "#8696a0"; }
-        if (btnSoporte) { btnSoporte.style.background = "#111b21"; btnSoporte.style.color = "#8696a0"; }
-        if (btnDirecto) { btnDirecto.style.background = "#8b5cf6"; btnDirecto.style.color = "#ffffff"; }
+        if (btnDirecto) {
+            btnDirecto.style.background = "#8b5cf6";
+            btnDirecto.style.color = "#ffffff";
+            btnDirecto.classList.add("active");
+        }
         if (tabsBar) tabsBar.style.display = "none";
-        
-        const searchInput = document.getElementById("chat-input-busqueda");
         if (searchBar) {
             searchBar.style.display = "block";
             if (searchInput) {
                 searchInput.value = "";
-                searchInput.placeholder = "Buscar compañero o chat 1-1...";
+                searchInput.placeholder = "Buscar compañero por nombre...";
                 searchInput.oninput = (e) => {
                     if (typeof filtrarDirectoChat === 'function') {
                         filtrarDirectoChat(e.target.value);
@@ -72,45 +126,26 @@ function cambiarAristaChat(arista) {
                 };
             }
         }
-        if (listOps) listOps.style.display = "none";
-        if (listAdmin) listAdmin.style.display = "none";
-        if (listSoporte) listSoporte.style.display = "none";
         if (listDirecto) listDirecto.style.display = "block";
         if (inputMsg) inputMsg.placeholder = "Escribe un mensaje directo privado...";
-
-        if (chatState.ws) {
-            try { chatState.ws.close(); } catch(e){}
-            chatState.ws = null;
-        }
-        if (adminChatState.ws) {
-            try { adminChatState.ws.close(); } catch(e){}
-            adminChatState.ws = null;
-        }
-        if (typeof soporteChatState !== 'undefined' && soporteChatState.ws) {
-            try { soporteChatState.ws.close(); } catch(e){}
-            soporteChatState.ws = null;
-        }
-        if (typeof directoChatState !== 'undefined' && directoChatState.ws) {
-            try { directoChatState.ws.close(); } catch(e){}
-            directoChatState.ws = null;
-        }
 
         if (typeof cargarCanalDirecto === 'function') {
             cargarCanalDirecto();
         }
+
     } else if (arista === 'soporte') {
-        if (btnOps) { btnOps.style.background = "#111b21"; btnOps.style.color = "#8696a0"; }
-        if (btnAdmin) { btnAdmin.style.background = "#111b21"; btnAdmin.style.color = "#8696a0"; }
-        if (btnSoporte) { btnSoporte.style.background = "#0284c7"; btnSoporte.style.color = "#ffffff"; }
-        if (btnDirecto) { btnDirecto.style.background = "#111b21"; btnDirecto.style.color = "#8696a0"; }
+        if (btnSoporte) {
+            btnSoporte.style.background = "#0284c7";
+            btnSoporte.style.color = "#ffffff";
+            btnSoporte.classList.add("active");
+        }
         if (tabsBar) tabsBar.style.display = "none";
         const esTI = (typeof esPersonalSistemasOAdmin === 'function') ? esPersonalSistemasOAdmin() : false;
-        const searchInput = document.getElementById("chat-input-busqueda");
         if (searchBar) {
             searchBar.style.display = esTI ? "block" : "none";
             if (searchInput) {
                 searchInput.value = "";
-                searchInput.placeholder = "Buscar colaborador en Ayuda Redes...";
+                searchInput.placeholder = "Buscar consulta en Ayuda Redes...";
                 searchInput.oninput = (e) => {
                     if (typeof filtrarSoporteChat === 'function') {
                         filtrarSoporteChat(e.target.value);
@@ -118,37 +153,23 @@ function cambiarAristaChat(arista) {
                 };
             }
         }
-        if (listOps) listOps.style.display = "none";
-        if (listAdmin) listAdmin.style.display = "none";
         if (listSoporte) listSoporte.style.display = "block";
-        if (listDirecto) listDirecto.style.display = "none";
         if (inputMsg) inputMsg.placeholder = "¿Dudas de internet, redes o sistemas? Escribe aquí...";
-
-        // Desconectar WebSocket de OP
-        if (chatState.ws) {
-            try { chatState.ws.close(); } catch(e){}
-            chatState.ws = null;
-        }
-        // Desconectar WebSocket de Admin
-        if (adminChatState.ws) {
-            try { adminChatState.ws.close(); } catch(e){}
-            adminChatState.ws = null;
-        }
 
         if (typeof cargarCanalSoporte === 'function') {
             cargarCanalSoporte();
         }
+
     } else if (arista === 'admin') {
-        if (btnOps) { btnOps.style.background = "#111b21"; btnOps.style.color = "#8696a0"; }
-        if (btnAdmin) { btnAdmin.style.background = "#6366f1"; btnAdmin.style.color = "#ffffff"; }
-        if (btnSoporte) { btnSoporte.style.background = "#111b21"; btnSoporte.style.color = "#8696a0"; }
-        if (btnDirecto) { btnDirecto.style.background = "#111b21"; btnDirecto.style.color = "#8696a0"; }
+        if (btnAdmin) {
+            btnAdmin.style.background = "#6366f1";
+            btnAdmin.style.color = "#ffffff";
+            btnAdmin.classList.add("active");
+        }
         if (tabsBar) tabsBar.style.display = "none";
-        
         const esAdmin = (typeof esUsuarioAdminChat === 'function') ? esUsuarioAdminChat() : false;
         adminChatState.esAdmin = esAdmin;
-        
-        const searchInput = document.getElementById("chat-input-busqueda");
+
         if (searchBar) {
             searchBar.style.display = esAdmin ? "block" : "none";
             if (searchInput) {
@@ -157,72 +178,41 @@ function cambiarAristaChat(arista) {
                 searchInput.oninput = (e) => filtrarAdminChat(e.target.value);
             }
         }
-        if (listOps) listOps.style.display = "none";
         if (listAdmin) listAdmin.style.display = "block";
-        if (listSoporte) listSoporte.style.display = "none";
         if (inputMsg) {
             inputMsg.placeholder = esAdmin 
                 ? "Escribe un mensaje oficial o resolución..." 
-                : "Escribe tu duda, solicitud de permiso o mensaje para RRHH...";
+                : "Escribe tu duda o mensaje para la Sra. Ana Lilia (RRHH)...";
         }
 
-        // Desconectar WebSocket de OP
-        if (chatState.ws) {
-            try { chatState.ws.close(); } catch(e){}
-            chatState.ws = null;
-        }
-        // Desconectar WebSocket de Soporte
-        if (typeof soporteChatState !== 'undefined' && soporteChatState.ws) {
-            try { soporteChatState.ws.close(); } catch(e){}
-            soporteChatState.ws = null;
-        }
-        if (typeof directoChatState !== 'undefined' && directoChatState.ws) {
-            try { directoChatState.ws.close(); } catch(e){}
-            directoChatState.ws = null;
+        if (typeof cargarListaAdminChat === 'function') {
+            cargarListaAdminChat();
         }
 
-        cargarListaAdminChat();
     } else {
-        if (btnOps) { btnOps.style.background = "#00a884"; btnOps.style.color = "#ffffff"; }
-        if (btnAdmin) { btnAdmin.style.background = "#111b21"; btnAdmin.style.color = "#8696a0"; }
-        if (btnSoporte) { btnSoporte.style.background = "#111b21"; btnSoporte.style.color = "#8696a0"; }
-        if (btnDirecto) { btnDirecto.style.background = "#111b21"; btnDirecto.style.color = "#8696a0"; }
+        // Por defecto: OPs de producción
+        chatState.arista = 'ops';
+        if (btnOps) {
+            btnOps.style.background = "#00a884";
+            btnOps.style.color = "#ffffff";
+            btnOps.classList.add("active");
+        }
         if (tabsBar) tabsBar.style.display = "flex";
-        if (searchBar) searchBar.style.display = "block";
+        if (searchBar) {
+            searchBar.style.display = "block";
+            if (searchInput) {
+                searchInput.value = "";
+                searchInput.placeholder = "Buscar por OP, evento o locación...";
+                searchInput.oninput = (e) => filtrarOPsChat(e.target.value);
+            }
+        }
         if (listOps) listOps.style.display = "block";
-        if (listAdmin) listAdmin.style.display = "none";
-        if (listSoporte) listSoporte.style.display = "none";
-        if (listDirecto) listDirecto.style.display = "none";
         if (inputMsg) inputMsg.placeholder = "Escribe un mensaje técnico de la OP...";
-
-        // Desconectar WebSocket de Admin
-        if (adminChatState.ws) {
-            try { adminChatState.ws.close(); } catch(e){}
-            adminChatState.ws = null;
-        }
-        // Desconectar WebSocket de Soporte
-        if (typeof soporteChatState !== 'undefined' && soporteChatState.ws) {
-            try { soporteChatState.ws.close(); } catch(e){}
-            soporteChatState.ws = null;
-        }
-        if (typeof directoChatState !== 'undefined' && directoChatState.ws) {
-            try { directoChatState.ws.close(); } catch(e){}
-            directoChatState.ws = null;
-        }
-
-        // En móvil, asegurar que se muestre la lista de OPs para seleccionar
-        const panelLat = document.getElementById("chat-panel-lateral");
-        const panelConv = document.getElementById("chat-panel-conversacion");
-        if (window.innerWidth <= 768 && panelLat && panelConv) {
-            panelLat.style.display = "flex";
-            panelConv.style.display = "none";
-        }
 
         if (typeof cargarListaOPsChat === 'function') {
             cargarListaOPsChat();
         }
 
-        // Si ya había una OP seleccionada y estamos en desktop, restaurar su cabecera y mensajes
         if (chatState.opActual && window.innerWidth > 768) {
             actualizarCabeceraChat(chatState.opActual);
             renderizarMensajes();
@@ -281,9 +271,20 @@ async function cargarListaAdminChat() {
             }
         }
 
-        // Si es un empleado regular (no admin), auto-seleccionar su conversación directa de inmediato
-        if (!esAdmin && adminChatState.conversaciones.length > 0) {
-            seleccionarAdminChat(adminChatState.conversaciones[0]);
+        // Si es un colaborador, auto-seleccionar su conversación con Ana Lilia siempre
+        if (!esAdmin) {
+            const miConv = (adminChatState.conversaciones && adminChatState.conversaciones.length > 0)
+                ? adminChatState.conversaciones[0]
+                : {
+                    id_empleado: idEmp,
+                    nombre: "Ana Lilia Villarreal (RRHH)",
+                    puesto: "Administradora General & RRHH",
+                    depto: "Administración / RH",
+                    foto_url: "fotos/101.jpg",
+                    no_leidos: 0,
+                    permisos_pendientes: 0
+                };
+            seleccionarAdminChat(miConv);
         }
     } catch (err) {
         console.error("Error al cargar lista admin chat:", err);
@@ -316,7 +317,7 @@ function renderizarListaAdmin() {
         const permisosPend = miConv.permisos_pendientes || 0;
 
         contenedor.innerHTML = `
-            <div onclick="seleccionarAdminChat(adminChatState.conversaciones[0])" 
+            <div onclick="seleccionarAdminChat(miConv)" 
                  style="background: linear-gradient(135deg, #312e81 0%, #4338ca 100%); border-radius: 12px; padding: 14px 16px; margin: 10px; color: white; cursor: pointer; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3); border: 1px solid #818cf8; transition: transform 0.15s;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">

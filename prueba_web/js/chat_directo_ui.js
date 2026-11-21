@@ -92,7 +92,7 @@ async function cargarCanalDirecto() {
             } else {
                 mostrarBienvenidaDirecto();
             }
-        } else if (directoChatState.conversaciones.length > 0) {
+        } else if (directoChatState.conversaciones.length > 0 && window.innerWidth > 768) {
             seleccionarDirectoChat(directoChatState.conversaciones[0]);
         } else {
             mostrarBienvenidaDirecto();
@@ -133,109 +133,55 @@ function renderizarSidebarDirecto() {
     const u = chatState.usuario || {};
     const miId = String(u.id_empleado || "000").trim();
 
-    // 1. Tomar el directorio completo de colaboradores activos
-    let todosColaboradores = (directoChatState.directorio || []).filter(e => String(e.id_empleado) !== miId);
+    // 1. Obtener lista de personal activo (excluyendo al usuario actual)
+    let lista = (directoChatState.directorio || []).filter(e => String(e.id_empleado) !== miId);
 
-    // Mapear conversaciones existentes por companero_id para unir datos
-    const mapaConv = {};
+    // Mapeo de mensajes no leídos
+    const noLeidosMap = {};
     (directoChatState.conversaciones || []).forEach(c => {
-        mapaConv[String(c.companero_id)] = c;
+        if (c.no_leidos > 0) {
+            noLeidosMap[String(c.companero_id)] = c.no_leidos;
+        }
     });
 
-    // 2. Unificar cada colaborador con su conversación si existe
-    let listaCompleta = todosColaboradores.map(emp => {
-        const idStr = String(emp.id_empleado);
-        const conv = mapaConv[idStr];
-        return {
-            companero_id: idStr,
-            companero_nombre: emp.nombre,
-            companero_puesto: emp.puesto || "Colaborador",
-            companero_depto: emp.depto || "General",
-            foto_url: emp.foto_url || `${CHAT_API_URL}/fotos/${idStr}.jpg`,
-            ultimo_mensaje: conv ? conv.ultimo_mensaje : "",
-            ultima_hora: conv ? conv.ultima_hora : "",
-            no_leidos: conv ? (conv.no_leidos || 0) : 0,
-            tiene_chat: !!conv
-        };
-    });
-
-    // 3. Aplicar filtro de búsqueda si el usuario escribe en la barra superior
+    // 2. Filtro de búsqueda por nombre si se escribe en la barra superior
     if (directoChatState.filtroBusqueda) {
-        const q = directoChatState.filtroBusqueda.toLowerCase();
-        listaCompleta = listaCompleta.filter(c => 
-            (c.companero_nombre || '').toLowerCase().includes(q) ||
-            String(c.companero_id || '').toLowerCase().includes(q) ||
-            (c.companero_puesto || '').toLowerCase().includes(q) ||
-            (c.companero_depto || '').toLowerCase().includes(q)
-        );
+        const q = directoChatState.filtroBusqueda.toLowerCase().trim();
+        lista = lista.filter(e => (e.nombre || '').toLowerCase().includes(q));
     }
 
-    // 4. Ordenar: primero los que tienen mensajes sin leer, luego los de chats recientes, y finalmente por orden alfabético
-    listaCompleta.sort((a, b) => {
-        if (a.no_leidos > 0 && b.no_leidos === 0) return -1;
-        if (b.no_leidos > 0 && a.no_leidos === 0) return 1;
-        if (a.tiene_chat && !b.tiene_chat) return -1;
-        if (!a.tiene_chat && b.tiene_chat) return 1;
-        return a.companero_nombre.localeCompare(b.companero_nombre);
-    });
+    // 3. Ordenar alfabéticamente por nombre completo
+    lista.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
 
-    let itemsHtml = "";
-    if (listaCompleta.length === 0) {
-        itemsHtml = `
-            <div style="text-align: center; padding: 36px 16px; color: #8696a0;">
-                <i class="ph ph-user-circle" style="font-size: 38px; color: #8b5cf6; opacity: 0.6; margin-bottom: 8px;"></i>
-                <h4 style="color: #e9edef; font-size: 14px; margin-bottom: 4px;">Sin coincidencias</h4>
-                <p style="font-size: 12px; line-height: 1.4;">No se encontró personal con ese nombre o puesto.</p>
+    if (lista.length === 0) {
+        contenedor.innerHTML = `
+            <div style="text-align: center; padding: 36px 16px; color: #8696a0; font-size: 13.5px;">
+                No se encontraron nombres de colaboradores.
+            </div>`;
+        return;
+    }
+
+    // 4. Renderizar EXCLUSIVAMENTE el nombre completo del personal
+    const itemsHtml = lista.map(emp => {
+        const idEmp = String(emp.id_empleado);
+        const esSeleccionado = directoChatState.chatActual && (String(directoChatState.chatActual.companero_id) === idEmp);
+        const nNoLeidos = noLeidosMap[idEmp] || 0;
+
+        return `
+            <div class="chat-colaborador-fila ${esSeleccionado ? 'active' : ''}"
+                 onclick="seleccionarDirectoChatPorId('${idEmp}')"
+                 style="padding: 14px 18px; border-bottom: 1px solid #1f2c34; cursor: pointer; color: ${esSeleccionado ? '#ffffff' : '#e9edef'}; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; transition: background 0.15s; background: ${esSeleccionado ? '#2a3942' : 'transparent'};">
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${emp.nombre}</span>
+                ${nNoLeidos > 0 ? `
+                    <span style="background: #8b5cf6; color: #ffffff; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 800; margin-left: 8px; flex-shrink: 0;">${nNoLeidos}</span>
+                ` : ''}
             </div>
         `;
-    } else {
-        itemsHtml = listaCompleta.map(conv => {
-            const esSeleccionado = directoChatState.chatActual && (String(directoChatState.chatActual.companero_id) === String(conv.companero_id));
-            const foto = conv.foto_url;
-            const noLeidos = conv.no_leidos || 0;
-
-            const sublinea = conv.tiene_chat && conv.ultimo_mensaje 
-                ? `<span style="overflow: hidden; text-overflow: ellipsis; ${noLeidos > 0 ? 'font-weight: 700; color: #ffffff;' : 'color: #94a3b8;'}">${escaparHTML(conv.ultimo_mensaje)}</span>`
-                : `<span style="color: #a78bfa; font-size: 11px;"><i class="ph ph-chat-circle-dots"></i> Iniciar conversación</span>`;
-
-            return `
-                <div class="chat-op-item ${esSeleccionado ? 'active' : ''}" 
-                     onclick="seleccionarDirectoChatPorId('${conv.companero_id}')"
-                     style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; cursor: pointer; border-bottom: 1px solid #1f2c34; transition: background .15s; background: ${esSeleccionado ? '#2a3942' : 'transparent'};">
-                    <div style="position: relative; flex-shrink: 0;">
-                        <img src="${foto}" 
-                             onerror="this.src='vendor/img/avatar_default.png'" 
-                             style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid ${noLeidos > 0 ? '#8b5cf6' : (conv.tiene_chat ? '#00a884' : '#334155')};">
-                        ${noLeidos > 0 ? '<span style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; background: #8b5cf6; border-radius: 50%; border: 2px solid #111b21;"></span>' : ''}
-                    </div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                            <h4 style="margin: 0; font-size: 13.5px; font-weight: 700; color: #e9edef; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                ${escaparHTML(conv.companero_nombre)}
-                            </h4>
-                            <span style="font-size: 10px; color: #8696a0; flex-shrink: 0;">${conv.ultima_hora ? (conv.ultima_hora.split(' ')[1]?.substring(0,5) || '') : ''}</span>
-                        </div>
-                        <div style="font-size: 11px; color: #8696a0; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            ${escaparHTML(conv.companero_puesto)} • ${escaparHTML(conv.companero_depto)}
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            ${sublinea}
-                            ${noLeidos > 0 ? `
-                                <span style="background: #8b5cf6; color: #ffffff; padding: 1.5px 7px; border-radius: 10px; font-size: 10px; font-weight: 800; margin-left: 6px;">${noLeidos}</span>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join("");
-    }
+    }).join("");
 
     contenedor.innerHTML = `
-        <div style="padding: 9px 14px; background: #111b21; border-bottom: 1px solid #1f2c34; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-                <i class="ph ph-users-three"></i> Personal Activo (${listaCompleta.length})
-            </span>
-            <span style="font-size: 10.5px; color: #8696a0;">1 a 1 Privado</span>
+        <div style="padding: 9px 18px; background: #111b21; border-bottom: 1px solid #1f2c34; font-size: 11px; font-weight: 700; color: #8696a0; text-transform: uppercase; letter-spacing: 0.5px;">
+            Personal Activo (${lista.length})
         </div>
         ${itemsHtml}
     `;

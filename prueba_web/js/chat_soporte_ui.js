@@ -117,7 +117,16 @@ async function cargarCanalSoporte() {
             } else if (soporteChatState.conversaciones.length > 0) {
                 seleccionarSoporteChat(soporteChatState.conversaciones[0]);
             } else {
-                mostrarEstadoVacioSoporteTI();
+                // Si no hay tickets externos, abrir la sala directa de Mesa de Ayuda TI
+                const canalMesa = {
+                    id_empleado: miId,
+                    id_empleado_consulta: miId,
+                    nombre: "Mesa de Ayuda TI",
+                    puesto: "Sistemas, Redes & Soporte Técnico 1-1",
+                    depto: "TI & Soporte",
+                    foto_url: "vendor/img/avatar_default.png"
+                };
+                seleccionarSoporteChat(canalMesa);
             }
         }
 
@@ -161,7 +170,7 @@ function renderizarSidebarSoporte() {
         const noLeidos = miConv.no_leidos || 0;
 
         contenedor.innerHTML = `
-            <div onclick="seleccionarSoporteChat(soporteChatState.conversaciones[0])" 
+            <div onclick="seleccionarSoporteChat(miConv)" 
                  style="background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%); border-radius: 12px; padding: 14px 16px; margin: 10px; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); border: 1px solid #38bdf8; transition: transform 0.15s;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">

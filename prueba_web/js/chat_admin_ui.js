@@ -19,16 +19,14 @@ const adminChatState = {
 // Determina si el usuario logueado en el chat tiene rol administrativo
 function esUsuarioAdminChat() {
     const u = chatState.usuario || {};
-    const rol = (u.rol || '').toUpperCase();
-    const puesto = (u.puesto || '').toUpperCase();
-    const depto = (u.depto || '').toUpperCase();
+    const id = String(u.id_empleado || '').trim();
     const nom = (u.nombre_completo || u.nombre || '').toUpperCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        .normalize("NFD").replace(/[̀-ͯ]/g, "");
 
-    const esDirectivo = nom.includes('VILLARREAL') || nom.includes('VILLAREAL') || nom.includes('VILARREAL') || nom.includes('AGUNDEZ');
-    const esRolAdmin = rol.includes('ADMIN') || rol.includes('DIRECCION') || rol.includes('RH') || puesto.includes('ADMIN') || puesto.includes('RH') || depto.includes('DIRECCION') || depto.includes('RH');
-
-    return esDirectivo || esRolAdmin;
+    // ÚNICAMENTE Ana Lilia Villarreal Uribe (ID 101) gestiona la bandeja general de RRHH.
+    // Todos los demás colaboradores (incluyendo directores y sistemas) chatean 1 a 1 con ella.
+    const esAnaLilia = id === "101" || nom.includes("ANA LILIA");
+    return esAnaLilia;
 }
 
 // Filtra la lista de conversaciones administrativas
@@ -212,8 +210,20 @@ function cambiarAristaChat(arista) {
             directoChatState.ws = null;
         }
 
-        // Si ya había una OP seleccionada, restaurar su cabecera y mensajes
-        if (chatState.opActual) {
+        // En móvil, asegurar que se muestre la lista de OPs para seleccionar
+        const panelLat = document.getElementById("chat-panel-lateral");
+        const panelConv = document.getElementById("chat-panel-conversacion");
+        if (window.innerWidth <= 768 && panelLat && panelConv) {
+            panelLat.style.display = "flex";
+            panelConv.style.display = "none";
+        }
+
+        if (typeof cargarListaOPsChat === 'function') {
+            cargarListaOPsChat();
+        }
+
+        // Si ya había una OP seleccionada y estamos en desktop, restaurar su cabecera y mensajes
+        if (chatState.opActual && window.innerWidth > 768) {
             actualizarCabeceraChat(chatState.opActual);
             renderizarMensajes();
             conectarWebSocketChat(chatState.opActual.id_evento);
@@ -296,7 +306,7 @@ function renderizarListaAdmin() {
             ? adminChatState.conversaciones[0]
             : {
                 id_empleado: (chatState.usuario && chatState.usuario.id_empleado) || "000",
-                nombre: "Administración & Recursos Humanos",
+                nombre: "Ana Lilia Villarreal (RRHH)",
                 puesto: "Atención Oficial y Permisos Laborales",
                 depto: "Dirección General / RH",
                 no_leidos: 0,
@@ -315,7 +325,7 @@ function renderizarListaAdmin() {
                     <div style="flex: 1; min-width: 0;">
                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
                             <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                Admon & Recursos Humanos
+                                Ana Lilia Villarreal (RRHH)
                             </h4>
                             <span style="background: #22c55e; color: #052e16; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">OFICIAL</span>
                         </div>

@@ -66,7 +66,7 @@ function cambiarAristaChat(arista) {
             searchBar.style.display = "block";
             if (searchInput) {
                 searchInput.value = "";
-                searchInput.placeholder = "Buscar compañero o chat directo...";
+                searchInput.placeholder = "Buscar compañero o chat 1-1...";
                 searchInput.oninput = (e) => {
                     if (typeof filtrarDirectoChat === 'function') {
                         filtrarDirectoChat(e.target.value);
@@ -112,7 +112,7 @@ function cambiarAristaChat(arista) {
             searchBar.style.display = esTI ? "block" : "none";
             if (searchInput) {
                 searchInput.value = "";
-                searchInput.placeholder = "Buscar colaborador en Soporte TI...";
+                searchInput.placeholder = "Buscar colaborador en Ayuda Redes...";
                 searchInput.oninput = (e) => {
                     if (typeof filtrarSoporteChat === 'function') {
                         filtrarSoporteChat(e.target.value);
@@ -124,7 +124,7 @@ function cambiarAristaChat(arista) {
         if (listAdmin) listAdmin.style.display = "none";
         if (listSoporte) listSoporte.style.display = "block";
         if (listDirecto) listDirecto.style.display = "none";
-        if (inputMsg) inputMsg.placeholder = "¿Dudas de internet, sistemas o equipos? Escribe aquí...";
+        if (inputMsg) inputMsg.placeholder = "¿Dudas de internet, redes o sistemas? Escribe aquí...";
 
         // Desconectar WebSocket de OP
         if (chatState.ws) {
@@ -155,7 +155,7 @@ function cambiarAristaChat(arista) {
             searchBar.style.display = esAdmin ? "block" : "none";
             if (searchInput) {
                 searchInput.value = "";
-                searchInput.placeholder = "Buscar colaborador en Admon & RH...";
+                searchInput.placeholder = "Buscar colaborador en RRHH...";
                 searchInput.oninput = (e) => filtrarAdminChat(e.target.value);
             }
         }
@@ -165,7 +165,7 @@ function cambiarAristaChat(arista) {
         if (inputMsg) {
             inputMsg.placeholder = esAdmin 
                 ? "Escribe un mensaje oficial o resolución..." 
-                : "Escribe tu duda, solicitud de permiso o mensaje para Admon & RH...";
+                : "Escribe tu duda, solicitud de permiso o mensaje para RRHH...";
         }
 
         // Desconectar WebSocket de OP

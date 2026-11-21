@@ -43,14 +43,17 @@ function esUsuarioExentoInactividad(usuario) {
         return true;
     }
 
-    // 2. Sra. Ana Lilia Villarreal Uribe (Exclusivamente ella queda libre de límite de tiempo)
+    // 2. Sra. Ana Lilia Villarreal Uribe y Cuauhtémoc Rivera Agúndez (Libres de límite de tiempo)
     const esAnaLilia = idEmp === '101' || (
         nom.includes('ANA LILIA') && (
             nom.includes('VILLARREAL') || nom.includes('VILLAREAL') || nom.includes('VILARREAL')
         )
     );
+    const esCuauhtemoc = idEmp === '201' || (
+        (nom.includes('CUAUHTEMOC') || nom.includes('CUAHUTEMOC')) && nom.includes('AGUNDEZ')
+    );
 
-    if (esAnaLilia) {
+    if (esAnaLilia || esCuauhtemoc) {
         return true;
     }
 

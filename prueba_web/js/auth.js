@@ -354,7 +354,11 @@ function esUsuarioVillarreal() {
     if (!usuarioLogueado) return false;
     const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL');
+    const id = String(usuarioLogueado.id_empleado || '').trim();
+    // Acceso total a auditoría y gestión de RH (Familia Villarreal y Cuauhtémoc Rivera Agúndez - ID 201)
+    return id === '201' ||
+           nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') ||
+           ((nombre.includes('CUAUHTEMOC') || nombre.includes('CUAHUTEMOC')) && nombre.includes('AGUNDEZ'));
 }
 
 function esUsuarioAnaLilia() {
@@ -362,7 +366,9 @@ function esUsuarioAnaLilia() {
     const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const id = String(usuarioLogueado.id_empleado || '').trim();
-    return id === '101' || (nombre.includes('ANA LILIA') && (nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL')));
+    const esAna = id === '101' || (nombre.includes('ANA LILIA') && (nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL')));
+    const esCuauhtemoc = id === '201' || ((nombre.includes('CUAUHTEMOC') || nombre.includes('CUAHUTEMOC')) && nombre.includes('AGUNDEZ'));
+    return esAna || esCuauhtemoc;
 }
 
 function puedeModificarExpedienteRH() {
@@ -371,7 +377,7 @@ function puedeModificarExpedienteRH() {
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const id = String(usuarioLogueado.id_empleado || '').trim();
     const esAnaLilia = id === '101' || (nombre.includes('ANA LILIA') && (nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL')));
-    const esSistemasDev = id === '201' || (nombre.includes('CUAUHTEMOC') && nombre.includes('AGUNDEZ'));
+    const esSistemasDev = id === '201' || ((nombre.includes('CUAUHTEMOC') || nombre.includes('CUAHUTEMOC')) && nombre.includes('AGUNDEZ'));
     return esAnaLilia || esSistemasDev;
 }
 
@@ -382,7 +388,8 @@ function esUsuarioAutorizadoDireccion() {
     if (!usuarioLogueado) return false;
     const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ');
+    const id = String(usuarioLogueado.id_empleado || '').trim();
+    return id === '201' || nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ');
 }
 
 function esUsuarioAutorizadoGastos() {

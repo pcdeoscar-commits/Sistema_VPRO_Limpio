@@ -1229,7 +1229,7 @@ async function seleccionarEmpleadoRH(idEmpleado) {
 
 async function guardarDatosGeneralesRH() {
     if (typeof puedeModificarExpedienteRH === 'function' && !puedeModificarExpedienteRH()) {
-        alert("⛔ Acceso Restringido: Únicamente la Sra. Ana Lilia Villarreal Uribe (Administración y Recursos Humanos) tiene autorización para modificar y guardar expedientes de colaboradores.");
+        alert("⛔ Acceso Restringido: Únicamente Administración y Dirección (Ana Lilia Villarreal / Cuauhtémoc Rivera) tienen autorización para modificar y guardar expedientes de colaboradores.");
         return;
     }
 
@@ -5069,7 +5069,7 @@ function filtrarTablaPlantillaRH() {
 
 function prepararAltaNuevoColaboradorRH() {
     if (typeof puedeModificarExpedienteRH === 'function' && !puedeModificarExpedienteRH()) {
-        alert("⛔ Acceso Restringido: Únicamente la Sra. Ana Lilia Villarreal Uribe tiene autorización para dar de alta nuevos colaboradores.");
+        alert("⛔ Acceso Restringido: Únicamente Administración y Dirección (Ana Lilia Villarreal / Cuauhtémoc Rivera) tienen autorización para dar de alta nuevos colaboradores.");
         return;
     }
 
@@ -5154,7 +5154,7 @@ function prepararAltaNuevoColaboradorRH() {
 
 async function confirmarEliminarEmpleadoRH() {
     if (typeof puedeModificarExpedienteRH === 'function' && !puedeModificarExpedienteRH()) {
-        alert("⛔ Acceso Restringido: Únicamente la Sra. Ana Lilia Villarreal Uribe tiene autorización para eliminar registros de colaboradores.");
+        alert("⛔ Acceso Restringido: Únicamente Administración y Dirección (Ana Lilia Villarreal / Cuauhtémoc Rivera) tienen autorización para eliminar registros de colaboradores.");
         return;
     }
 

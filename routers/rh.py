@@ -367,6 +367,8 @@ class VacacionCreate(BaseModel):
 
 
 class VacacionUpdate(BaseModel):
+    fecha_inicio_goce: Optional[date] = None
+    fecha_fin_goce: Optional[date] = None
     dias_tomados: Optional[int] = None
     dias_pendientes: Optional[int] = None
     estatus: Optional[str] = None

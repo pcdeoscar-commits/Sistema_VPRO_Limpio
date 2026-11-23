@@ -13,6 +13,7 @@ window.vproCatalogosOP = null;
 window.vproFoliosActivos = [];
 window.vproFoliosHistoricos = [];
 window.vproProximoId = 1;
+window.vproProximoFolio = 1;
 
 window.opMultiSelects = {
     personal_vpro: [],
@@ -98,6 +99,7 @@ async function inicializarModuloOP(folioDeseado = null) {
         window.vproFoliosActivos = dataFolios.folios || [];
         window.vproFoliosHistoricos = dataFolios.folios_historicos || [];
         window.vproProximoId = dataFolios.proximo_id || 1;
+        window.vproProximoFolio = dataFolios.proximo_folio || window.vproProximoId || 180;
 
         // Combinar catálogos
         window.vproCatalogosOP = {
@@ -846,8 +848,9 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
     const cats = window.vproCatalogosOP || {};
     const hoyStr = formatearFechaLocal(new Date());
 
-    const idEvento = data.id_evento || window.vproProximoId || 1;
-    const folioVal = data.folio || String(idEvento);
+    const esNuevaOrden = !data || !data.id_evento || data.id_evento === 0 || !data.folio;
+    const idEvento = (data && data.id_evento) ? data.id_evento : 0;
+    const folioVal = (data && data.folio) ? data.folio : String(window.vproProximoFolio || "180");
 
     // Fechas y Horas limpias
     const fInstalacion = (data.fec_de_instalacion ? String(data.fec_de_instalacion).substring(0, 10) : hoyStr);
@@ -975,7 +978,7 @@ function generarHtmlFormularioOP(data, isReadOnly = false) {
                 <div style="display: grid; grid-template-columns: 1fr 2fr 2.5fr 2fr; gap: 14px; margin-bottom: 16px;">
                     <div>
                         <label class="op-form-label">🔢 FOLIO VPRO:</label>
-                        <input type="text" id="op_folio" value="${folioVal}" class="op-input" disabled>
+                        <input type="text" id="op_folio" value="${folioVal}" class="op-input" ${esNuevaOrden ? 'placeholder="Ej. 180"' : 'disabled'} title="${esNuevaOrden ? 'Folio sugerido automáticamente. Puede ajustarse si se requiere.' : 'Folio oficial asignado'}">
                     </div>
                     <div>
                         <label class="op-form-label">👤 CLIENTE:</label>

@@ -208,15 +208,22 @@ def obtener_folios_activos_e_historicos():
             ORDER BY id_evento DESC
         """)
         query_max_id = text("SELECT COALESCE(MAX(id_evento), 0) + 1 AS proximo_id FROM public.eventos")
+        query_max_folio = text("""
+            SELECT COALESCE(MAX(CAST(folio AS INTEGER)), 0) + 1 AS proximo_folio 
+            FROM public.eventos 
+            WHERE folio ~ '^[0-9]+$'
+        """)
 
         folios_activos = []
         folios_historicos = []
         max_id_nuevo = 1
+        max_folio_nuevo = 1
 
         with engine_eventos.connect() as conn:
             activos_nuevos = conn.execute(query_activos_nueva).mappings().fetchall()
             historicos_nuevos = conn.execute(query_historicos_nueva).mappings().fetchall()
-            max_id_nuevo = conn.execute(query_max_id).scalar()
+            max_id_nuevo = conn.execute(query_max_id).scalar() or 1
+            max_folio_nuevo = conn.execute(query_max_folio).scalar() or 1
             
             def formatear_folio_label(r):
                 folio_val = r['folio'] or ''
@@ -260,10 +267,11 @@ def obtener_folios_activos_e_historicos():
         return {
             "folios": folios_activos,
             "folios_historicos": folios_historicos,
-            "proximo_id": max_id_nuevo
+            "proximo_id": max_id_nuevo,
+            "proximo_folio": max_folio_nuevo
         }
     except Exception as e:
-        return {"folios": [], "folios_historicos": [], "proximo_id": 1}
+        return {"folios": [], "folios_historicos": [], "proximo_id": 1, "proximo_folio": 1}
 
 
 @router.get("/auditoria-choferes")
@@ -560,7 +568,7 @@ def buscar_op_por_folio(folio: str):
 def guardar_o_actualizar_op(op: dict):
     """Guarda o actualiza una orden de producción."""
     try:
-        id_ev = int(op.get("id_evento"))
+        id_ev = int(op.get("id_evento") or 0)
         
         def format_pg_array(data):
             if not data:
@@ -661,8 +669,10 @@ def guardar_o_actualizar_op(op: dict):
             del payload['estatus']
 
         row_ant = None
+        existe = False
         with engine_eventos.connect() as conn:
-            existe = conn.execute(text("SELECT 1 FROM public.eventos WHERE id_evento = :id_evento"), {"id_evento": id_ev}).scalar()
+            if id_ev > 0:
+                existe = conn.execute(text("SELECT 1 FROM public.eventos WHERE id_evento = :id_evento"), {"id_evento": id_ev}).scalar()
             if existe:
                 row_ant = conn.execute(text("""
                     SELECT folio, locacion, hra_de_llamado, inicio_del_evento, fec_del_evento,
@@ -673,6 +683,15 @@ def guardar_o_actualizar_op(op: dict):
                 """), {"id_evento": id_ev}).mappings().first()
             
         if existe:
+            # Validar que si cambiaron el folio, no colisione con otra OP distinta
+            with engine_eventos.connect() as conn:
+                duplicado = conn.execute(text("""
+                    SELECT 1 FROM public.eventos 
+                    WHERE folio = :folio AND id_evento != :id_evento
+                """), {"folio": payload["folio"], "id_evento": id_ev}).scalar()
+                if duplicado:
+                    raise HTTPException(status_code=400, detail=f"El folio '{payload['folio']}' ya pertenece a otra Orden de Producción existente.")
+
             query_update = text("""
                 UPDATE public.eventos SET 
                     folio = :folio, para_q_cliente = :para_q_cliente, nombre_evento = :nombre_evento, 
@@ -703,6 +722,24 @@ def guardar_o_actualizar_op(op: dict):
             with engine_eventos.begin() as conn:
                 conn.execute(query_update, payload)
         else:
+            with engine_eventos.begin() as conn:
+                # Sincronizar secuencia id_evento al máximo actual y obtener nuevo ID seguro
+                conn.execute(text("SELECT setval('public.eventos_id_evento_seq', (SELECT GREATEST(COALESCE(MAX(id_evento), 0), 1) FROM public.eventos))"))
+                nuevo_id = conn.execute(text("SELECT nextval('public.eventos_id_evento_seq')")).scalar()
+                id_ev = nuevo_id
+                payload["id_evento"] = nuevo_id
+
+                # Validar folio propuesto: si viene vacío o ya existe en BD, asignar el siguiente folio numérico disponible
+                folio_propuesto = str(payload.get("folio") or "").strip()
+                folio_en_uso = conn.execute(text("SELECT 1 FROM public.eventos WHERE folio = :folio"), {"folio": folio_propuesto}).scalar() if folio_propuesto else True
+                if folio_en_uso:
+                    proximo_folio = conn.execute(text("""
+                        SELECT COALESCE(MAX(CAST(folio AS INTEGER)), 0) + 1 
+                        FROM public.eventos 
+                        WHERE folio ~ '^[0-9]+$'
+                    """)).scalar()
+                    payload["folio"] = str(proximo_folio)
+
             query_insert = text("""
                 INSERT INTO public.eventos (
                     id_evento, folio, para_q_cliente, nombre_evento, subtitulo_evento, locacion, fec_de_instalacion, hra_de_instalacion, 
@@ -833,7 +870,12 @@ def guardar_o_actualizar_op(op: dict):
         except Exception as e_alerta:
             print(f"⚠️ Error al disparar alerta de sistema en chat OP: {e_alerta}")
 
-        return {"status": "SUCCESS"}
+        return {
+            "status": "SUCCESS",
+            "mensaje": f"Orden de producción {payload.get('folio')} guardada exitosamente.",
+            "id_evento": id_ev,
+            "folio": payload.get("folio")
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

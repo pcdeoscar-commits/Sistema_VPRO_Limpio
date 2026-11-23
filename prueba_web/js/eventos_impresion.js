@@ -789,8 +789,8 @@ async function cargarDetalleOP(folioId) {
         window.opChoferesPorVehiculo = {};
         window.opFotosEvidenciaActuales = [];
 
-        const proximoFolio = window.vproProximoId || 1;
-        container.innerHTML = generarHtmlFormularioOP({ id_evento: proximoFolio, folio: String(proximoFolio) }, false);
+        const proximoFolio = window.vproProximoFolio || window.vproProximoId || 180;
+        container.innerHTML = generarHtmlFormularioOP({ id_evento: 0, folio: String(proximoFolio) }, false);
 
         // Renderizar multi-selects en blanco
         renderMultiSelectComponent('ms-reuniones-act', 'reuniones', cats.reuniones, "Despliega y selecciona una o varias reuniones...");
@@ -2022,7 +2022,7 @@ async function guardarOrdenOP(event, silencioso = false) {
 
     const payload = {
         id_evento: parseInt(id_evento) || 0,
-        folio: folio || String(id_evento),
+        folio: (folio || String(window.vproProximoFolio || "180")).trim(),
         para_q_cliente: para_q_cliente || "",
         nombre_evento: nombre_evento || "",
         subtitulo_evento: (subtitulo_evento || "").trim(),
@@ -2083,14 +2083,15 @@ async function guardarOrdenOP(event, silencioso = false) {
         const resultado = await respuesta.json();
 
         if (respuesta.ok && resultado.status === "SUCCESS") {
+            const folioGuardado = resultado.folio || folio;
             if (silencioso) return true;
-            alert(`✅ ¡Orden de Producción "${folio || nombre_evento}" guardada exitosamente!`);
+            alert(`✅ ¡Orden de Producción "${folioGuardado || nombre_evento}" guardada exitosamente!`);
 
             // Si la OP fue habilitada temporalmente desde el histórico, sugerir regresarla al archivo histórico
-            if (window.opHabilitadaTemporalmenteFolio && window.opHabilitadaTemporalmenteFolio === folio) {
-                const regresar = confirm(`¿Deseas mandar la OP "${folio}" de nuevo al Archivo Histórico ahora que guardaste los cambios/evidencias?`);
+            if (window.opHabilitadaTemporalmenteFolio && window.opHabilitadaTemporalmenteFolio === folioGuardado) {
+                const regresar = confirm(`¿Deseas mandar la OP "${folioGuardado}" de nuevo al Archivo Histórico ahora que guardaste los cambios/evidencias?`);
                 if (regresar) {
-                    await mandarOPAlHistorial(folio, false);
+                    await mandarOPAlHistorial(folioGuardado, false);
                     return;
                 }
             }
@@ -2099,8 +2100,8 @@ async function guardarOrdenOP(event, silencioso = false) {
             await inicializarModuloOP();
             const selectFolios = document.getElementById('select-folios-op');
             if (selectFolios) {
-                selectFolios.value = folio;
-                cargarDetalleOP(folio);
+                selectFolios.value = folioGuardado;
+                cargarDetalleOP(folioGuardado);
             }
         } else {
             if (!silencioso) alert(`❌ Error al guardar: ${resultado.detail || 'Ocurrió un error en el servidor.'}`);

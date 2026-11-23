@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict p74h4QhZPOHDikKtb5G2o9V20O64hA07m5Vj3eXUiIjXsYCmzLf7iHCSZZfpnv6
+\restrict 9eJLaWher2GSu1iWGFQpFyq0RpFkrFaUHUnyc67HlZR0AlbKyStaBcVCW4ezKcF
 
--- Dumped from database version 18.4
+-- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
@@ -24,29 +24,12 @@ ALTER TABLE IF EXISTS ONLY public.clientes DROP CONSTRAINT IF EXISTS cliente_emp
 ALTER TABLE IF EXISTS public.clientes ALTER COLUMN id_cliente DROP DEFAULT;
 DROP SEQUENCE IF EXISTS public.clientes_id_cliente_seq;
 DROP TABLE IF EXISTS public.clientes;
--- *not* dropping schema, since initdb creates it
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
---
-
--- *not* creating schema, since initdb creates it
-
-
-ALTER SCHEMA public OWNER TO postgres;
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
---
-
-COMMENT ON SCHEMA public IS '';
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: clientes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: clientes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.clientes (
@@ -64,10 +47,8 @@ CREATE TABLE public.clientes (
 );
 
 
-ALTER TABLE public.clientes OWNER TO postgres;
-
 --
--- Name: clientes_id_cliente_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: clientes_id_cliente_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.clientes_id_cliente_seq
@@ -79,24 +60,22 @@ CREATE SEQUENCE public.clientes_id_cliente_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.clientes_id_cliente_seq OWNER TO postgres;
-
 --
--- Name: clientes_id_cliente_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: clientes_id_cliente_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.clientes_id_cliente_seq OWNED BY public.clientes.id_cliente;
 
 
 --
--- Name: clientes id_cliente; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: clientes id_cliente; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.clientes ALTER COLUMN id_cliente SET DEFAULT nextval('public.clientes_id_cliente_seq'::regclass);
 
 
 --
--- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.clientes (cliente_empresa, gte_gral, estado, ciudad, tel_de_ofna, email_de_empresa, nombre_contacto_princ, cel_contact_princ, nombre_contacto_a, cel_contact_a, id_cliente) FROM stdin;
@@ -122,25 +101,27 @@ GOBIERNO FEDERAL	GFNolose	000000	CDMX	111111	GFnolose@nolose.com	GFNolose	222222
 GOBIERNO DEL ESTADO DE SINALOA	Eleazar(PapiRINGO)	Sinaloa	Culiacan	22222222222	nolose@nolose.com	Papi	3333333333	Angel	6674602906	13
 CESAVESIN										32
 COCA - COLA	ACTUALIZAR Please elnombr del Gte. Gral.	Sinaloa	Culiacan	000000000	ccolanolose@ccola	Eunice Hernandez	222222222	Alma D. Carrillo López	333333333	21
-PERIODICO EL DEBATE										38
-AYUNTAMIENTO DE AHOME										39
-MAJA SPORTWEAR										40
-MERCADITO MOVIL										41
-BLAST MARKETING										42
-GRUPO FGL TRADE										43
-KUWA										44
+CORREDOR DE LA SALUD "ARCANGEL RAFAEL"	José Valenzuela	Sinaloa	Culiacan, Sin.							38
+FISCALIA GENERAL DEL ESTADO										39
+PERIODICO EL DEBATE										40
+AYUNTAMIENTO DE AHOME										41
+MAJA SPORTWEAR										42
+MERCADITO MOVIL										43
+BLAST MARKETING										44
+GRUPO FGL TRADE										45
+KUWA										46
 \.
 
 
 --
--- Name: clientes_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: clientes_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.clientes_id_cliente_seq', 44, true);
+SELECT pg_catalog.setval('public.clientes_id_cliente_seq', 46, true);
 
 
 --
--- Name: clientes cliente_empresa_unico; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: clientes cliente_empresa_unico; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.clientes
@@ -148,7 +129,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- Name: clientes clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: clientes clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.clientes
@@ -156,16 +137,8 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE USAGE ON SCHEMA public FROM PUBLIC;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
---
 -- PostgreSQL database dump complete
 --
 
-\unrestrict p74h4QhZPOHDikKtb5G2o9V20O64hA07m5Vj3eXUiIjXsYCmzLf7iHCSZZfpnv6
+\unrestrict 9eJLaWher2GSu1iWGFQpFyq0RpFkrFaUHUnyc67HlZR0AlbKyStaBcVCW4ezKcF
 

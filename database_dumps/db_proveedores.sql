@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict t7ukrr2T93yK44Yps9JWCf0k1dzegBE8q4ORIcmK9rsV5tbkcAdprRDfIuQA8Ud
+\restrict dl7cypeWqu0qnhRWYGIAzpCgwMmYOBjC3b2rGhotEcWJqQUxjbc3OWMBUtFZQpU
 
--- Dumped from database version 18.4
+-- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
@@ -21,29 +21,12 @@ SET row_security = off;
 
 ALTER TABLE IF EXISTS ONLY public.proveedores DROP CONSTRAINT IF EXISTS proveedores_pkey;
 DROP TABLE IF EXISTS public.proveedores;
--- *not* dropping schema, since initdb creates it
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
---
-
--- *not* creating schema, since initdb creates it
-
-
-ALTER SCHEMA public OWNER TO postgres;
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
---
-
-COMMENT ON SCHEMA public IS '';
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: proveedores; Type: TABLE; Schema: public; Owner: postgres
+-- Name: proveedores; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.proveedores (
@@ -60,10 +43,8 @@ CREATE TABLE public.proveedores (
 );
 
 
-ALTER TABLE public.proveedores OWNER TO postgres;
-
 --
--- Data for Name: proveedores; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: proveedores; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.proveedores (nombre_del_proveedor, gte_gral, estado, ciudad, tel_de_ofna, email_de_empresa, nombre_contacto_princ, cel_contact_princ, nombre_contacto_a, cel_contact_a) FROM stdin;
@@ -76,7 +57,7 @@ ELEVOX	Eleazar	Sinaloa	Culiacan	6671234567	elevox@elevox.com	Minion	66723467890	
 
 
 --
--- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.proveedores
@@ -84,16 +65,8 @@ ALTER TABLE ONLY public.proveedores
 
 
 --
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE USAGE ON SCHEMA public FROM PUBLIC;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
---
 -- PostgreSQL database dump complete
 --
 
-\unrestrict t7ukrr2T93yK44Yps9JWCf0k1dzegBE8q4ORIcmK9rsV5tbkcAdprRDfIuQA8Ud
+\unrestrict dl7cypeWqu0qnhRWYGIAzpCgwMmYOBjC3b2rGhotEcWJqQUxjbc3OWMBUtFZQpU
 

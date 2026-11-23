@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict StKW2VeYAhzKDJ4s5BYB6yT5XthUUrBtgFwV4B4F6ZLKOfhbngWFvDdWYile5DZ
+\restrict Yz91aIIQvjMfasXm2VwfcHGuUrdNQVUBaB4KuS4DWG66xYIEqtWzJhAOFatuSiZ
 
--- Dumped from database version 18.4
+-- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
@@ -49,6 +49,9 @@ DROP INDEX IF EXISTS public.idx_chat_dir_sala;
 DROP INDEX IF EXISTS public.idx_chat_dir_rem;
 DROP INDEX IF EXISTS public.idx_chat_dir_dest_leido;
 DROP INDEX IF EXISTS public.idx_chat_dir_dest;
+DROP INDEX IF EXISTS public.idx_chat_admin_leido_admin;
+DROP INDEX IF EXISTS public.idx_chat_admin_id_empleado;
+DROP INDEX IF EXISTS public.idx_chat_admin_fecha;
 DROP INDEX IF EXISTS public.idx_chat_admin_emp;
 DROP INDEX IF EXISTS public.idx_archivos_paquete;
 DROP INDEX IF EXISTS public.idx_archivos_origen;
@@ -146,29 +149,12 @@ DROP SEQUENCE IF EXISTS public.asistencia_eventos_id_seq;
 DROP TABLE IF EXISTS public.asistencia_eventos;
 DROP SEQUENCE IF EXISTS public.archivos_compartidos_id_transferencia_seq;
 DROP TABLE IF EXISTS public.archivos_compartidos;
--- *not* dropping schema, since initdb creates it
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
---
-
--- *not* creating schema, since initdb creates it
-
-
-ALTER SCHEMA public OWNER TO postgres;
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
---
-
-COMMENT ON SCHEMA public IS '';
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: archivos_compartidos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: archivos_compartidos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.archivos_compartidos (
@@ -197,10 +183,8 @@ CREATE TABLE public.archivos_compartidos (
 );
 
 
-ALTER TABLE public.archivos_compartidos OWNER TO postgres;
-
 --
--- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.archivos_compartidos_id_transferencia_seq
@@ -212,17 +196,15 @@ CREATE SEQUENCE public.archivos_compartidos_id_transferencia_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.archivos_compartidos_id_transferencia_seq OWNER TO postgres;
-
 --
--- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.archivos_compartidos_id_transferencia_seq OWNED BY public.archivos_compartidos.id_transferencia;
 
 
 --
--- Name: asistencia_eventos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: asistencia_eventos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.asistencia_eventos (
@@ -234,10 +216,8 @@ CREATE TABLE public.asistencia_eventos (
 );
 
 
-ALTER TABLE public.asistencia_eventos OWNER TO postgres;
-
 --
--- Name: asistencia_eventos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: asistencia_eventos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.asistencia_eventos_id_seq
@@ -249,27 +229,25 @@ CREATE SEQUENCE public.asistencia_eventos_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.asistencia_eventos_id_seq OWNER TO postgres;
-
 --
--- Name: asistencia_eventos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: asistencia_eventos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.asistencia_eventos_id_seq OWNED BY public.asistencia_eventos.id;
 
 
 --
--- Name: chat_admin_mensajes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: chat_admin_mensajes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.chat_admin_mensajes (
     id integer NOT NULL,
     id_empleado character varying(50) NOT NULL,
     autor_id character varying(50) NOT NULL,
-    autor_nombre character varying(255) NOT NULL,
-    autor_rol character varying(100),
+    autor_nombre character varying(120) NOT NULL,
+    autor_rol character varying(50),
     mensaje text NOT NULL,
-    tipo_mensaje character varying(50) DEFAULT 'TEXTO'::character varying,
+    tipo_mensaje character varying(30) DEFAULT 'TEXTO'::character varying,
     archivo_url text,
     metadata_extra jsonb DEFAULT '{}'::jsonb,
     fecha_hora timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
@@ -278,10 +256,8 @@ CREATE TABLE public.chat_admin_mensajes (
 );
 
 
-ALTER TABLE public.chat_admin_mensajes OWNER TO postgres;
-
 --
--- Name: chat_admin_mensajes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: chat_admin_mensajes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.chat_admin_mensajes_id_seq
@@ -293,17 +269,15 @@ CREATE SEQUENCE public.chat_admin_mensajes_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.chat_admin_mensajes_id_seq OWNER TO postgres;
-
 --
--- Name: chat_admin_mensajes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: chat_admin_mensajes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.chat_admin_mensajes_id_seq OWNED BY public.chat_admin_mensajes.id;
 
 
 --
--- Name: chat_directo_mensajes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: chat_directo_mensajes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.chat_directo_mensajes (
@@ -322,10 +296,8 @@ CREATE TABLE public.chat_directo_mensajes (
 );
 
 
-ALTER TABLE public.chat_directo_mensajes OWNER TO postgres;
-
 --
--- Name: chat_directo_mensajes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: chat_directo_mensajes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.chat_directo_mensajes_id_seq
@@ -337,17 +309,15 @@ CREATE SEQUENCE public.chat_directo_mensajes_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.chat_directo_mensajes_id_seq OWNER TO postgres;
-
 --
--- Name: chat_directo_mensajes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: chat_directo_mensajes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.chat_directo_mensajes_id_seq OWNED BY public.chat_directo_mensajes.id;
 
 
 --
--- Name: chat_soporte_mensajes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: chat_soporte_mensajes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.chat_soporte_mensajes (
@@ -369,10 +339,8 @@ CREATE TABLE public.chat_soporte_mensajes (
 );
 
 
-ALTER TABLE public.chat_soporte_mensajes OWNER TO postgres;
-
 --
--- Name: chat_soporte_mensajes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: chat_soporte_mensajes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.chat_soporte_mensajes_id_seq
@@ -384,17 +352,15 @@ CREATE SEQUENCE public.chat_soporte_mensajes_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.chat_soporte_mensajes_id_seq OWNER TO postgres;
-
 --
--- Name: chat_soporte_mensajes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: chat_soporte_mensajes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.chat_soporte_mensajes_id_seq OWNED BY public.chat_soporte_mensajes.id;
 
 
 --
--- Name: control_asistencia; Type: TABLE; Schema: public; Owner: postgres
+-- Name: control_asistencia; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.control_asistencia (
@@ -410,10 +376,8 @@ CREATE TABLE public.control_asistencia (
 );
 
 
-ALTER TABLE public.control_asistencia OWNER TO postgres;
-
 --
--- Name: control_asistencia_id_registro_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: control_asistencia_id_registro_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.control_asistencia_id_registro_seq
@@ -425,17 +389,15 @@ CREATE SEQUENCE public.control_asistencia_id_registro_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.control_asistencia_id_registro_seq OWNER TO postgres;
-
 --
--- Name: control_asistencia_id_registro_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: control_asistencia_id_registro_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.control_asistencia_id_registro_seq OWNED BY public.control_asistencia.id_registro;
 
 
 --
--- Name: control_horas_extras; Type: TABLE; Schema: public; Owner: postgres
+-- Name: control_horas_extras; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.control_horas_extras (
@@ -459,10 +421,8 @@ CREATE TABLE public.control_horas_extras (
 );
 
 
-ALTER TABLE public.control_horas_extras OWNER TO postgres;
-
 --
--- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.control_horas_extras_id_autorizacion_seq
@@ -474,17 +434,15 @@ CREATE SEQUENCE public.control_horas_extras_id_autorizacion_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.control_horas_extras_id_autorizacion_seq OWNER TO postgres;
-
 --
--- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.control_horas_extras_id_autorizacion_seq OWNED BY public.control_horas_extras.id_autorizacion;
 
 
 --
--- Name: cronogramas_eventos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: cronogramas_eventos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.cronogramas_eventos (
@@ -501,10 +459,8 @@ CREATE TABLE public.cronogramas_eventos (
 );
 
 
-ALTER TABLE public.cronogramas_eventos OWNER TO postgres;
-
 --
--- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.cronogramas_eventos_id_cronograma_seq
@@ -516,17 +472,15 @@ CREATE SEQUENCE public.cronogramas_eventos_id_cronograma_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.cronogramas_eventos_id_cronograma_seq OWNER TO postgres;
-
 --
--- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.cronogramas_eventos_id_cronograma_seq OWNED BY public.cronogramas_eventos.id_cronograma;
 
 
 --
--- Name: departamentos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: departamentos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.departamentos (
@@ -535,10 +489,8 @@ CREATE TABLE public.departamentos (
 );
 
 
-ALTER TABLE public.departamentos OWNER TO postgres;
-
 --
--- Name: departamentos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: departamentos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.departamentos_id_seq
@@ -550,21 +502,19 @@ CREATE SEQUENCE public.departamentos_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.departamentos_id_seq OWNER TO postgres;
-
 --
--- Name: departamentos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: departamentos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.departamentos_id_seq OWNED BY public.departamentos.id;
 
 
 --
--- Name: empleados; Type: TABLE; Schema: public; Owner: postgres
+-- Name: empleados; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.empleados (
-    id_empleado character varying(20) NOT NULL,
+    id_empleado character varying(3) NOT NULL,
     nombre character varying,
     depto character varying,
     email character varying,
@@ -573,32 +523,30 @@ CREATE TABLE public.empleados (
     fecha_ing date NOT NULL,
     licencia_vence date,
     password text,
-    rol character varying(50) DEFAULT 'PRODUCTOR'::character varying,
-    rfc character varying(50),
-    curp character varying(50),
-    nss character varying(50),
-    estado_civil character varying(50),
+    rol character varying(20) DEFAULT 'PRODUCTOR'::character varying,
+    rfc character varying(13),
+    curp character varying(18),
+    nss character varying(11),
+    estado_civil character varying(20),
     domicilio text,
     ciudad character varying(100),
-    cp character varying(20),
-    contacto_emergencia character varying(250),
-    tel_emergencia character varying(50),
-    parentesco_emergencia character varying(100),
-    escolaridad character varying(100),
-    puesto character varying(150),
-    tipo_contrato character varying(100),
+    cp character varying(5),
+    contacto_emergencia character varying(150),
+    tel_emergencia character varying(20),
+    parentesco_emergencia character varying(50),
+    escolaridad character varying(50),
+    puesto character varying(100),
+    tipo_contrato character varying(30),
     salario_mensual numeric(12,2),
     foto_url text,
-    estatus_empleado character varying(50) DEFAULT 'ACTIVO'::character varying,
+    estatus_empleado character varying(20) DEFAULT 'ACTIVO'::character varying,
     fecha_baja date,
     motivo_baja text
 );
 
 
-ALTER TABLE public.empleados OWNER TO postgres;
-
 --
--- Name: log_accesos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: log_accesos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.log_accesos (
@@ -612,10 +560,8 @@ CREATE TABLE public.log_accesos (
 );
 
 
-ALTER TABLE public.log_accesos OWNER TO postgres;
-
 --
--- Name: log_accesos_id_log_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: log_accesos_id_log_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.log_accesos_id_log_seq
@@ -627,17 +573,15 @@ CREATE SEQUENCE public.log_accesos_id_log_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.log_accesos_id_log_seq OWNER TO postgres;
-
 --
--- Name: log_accesos_id_log_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: log_accesos_id_log_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.log_accesos_id_log_seq OWNED BY public.log_accesos.id_log;
 
 
 --
--- Name: op_agenda; Type: TABLE; Schema: public; Owner: postgres
+-- Name: op_agenda; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.op_agenda (
@@ -658,10 +602,8 @@ CREATE TABLE public.op_agenda (
 );
 
 
-ALTER TABLE public.op_agenda OWNER TO postgres;
-
 --
--- Name: op_agenda_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: op_agenda_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.op_agenda_id_seq
@@ -673,22 +615,20 @@ CREATE SEQUENCE public.op_agenda_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.op_agenda_id_seq OWNER TO postgres;
-
 --
--- Name: op_agenda_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: op_agenda_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.op_agenda_id_seq OWNED BY public.op_agenda.id;
 
 
 --
--- Name: rh_capacitacion; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_capacitacion; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_capacitacion (
     id_capacitacion integer NOT NULL,
-    id_empleado character varying(20) NOT NULL,
+    id_empleado character varying(3) NOT NULL,
     nombre_curso character varying(200) NOT NULL,
     tipo character varying(50) DEFAULT 'INTERNA'::character varying,
     institucion character varying(150),
@@ -707,10 +647,8 @@ CREATE TABLE public.rh_capacitacion (
 );
 
 
-ALTER TABLE public.rh_capacitacion OWNER TO postgres;
-
 --
--- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_capacitacion_id_capacitacion_seq
@@ -722,22 +660,20 @@ CREATE SEQUENCE public.rh_capacitacion_id_capacitacion_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_capacitacion_id_capacitacion_seq OWNER TO postgres;
-
 --
--- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_capacitacion_id_capacitacion_seq OWNED BY public.rh_capacitacion.id_capacitacion;
 
 
 --
--- Name: rh_contratos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_contratos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_contratos (
     id_contrato integer NOT NULL,
-    id_empleado character varying(20) NOT NULL,
+    id_empleado character varying(3) NOT NULL,
     folio_contrato character varying(30),
     tipo_contrato character varying(50) DEFAULT 'PLANTA'::character varying,
     fecha_inicio date NOT NULL,
@@ -762,10 +698,8 @@ CREATE TABLE public.rh_contratos (
 );
 
 
-ALTER TABLE public.rh_contratos OWNER TO postgres;
-
 --
--- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_contratos_id_contrato_seq
@@ -777,22 +711,20 @@ CREATE SEQUENCE public.rh_contratos_id_contrato_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_contratos_id_contrato_seq OWNER TO postgres;
-
 --
--- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_contratos_id_contrato_seq OWNED BY public.rh_contratos.id_contrato;
 
 
 --
--- Name: rh_documentos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_documentos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_documentos (
     id_documento integer NOT NULL,
-    id_empleado character varying(20) NOT NULL,
+    id_empleado character varying(3) NOT NULL,
     tipo_documento character varying(80),
     nombre_archivo character varying(200),
     archivo_url text,
@@ -807,10 +739,8 @@ CREATE TABLE public.rh_documentos (
 );
 
 
-ALTER TABLE public.rh_documentos OWNER TO postgres;
-
 --
--- Name: rh_documentos_id_documento_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_documentos_id_documento_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_documentos_id_documento_seq
@@ -822,23 +752,21 @@ CREATE SEQUENCE public.rh_documentos_id_documento_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_documentos_id_documento_seq OWNER TO postgres;
-
 --
--- Name: rh_documentos_id_documento_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_documentos_id_documento_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_documentos_id_documento_seq OWNED BY public.rh_documentos.id_documento;
 
 
 --
--- Name: rh_entrevistas; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_entrevistas; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_entrevistas (
     id_entrevista integer NOT NULL,
     id_solicitud integer,
-    id_empleado character varying(20),
+    id_empleado character varying(3),
     tipo_entrevista character varying(50) DEFAULT 'INICIAL'::character varying,
     fecha_entrevista date,
     hora_inicio time without time zone,
@@ -861,10 +789,8 @@ CREATE TABLE public.rh_entrevistas (
 );
 
 
-ALTER TABLE public.rh_entrevistas OWNER TO postgres;
-
 --
--- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_entrevistas_id_entrevista_seq
@@ -876,22 +802,20 @@ CREATE SEQUENCE public.rh_entrevistas_id_entrevista_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_entrevistas_id_entrevista_seq OWNER TO postgres;
-
 --
--- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_entrevistas_id_entrevista_seq OWNED BY public.rh_entrevistas.id_entrevista;
 
 
 --
--- Name: rh_evaluaciones; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_evaluaciones (
     id_evaluacion integer NOT NULL,
-    id_empleado character varying(20) NOT NULL,
+    id_empleado character varying(3) NOT NULL,
     periodo character varying(30),
     tipo character varying(50) DEFAULT 'SEMESTRAL'::character varying,
     evaluador character varying(150),
@@ -916,10 +840,8 @@ CREATE TABLE public.rh_evaluaciones (
 );
 
 
-ALTER TABLE public.rh_evaluaciones OWNER TO postgres;
-
 --
--- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_evaluaciones_id_evaluacion_seq
@@ -931,22 +853,20 @@ CREATE SEQUENCE public.rh_evaluaciones_id_evaluacion_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_evaluaciones_id_evaluacion_seq OWNER TO postgres;
-
 --
--- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_evaluaciones_id_evaluacion_seq OWNED BY public.rh_evaluaciones.id_evaluacion;
 
 
 --
--- Name: rh_historial; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_historial; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_historial (
     id_historial integer NOT NULL,
-    id_empleado character varying(20) NOT NULL,
+    id_empleado character varying(3) NOT NULL,
     fecha_evento timestamp without time zone DEFAULT now(),
     tipo_evento character varying(60) NOT NULL,
     descripcion text,
@@ -959,10 +879,8 @@ CREATE TABLE public.rh_historial (
 );
 
 
-ALTER TABLE public.rh_historial OWNER TO postgres;
-
 --
--- Name: rh_historial_id_historial_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_historial_id_historial_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_historial_id_historial_seq
@@ -974,22 +892,20 @@ CREATE SEQUENCE public.rh_historial_id_historial_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_historial_id_historial_seq OWNER TO postgres;
-
 --
--- Name: rh_historial_id_historial_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_historial_id_historial_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_historial_id_historial_seq OWNED BY public.rh_historial.id_historial;
 
 
 --
--- Name: rh_incapacidades; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_incapacidades; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_incapacidades (
     id_incapacidad integer NOT NULL,
-    id_empleado character varying(20) NOT NULL,
+    id_empleado character varying(3) NOT NULL,
     folio_incapacidad character varying(30),
     tipo character varying(50) DEFAULT 'ENFERMEDAD GENERAL'::character varying,
     fecha_inicio date NOT NULL,
@@ -1009,10 +925,8 @@ CREATE TABLE public.rh_incapacidades (
 );
 
 
-ALTER TABLE public.rh_incapacidades OWNER TO postgres;
-
 --
--- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_incapacidades_id_incapacidad_seq
@@ -1024,22 +938,20 @@ CREATE SEQUENCE public.rh_incapacidades_id_incapacidad_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_incapacidades_id_incapacidad_seq OWNER TO postgres;
-
 --
--- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_incapacidades_id_incapacidad_seq OWNED BY public.rh_incapacidades.id_incapacidad;
 
 
 --
--- Name: rh_permisos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_permisos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_permisos (
     id_permiso integer NOT NULL,
-    id_empleado character varying(20) NOT NULL,
+    id_empleado character varying(3) NOT NULL,
     folio_permiso character varying(20),
     tipo_permiso character varying(50) DEFAULT 'PERSONAL'::character varying,
     fecha_solicitud date DEFAULT CURRENT_DATE,
@@ -1058,16 +970,14 @@ CREATE TABLE public.rh_permisos (
     registrado_por character varying(100),
     fecha_registro timestamp without time zone DEFAULT now(),
     modalidad character varying(20) DEFAULT 'DIAS'::character varying,
-    horas_solicitadas numeric(4,2) DEFAULT NULL::numeric,
+    horas_solicitadas numeric(4,2) DEFAULT 0,
     hora_inicio time without time zone,
     hora_fin time without time zone
 );
 
 
-ALTER TABLE public.rh_permisos OWNER TO postgres;
-
 --
--- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_permisos_id_permiso_seq
@@ -1079,17 +989,15 @@ CREATE SEQUENCE public.rh_permisos_id_permiso_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_permisos_id_permiso_seq OWNER TO postgres;
-
 --
--- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_permisos_id_permiso_seq OWNED BY public.rh_permisos.id_permiso;
 
 
 --
--- Name: rh_solicitudes_empleo; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_solicitudes_empleo (
@@ -1121,16 +1029,14 @@ CREATE TABLE public.rh_solicitudes_empleo (
     cv_url text,
     estatus character varying(30) DEFAULT 'RECIBIDA'::character varying,
     observaciones_rh text,
-    id_empleado_resultado character varying(20),
+    id_empleado_resultado character varying(3),
     creado_por character varying(100),
     fecha_creacion timestamp without time zone DEFAULT now()
 );
 
 
-ALTER TABLE public.rh_solicitudes_empleo OWNER TO postgres;
-
 --
--- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq
@@ -1142,22 +1048,20 @@ CREATE SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq OWNER TO postgres;
-
 --
--- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq OWNED BY public.rh_solicitudes_empleo.id_solicitud;
 
 
 --
--- Name: rh_vacaciones; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rh_vacaciones; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.rh_vacaciones (
     id_vacacion integer NOT NULL,
-    id_empleado character varying(20) NOT NULL,
+    id_empleado character varying(3) NOT NULL,
     anio_periodo integer NOT NULL,
     dias_correspondientes integer NOT NULL,
     dias_tomados integer DEFAULT 0,
@@ -1177,10 +1081,8 @@ CREATE TABLE public.rh_vacaciones (
 );
 
 
-ALTER TABLE public.rh_vacaciones OWNER TO postgres;
-
 --
--- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.rh_vacaciones_id_vacacion_seq
@@ -1192,164 +1094,162 @@ CREATE SEQUENCE public.rh_vacaciones_id_vacacion_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rh_vacaciones_id_vacacion_seq OWNER TO postgres;
-
 --
--- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.rh_vacaciones_id_vacacion_seq OWNED BY public.rh_vacaciones.id_vacacion;
 
 
 --
--- Name: archivos_compartidos id_transferencia; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: archivos_compartidos id_transferencia; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.archivos_compartidos ALTER COLUMN id_transferencia SET DEFAULT nextval('public.archivos_compartidos_id_transferencia_seq'::regclass);
 
 
 --
--- Name: asistencia_eventos id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: asistencia_eventos id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.asistencia_eventos ALTER COLUMN id SET DEFAULT nextval('public.asistencia_eventos_id_seq'::regclass);
 
 
 --
--- Name: chat_admin_mensajes id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: chat_admin_mensajes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.chat_admin_mensajes ALTER COLUMN id SET DEFAULT nextval('public.chat_admin_mensajes_id_seq'::regclass);
 
 
 --
--- Name: chat_directo_mensajes id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: chat_directo_mensajes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.chat_directo_mensajes ALTER COLUMN id SET DEFAULT nextval('public.chat_directo_mensajes_id_seq'::regclass);
 
 
 --
--- Name: chat_soporte_mensajes id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: chat_soporte_mensajes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.chat_soporte_mensajes ALTER COLUMN id SET DEFAULT nextval('public.chat_soporte_mensajes_id_seq'::regclass);
 
 
 --
--- Name: control_asistencia id_registro; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: control_asistencia id_registro; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.control_asistencia ALTER COLUMN id_registro SET DEFAULT nextval('public.control_asistencia_id_registro_seq'::regclass);
 
 
 --
--- Name: control_horas_extras id_autorizacion; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: control_horas_extras id_autorizacion; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.control_horas_extras ALTER COLUMN id_autorizacion SET DEFAULT nextval('public.control_horas_extras_id_autorizacion_seq'::regclass);
 
 
 --
--- Name: cronogramas_eventos id_cronograma; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: cronogramas_eventos id_cronograma; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.cronogramas_eventos ALTER COLUMN id_cronograma SET DEFAULT nextval('public.cronogramas_eventos_id_cronograma_seq'::regclass);
 
 
 --
--- Name: departamentos id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: departamentos id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.departamentos ALTER COLUMN id SET DEFAULT nextval('public.departamentos_id_seq'::regclass);
 
 
 --
--- Name: log_accesos id_log; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: log_accesos id_log; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.log_accesos ALTER COLUMN id_log SET DEFAULT nextval('public.log_accesos_id_log_seq'::regclass);
 
 
 --
--- Name: op_agenda id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: op_agenda id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.op_agenda ALTER COLUMN id SET DEFAULT nextval('public.op_agenda_id_seq'::regclass);
 
 
 --
--- Name: rh_capacitacion id_capacitacion; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_capacitacion id_capacitacion; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_capacitacion ALTER COLUMN id_capacitacion SET DEFAULT nextval('public.rh_capacitacion_id_capacitacion_seq'::regclass);
 
 
 --
--- Name: rh_contratos id_contrato; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_contratos id_contrato; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_contratos ALTER COLUMN id_contrato SET DEFAULT nextval('public.rh_contratos_id_contrato_seq'::regclass);
 
 
 --
--- Name: rh_documentos id_documento; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_documentos id_documento; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_documentos ALTER COLUMN id_documento SET DEFAULT nextval('public.rh_documentos_id_documento_seq'::regclass);
 
 
 --
--- Name: rh_entrevistas id_entrevista; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_entrevistas id_entrevista; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_entrevistas ALTER COLUMN id_entrevista SET DEFAULT nextval('public.rh_entrevistas_id_entrevista_seq'::regclass);
 
 
 --
--- Name: rh_evaluaciones id_evaluacion; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones id_evaluacion; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_evaluaciones ALTER COLUMN id_evaluacion SET DEFAULT nextval('public.rh_evaluaciones_id_evaluacion_seq'::regclass);
 
 
 --
--- Name: rh_historial id_historial; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_historial id_historial; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_historial ALTER COLUMN id_historial SET DEFAULT nextval('public.rh_historial_id_historial_seq'::regclass);
 
 
 --
--- Name: rh_incapacidades id_incapacidad; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_incapacidades id_incapacidad; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_incapacidades ALTER COLUMN id_incapacidad SET DEFAULT nextval('public.rh_incapacidades_id_incapacidad_seq'::regclass);
 
 
 --
--- Name: rh_permisos id_permiso; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_permisos id_permiso; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_permisos ALTER COLUMN id_permiso SET DEFAULT nextval('public.rh_permisos_id_permiso_seq'::regclass);
 
 
 --
--- Name: rh_solicitudes_empleo id_solicitud; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo id_solicitud; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo ALTER COLUMN id_solicitud SET DEFAULT nextval('public.rh_solicitudes_empleo_id_solicitud_seq'::regclass);
 
 
 --
--- Name: rh_vacaciones id_vacacion; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rh_vacaciones id_vacacion; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_vacaciones ALTER COLUMN id_vacacion SET DEFAULT nextval('public.rh_vacaciones_id_vacacion_seq'::regclass);
 
 
 --
--- Data for Name: archivos_compartidos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: archivos_compartidos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.archivos_compartidos (id_transferencia, id_empleado_origen, nombre_origen, id_empleado_destino, nombre_destino, nombre_archivo_original, nombre_archivo_fisico, tamano_bytes, tamano_legible, tipo_mime, mensaje, folio_paquete, fecha_subida, descargado, veces_descargado, fecha_primer_descarga, fecha_limite_borrado, estatus, ip_origen, es_lan_origen, ip_descarga, es_lan_descarga) FROM stdin;
@@ -1540,14 +1440,222 @@ COPY public.archivos_compartidos (id_transferencia, id_empleado_origen, nombre_o
 88	101	Ana Lilia Villarreal Uribe	201	Cuauhtemoc Rivera Agundez	ORDEN DE PROD.No156 Enlace vía ZOOM gobernadora y noticiero canal II,  15-sep-26.xls	trans_1791914705_b849ae4f_ORDEN_DE_PROD.No156_Enlace_v_a_ZOOM_gobernadora_y_noticiero_canal_II___15-sep-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1791914705-CC5967	2026-10-13 12:05:05.812331	t	1	2026-10-13 14:00:12.379174	2026-10-14 14:00:12.379174	EXPIRADO_BORRADO	189.195.177.20	f	127.0.0.1	t
 90	101	Ana Lilia Villarreal Uribe	201	Cuauhtemoc Rivera Agundez	ORDEN DE PROD.No154 Proveeduria internet a 10 modulos y cableado a stand, dias 09,10 y 11sept. Villa Juarez.xls	trans_1791914705_65b12d82_ORDEN_DE_PROD.No154_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_09_10_y_11sept._Villa_Juarez.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1791914705-CC5967	2026-10-13 12:05:05.812331	t	1	2026-10-13 14:00:24.361228	2026-10-14 14:00:24.361228	EXPIRADO_BORRADO	189.195.177.20	f	127.0.0.1	t
 22	101	Ana Lilia Villarreal Uribe	201	Cuauhtemoc Rivera Agundez	ORDEN DE PROD. No.002-El Debate.xls	trans_1791914585_432bdf6f_ORDEN_DE_PROD._No.002-El_Debate.xls	54272	53.0 KB	application/vnd.ms-excel		TRF-1791914585-D96C68	2026-10-13 12:03:05.747693	t	2	2026-10-13 14:01:28.825873	2026-10-14 14:01:28.825873	EXPIRADO_BORRADO	189.195.177.20	f	127.0.0.1	t
+389	201	Cuahutémoc Rivera Agúndez	101	Ana Lilia Villarreal Uribe	Reporte_Oficial_OPs_VPRO.pdf	trans_1795284245_138e3279_Reporte_Oficial_OPs_VPRO.pdf	30791	30.1 KB	application/pdf	Asi quedaron las Ops ya ordenadas...y actualizadas.	TRF-1795284245-DWWBXV	2026-11-21 18:04:05.542457	f	0	\N	\N	DISPONIBLE	100.64.0.12	f	\N	\N
+338	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.080 Día de la Bandera-Giras240226.xls	trans_1795198473_28efe93d_ORDEN_DE_PROD.No.080_D_a_de_la_Bandera-Giras240226.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:33.578884	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.21	f	\N	\N
+339	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.078  Semanera Auditorio 230226.xls	trans_1795198473_2b2a5b70_ORDEN_DE_PROD.No.078__Semanera_Auditorio_230226.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:33.729554	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.11	f	\N	\N
+340	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.079 CONF.COPPEL MANZANILLO COLIMA 22,23,y 24 Abril.xls	trans_1795198473_2c491bcd_ORDEN_DE_PROD.No.079_CONF.COPPEL_MANZANILLO_COLIMA_22_23_y_24_Abril.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:33.869454	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+341	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.076 Eti 101 Valle Alto-Giras170226.xls	trans_1795198474_a71f8ae9_ORDEN_DE_PROD.No.076_Eti_101_Valle_Alto-Giras170226.xls	60416	59.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:34.009566	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.9	f	\N	\N
 190	200	Andrea Maria Vilarreal Lopez	201	Cuauhtemoc Rivera Agundez	foto 2.png	trans_1793046232_0e07a9af_foto_2.png	1553882	1.5 MB	image/png	imagen con el logo arreglado	TRF-1793046231-W1RX9M	2026-10-26 20:23:52.636548	f	0	\N	\N	DESCARTADO_RECEPTOR	100.64.0.13	f	\N	\N
 188	200	Andrea Maria Vilarreal Lopez	201	Cuauhtemoc Rivera Agundez	foto.png	trans_1793045217_f72d79eb_foto.png	1543481	1.5 MB	image/png	le mando la imagen y el video que solicito	TRF-1793045216-KKUGZE	2026-10-26 20:06:57.25393	t	2	2026-10-26 20:08:25.499584	2026-10-27 20:08:25.499584	EXPIRADO_BORRADO	100.64.0.9	f	100.64.0.13	f
 189	200	Andrea Maria Vilarreal Lopez	201	Cuauhtemoc Rivera Agundez	Video para vpropedia.mp4	trans_1793045226_e419ab14_Video_para_vpropedia.mp4	147423619	140.6 MB	video/mp4	le mando la imagen y el video que solicito	TRF-1793045216-KKUGZE	2026-10-26 20:07:06.454796	t	1	2026-10-26 20:08:11.557703	2026-10-27 20:08:11.557703	EXPIRADO_BORRADO	100.64.0.18	f	100.64.0.18	f
+342	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.077 Día del ejercito Mexicano-Giras190226.xls	trans_1795198474_cd3ce456_ORDEN_DE_PROD.No.077_D_a_del_ejercito_Mexicano-Giras190226.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:34.142816	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+191	201	Cuahutémoc Rivera Agúndez	201	Cuahutémoc Rivera Agúndez	VPRO_ENTORNO_DESARROLLO_LAPTOP.zip	trans_1793394522_e0290d60_VPRO_ENTORNO_DESARROLLO_LAPTOP.zip	740644419	706.3 MB	application/x-zip-compressed		TRF-1793394487-E3CMQV	2026-10-30 21:08:42.799841	f	0	\N	\N	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+192	201	Cuahutémoc Rivera Agúndez	109	Osiel Cuauhtemoc Hernandez Aldape	Risa_de_la_pdta.webm	trans_1793475313_e16bb871_Risa_de_la_pdta.webm	34997556	33.4 MB	video/webm	Te lomando para garrar cura y veas que flato.	TRF-1793475308-KIQ4OH	2026-10-31 19:35:13.264387	f	0	\N	\N	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+193	201	Cuahutémoc Rivera Agúndez	121	Sofia Alejandra Villarreal Lopez	Auditoria_Inventario_Duplicados_VPRO.xlsx	trans_1794516746_6a65ce4d_Auditoria_Inventario_Duplicados_VPRO.xlsx	43154	42.1 KB	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	le envío este archivo para su revision, esperando que este resumen pueda ayudar a que tengamos un inventario real y eficiente.	TRF-1794516746-P00M99	2026-11-12 20:52:26.395624	f	0	\N	\N	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+195	201	Cuahutémoc Rivera Agúndez	203	Pedro Villarreal Uribe	Auditoria_Inventario_Duplicados_VPRO.xlsx	trans_1794516977_30c19e75_Auditoria_Inventario_Duplicados_VPRO.xlsx	43154	42.1 KB	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	"le envío este archivo para su revision, esperando que este resumen pueda ayudar a que tengamos un inventario real y eficiente. Cualquier duda estoy a sus ordenes. ----> asi fue evaluado <---- El libro cuenta con diseño ejecutivo, bandas de color por grupo de duplicado y 5 pestañas de trabajo: Pestaña Total Registros Descripción y Criterio de Duplicidad Resumen Ejecutivo — Métricas clave (KPIs), causas raíz de la duplicidad, impacto en reportes de fallas y plan de acción recomendado.	TRF-1794516978-U5IH52	2026-11-12 20:56:17.561294	f	0	\N	\N	EXPIRADO_BORRADO	100.64.0.3	f	\N	\N
+204	201	Cuahutémoc Rivera Agúndez	201	Cuahutémoc Rivera Agúndez	VPRO_ENTORNO_DESARROLLO_LAPTOP.zip	trans_1795051404_2e9c62be_VPRO_ENTORNO_DESARROLLO_LAPTOP.zip	740644419	706.3 MB	application/x-zip-compressed		TRF-1795051369-2DGU7Z	2026-11-19 01:23:24.251895	f	0	\N	\N	CANCELADO	100.64.0.6	f	\N	\N
+203	109	Osiel Cuauhtemoc Hernandez Aldape	102	Gerardo Villarreal Uribe	CAMPO7.mp3	trans_1794964926_16a4a50c_CAMPO7.mp3	971046	948.3 KB	audio/mpeg		TRF-1794964919-YIU12N	2026-11-18 01:22:06.221143	t	1	2026-11-18 01:24:14.401404	2026-11-19 01:24:14.401404	EXPIRADO_BORRADO	100.64.0.10	f	100.64.0.2	f
+202	109	Osiel Cuauhtemoc Hernandez Aldape	102	Gerardo Villarreal Uribe	CAMPO6.wav	trans_1794964925_eed44bb7_CAMPO6.wav	15309430	14.6 MB	audio/wav		TRF-1794964919-YIU12N	2026-11-18 01:22:05.980203	t	1	2026-11-18 01:24:17.576998	2026-11-19 01:24:17.576998	EXPIRADO_BORRADO	100.64.0.9	f	100.64.0.2	f
+201	109	Osiel Cuauhtemoc Hernandez Aldape	102	Gerardo Villarreal Uribe	CAMPO5.mp3	trans_1794964925_8b0b2026_CAMPO5.mp3	941094	919.0 KB	audio/mpeg		TRF-1794964919-YIU12N	2026-11-18 01:22:05.278813	t	1	2026-11-18 01:24:21.124156	2026-11-19 01:24:21.124156	EXPIRADO_BORRADO	100.64.0.15	f	100.64.0.1	f
+390	201	Cuahutémoc Rivera Agúndez	124	Manuel Eduardo Madrid	Reporte_Oficial_OPs_VPRO.pdf	trans_1795284279_c5830624_Reporte_Oficial_OPs_VPRO.pdf	30791	30.1 KB	application/pdf	Asi quedaron las Ops actualizadas y a la fecha.	TRF-1795284279-IU9EZE	2026-11-21 18:04:39.63519	f	0	\N	\N	DISPONIBLE	100.64.0.2	f	\N	\N
+194	201	Cuahutémoc Rivera Agúndez	200	Andrea Maria Vilarreal Lopez	Auditoria_Inventario_Duplicados_VPRO.xlsx	trans_1794516858_254ab49f_Auditoria_Inventario_Duplicados_VPRO.xlsx	43154	42.1 KB	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet	le envío este archivo para su revision, esperando que este resumen pueda ayudar a que tengamos un inventario real y eficiente. Cualquier duda estoy a sus ordenes. ----> asi fue evaluado <---- El libro cuenta con diseño ejecutivo, bandas de color por grupo de duplicado y 5 pestañas de trabajo:\r\n\r\nPestaña\tTotal Registros\tDescripción y Criterio de Duplicidad\r\nResumen Ejecutivo\t—\tMétricas clave (KPIs), causas raíz de la duplicidad, impacto en reportes de fallas y plan de acción recomendado.\r\n1. Series Físicas Repetidas\t30 filas\tDuplicados Críticos: Mismo número de serie de fabricante registrado 2 o más veces con diferente código de activo (ej. Routers Huawei, Laptops Dell/HP, Pantallas Smart TV 65", Consolas Steren).\r\n2. Global vs Kits (Plantillas)\t47 filas\tCruce Maestro vs Kit: Activos del inventario global que fueron re-ingresados en plantillas de colaboradores con códigos virtuales (INV_ALT_...), duplicando la existencia física del mismo bien.\r\n3. Duplicados Inv. Global\t273 filas\tBodega vs Departamentos: Equipos ingresados inicialmente en Bodega (VPNBOG...) y dados de alta una segunda vez bajo departamentos operativos (VPNRED..., VPNDIR..., VPNPRO...).\r\n4. Duplicados entre Plantillas\t59 filas\tEquipos Estratégicos Replicados: Dispositivos únicos o de alto valor (ej. Antenas Starlink, ATEM Mini SDI, switches) dados de alta simultáneamente en las plantillas de varios colaboradores.	TRF-1794516858-FHX86X	2026-11-12 20:54:18.332844	t	1	2026-11-12 23:42:04.823416	2026-11-13 23:42:04.823416	EXPIRADO_BORRADO	100.64.0.15	f	100.64.0.1	f
+393	104	Jose Francisco Torres Sanchez	124	Manuel Eduardo Madrid	Hoja de necesidades Informe Gobernadora.docx	trans_1795285255_ef595450_Hoja_de_necesidades_Informe_Gobernadora.docx	28087	27.4 KB	application/vnd.openxmlformats-officedocument.wordprocessingml.document		TRF-1795285232-S48V4C	2026-11-21 18:20:55.874915	t	1	2026-11-21 18:24:19.867399	2026-11-22 18:24:19.867399	EXPIRADO_BORRADO	100.64.0.10	f	100.64.0.11	f
+396	104	Jose Francisco Torres Sanchez	119	Manuel Antonio Madrid Zazueta	Hoja de necesidades Informe Gobernadora.docx	trans_1795285384_3ddce07e_Hoja_de_necesidades_Informe_Gobernadora.docx	28087	27.4 KB	application/vnd.openxmlformats-officedocument.wordprocessingml.document		TRF-1795285360-UD9PQP	2026-11-21 18:23:04.203487	f	0	\N	\N	DISPONIBLE	100.64.0.12	f	\N	\N
+343	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.073 CIBACOPA- Culiacán 16 y 17 mayo.xls	trans_1795198474_2316656f_ORDEN_DE_PROD.No.073_CIBACOPA-_Culiac_n_16_y_17_mayo.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:34.3809	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+344	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.072 CIBACOPA- Mazatlan 12 y 13 mayo.xls	trans_1795198474_260cd856_ORDEN_DE_PROD.No.072_CIBACOPA-_Mazatlan_12_y_13_mayo.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:34.530076	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+345	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.071 CIBACOPA- Culiacán 05 y 06 mayo.xls	trans_1795198474_e2c6f4c5_ORDEN_DE_PROD.No.071_CIBACOPA-_Culiac_n_05_y_06_mayo.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:34.680079	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+346	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.070 CIBACOPA- Guasave 01 y 02 Mayo.xls	trans_1795198474_08002575_ORDEN_DE_PROD.No.070_CIBACOPA-_Guasave_01_y_02_Mayo.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:34.81307	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+347	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.068 CIBACOPA- Culiacán 21 y 22 abril.xls	trans_1795198474_14cd80b6_ORDEN_DE_PROD.No.068_CIBACOPA-_Culiac_n_21_y_22_abril.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:34.96769	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.4	f	\N	\N
+348	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.067 CIBACOPA- Guasave 10 y 11 abril.xls	trans_1795198475_0ac69ef0_ORDEN_DE_PROD.No.067_CIBACOPA-_Guasave_10_y_11_abril.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:35.095992	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+349	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.060 CIBACOPA- Guasave 24 y 25 feb.xls	trans_1795198475_3fa9d797_ORDEN_DE_PROD.No.060_CIBACOPA-_Guasave_24_y_25_feb.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:35.240859	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+350	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.059 CIBACOPA- Culiacán 21 y 22 feb.xls	trans_1795198475_8705d373_ORDEN_DE_PROD.No.059_CIBACOPA-_Culiac_n_21_y_22_feb.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:35.385869	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+351	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.058 HANGAR #10 Aniv.Fuerza Aerea Mexicana.xls	trans_1795198475_6920b018_ORDEN_DE_PROD.No.058_HANGAR__10_Aniv.Fuerza_Aerea_Mexicana.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:35.527211	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.9	f	\N	\N
+352	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.057 SUMINISTRO INTERNET GIRAS Blv.dAgricultores.xls	trans_1795198475_50c81148_ORDEN_DE_PROD.No.057_SUMINISTRO_INTERNET_GIRAS_Blv.dAgricultores.xls	60416	59.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:35.667913	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+353	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.048 SIST.AUDIO Y MIROFONIA COPPEL 290126.xls	trans_1795198475_e83ad694_ORDEN_DE_PROD.No.048_SIST.AUDIO_Y_MIROFONIA_COPPEL_290126.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:35.807245	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+354	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.056 CONF.COPPEL, CHIHUAHUA,CH. 11 y 12  MARZO.xls	trans_1795198475_6a9cb5a3_ORDEN_DE_PROD.No.056_CONF.COPPEL__CHIHUAHUA_CH._11_y_12__MARZO.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:35.947678	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+200	109	Osiel Cuauhtemoc Hernandez Aldape	102	Gerardo Villarreal Uribe	CAMPO4.mp3	trans_1794964925_3b13dd2a_CAMPO4.mp3	923814	902.2 KB	audio/mpeg		TRF-1794964919-YIU12N	2026-11-18 01:22:05.034516	t	1	2026-11-18 01:24:24.358711	2026-11-19 01:24:24.358711	EXPIRADO_BORRADO	100.64.0.20	f	100.64.0.13	f
+199	109	Osiel Cuauhtemoc Hernandez Aldape	102	Gerardo Villarreal Uribe	CAMPO3.mp3	trans_1794964924_19634e11_CAMPO3.mp3	1540134	1.5 MB	audio/mpeg		TRF-1794964919-YIU12N	2026-11-18 01:22:04.804854	t	1	2026-11-18 01:24:27.714396	2026-11-19 01:24:27.714396	EXPIRADO_BORRADO	100.64.0.10	f	100.64.0.7	f
+198	109	Osiel Cuauhtemoc Hernandez Aldape	102	Gerardo Villarreal Uribe	CAMPO2.mp3	trans_1794964924_54fa565f_CAMPO2.mp3	1103526	1.1 MB	audio/mpeg		TRF-1794964919-YIU12N	2026-11-18 01:22:04.494991	t	1	2026-11-18 01:24:30.812932	2026-11-19 01:24:30.812932	EXPIRADO_BORRADO	100.64.0.17	f	100.64.0.17	f
+197	109	Osiel Cuauhtemoc Hernandez Aldape	102	Gerardo Villarreal Uribe	CAMPO1.wav	trans_1794964924_a1d1a785_CAMPO1.wav	18289438	17.4 MB	audio/wav		TRF-1794964919-YIU12N	2026-11-18 01:22:04.215929	t	1	2026-11-18 01:24:35.284604	2026-11-19 01:24:35.284604	EXPIRADO_BORRADO	100.64.0.2	f	100.64.0.16	f
+196	109	Osiel Cuauhtemoc Hernandez Aldape	102	Gerardo Villarreal Uribe	CAMPO POSICIONAMIENTO.wav	trans_1794964923_797ba993_CAMPO_POSICIONAMIENTO.wav	64355574	61.4 MB	audio/wav		TRF-1794964919-YIU12N	2026-11-18 01:22:03.370795	t	1	2026-11-18 01:24:38.394386	2026-11-19 01:24:38.394386	EXPIRADO_BORRADO	100.64.0.5	f	100.64.0.4	f
+391	124	Manuel Eduardo Madrid	104	Jose Francisco Torres Sanchez	Hoja de necesidades.docx	trans_1795284539_6d095117_Hoja_de_necesidades.docx	27278	26.6 KB	application/vnd.openxmlformats-officedocument.wordprocessingml.document		TRF-1795284539-QQW4YV	2026-11-21 18:08:59.748002	t	1	2026-11-21 18:10:09.163732	2026-11-22 18:10:09.163732	EXPIRADO_BORRADO	100.64.0.15	f	100.64.0.17	f
+208	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	._ORDEN DE PROD.No.039 REGION 3ER ZONA MILITAR MAZATLAN.xlsx	trans_1795198453_a468c333_._ORDEN_DE_PROD.No.039_REGION_3ER_ZONA_MILITAR_MAZATLAN.xlsx	4096	4.0 KB	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet		TRF-1795198451-C4I40M	2026-11-20 18:14:13.046835	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+209	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD. No.001-Hangar.xls	trans_1795198453_bcc4a33a_ORDEN_DE_PROD._No.001-Hangar.xls	59904	58.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:13.277459	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+205	200	Andrea Maria Vilarreal Lopez	201	Cuahutémoc Rivera Agúndez	C0032_39.MP4	trans_1795051999_f8ea5fc0_C0032_39.MP4	3429354035	3.19 GB	video/mp4	hadcñnas	TRF-1795051815-CLERCU	2026-11-19 01:33:19.044166	f	0	\N	\N	DESCARTADO_RECEPTOR	100.64.0.2	f	\N	\N
+206	200	Andrea Maria Vilarreal Lopez	201	Cuahutémoc Rivera Agúndez	C0020_33.MP4	trans_1795052170_f3fb0518_C0020_33.MP4	3160829369	2.94 GB	video/mp4	hadcñnas	TRF-1795051815-CLERCU	2026-11-19 01:36:10.220269	f	0	\N	\N	DESCARTADO_RECEPTOR	100.64.0.3	f	\N	\N
+207	200	Andrea Maria Vilarreal Lopez	201	Cuahutémoc Rivera Agúndez	C0014_28.MP4	trans_1795052319_20e82f75_C0014_28.MP4	2787772769	2.60 GB	video/mp4	hadcñnas	TRF-1795051815-CLERCU	2026-11-19 01:38:39.108097	t	1	2026-11-19 01:39:48.131899	2026-11-20 01:39:48.131899	DESCARTADO_RECEPTOR	100.64.0.7	f	100.64.0.1	f
+210	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD. No.002-El Debate.xls	trans_1795198453_785bf44a_ORDEN_DE_PROD._No.002-El_Debate.xls	54272	53.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:13.432628	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+355	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.047 Entrega Titulos Propiedad, Sinaloa de Leyva.190126.xls	trans_1795198476_69e9bb23_ORDEN_DE_PROD.No.047_Entrega_Titulos_Propiedad__Sinaloa_de_Leyva.190126.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:36.092413	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+356	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.046  Semanera 190126 Guasave, Sin..xls	trans_1795198476_473ea860_ORDEN_DE_PROD.No.046__Semanera_190126_Guasave__Sin..xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:36.228664	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.9	f	\N	\N
+357	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.045  Semanera 120126 Auditorio.xls	trans_1795198476_4dd1e23e_ORDEN_DE_PROD.No.045__Semanera_120126_Auditorio.xls	57856	56.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:36.368841	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+358	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.044 SESION VIRTUAL IEES- STUDIO 14ene-25.xls	trans_1795198476_8404fa86_ORDEN_DE_PROD.No.044_SESION_VIRTUAL_IEES-_STUDIO_14ene-25.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:36.509892	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+359	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.043 GRABACIONES MAJA 14ene-25.xls	trans_1795198476_c5d2ddf5_ORDEN_DE_PROD.No.043_GRABACIONES_MAJA_14ene-25.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:36.650891	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.18	f	\N	\N
+360	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.042 FAST STAR 2026 COCA COLA ENLACE CULIACAN.xls	trans_1795198476_17c3071c_ORDEN_DE_PROD.No.042_FAST_STAR_2026_COCA_COLA_ENLACE_CULIACAN.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:36.795332	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.21	f	\N	\N
+361	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.041 FAST STAR 2026 COCA COLA MAZATLAN.xls	trans_1795198476_0a5543a2_ORDEN_DE_PROD.No.041_FAST_STAR_2026_COCA_COLA_MAZATLAN.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:36.946314	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+398	201	Cuahutémoc Rivera Agúndez	201	Cuahutémoc Rivera Agúndez	VPRO_RESPALDO_COMPLETO_20261123.zip	trans_1795455234_80e1f95f_VPRO_RESPALDO_COMPLETO_20261123.zip	1829592990	1.70 GB	application/zip	Para tener un clon del sistema.	TRF-1795455122-G6VNWM	2026-11-23 17:33:54.113196	t	1	2026-11-23 17:34:19.240102	2026-11-24 17:34:19.240102	DESCARGADO	100.64.0.14	f	100.64.0.20	f
+392	104	Jose Francisco Torres Sanchez	203	Pedro Villarreal Uribe	Hoja de necesidades Informe Gobernadora.docx	trans_1795285195_acaee125_Hoja_de_necesidades_Informe_Gobernadora.docx	28087	27.4 KB	application/vnd.openxmlformats-officedocument.wordprocessingml.document		TRF-1795285172-CGOA3F	2026-11-21 18:19:55.573982	f	0	\N	\N	DISPONIBLE	100.64.0.8	f	\N	\N
+362	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.040  Semanera 050126 Mochis.xls	trans_1795198477_c911f95b_ORDEN_DE_PROD.No.040__Semanera_050126_Mochis.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:37.091182	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+363	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.135 Grabaciones en Estudio COCACOLA 29julio26.xls	trans_1795198477_157442ed_ORDEN_DE_PROD.No.135_Grabaciones_en_Estudio_COCACOLA_29julio26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:37.237761	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.18	f	\N	\N
+364	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.138 GRABACIONES DEL CAMPO EN AGUASCALIENTES 06-agosto-26.xls	trans_1795198477_55f39fa8_ORDEN_DE_PROD.No.138_GRABACIONES_DEL_CAMPO_EN_AGUASCALIENTES_06-agosto-26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:37.384409	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+365	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.139 ENLACE PRESIDENCIAL DESDE  BORABAMPO,Ahome    06-agosto-26.xls	trans_1795198477_7f9d3818_ORDEN_DE_PROD.No.139_ENLACE_PRESIDENCIAL_DESDE__BORABAMPO_Ahome____06-agosto-26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:37.531035	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+366	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.140 Proveeduria internet a 10 modulos y cableado a stand, dias 05,06 y07 Agosto26 El Ranchito.xls	trans_1795198477_cf2cae66_ORDEN_DE_PROD.No.140_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_05_06_y07_Agosto26_El_Ranchito.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:37.67285	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+367	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.138 EL CARRIZO  09-agosto-26.xls	trans_1795198477_b23bd632_ORDEN_DE_PROD.No.138_EL_CARRIZO__09-agosto-26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:37.829209	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.21	f	\N	\N
+368	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No142 Proveeduria internet a 10 modulos y cableado a stand, dias 19,20 y21 Agosto Costa Rica.xls	trans_1795198477_e856ca5c_ORDEN_DE_PROD.No142_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_19_20_y21_Agosto_Costa_Rica.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:37.985161	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.18	f	\N	\N
+369	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.137 ENLACE PRESICENCIA-despacho gobernador   05-agosto-26.xls	trans_1795198478_9e2a8854_ORDEN_DE_PROD.No.137_ENLACE_PRESICENCIA-despacho_gobernador___05-agosto-26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:38.123429	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+370	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.136 ENLACE PRESICENCIA  en AARC Y  04-agosto-26.xls	trans_1795198478_50d57e49_ORDEN_DE_PROD.No.136_ENLACE_PRESICENCIA__en_AARC_Y__04-agosto-26.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:38.260385	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+371	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.143 ENLACE PRESICENCIAL-despacho gobernador   21-agosto-26.xls	trans_1795198478_08479984_ORDEN_DE_PROD.No.143_ENLACE_PRESICENCIAL-despacho_gobernador___21-agosto-26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:38.409781	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.2	f	\N	\N
+372	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.102  Semanera Auditorio 22abril26.xls	trans_1795198478_7016d925_ORDEN_DE_PROD.No.102__Semanera_Auditorio_22abril26.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:38.556528	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+373	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.144 Cobertura 72 ANIVERSARIO LEY    28-agosto-26.xls	trans_1795198478_0c011090_ORDEN_DE_PROD.No.144_Cobertura_72_ANIVERSARIO_LEY____28-agosto-26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:38.696633	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.9	f	\N	\N
+374	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.131 CONGRESO CESAVESIN- MAZATLAN 20, 21 y 22 AGOSTO-26.xls	trans_1795198478_aadb83ae_ORDEN_DE_PROD.No.131_CONGRESO_CESAVESIN-_MAZATLAN_20__21_y_22_AGOSTO-26.xls	64000	62.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:38.837545	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.11	f	\N	\N
+375	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.141 SESION EXTRAORD. Y ESPECIAL  VIRTUAL IEES- ESTUDIO 25-agosto-26.xls	trans_1795198478_db22e6de_ORDEN_DE_PROD.No.141_SESION_EXTRAORD._Y_ESPECIAL__VIRTUAL_IEES-_ESTUDIO_25-agosto-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:38.977612	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+376	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.036  MAJA- Live Streaming Sorteo Anual 14-ene-26.xls	trans_1795198479_51a64ce2_ORDEN_DE_PROD.No.036__MAJA-_Live_Streaming_Sorteo_Anual_14-ene-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:39.119327	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+377	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No145 Proveeduria internet a 10 modulos y cableado a stand, dias 02,03 y 04 sept. Costa Rica.xls	trans_1795198479_d23dc569_ORDEN_DE_PROD.No145_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_02_03_y_04_sept._Costa_Rica.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:39.258282	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+378	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.150 Ayutam. badiraguato-TEBACAS 16-oct.2026.xls	trans_1795198479_dca3e830_ORDEN_DE_PROD.No.150_Ayutam._badiraguato-TEBACAS_16-oct.2026.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:39.444912	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.14	f	\N	\N
+379	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.149 Ayutam. badiraguato-TEBACAS 10-oct.2026.xls	trans_1795198479_a3b990ac_ORDEN_DE_PROD.No.149_Ayutam._badiraguato-TEBACAS_10-oct.2026.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:39.633239	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+394	104	Jose Francisco Torres Sanchez	101	Ana Lilia Villarreal Uribe	Hoja de necesidades Informe Gobernadora.docx	trans_1795285279_6c03ad71_Hoja_de_necesidades_Informe_Gobernadora.docx	28087	27.4 KB	application/vnd.openxmlformats-officedocument.wordprocessingml.document		TRF-1795285256-IVC5WV	2026-11-21 18:21:19.307117	f	0	\N	\N	DISPONIBLE	100.64.0.20	f	\N	\N
+395	104	Jose Francisco Torres Sanchez	107	Martin Eduardo Sanchez Estrada	Hoja de necesidades Informe Gobernadora.docx	trans_1795285338_597b5c0c_Hoja_de_necesidades_Informe_Gobernadora.docx	28087	27.4 KB	application/vnd.openxmlformats-officedocument.wordprocessingml.document		TRF-1795285314-E6PCST	2026-11-21 18:22:18.065815	f	0	\N	\N	DISPONIBLE	100.64.0.2	f	\N	\N
+397	104	Jose Francisco Torres Sanchez	102	Gerardo Villarreal Uribe	Hoja de necesidades Informe Gobernadora.docx	trans_1795285402_c4094c24_Hoja_de_necesidades_Informe_Gobernadora.docx	28087	27.4 KB	application/vnd.openxmlformats-officedocument.wordprocessingml.document		TRF-1795285379-1MBABY	2026-11-21 18:23:22.448043	f	0	\N	\N	DISPONIBLE	100.64.0.17	f	\N	\N
+380	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.146 Ayutam. badiraguato- Culiacán 04,05 y 06 sept.2026.xls	trans_1795198479_a623133c_ORDEN_DE_PROD.No.146_Ayutam._badiraguato-_Culiac_n_04_05_y_06_sept.2026.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:39.891104	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+381	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.148 Ayutam. badiraguato-TEBACAS 03-oct.2026.xls	trans_1795198480_ac8a2472_ORDEN_DE_PROD.No.148_Ayutam._badiraguato-TEBACAS_03-oct.2026.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:40.068187	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.2	f	\N	\N
+382	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No152  monitores Salon gobernadores Reunion privada domingo 06-sep-26.xls	trans_1795198480_fc10a3a2_ORDEN_DE_PROD.No152__monitores_Salon_gobernadores_Reunion_privada_domingo_06-sep-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:40.227186	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.11	f	\N	\N
+383	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No153 Grabaciones JAPAC 07-sep-26.xls	trans_1795198480_c93673eb_ORDEN_DE_PROD.No153_Grabaciones_JAPAC_07-sep-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:40.37401	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+384	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No154 Proveeduria internet a 10 modulos y cableado a stand, dias 09,10 y 11sept. Villa Juarez.xls	trans_1795198480_ecf91f45_ORDEN_DE_PROD.No154_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_09_10_y_11sept._Villa_Juarez.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:40.516298	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.11	f	\N	\N
+385	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No155 FESTEJOS PATRIOS 15 SEPT. 2026 PALACIO.xls	trans_1795198480_0884f864_ORDEN_DE_PROD.No155_FESTEJOS_PATRIOS_15_SEPT._2026_PALACIO.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:40.655079	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.2	f	\N	\N
+386	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No156 Enlace vía ZOOM gobernadora y noticiero canal II,  15-sep-26.xls	trans_1795198480_605c2ee3_ORDEN_DE_PROD.No156_Enlace_v_a_ZOOM_gobernadora_y_noticiero_canal_II___15-sep-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:40.811647	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+387	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No157 VISITA PRESIDENCIAL  Feria ganadera monitores y switcher   20-sep-26.xls	trans_1795198480_26e72088_ORDEN_DE_PROD.No157_VISITA_PRESIDENCIAL__Feria_ganadera_monitores_y_switcher___20-sep-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:40.950766	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+388	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No158 SESION EXTRAORD. Y ESPECIAL  VIRTUAL IEES- ESTUDIO 30-sept-26.xls	trans_1795198481_841ec04d_ORDEN_DE_PROD.No158_SESION_EXTRAORD._Y_ESPECIAL__VIRTUAL_IEES-_ESTUDIO_30-sept-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:41.163971	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+212	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.004- Semanera.xls	trans_1795198453_0b099387_ORDEN_DE_PROD.No.004-_Semanera.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:13.780373	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.21	f	\N	\N
+213	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.005 Cuadrangular del Bienestar-Los Mochis.xls	trans_1795198453_95f6c074_ORDEN_DE_PROD.No.005_Cuadrangular_del_Bienestar-Los_Mochis.xls	61440	60.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:13.954369	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+214	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.006 Cuadrangular del Bienestar-Culiacán.xls	trans_1795198454_7e145ffa_ORDEN_DE_PROD.No.006_Cuadrangular_del_Bienestar-Culiac_n.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:14.139102	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.18	f	\N	\N
+215	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.007 Evento Inauguracion bombeo-Mazatlán.xls	trans_1795198454_4d202c49_ORDEN_DE_PROD.No.007_Evento_Inauguracion_bombeo-Mazatl_n.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:14.288851	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.5	f	\N	\N
+216	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.008 Evento Cuadrangular del Bienestar en Mazatlán Teodoro Mariscal.xls	trans_1795198454_630567ee_ORDEN_DE_PROD.No.008_Evento_Cuadrangular_del_Bienestar_en_Mazatl_n_Teodoro_Mariscal.xls	65024	63.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:14.517173	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+217	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.009 Gob. del Edo. Giras- Los Mochis 171025.xls	trans_1795198454_af059d2f_ORDEN_DE_PROD.No.009_Gob._del_Edo._Giras-_Los_Mochis_171025.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:14.695916	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+218	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.010 Semanera.xls	trans_1795198454_2d42cd8c_ORDEN_DE_PROD.No.010_Semanera.xls	60416	59.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:14.881159	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+219	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.011 IEES Sesion Extraordinaria PRESENCIAL 211025.xls	trans_1795198455_60d3ed3e_ORDEN_DE_PROD.No.011_IEES_Sesion_Extraordinaria_PRESENCIAL_211025.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:15.055084	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+220	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.012 REUNION SEGURIDAD HARFUCH MAZATLAN 23-oct-25.xls	trans_1795198455_d8531c19_ORDEN_DE_PROD.No.012_REUNION_SEGURIDAD_HARFUCH_MAZATLAN_23-oct-25.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:15.267476	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+221	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.013 INFORME MORENA en Navolato 25-oct-25.xls	trans_1795198455_d9a1e037_ORDEN_DE_PROD.No.013_INFORME_MORENA_en_Navolato_25-oct-25.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:15.430306	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+222	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.014  CONFERECIA REPSE-Aquamiller-30-oct-25.xls	trans_1795198455_8c7df512_ORDEN_DE_PROD.No.014__CONFERECIA_REPSE-Aquamiller-30-oct-25.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:15.573429	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.18	f	\N	\N
+223	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.015 IEES Sesion Extraordinaria PRESENCIAL 01nov25.xls	trans_1795198455_44216285_ORDEN_DE_PROD.No.015_IEES_Sesion_Extraordinaria_PRESENCIAL_01nov25.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:15.768876	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+224	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.016 Cuadrangular del Bienestar-Los Mochis 11 Y 12 NOV..xls	trans_1795198455_4228be78_ORDEN_DE_PROD.No.016_Cuadrangular_del_Bienestar-Los_Mochis_11_Y_12_NOV..xls	59392	58.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:15.972308	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.11	f	\N	\N
+225	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.017 Semanera 27-oct-25.xls	trans_1795198456_b41891bf_ORDEN_DE_PROD.No.017_Semanera_27-oct-25.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:16.271461	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+226	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.018 INFORME PDTE. MPAL. AHOME en Los mochis 28-oct-25.xls	trans_1795198456_d59cd0fc_ORDEN_DE_PROD.No.018_INFORME_PDTE._MPAL._AHOME_en_Los_mochis_28-oct-25.xls	61952	60.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:16.439627	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+227	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.019  Semanera 031125.xls	trans_1795198456_d5e2bca2_ORDEN_DE_PROD.No.019__Semanera_031125.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:16.607341	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.7	f	\N	\N
+229	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.021 IEES Sesion VIRTUAL 12nov25.xls	trans_1795198456_0bb90991_ORDEN_DE_PROD.No.021_IEES_Sesion_VIRTUAL_12nov25.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:16.951256	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+230	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.022 Gob. del Edo. 4to.INFORME GOB. CONGRESO 26112025.xls	trans_1795198457_3b58a98c_ORDEN_DE_PROD.No.022_Gob._del_Edo._4to.INFORME_GOB._CONGRESO_26112025.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:17.11772	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+231	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.023 ISDE-PREMIO ESTATAL AL DEPORTE  27112025.xls	trans_1795198457_efd5dfa5_ORDEN_DE_PROD.No.023_ISDE-PREMIO_ESTATAL_AL_DEPORTE__27112025.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:17.293834	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+232	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.024 reunion seguridad badiraguato 131125.xls	trans_1795198457_b8801cef_ORDEN_DE_PROD.No.024_reunion_seguridad_badiraguato_131125.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:17.445021	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.3	f	\N	\N
+233	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.025 4TO.INFORME GOBIERNO Congreso 26NOV25.xls	trans_1795198457_d837d2e9_ORDEN_DE_PROD.No.025_4TO.INFORME_GOBIERNO_Congreso_26NOV25.xls	59392	58.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:17.582263	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+228	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.020  Semanera 101125.xls	trans_1795198456_d2da708b_ORDEN_DE_PROD.No.020__Semanera_101125.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:16.780988	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.3	f	\N	\N
+234	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.026 Switcher y equipo para LIVE COPPEL  21NOV25.xls	trans_1795198457_b95483a2_ORDEN_DE_PROD.No.026_Switcher_y_equipo_para_LIVE_COPPEL__21NOV25.xls	59904	58.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:17.751599	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+235	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.027  Semanera 111125.xls	trans_1795198457_d87ef836_ORDEN_DE_PROD.No.027__Semanera_111125.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:17.910773	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+236	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.028  Semanera 171125.xls	trans_1795198458_fbad98f1_ORDEN_DE_PROD.No.028__Semanera_171125.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:18.069676	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.21	f	\N	\N
+237	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.029  Semanera 241125.xls	trans_1795198458_cb7b4fe7_ORDEN_DE_PROD.No.029__Semanera_241125.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:18.230673	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+238	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.030  Enlace Mañanera Secret.Gob. -Auditorio 251125.xls	trans_1795198458_919aa3c5_ORDEN_DE_PROD.No.030__Enlace_Ma_anera_Secret.Gob._-Auditorio_251125.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:18.402991	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.5	f	\N	\N
+239	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.031  Semanera 011225.xls	trans_1795198458_c0ea456f_ORDEN_DE_PROD.No.031__Semanera_011225.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:18.575672	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.7	f	\N	\N
+240	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.032  GIRAS  Secret. en Guasave 02-dic-25.xls	trans_1795198458_021d7f20_ORDEN_DE_PROD.No.032__GIRAS__Secret._en_Guasave_02-dic-25.xls	60416	59.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:18.734514	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.11	f	\N	\N
+241	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.035 REGION 3ER ZONA MILITAR MAZATLAN.xls	trans_1795198458_cdc44609_ORDEN_DE_PROD.No.035_REGION_3ER_ZONA_MILITAR_MAZATLAN.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:18.90235	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+242	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.033  GIRAS  Secret. ISDE CAR- Ma,. del Rosario 03-dic-25.xls	trans_1795198459_085eb0c9_ORDEN_DE_PROD.No.033__GIRAS__Secret._ISDE_CAR-_Ma_._del_Rosario_03-dic-25.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:19.068817	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+243	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.037  Semanera 081225.xls	trans_1795198459_366892c3_ORDEN_DE_PROD.No.037__Semanera_081225.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:19.218912	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+244	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.038  Semanera 151225.xls	trans_1795198459_7ae996f0_ORDEN_DE_PROD.No.038__Semanera_151225.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:19.364743	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+245	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.034 COPPEL present.libro en PRIMAVERA 17-dic-25.xls	trans_1795198459_0b14e736_ORDEN_DE_PROD.No.034_COPPEL_present.libro_en_PRIMAVERA_17-dic-25.xls	59904	58.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:19.522792	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+246	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.039 REGION 3ER ZONA MILITAR MAZATLAN.xlsx	trans_1795198459_52a8761c_ORDEN_DE_PROD.No.039_REGION_3ER_ZONA_MILITAR_MAZATLAN.xlsx	84273	82.3 KB	application/vnd.openxmlformats-officedocument.spreadsheetml.sheet		TRF-1795198451-C4I40M	2026-11-20 18:14:19.677734	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+247	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.036 GRABACIONES MERCADITO MOVIL.xls	trans_1795198459_07ebf30a_ORDEN_DE_PROD.No.036_GRABACIONES_MERCADITO_MOVIL.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:19.814633	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+248	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	._ORDEN DE PROD.No.036  MAJA- Live Streaming Sorteo Anual 14-ene-26.xls	trans_1795198459_8ae7305c_._ORDEN_DE_PROD.No.036__MAJA-_Live_Streaming_Sorteo_Anual_14-ene-26.xls	4096	4.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:19.9423	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+249	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No159 Proveeduria internet a 10 modulos y cableado a stand, dias 30 sept. 01 y 02 octubre 2026 Campo Aguaruto.xls	trans_1795198460_544747ef_ORDEN_DE_PROD.No159_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_30_sept._01_y_02_octubre_2026_Campo_Aguaruto.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:20.101833	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.11	f	\N	\N
+250	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No160 DIF Estatal inaguracion de area de cedrtificacion 05-oct-26.xls	trans_1795198460_96984188_ORDEN_DE_PROD.No160_DIF_Estatal_inaguracion_de_area_de_cedrtificacion_05-oct-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:20.294798	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.14	f	\N	\N
+251	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No161 Reunion ADECEM en Casa Bon  06-oct-26.xls	trans_1795198460_80a2335f_ORDEN_DE_PROD.No161_Reunion_ADECEM_en_Casa_Bon__06-oct-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:20.488498	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+252	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No162 Ayuntam. Escuinapa  09-oct-26.xls	trans_1795198460_a855c294_ORDEN_DE_PROD.No162_Ayuntam._Escuinapa__09-oct-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:20.646548	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+253	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.163 ENLACE PRESICENCIAL-en Secret. Seg. Punlica 12-oct-26.xls	trans_1795198460_01cbddd8_ORDEN_DE_PROD.No.163_ENLACE_PRESICENCIAL-en_Secret._Seg._Punlica_12-oct-26.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:20.804036	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+254	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No164 Proveeduria internet a 10 modulos y cableado a stand, dias 14,15 y 16 octubre 2026.xls	trans_1795198460_a0f0556a_ORDEN_DE_PROD.No164_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_14_15_y_16_octubre_2026.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:20.970399	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.14	f	\N	\N
+255	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No165 Grabaciones y covertura de entrevista en Los Portales Oct.13-26.xls	trans_1795198461_87f3d7ab_ORDEN_DE_PROD.No165_Grabaciones_y_covertura_de_entrevista_en_Los_Portales_Oct.13-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:21.208783	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+256	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No166 MORENA Grabaciones de aspectos Evento Masico El Dorado Oct.14-26.xls	trans_1795198461_6875f912_ORDEN_DE_PROD.No166_MORENA_Grabaciones_de_aspectos_Evento_Masico_El_Dorado_Oct.14-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:21.363176	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+257	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.167 GRABACIONES DEL CAMPO Culiacan 16-oct-26.xls	trans_1795198461_082bce86_ORDEN_DE_PROD.No.167_GRABACIONES_DEL_CAMPO_Culiacan_16-oct-26.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:21.551923	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.14	f	\N	\N
+258	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No168 SESION EXTRAORD.  VIRTUAL IEES- ESTUDIO 28-oct-26.xls	trans_1795198461_7a1ed4b9_ORDEN_DE_PROD.No168_SESION_EXTRAORD.__VIRTUAL_IEES-_ESTUDIO_28-oct-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:21.722858	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+259	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No169 Grabacion conferencia RIOS  25-oct-26.xls	trans_1795198461_e0e3e267_ORDEN_DE_PROD.No169_Grabacion_conferencia_RIOS__25-oct-26.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:21.870578	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+260	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.170   IEES Sesion Extraordinaria PRESENCIAL 03nov26.xls	trans_1795198462_5ce9f5ce_ORDEN_DE_PROD.No.170___IEES_Sesion_Extraordinaria_PRESENCIAL_03nov26.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:22.021848	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+261	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.172   IEES Sesion Extraordinaria PRESENCIAL 12nov26.xls	trans_1795198462_bdd3a0c8_ORDEN_DE_PROD.No.172___IEES_Sesion_Extraordinaria_PRESENCIAL_12nov26.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:22.182268	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.3	f	\N	\N
+262	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.147 Ayutam. badiraguato- Culiacán 27 sept.2026.xls	trans_1795198462_3498c7a9_ORDEN_DE_PROD.No.147_Ayutam._badiraguato-_Culiac_n_27_sept.2026.xls	60416	59.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:22.333266	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+263	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.151 Ayutam. badiraguato-TEBACAS Play Inn 21-oct.2026.xls	trans_1795198462_2645ef34_ORDEN_DE_PROD.No.151_Ayutam._badiraguato-TEBACAS_Play_Inn_21-oct.2026.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:22.519446	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.8	f	\N	\N
+264	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.151-A Ayutam. badiraguato-TEBACAS Play Inn 03-nov2026.xls	trans_1795198462_394c17e7_ORDEN_DE_PROD.No.151-A_Ayutam._badiraguato-TEBACAS_Play_Inn_03-nov2026.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:22.68937	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+265	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.171 Ayutam. badiraguato-TEBACAS Play Inn 03-nov2026.xls	trans_1795198462_0471095a_ORDEN_DE_PROD.No.171_Ayutam._badiraguato-TEBACAS_Play_Inn_03-nov2026.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:22.87699	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+266	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.173 Corredor de la Salud  06-nov2026.xls	trans_1795198463_191cfaa9_ORDEN_DE_PROD.No.173_Corredor_de_la_Salud__06-nov2026.xls	57856	56.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:23.024823	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.18	f	\N	\N
+267	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.174 Giras  Firma Convenio y Rueda Prensa Harfuch en Mazatlan 09-nov2026.xls	trans_1795198463_11661cf4_ORDEN_DE_PROD.No.174_Giras__Firma_Convenio_y_Rueda_Prensa_Harfuch_en_Mazatlan_09-nov2026.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:23.170527	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+268	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.175 Entrega de Patrulals en Fiscalia 13nov26.xls	trans_1795198463_716c1aad_ORDEN_DE_PROD.No.175_Entrega_de_Patrulals_en_Fiscalia_13nov26.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:23.308507	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+269	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.176- Giras Oscar- ISDE Premio Estatal del Deporte 19nov26.xls	trans_1795198463_24d370b4_ORDEN_DE_PROD.No.176-_Giras_Oscar-_ISDE_Premio_Estatal_del_Deporte_19nov26.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:23.448271	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+270	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.134 Proveeduria internet a 10 modulos y cableado a stand, dias 22,23 y 24julio en Vista Hermosa.xls	trans_1795198463_3455e060_ORDEN_DE_PROD.No.134_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_22_23_y_24julio_en_Vista_Hermosa.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:23.603906	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.9	f	\N	\N
+271	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.133  Grabaciones DEL CAMPO  en Aguascalientes dias 21 y 22-julio-26.xls	trans_1795198463_7e95fc5b_ORDEN_DE_PROD.No.133__Grabaciones_DEL_CAMPO__en_Aguascalientes_dias_21_y_22-julio-26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:23.746571	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+272	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.132 COPPEL torre premier Jurídico 21-julio-26.xls	trans_1795198463_fdf8d611_ORDEN_DE_PROD.No.132_COPPEL_torre_premier_Jur_dico_21-julio-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:23.894274	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+273	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.129 IEES Sesión Virtual en estudio 16-julio-26.xls	trans_1795198464_82c3dbb4_ORDEN_DE_PROD.No.129_IEES_Sesi_n_Virtual_en_estudio_16-julio-26.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:24.058376	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+274	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.130 Grabacion JUAN MANUEL LEY  Aniv.72 LEY dia 23-julio-26.xls	trans_1795198464_483ebc7c_ORDEN_DE_PROD.No.130_Grabacion_JUAN_MANUEL_LEY__Aniv.72_LEY_dia_23-julio-26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:24.212391	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+275	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.128 Proveeduria internet a 10 modulos y cableado a stand Lazaro Cardenas.xls	trans_1795198464_89b7ecda_ORDEN_DE_PROD.No.128_Proveeduria_internet_a_10_modulos_y_cableado_a_stand_Lazaro_Cardenas.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:24.348685	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+276	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.127 IEES Sesión Virtual en estudio 09-julio-26.xls	trans_1795198464_fc921e20_ORDEN_DE_PROD.No.127_IEES_Sesi_n_Virtual_en_estudio_09-julio-26.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:24.487887	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.18	f	\N	\N
+277	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.123 Grabacion Testimonios LEY Aniv.72 dia 02-julio-26.xls	trans_1795198464_c69f0c2b_ORDEN_DE_PROD.No.123_Grabacion_Testimonios_LEY_Aniv.72_dia_02-julio-26.xls	57856	56.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:24.671411	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.9	f	\N	\N
+278	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.126 Grabacion Testimonios LEY Aniv.72 dia 08-julio-26.xls	trans_1795198464_dd375899_ORDEN_DE_PROD.No.126_Grabacion_Testimonios_LEY_Aniv.72_dia_08-julio-26.xls	58880	57.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:24.82647	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+279	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.125 Grabacion Testimonios LEY Aniv.72 dia 07-julio-26.xls	trans_1795198464_6ae78b04_ORDEN_DE_PROD.No.125_Grabacion_Testimonios_LEY_Aniv.72_dia_07-julio-26.xls	57856	56.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:24.977864	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+280	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.124 Grabacion Testimonios LEY Aniv.72 dia 03-julio-26.xls	trans_1795198465_e5e5ad7c_ORDEN_DE_PROD.No.124_Grabacion_Testimonios_LEY_Aniv.72_dia_03-julio-26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:25.121609	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.4	f	\N	\N
+281	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.122 ENLACE PRESICENCIA Y VIVIENDAS BIENESTAR EN MOCHIS 01-julio-26.xls	trans_1795198465_75e116bb_ORDEN_DE_PROD.No.122_ENLACE_PRESICENCIA_Y_VIVIENDAS_BIENESTAR_EN_MOCHIS_01-julio-26.xls	57856	56.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:25.270912	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+282	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.121 Tripies para Monitores El SAUZ militar.xls	trans_1795198465_a4aa4a6a_ORDEN_DE_PROD.No.121_Tripies_para_Monitores_El_SAUZ_militar.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:25.427081	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+283	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.120 MORENA Salon Floresta Domnigo28jun26.xls	trans_1795198465_dd920538_ORDEN_DE_PROD.No.120_MORENA_Salon_Floresta_Domnigo28jun26.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:25.577151	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.6	f	\N	\N
+284	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.119 Proveeduria internet a 10 modulas con fibra Alturas del Sur.xls	trans_1795198465_05ecdf42_ORDEN_DE_PROD.No.119_Proveeduria_internet_a_10_modulas_con_fibra_Alturas_del_Sur.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:25.726965	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+285	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.118 Streaming a 3camaras salon gobernadores 23jun26.xls	trans_1795198465_8e27560d_ORDEN_DE_PROD.No.118_Streaming_a_3camaras_salon_gobernadores_23jun26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:25.891765	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+286	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.117 reprod.de material a pantallas Villa union 19jun26.xls	trans_1795198466_65d6fbb9_ORDEN_DE_PROD.No.117_reprod.de_material_a_pantallas_Villa_union_19jun26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:26.034634	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.4	f	\N	\N
+287	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.116 Streaming y dist.de señal Mundial 11jun26.xls	trans_1795198466_bfb2352b_ORDEN_DE_PROD.No.116_Streaming_y_dist.de_se_al_Mundial_11jun26.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:26.179064	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+288	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.115 ELEVOX -Museo Centenario 03 Y 04-junio.xls	trans_1795198466_a870844c_ORDEN_DE_PROD.No.115_ELEVOX_-Museo_Centenario_03_Y_04-junio.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:26.316452	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+289	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.114 CEPROPIES-GIRAS Informe Presidencial 31mayo26.xls	trans_1795198466_4ffad2f2_ORDEN_DE_PROD.No.114_CEPROPIES-GIRAS_Informe_Presidencial_31mayo26.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:26.460681	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.14	f	\N	\N
+290	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.113 IEES Sesión Virtual en estudio 04-junio.xls	trans_1795198466_1234905e_ORDEN_DE_PROD.No.113_IEES_Sesi_n_Virtual_en_estudio_04-junio.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:26.602696	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+291	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.112 AQUATON- DIF ESTATAL-APOYO  21mayo26.xls	trans_1795198466_63e798f6_ORDEN_DE_PROD.No.112_AQUATON-_DIF_ESTATAL-APOYO__21mayo26.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:26.762353	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+307	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.091 Enlace Presidenta mañanaera del pueblo desde Mochis 250326.xls	trans_1795198469_daea30ef_ORDEN_DE_PROD.No.091_Enlace_Presidenta_ma_anaera_del_pueblo_desde_Mochis_250326.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:29.118143	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+292	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.111 ISJU enlace presidencia  22mayo26.xls	trans_1795198466_c4f07ada_ORDEN_DE_PROD.No.111_ISJU_enlace_presidencia__22mayo26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:26.915845	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+293	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.109 Conmemoracion Batalla de Puebla en 9na zona militar  05mayo26.xls	trans_1795198467_e1a88523_ORDEN_DE_PROD.No.109_Conmemoracion_Batalla_de_Puebla_en_9na_zona_militar__05mayo26.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:27.062301	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+294	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.110  Grabación aspectos   06mayo26.xls	trans_1795198467_85ca0091_ORDEN_DE_PROD.No.110__Grabaci_n_aspectos___06mayo26.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:27.212861	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.9	f	\N	\N
+295	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.108 Rueda de Prensa Gabinete de Seguridad en 9na zona militar  04mayo26.xls	trans_1795198467_5c736120_ORDEN_DE_PROD.No.108_Rueda_de_Prensa_Gabinete_de_Seguridad_en_9na_zona_militar__04mayo26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:27.341771	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.7	f	\N	\N
+296	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.107 Reunión Privada de Seguridad 9na zona militar  04mayo26.xls	trans_1795198467_6097f896_ORDEN_DE_PROD.No.107_Reuni_n_Privada_de_Seguridad_9na_zona_militar__04mayo26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:27.485776	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.10	f	\N	\N
+297	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.106  Semanera Auditorio 27abril26.xls	trans_1795198467_278be8c3_ORDEN_DE_PROD.No.106__Semanera_Auditorio_27abril26.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:27.621806	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.18	f	\N	\N
+298	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.105 MORENA en figlostase 25abril26.xls	trans_1795198467_3708d0f2_ORDEN_DE_PROD.No.105_MORENA_en_figlostase_25abril26.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:27.765891	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.21	f	\N	\N
+299	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.104  GES-cuenta cuentos 22abril26.xls	trans_1795198467_e8eef1be_ORDEN_DE_PROD.No.104__GES-cuenta_cuentos_22abril26.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:27.918218	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+300	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.103  Evento Hotel Lucerna-KUWA- 30abril26.xls	trans_1795198468_95d8b1a6_ORDEN_DE_PROD.No.103__Evento_Hotel_Lucerna-KUWA-_30abril26.xls	54784	53.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:28.058963	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+301	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.101- IEES Sesion Virtual en estudio 27abril-26.xls	trans_1795198468_648aed41_ORDEN_DE_PROD.No.101-_IEES_Sesion_Virtual_en_estudio_27abril-26.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:28.210243	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.8	f	\N	\N
+302	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.100 REUNION GABINETE-HANGAR MILITAR16 de abril.xls	trans_1795198468_328cea44_ORDEN_DE_PROD.No.100_REUNION_GABINETE-HANGAR_MILITAR16_de_abril.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:28.354061	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.14	f	\N	\N
+303	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.099  Grabación Entrevista SACSA.xls	trans_1795198468_a4ffc48d_ORDEN_DE_PROD.No.099__Grabaci_n_Entrevista_SACSA.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:28.496201	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+304	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.097 IEES Conferencias TEATRO UAdO.xls	trans_1795198468_512c46ba_ORDEN_DE_PROD.No.097_IEES_Conferencias_TEATRO_UAdO.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:28.631834	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.8	f	\N	\N
+305	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.098 Enlace con la mañanera del Pueblo PRESIDENTA y REUNION GOBER.xls	trans_1795198468_9d2419cc_ORDEN_DE_PROD.No.098_Enlace_con_la_ma_anera_del_Pueblo_PRESIDENTA_y_REUNION_GOBER.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:28.782057	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+306	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.066 CIBACOPA- Guasave 07 y 08 abril.xls	trans_1795198468_2b21229c_ORDEN_DE_PROD.No.066_CIBACOPA-_Guasave_07_y_08_abril.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:28.98295	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.14	f	\N	\N
+308	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.092 presentacion PROGRAMA VIVIENDA BIENESTAR en Los mochis 250326.xls	trans_1795198469_fdb78059_ORDEN_DE_PROD.No.092_presentacion_PROGRAMA_VIVIENDA_BIENESTAR_en_Los_mochis_250326.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:29.255958	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.9	f	\N	\N
+309	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.096  Semanera Auditorio 060426.xls	trans_1795198469_ce41156a_ORDEN_DE_PROD.No.096__Semanera_Auditorio_060426.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:29.396025	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+310	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.095  Semanera Auditorio 300326.xls	trans_1795198469_ec885433_ORDEN_DE_PROD.No.095__Semanera_Auditorio_300326.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:29.537972	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+313	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.093 banderazo de inicio SEMANA SANTA en PLAYAS BELLAVISTA, GUASAVE 270326.xls	trans_1795198469_2f68e4c0_ORDEN_DE_PROD.No.093_banderazo_de_inicio_SEMANA_SANTA_en_PLAYAS_BELLAVISTA__GUASAVE_270326.xls	54784	53.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:29.988482	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+317	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.089 GRUPO FGL TRADE .CONFERENCIA  REST. CAYENA.xls	trans_1795198470_9b705d8c_ORDEN_DE_PROD.No.089_GRUPO_FGL_TRADE_.CONFERENCIA__REST._CAYENA.xls	60416	59.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:30.558497	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+311	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.094 Entrega de titulos de propiedad El Dorado 280326.xls	trans_1795198469_339d7623_ORDEN_DE_PROD.No.094_Entrega_de_titulos_de_propiedad_El_Dorado_280326.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:29.693225	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+312	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.065 CIBACOPA- Guasave 27 y 28 marzo.xls	trans_1795198469_8bf4ff47_ORDEN_DE_PROD.No.065_CIBACOPA-_Guasave_27_y_28_marzo.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:29.836717	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.21	f	\N	\N
+314	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.069 CIBACOPA- Mazatlan 28 y 29 abril.xls	trans_1795198470_5061c95e_ORDEN_DE_PROD.No.069_CIBACOPA-_Mazatlan_28_y_29_abril.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:30.131262	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+315	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.090  Semanera Auditorio 230326.xls	trans_1795198470_4b483629_ORDEN_DE_PROD.No.090__Semanera_Auditorio_230326.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:30.269805	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+316	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.064 CIBACOPA- Culiacán 21 y 22 marzo.xls	trans_1795198470_c04e3a29_ORDEN_DE_PROD.No.064_CIBACOPA-_Culiac_n_21_y_22_marzo.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:30.414023	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+318	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.088 GRUPO PARLAM. MORENA HOTEL SAN MARCOS.xls	trans_1795198470_2d93855d_ORDEN_DE_PROD.No.088_GRUPO_PARLAM._MORENA_HOTEL_SAN_MARCOS.xls	60416	59.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:30.700864	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+319	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.087 INAUGURACION FACULTAD MEDICINA EN GUASAVE.xls	trans_1795198470_1a346556_ORDEN_DE_PROD.No.087_INAUGURACION_FACULTAD_MEDICINA_EN_GUASAVE.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:30.844678	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.7	f	\N	\N
+320	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.086  Semanera en USE 170326.xls	trans_1795198470_8da992a0_ORDEN_DE_PROD.No.086__Semanera_en_USE_170326.xls	60928	59.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:30.986416	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.7	f	\N	\N
+321	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.085 ENLACE PRESIDENTA ISMUJERES 12MARZO26.xls	trans_1795198471_3b8891d9_ORDEN_DE_PROD.No.085_ENLACE_PRESIDENTA_ISMUJERES_12MARZO26.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:31.137592	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+322	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.063 CIBACOPA- Culiacán 04 y 05 abril semana santa.xls	trans_1795198471_31c13ed7_ORDEN_DE_PROD.No.063_CIBACOPA-_Culiac_n_04_y_05_abril_semana_santa.xls	59392	58.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:31.279808	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+323	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.062 CIBACOPA- Culiacán 06 y 07 marzo.xls	trans_1795198471_2602c478_ORDEN_DE_PROD.No.062_CIBACOPA-_Culiac_n_06_y_07_marzo.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:31.427058	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.21	f	\N	\N
+324	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.061 CIBACOPA- Culiacán 28feb y 01 marzo.xls	trans_1795198471_08722187_ORDEN_DE_PROD.No.061_CIBACOPA-_Culiac_n_28feb_y_01_marzo.xls	62464	61.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:31.590128	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.20	f	\N	\N
+325	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.084- IEES Sesion Extraord. y especial -virtual 11-marzo26.xls	trans_1795198471_7e4e8ff9_ORDEN_DE_PROD.No.084-_IEES_Sesion_Extraord._y_especial_-virtual_11-marzo26.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:31.748046	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.15	f	\N	\N
+326	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.075- IEES Sesion Extraord. y especial -virtual 25feb26.xls	trans_1795198471_34a7ea1c_ORDEN_DE_PROD.No.075-_IEES_Sesion_Extraord._y_especial_-virtual_25feb26.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:31.895628	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+327	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.083 SERV.AUDIOVISUAL CONFERENCIAS BLAST MARKETING -REST. CAYENA.xls	trans_1795198472_0e4ebf54_ORDEN_DE_PROD.No.083_SERV.AUDIOVISUAL_CONFERENCIAS_BLAST_MARKETING_-REST._CAYENA.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:32.043343	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.18	f	\N	\N
+328	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.051 CONF.COPPEL AGUASCALIENTES,03,04 Y 05 MARZO.xls	trans_1795198472_7dbdf0f5_ORDEN_DE_PROD.No.051_CONF.COPPEL_AGUASCALIENTES_03_04_Y_05_MARZO.xls	56832	55.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:32.178215	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.19	f	\N	\N
+211	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.003- 1er. Informe sheinbaum.xls	trans_1795198453_01e95e2d_ORDEN_DE_PROD.No.003-_1er._Informe_sheinbaum.xls	55296	54.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:13.597965	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.1	f	\N	\N
+329	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.082 VISITA presidenta -Culiacán.xls	trans_1795198472_614dd5a8_ORDEN_DE_PROD.No.082_VISITA_presidenta_-Culiac_n.xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:32.316609	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+330	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.074- 4to..informe DIF ESTATAL explanada palacio gob..xls	trans_1795198472_521f38d4_ORDEN_DE_PROD.No.074-_4to..informe_DIF_ESTATAL_explanada_palacio_gob..xls	57344	56.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:32.463073	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.11	f	\N	\N
+331	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.081 VISITA presidenta -Mazatlán.xls	trans_1795198472_5837e6af_ORDEN_DE_PROD.No.081_VISITA_presidenta_-Mazatl_n.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:32.589709	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.17	f	\N	\N
+332	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.055 CONF.COPPEL, MEXICALI,BCN 11 y 12  MARZO.xls	trans_1795198472_bfa87ba9_ORDEN_DE_PROD.No.055_CONF.COPPEL__MEXICALI_BCN_11_y_12__MARZO.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:32.7308	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+333	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.054 CONF.COPPEL DURANGO, DGO. 10,11 y 12  MARZO.xls	trans_1795198472_317c834c_ORDEN_DE_PROD.No.054_CONF.COPPEL_DURANGO__DGO._10_11_y_12__MARZO.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:32.861004	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.16	f	\N	\N
+334	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.053 CONF.COPPEL MANZANILLO,COLIMA 10,11 y 12  MARZO.xls	trans_1795198472_335b81b1_ORDEN_DE_PROD.No.053_CONF.COPPEL_MANZANILLO_COLIMA_10_11_y_12__MARZO.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:32.994255	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.13	f	\N	\N
+335	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.050 CONF.COPPEL MAZATLAN,SIN 24,25,26 FEB.xls	trans_1795198473_0cca52e6_ORDEN_DE_PROD.No.050_CONF.COPPEL_MAZATLAN_SIN_24_25_26_FEB.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:33.142478	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.21	f	\N	\N
+336	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.052 CONF.COPPEL  SAN CARLOS, SON.,03,04 Y 05 MARZO.xls	trans_1795198473_8d4457f6_ORDEN_DE_PROD.No.052_CONF.COPPEL__SAN_CARLOS__SON._03_04_Y_05_MARZO.xls	56320	55.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:33.294454	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.12	f	\N	\N
+337	101	Ana Lilia Villarreal Uribe	201	Cuahutémoc Rivera Agúndez	ORDEN DE PROD.No.049 CONF.COPPEL MANZANILLO COLIMA 24,25,26 FEB.xls	trans_1795198473_2711aa09_ORDEN_DE_PROD.No.049_CONF.COPPEL_MANZANILLO_COLIMA_24_25_26_FEB.xls	58368	57.0 KB	application/vnd.ms-excel		TRF-1795198451-C4I40M	2026-11-20 18:14:33.438571	t	1	2026-11-20 19:54:47.60106	2026-11-21 19:54:47.60106	EXPIRADO_BORRADO	100.64.0.8	f	\N	\N
 \.
 
 
 --
--- Data for Name: asistencia_eventos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: asistencia_eventos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.asistencia_eventos (id, id_empleado, nombre_empleado, cliente, fecha_evento) FROM stdin;
@@ -1555,34 +1663,92 @@ COPY public.asistencia_eventos (id, id_empleado, nombre_empleado, cliente, fecha
 
 
 --
--- Data for Name: chat_admin_mensajes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: chat_admin_mensajes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.chat_admin_mensajes (id, id_empleado, autor_id, autor_nombre, autor_rol, mensaje, tipo_mensaje, archivo_url, metadata_extra, fecha_hora, leido_por_admin, leido_por_empleado) FROM stdin;
-5	201	201	Cuauhtemoc Rivera Agundez	SISTEMA	📋 *NUEVA SOLICITUD DE PERMISO LABORAL*\n• *Folio:* PER-2026-001\n• *Colaborador:* Cuauhtemoc Rivera Agundez (ID: 201)\n• *Tipo:* ASUNTOS PERSONALES\n• *Periodo:* Del 2026-11-08 al 2026-11-08 (1 día(s))\n• *Goce de Sueldo:* Con Goce\n• *Motivo:* es el cumple de Hellen Irina\n• *Estatus:* ⏳ PENDIENTE DE REVISIÓN EN RH	SOLICITUD_PERMISO	\N	{"dias": 1, "folio": "PER-2026-001", "estatus": "PENDIENTE", "con_goce": true, "fecha_fin": "2026-11-08", "id_permiso": 5, "id_empleado": "201", "fecha_inicio": "2026-11-08", "tipo_permiso": "ASUNTOS PERSONALES"}	2026-10-29 11:40:57.348734	t	t
-6	201	000	Celular Azul / Samsung	ADMIN	Enterado	TEXTO	\N	{}	2026-10-29 11:51:51.953849	t	f
-7	202	202	Edgar Javier Amarillas	SISTEMA	📋 *NUEVA SOLICITUD DE PERMISO LABORAL*\n• *Folio:* PER-2026-002\n• *Colaborador:* Edgar Javier Amarillas (ID: 202)\n• *Modalidad:* 📅 Día(s) Completo(s)\n• *Tipo:* VACACIONES\n• *Periodo / Horario:* Del 2026-11-25 al 2026-11-27 (3 día(s))\n• *Goce de Sueldo:* Sin Goce\n• *Motivo:* Test de prueba\n• *Estatus:* ⏳ PENDIENTE DE REVISIÓN EN RH	SOLICITUD_PERMISO	\N	{"dias": 3, "folio": "PER-2026-002", "horas": null, "estatus": "PENDIENTE", "con_goce": false, "hora_fin": null, "fecha_fin": "2026-11-27", "modalidad": "DIAS", "id_permiso": 6, "hora_inicio": null, "id_empleado": "202", "fecha_inicio": "2026-11-25", "tipo_permiso": "VACACIONES"}	2026-11-20 12:44:53.789704	f	t
+1	201	201	Cuahutémoc Rivera Agúndez	SISTEMA	📋 *NUEVA SOLICITUD DE PERMISO LABORAL*\n• *Folio:* PER-2026-001\n• *Colaborador:* Cuahutémoc Rivera Agúndez (ID: 201)\n• *Tipo:* CITA MÉDICA (IMSS/PARTICULAR)\n• *Periodo:* Del 2026-11-05 al 2026-11-05 (1 día(s))\n• *Goce de Sueldo:* Con Goce\n• *Motivo:* Cita medica con dentista\n• *Estatus:* ⏳ PENDIENTE DE REVISIÓN EN RH	SOLICITUD_PERMISO	\N	{"dias": 1, "folio": "PER-2026-001", "estatus": "PENDIENTE", "con_goce": true, "fecha_fin": "2026-11-05", "id_permiso": 1, "id_empleado": "201", "fecha_inicio": "2026-11-05", "tipo_permiso": "CITA MÉDICA (IMSS/PARTICULAR)"}	2026-11-05 05:32:01.598691	t	t
+3	202	202	Edgar Javier Amarillas	SISTEMA	📋 *NUEVA SOLICITUD DE PERMISO LABORAL*\n• *Folio:* PER-2026-002\n• *Colaborador:* Edgar Javier Amarillas (ID: 202)\n• *Tipo:* OTRO PERMISO LABORAL\n• *Periodo:* Del 2026-11-05 al 2026-11-05 (1 día(s))\n• *Goce de Sueldo:* Con Goce\n• *Motivo:* Solicito la tarde del 05-nov-2026 debido a dolor muscular de piernas\n• *Estatus:* ⏳ PENDIENTE DE REVISIÓN EN RH	SOLICITUD_PERMISO	\N	{"dias": 1, "folio": "PER-2026-002", "estatus": "PENDIENTE", "con_goce": true, "fecha_fin": "2026-11-05", "id_permiso": 2, "id_empleado": "202", "fecha_inicio": "2026-11-05", "tipo_permiso": "OTRO PERMISO LABORAL"}	2026-11-05 20:29:05.754126	t	t
+4	201	201	Cuahutémoc Rivera Agúndez	SISTEMA	📋 *NUEVA SOLICITUD DE PERMISO LABORAL*\n• *Folio:* PER-2026-003\n• *Colaborador:* Cuahutémoc Rivera Agúndez (ID: 201)\n• *Tipo:* CITA MÉDICA (IMSS/PARTICULAR)\n• *Periodo:* Del 2026-11-06 al 2026-11-06 (1 día(s))\n• *Goce de Sueldo:* Con Goce\n• *Motivo:* cita previa con dentista\n• *Estatus:* ⏳ PENDIENTE DE REVISIÓN EN RH	SOLICITUD_PERMISO	\N	{"dias": 1, "folio": "PER-2026-003", "estatus": "PENDIENTE", "con_goce": true, "fecha_fin": "2026-11-06", "id_permiso": 3, "id_empleado": "201", "fecha_inicio": "2026-11-06", "tipo_permiso": "CITA MÉDICA (IMSS/PARTICULAR)"}	2026-11-05 23:27:19.559112	t	t
+7	202	ADMIN	Ana Lilia Villarreal Uribe	ADMIN	✅ *SOLICITUD DE PERMISO APROBADA*\n• *Folio:* PER-2026-002\n• *Modalidad:* Con goce de sueldo\n• *Autorizado por:* Ana Lilia Villarreal Uribe\n• *Observaciones:* Sin observaciones adicionales\n• *Asistencia:* Sincronizada y justificada en el Reloj Checador.	RESOLUCION_PERMISO	\N	{"folio": "PER-2026-002", "estatus": "APROBADO", "con_goce": true, "id_permiso": 2, "dictaminado_por": "Ana Lilia Villarreal Uribe"}	2026-11-06 19:03:05.802045	t	t
+12	202	202	Edgar Javier Amarillas	PRODUCCION	Sra Ana voy a tomar el día sábado 21 de noviembre por el día que se me debe de descanso	TEXTO	\N	{}	2026-11-21 01:06:50.304273	t	t
+2	201	201	Cuahutémoc Rivera Agúndez	ADMIN	Ya subi mi placa de la calaca que traigo dentro al sistema.	TEXTO	\N	{}	2026-11-05 20:00:47.18062	t	t
+5	201	ADMIN	Ana Lilia Villarreal Uribe	ADMIN	✅ *SOLICITUD DE PERMISO APROBADA*\n• *Folio:* PER-2026-001\n• *Modalidad:* Con goce de sueldo\n• *Autorizado por:* Ana Lilia Villarreal Uribe\n• *Observaciones:* Sin observaciones adicionales\n• *Asistencia:* Sincronizada y justificada en el Reloj Checador.	RESOLUCION_PERMISO	\N	{"folio": "PER-2026-001", "estatus": "APROBADO", "con_goce": true, "id_permiso": 1, "dictaminado_por": "Ana Lilia Villarreal Uribe"}	2026-11-06 19:02:09.362498	t	t
+6	201	ADMIN	Ana Lilia Villarreal Uribe	ADMIN	✅ *SOLICITUD DE PERMISO APROBADA*\n• *Folio:* PER-2026-003\n• *Modalidad:* Con goce de sueldo\n• *Autorizado por:* Ana Lilia Villarreal Uribe\n• *Observaciones:* Sin observaciones adicionales\n• *Asistencia:* Sincronizada y justificada en el Reloj Checador.	RESOLUCION_PERMISO	\N	{"folio": "PER-2026-003", "estatus": "APROBADO", "con_goce": true, "id_permiso": 3, "dictaminado_por": "Ana Lilia Villarreal Uribe"}	2026-11-06 19:02:44.509015	t	t
+13	202	101	Ana Lilia Villarreal Uribe	ADMIN	Muy bien, lo registro. Que descanse	TEXTO	\N	{}	2026-11-21 20:44:20.810922	t	f
 \.
 
 
 --
--- Data for Name: chat_directo_mensajes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: chat_directo_mensajes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.chat_directo_mensajes (id, sala_id, remitente_id, destinatario_id, remitente_nombre, mensaje, tipo_mensaje, archivo_url, reacciones, metadata_extra, fecha_hora, leido) FROM stdin;
+1	200_201	201	200	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:02:54.583346	f
+2	101_201	201	101	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:02:59.8535	f
+3	113_201	201	113	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:03:07.691724	f
+4	102_201	201	102	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:03:13.949771	f
+5	105_201	201	105	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:03:19.482163	f
+6	104_201	201	104	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:03:23.400377	f
+7	119_201	201	119	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:03:27.178921	f
+8	124_201	201	124	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:03:31.015627	f
+9	109_201	201	109	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:03:42.732349	f
+10	201_203	201	203	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:03:46.041568	f
+11	121_201	201	121	Cuahutémoc Rivera Agúndez	Hola	TEXTO	\N	{}	{}	2026-11-21 13:03:52.442624	f
+12	121_201	201	121	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:04.106539	f
+13	109_201	201	109	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:08.553057	f
+14	124_201	201	124	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:12.347429	f
+15	119_201	201	119	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:15.903651	f
+16	104_201	201	104	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:20.314641	f
+17	105_201	201	105	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:23.610164	f
+18	102_201	201	102	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:28.01019	f
+19	113_201	201	113	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:33.48487	f
+20	200_201	201	200	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:38.507614	f
+21	101_201	201	101	Cuahutémoc Rivera Agúndez	Probando que funcione el chat	TEXTO	\N	{}	{}	2026-11-21 13:04:42.219895	f
+22	125_201	201	125	Cuauhtemoc Rivera Agundez	Que ondas?	TEXTO	\N	{}	{}	2026-11-21 19:01:55.38558	f
 \.
 
 
 --
--- Data for Name: chat_soporte_mensajes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: chat_soporte_mensajes; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.chat_soporte_mensajes (id, id_empleado, autor_nombre, autor_rol, mensaje, tipo_mensaje, archivo_url, es_fijado, reacciones, metadata_extra, fecha_hora, id_empleado_consulta, autor_id, leido_por_ti, leido_por_empleado) FROM stdin;
+1	201	Cuahutémoc Rivera Agúndez	ADMIN	Que ondas...	TEXTO	\N	f	{}	{}	2026-10-31 13:15:34.6296	201	201	t	f
+2	201	Cuahutémoc Rivera Agúndez	ADMIN	dfjhfdhjdfd	TEXTO	\N	f	{}	{}	2026-10-31 13:15:50.549912	201	201	t	f
+5	201	Cuahutémoc Rivera Agúndez	ADMIN	zas	TEXTO	\N	f	{}	{}	2026-10-31 13:16:30.615918	201	201	t	f
+6	201	Cuahutémoc Rivera Agúndez	ADMIN	Ande compa	TEXTO	\N	f	{}	{}	2026-10-31 13:30:11.764102	201	201	t	f
+8	201	Cuahutémoc Rivera Agúndez	ADMIN	si	TEXTO	\N	f	{}	{}	2026-10-31 13:30:50.576298	201	201	t	f
+3	202	Edgar Javier Amarillas	PRODUCCION	Wep	TEXTO	\N	f	{}	{}	2026-10-31 13:15:50.963964	202	202	t	f
+4	202	Edgar Javier Amarillas	PRODUCCION	Algo	TEXTO	\N	f	{}	{}	2026-10-31 13:16:24.872946	202	202	t	f
+30	201	Cuahutémoc Rivera Agúndez	SISTEMAS	Buen dia	TEXTO	\N	f	{}	{}	2026-11-18 09:43:52.013387	201	201	t	f
+7	201	Cuahutémoc Rivera Agúndez	ADMIN	quiero saber	TEXTO	\N	f	{}	{}	2026-10-31 13:30:49.818192	201	201	t	f
+9	201	Cuahutémoc Rivera Agúndez	ADMIN	te	TEXTO	\N	f	{}	{}	2026-10-31 13:30:51.628657	201	201	t	f
+10	201	Cuahutémoc Rivera Agúndez	ADMIN	va a sonar.	TEXTO	\N	f	{}	{}	2026-10-31 13:30:54.645318	201	201	t	f
+11	201	Cuahutémoc Rivera Agúndez	ADMIN	o que	TEXTO	\N	f	{}	{}	2026-10-31 13:30:58.415949	201	201	t	f
+12	201	Cuahutémoc Rivera Agúndez	ADMIN	es	TEXTO	\N	f	{}	{}	2026-10-31 13:30:59.466018	201	201	t	f
+13	201	Cuahutémoc Rivera Agúndez	ADMIN	lo q	TEXTO	\N	f	{}	{}	2026-10-31 13:31:00.689963	201	201	t	f
+14	201	Cuahutémoc Rivera Agúndez	ADMIN	que	TEXTO	\N	f	{}	{}	2026-10-31 13:31:01.92497	201	201	t	f
+15	201	Cuahutémoc Rivera Agúndez	ADMIN	va a	TEXTO	\N	f	{}	{}	2026-10-31 13:31:03.395726	201	201	t	f
+16	201	Cuahutémoc Rivera Agúndez	ADMIN	pasar.	TEXTO	\N	f	{}	{}	2026-10-31 13:31:06.146959	201	201	t	f
+19	201	Cuahutémoc Rivera Agúndez	ADMIN	a	TEXTO	\N	f	{}	{}	2026-10-31 13:34:52.000294	201	201	t	f
+20	201	Cuahutémoc Rivera Agúndez	ADMIN	picale	TEXTO	\N	f	{}	{}	2026-10-31 13:35:03.542832	201	201	t	f
+21	201	Cuahutémoc Rivera Agúndez	ADMIN	otra	TEXTO	\N	f	{}	{}	2026-10-31 13:35:04.807074	201	201	t	f
+22	201	Cuahutémoc Rivera Agúndez	ADMIN	vez	TEXTO	\N	f	{}	{}	2026-10-31 13:35:05.783239	201	201	t	f
+25	201	Cuahutémoc Rivera Agúndez	ADMIN	oa	TEXTO	\N	f	{}	{}	2026-10-31 13:35:56.81785	201	201	t	f
+26	201	Cuahutémoc Rivera Agúndez	ADMIN	dfgm	TEXTO	\N	f	{}	{}	2026-10-31 13:36:19.011383	201	201	t	f
+27	201	Cuahutémoc Rivera Agúndez	ADMIN	eeeeecole	TEXTO	\N	f	{}	{}	2026-10-31 13:36:40.393353	201	201	t	f
+17	202	Edgar Javier Amarillas	PRODUCCION	No sonó	TEXTO	\N	f	{}	{}	2026-10-31 13:31:25.753991	202	202	t	f
+18	202	Edgar Javier Amarillas	PRODUCCION	Mensaje	TEXTO	\N	f	{}	{}	2026-10-31 13:31:49.537656	202	202	t	f
+23	202	Edgar Javier Amarillas	PRODUCCION	Puras desas	TEXTO	\N	f	{}	{}	2026-10-31 13:35:10.378077	202	202	t	f
+24	202	Edgar Javier Amarillas	PRODUCCION	Mándame algo	TEXTO	\N	f	{}	{}	2026-10-31 13:35:54.578119	202	202	t	f
+28	109	Osiel Cuauhtemoc Hernandez Aldape	PRODUCCION	Prueba 1	TEXTO	\N	f	{"👍": ["109"]}	{}	2026-10-31 13:43:18.485635	109	109	t	f
+29	109	Osiel Cuauhtemoc Hernandez Aldape	PRODUCCION	Hola Hola	TEXTO	\N	f	{}	{}	2026-10-31 13:43:52.655456	109	109	t	f
 \.
 
 
 --
--- Data for Name: control_asistencia; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: control_asistencia; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, hora_salida, estatus, observaciones, hora_entrada_v, hora_salida_v) FROM stdin;
@@ -1702,7 +1868,6 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 115	113	2026-08-31	09:18:09	14:26:24	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	19:01:31	\N
 117	200	2026-08-31	14:00:02	19:02:02	RETARDO	Kiosco - T. Matutino | Kiosco - Fin Jornada	\N	\N
 118	109	2026-08-31	19:04:09	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
-736	200	2026-11-06	08:44:39	14:00:03	ASISTENCIA	Kiosco HTML	16:00:03	\N
 109	124	2026-08-31	08:51:01	14:02:02	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:05:59	19:04:25
 110	119	2026-08-31	08:51:07	14:02:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:06:10	19:04:31
 114	107	2026-08-31	09:04:55	14:03:07	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:51:35	19:05:44
@@ -2076,7 +2241,6 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 518	115	2026-10-12	08:54:44	14:00:36	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 521	200	2026-10-12	09:44:26	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	16:45:51
 519	113	2026-10-12	09:06:39	14:02:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:56:24	19:01:21
-737	115	2026-11-06	08:44:49	14:00:06	ASISTENCIA	Kiosco HTML	16:00:06	\N
 517	124	2026-10-12	08:47:43	14:01:11	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:53:53	19:01:50
 524	121	2026-10-13	08:43:16	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 526	115	2026-10-13	08:46:28	14:02:13	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
@@ -2221,35 +2385,157 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 633	119	2026-10-24	09:03:22	14:01:03	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
 644	109	2026-10-26	09:12:00	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 646	115	2026-10-26	09:00:00	14:00:44	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
-655	104	2026-10-27	09:06:16	\N	ASISTENCIA	Kiosco HTML	\N	\N
 640	104	2026-10-26	09:00:00	14:07:42	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:42:35	19:01:06
 649	202	2026-10-26	09:00:00	14:02:22	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
 645	113	2026-10-26	09:01:00	14:02:56	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:12:30	19:01:09
-656	124	2026-10-27	09:06:50	\N	ASISTENCIA	Kiosco HTML	\N	\N
-657	119	2026-10-27	09:07:29	\N	ASISTENCIA	Kiosco HTML	\N	\N
 648	201	2026-10-26	09:20:00	15:51:37	RETARDO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML	19:01:12	\N
-651	115	2026-10-27	08:55:25	\N	ASISTENCIA	Kiosco HTML	\N	\N
-652	200	2026-10-27	09:00:24	\N	ASISTENCIA	Kiosco HTML	\N	\N
 643	107	2026-10-26	09:00:00	14:01:30	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:56:42	18:58:11
 642	119	2026-10-26	09:00:00	14:01:07	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:09:06	18:59:34
 650	200	2026-10-26	13:56:27	\N	OMISIÓN COMIDA	Kiosco HTML | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos) | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	18:59:39
 647	124	2026-10-26	09:00:00	14:01:14	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:08:51	18:59:48
 653	121	2026-10-27	09:00:36	\N	ASISTENCIA	Kiosco HTML	\N	\N
-654	202	2026-10-27	09:02:38	\N	ASISTENCIA	Kiosco HTML	\N	\N
-658	113	2026-10-27	09:09:02	\N	ASISTENCIA	Kiosco HTML	\N	\N
-659	107	2026-10-27	09:09:34	\N	ASISTENCIA	Kiosco HTML	\N	\N
-660	109	2026-10-27	09:15:19	\N	ASISTENCIA	Kiosco HTML	\N	\N
-661	105	2026-10-27	09:15:34	\N	ASISTENCIA	Kiosco HTML	\N	\N
-662	201	2026-10-27	10:18:39	\N	ASISTENCIA	Kiosco HTML	\N	\N
+652	200	2026-10-27	09:00:24	13:59:02	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+655	104	2026-10-27	09:06:16	14:05:12	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:47:40	19:00:11
+651	115	2026-10-27	08:55:25	14:00:28	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+656	124	2026-10-27	09:06:50	14:01:17	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:08:11	19:00:58
+654	202	2026-10-27	09:02:38	14:07:58	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:06:20	19:00:48
+660	109	2026-10-27	09:15:19	\N	OMISIÓN COMIDA	Kiosco HTML | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:21
+657	119	2026-10-27	09:07:29	14:01:59	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:08:13	19:00:46
+658	113	2026-10-27	09:09:02	14:00:00	ASISTENCIA	Kiosco HTML | Kiosco HTML | Kiosco HTML	19:00:03	\N
+661	105	2026-10-27	09:15:34	14:08:48	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:20:31	19:00:06
+659	107	2026-10-27	09:09:34	14:00:37	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:49:19	19:00:25
+662	201	2026-10-27	10:18:39	14:07:57	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:06:26	19:00:29
+671	109	2026-10-28	09:06:57	\N	ASISTENCIA	Kiosco HTML	\N	\N
+665	115	2026-10-28	08:50:16	13:59:50	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+668	201	2026-10-28	09:03:45	14:50:43	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:01:27	19:01:15
+673	104	2026-10-28	09:25:01	14:04:26	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:57:57	19:01:25
+672	105	2026-10-28	09:12:54	\N	OMISIÓN COMIDA	Kiosco HTML | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:02:04
+666	202	2026-10-28	08:53:07	14:04:21	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:57:52	19:03:00
+667	107	2026-10-28	09:00:04	15:52:17	ASISTENCIA	Kiosco HTML | Kiosco HTML | Kiosco HTML	19:03:58	\N
+663	119	2026-10-28	08:49:35	10:59:09	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:03:09	19:04:00
+664	124	2026-10-28	08:49:51	14:00:12	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:03:05	19:04:06
+669	121	2026-10-28	09:03:49	15:59:41	ASISTENCIA	Kiosco HTML | Kiosco HTML | Kiosco HTML	19:33:04	\N
+670	200	2026-10-28	09:03:55	13:02:51	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:59:47	19:33:22
+676	115	2026-10-29	08:46:42	13:59:09	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+680	105	2026-10-29	09:09:42	14:05:52	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:22:25	19:00:52
+681	104	2026-10-29	09:09:48	14:29:10	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:42:52	19:00:58
+678	107	2026-10-29	08:57:31	13:58:14	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:57:19	19:01:53
+679	202	2026-10-29	09:03:06	14:06:49	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:33:44	19:02:39
+677	201	2026-10-29	08:48:17	14:04:49	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:23:38	19:03:36
+682	109	2026-10-29	09:30:48	\N	ASISTENCIA	Kiosco HTML	\N	\N
+684	121	2026-10-29	16:31:08	\N	ASISTENCIA	Kiosco HTML	\N	\N
+675	124	2026-10-29	08:46:23	13:59:00	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:06:53	19:00:05
+683	200	2026-10-29	13:39:24	\N	OMISIÓN COMIDA	Kiosco HTML | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos) | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:29
+674	119	2026-10-29	08:46:19	13:58:30	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:07:02	19:00:38
+694	121	2026-10-30	09:17:31	\N	ASISTENCIA	Kiosco HTML	\N	\N
+712	202	2026-11-03	08:54:47	\N	ASISTENCIA	Kiosco HTML	\N	\N
+689	115	2026-10-30	08:53:33	14:01:23	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+714	119	2026-11-03	08:57:05	\N	ASISTENCIA	Kiosco HTML	\N	\N
+724	105	2026-11-04	15:57:04	\N	RETARDO	📍 [OP-48] Llamado: 09:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Retardo 417m	\N	\N
+732	109	2026-11-05	09:35:23	\N	RETARDO	Kiosco HTML | Retardo 35m	\N	\N
+710	115	2026-11-03	08:45:48	14:01:00	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+719	124	2026-11-04	09:00:11	16:19:28	COMPLETO	Kiosco HTML	16:21:02	18:00:45
+720	107	2026-11-04	09:08:59	15:47:24	ASISTENCIA	Kiosco HTML	19:02:02	\N
+709	104	2026-11-03	08:01:15	14:04:45	ASISTENCIA	Kiosco HTML | Kiosco HTML	15:57:54	\N
+723	109	2026-11-04	15:56:42	\N	OMISIÓN COMIDA	📍 [OP-48] Llamado: 09:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Retardo 416m | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	22:43:51
+721	104	2026-11-04	12:41:49	14:06:02	RETARDO	📍 [OP-48] Llamado: 09:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Retardo 221m	15:42:16	22:45:30
+693	200	2026-10-30	09:17:30	13:33:02	ASISTENCIA	Kiosco HTML | Kiosco HTML | Kiosco HTML	16:40:22	\N
+691	105	2026-10-30	09:05:37	14:13:28	ASISTENCIA	Kiosco HTML | Kiosco HTML | Kiosco HTML	16:43:22	\N
+688	107	2026-10-30	08:53:22	14:01:57	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:58:32	18:59:52
+686	124	2026-10-30	08:52:55	14:01:52	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:03:26	19:00:13
+685	119	2026-10-30	08:52:48	14:01:06	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:03:48	19:00:18
+692	104	2026-10-30	09:05:41	14:10:20	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:52:46	19:00:24
+695	109	2026-10-30	09:18:01	\N	OMISIÓN COMIDA	Kiosco HTML | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:40
+687	201	2026-10-30	08:53:00	14:14:06	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:56:25	19:00:57
+690	202	2026-10-30	08:53:42	14:01:32	COMPLETO	Kiosco HTML | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:33:19	19:01:07
+696	121	2026-10-31	08:39:07	\N	ASISTENCIA	Kiosco HTML	\N	\N
+704	105	2026-10-31	08:58:24	\N	ASISTENCIA	Kiosco HTML	\N	\N
+699	201	2026-10-31	08:46:46	13:58:11	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+698	115	2026-10-31	08:43:12	13:58:58	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+706	107	2026-10-31	13:59:58	\N	ASISTENCIA	Kiosco HTML	\N	\N
+701	202	2026-10-31	08:55:55	14:00:05	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+703	119	2026-10-31	08:58:07	14:00:19	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+700	109	2026-10-31	08:48:35	14:00:33	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+702	124	2026-10-31	08:57:31	14:00:58	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+705	104	2026-10-31	09:09:10	14:01:24	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+697	200	2026-10-31	08:39:30	14:01:34	ASISTENCIA	Kiosco HTML | Kiosco HTML	\N	\N
+707	105	2026-11-03	07:58:17	\N	ASISTENCIA	Kiosco HTML	\N	\N
+713	124	2026-11-03	08:56:03	14:00:33	COMPLETO	Kiosco HTML | Kiosco HTML	15:58:29	19:01:37
+715	107	2026-11-03	08:58:22	14:03:07	COMPLETO	Kiosco HTML | Kiosco HTML	16:16:12	19:02:11
+711	200	2026-11-03	08:51:00	13:14:23	COMPLETO	Kiosco HTML | Kiosco HTML	16:25:45	22:17:04
+708	201	2026-11-03	07:59:02	14:01:33	COMPLETO	Kiosco HTML | Kiosco HTML	16:04:54	22:45:50
+718	121	2026-11-04	08:52:02	\N	ASISTENCIA	Kiosco HTML	\N	\N
+717	200	2026-11-04	08:51:50	12:30:48	ASISTENCIA	Kiosco HTML	\N	\N
+716	115	2026-11-04	08:49:30	12:31:20	ASISTENCIA	Kiosco HTML	\N	\N
+730	107	2026-11-05	08:55:09	14:00:49	COMPLETO	Kiosco HTML	15:51:37	19:00:40
+728	121	2026-11-05	08:42:19	13:42:52	ASISTENCIA	Kiosco HTML	\N	\N
+734	119	2026-11-05	09:35:00	14:00:55	GIRA / COMIDA	📍 [EN GIRA] Entrada: 09:35 | Kiosco - Salida Matutina / Comida	\N	\N
+726	104	2026-11-05	08:32:37	14:24:09	COMPLETO	Kiosco HTML	15:50:59	19:00:41
+729	124	2026-11-05	08:50:28	14:01:12	COMPLETO	Kiosco HTML	16:09:12	19:01:34
+735	202	2026-11-05	09:35:00	14:04:34	PERMISO	📋 Permiso RH (OTRO PERMISO LABORAL: Con Goce) - Dictaminó: Ana Lilia Villarreal Uribe	\N	\N
+731	113	2026-11-05	09:02:01	14:16:58	COMPLETO	Kiosco HTML	16:01:24	19:03:25
+727	200	2026-11-05	08:42:02	13:42:42	COMPLETO	Kiosco HTML	17:23:11	19:07:34
+725	105	2026-11-05	08:31:49	14:02:04	ASISTENCIA	Kiosco HTML	19:00:43	\N
+722	201	2026-11-04	15:37:03	\N	ASISTENCIA	📍 [OP-48] Llamado: 09:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Asistencia Evento OP	\N	22:38:49
+736	200	2026-11-06	08:44:39	14:00:03	COMPLETO	Kiosco HTML	16:00:03	19:01:09
+733	201	2026-11-05	10:56:52	14:05:25	PERMISO	📋 Permiso RH (CITA MÉDICA (IMSS/PARTICULAR): Con Goce) - Dictaminó: Ana Lilia Villarreal Uribe	16:00:30	19:00:35
+737	115	2026-11-06	08:44:49	14:00:06	ASISTENCIA	Kiosco HTML	16:00:06	\N
 738	121	2026-11-06	08:49:10	14:00:09	ASISTENCIA	Kiosco HTML	16:00:09	\N
-739	124	2026-11-06	08:56:47	14:00:12	ASISTENCIA	Kiosco HTML	16:00:12	\N
-740	105	2026-11-06	08:57:04	14:00:15	ASISTENCIA	📍 [OP-51] Llamado: 09:00 | INAUGURACION DE CORREDOR DE LA SALUD	16:00:15	\N
-741	202	2026-11-06	08:57:21	14:00:18	ASISTENCIA	Kiosco HTML	16:00:18	\N
-742	104	2026-11-06	08:57:24	14:00:21	ASISTENCIA	📍 [OP-51] Llamado: 09:00 | INAUGURACION DE CORREDOR DE LA SALUD	16:00:21	\N
-743	119	2026-11-06	08:57:32	14:00:24	ASISTENCIA	Kiosco HTML	16:00:24	\N
-745	113	2026-11-06	09:19:39	14:00:30	RETARDO	Kiosco HTML | Retardo 19m	16:00:30	\N
-746	201	2026-11-06	12:00:47	14:00:33	PERMISO	📋 Permiso RH (CITA MÉDICA (IMSS/PARTICULAR): Con Goce) - Dictaminó: Ana Lilia Villarreal Uribe	16:00:33	\N
 744	107	2026-11-06	09:02:56	14:00:27	ASISTENCIA	Kiosco HTML	16:00:27	\N
+746	201	2026-11-06	12:00:00	14:00:00	COMPLETO	📋 Permiso RH (CITA MÉDICA (IMSS/PARTICULAR): Con Goce 09:00-12:00) - Dictaminó: Ana Lilia Villarreal Uribe	16:00:00	18:59:43
+743	119	2026-11-06	08:57:32	14:00:24	COMPLETO	Kiosco HTML	16:00:24	19:00:29
+739	124	2026-11-06	08:56:47	14:00:12	COMPLETO	Kiosco HTML	16:00:12	19:00:36
+745	113	2026-11-06	09:19:39	14:00:30	RETARDO	Kiosco HTML | Retardo 19m	16:00:30	19:00:45
+741	202	2026-11-06	08:57:21	14:00:18	COMPLETO	Kiosco HTML	16:00:18	19:01:06
+742	104	2026-11-06	08:57:24	14:00:21	COMPLETO	📍 [OP-51] Llamado: 09:00 | INAUGURACION DE CORREDOR DE LA SALUD	16:00:21	19:36:58
+740	105	2026-11-06	08:57:04	14:00:15	COMPLETO	📍 [OP-51] Llamado: 09:00 | INAUGURACION DE CORREDOR DE LA SALUD	16:00:15	19:38:19
+750	200	2026-11-07	08:29:20	\N	ASISTENCIA	Kiosco HTML	\N	\N
+757	105	2026-11-07	09:21:40	\N	RETARDO	Kiosco HTML | Retardo 21m	\N	\N
+751	115	2026-11-07	08:44:50	14:00:10	ASISTENCIA	Kiosco HTML	\N	\N
+758	104	2026-11-07	09:21:49	14:00:12	RETARDO	Kiosco HTML | Retardo 21m	\N	\N
+759	201	2026-11-07	09:26:50	14:00:24	RETARDO	Kiosco HTML | Retardo 26m	\N	\N
+755	119	2026-11-07	09:00:39	14:00:28	ASISTENCIA	Kiosco HTML	\N	\N
+754	124	2026-11-07	08:58:39	14:00:29	ASISTENCIA	Kiosco HTML	\N	\N
+752	202	2026-11-07	08:49:00	14:01:18	ASISTENCIA	Kiosco HTML	\N	\N
+756	113	2026-11-07	09:11:23	14:01:26	RETARDO	Kiosco HTML | Retardo 11m	\N	\N
+753	107	2026-11-07	08:52:44	14:01:37	ASISTENCIA	Kiosco HTML	\N	\N
+760	104	2026-11-08	14:09:10	\N	RETARDO	Kiosco HTML | Retardo 309m	\N	\N
+761	105	2026-11-08	14:37:30	\N	RETARDO	Kiosco HTML | Retardo 337m	\N	\N
+762	201	2026-11-08	14:45:31	\N	RETARDO	Kiosco HTML | Retardo 345m	\N	\N
+763	109	2026-11-08	14:52:01	\N	RETARDO	Kiosco HTML | Retardo 352m	\N	\N
+764	119	2026-11-08	14:55:52	\N	RETARDO	Kiosco HTML | Retardo 355m	\N	\N
+765	113	2026-11-08	15:01:07	\N	RETARDO	Kiosco HTML | Retardo 361m	\N	\N
+766	115	2026-11-09	08:46:25	14:00:24	ASISTENCIA	Kiosco HTML	\N	\N
+770	201	2026-11-09	06:00:00	15:28:23	GIRA / COMIDA	📍 [EN GIRA] Entrada: 06:00 | Kiosco - Salida Matutina / Comida	\N	\N
+771	113	2026-11-09	06:00:00	15:32:38	GIRA / COMIDA	📍 [EN GIRA] Entrada: 06:00 | Kiosco - Salida Matutina / Comida	\N	\N
+772	107	2026-11-09	06:00:00	15:35:23	GIRA / COMIDA	📍 [EN GIRA] Entrada: 06:00 | Kiosco - Salida Matutina / Comida	\N	\N
+773	109	2026-11-09	06:00:00	15:40:37	GIRA / COMIDA	📍 [EN GIRA] Entrada: 06:00 | Kiosco - Salida Matutina / Comida	\N	\N
+774	119	2026-11-09	06:00:00	15:57:35	GIRA / COMIDA	📍 [EN GIRA] Entrada: 06:00 | Kiosco - Salida Matutina / Comida	\N	\N
+769	202	2026-11-09	08:53:03	14:00:49	COMPLETO	Kiosco HTML	15:48:09	17:53:12
+768	124	2026-11-09	08:52:21	14:00:37	COMPLETO	Kiosco HTML	16:01:12	17:55:16
+767	200	2026-11-09	08:46:57	\N	OMISIÓN COMIDA	Kiosco HTML | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos) | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	18:03:03
+783	105	2026-11-11	09:05:21	\N	ASISTENCIA	Kiosco HTML	\N	\N
+786	109	2026-11-11	09:50:03	\N	RETARDO	Kiosco HTML | Retardo 50m	\N	\N
+781	119	2026-11-11	08:53:04	13:59:16	COMPLETO	Kiosco HTML	16:01:56	19:00:01
+775	121	2026-11-11	08:48:39	13:32:37	ASISTENCIA	Kiosco HTML	\N	\N
+776	202	2026-11-11	08:48:44	14:00:07	COMPLETO	Kiosco HTML	15:56:48	19:00:07
+778	115	2026-11-11	08:51:03	13:59:04	ASISTENCIA	Kiosco HTML	\N	\N
+785	113	2026-11-11	09:22:23	14:07:24	RETARDO	Kiosco HTML | Retardo 22m	16:01:38	19:00:09
+780	124	2026-11-11	08:52:35	13:59:23	COMPLETO	Kiosco HTML	16:01:41	19:00:12
+784	104	2026-11-11	09:11:08	15:42:32	RETARDO	Kiosco HTML | Retardo 11m	15:48:32	19:00:20
+779	107	2026-11-11	08:52:23	13:58:50	COMPLETO	Kiosco HTML	15:43:27	19:00:24
+788	105	2026-11-12	08:51:36	\N	ASISTENCIA	📍 [OP-50] Llamado: 09:00 | SESION EXTRAORDINARIA PRESENCIAL EN IEES	\N	\N
+793	119	2026-11-12	08:59:30	14:01:03	COMPLETO	📍 [OP-50] Llamado: 09:00 | SESION EXTRAORDINARIA PRESENCIAL EN IEES	16:04:01	19:02:33
+789	109	2026-11-12	08:51:44	\N	ASISTENCIA	📍 [OP-50] Llamado: 09:00 | SESION EXTRAORDINARIA PRESENCIAL EN IEES	\N	\N
+795	201	2026-11-12	09:14:17	14:18:13	RETARDO	Kiosco HTML | Retardo 14m	15:52:41	19:01:16
+791	107	2026-11-12	08:57:53	14:02:07	COMPLETO	📍 [OP-50] Llamado: 09:00 | SESION EXTRAORDINARIA PRESENCIAL EN IEES	15:53:33	19:17:39
+796	200	2026-11-12	09:18:07	13:39:47	RETARDO	Kiosco HTML | Retardo 18m	15:59:43	19:02:08
+777	200	2026-11-11	08:50:05	13:32:36	COMPLETO	Kiosco HTML	17:48:09	18:59:35
+782	201	2026-11-11	08:57:56	14:17:19	COMPLETO	Kiosco HTML	16:00:29	18:59:38
+790	202	2026-11-12	08:51:57	14:01:29	COMPLETO	📍 [OP-50] Llamado: 09:00 | SESION EXTRAORDINARIA PRESENCIAL EN IEES	16:01:56	19:01:01
+794	113	2026-11-12	09:08:35	14:06:23	ASISTENCIA	📍 [OP-54] Llamado: 16:30 | Asambleas informativas	19:02:44	\N
+787	104	2026-11-12	08:51:26	14:06:35	ASISTENCIA	📍 [OP-50] Llamado: 09:00 | SESION EXTRAORDINARIA PRESENCIAL EN IEES	15:43:12	\N
+792	124	2026-11-12	08:59:26	14:01:38	COMPLETO	Kiosco HTML	16:03:55	19:02:13
 800	202	2026-11-13	07:53:34	\N	ASISTENCIA	📍 [OP-56] Llamado: 08:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS	\N	\N
 802	119	2026-11-13	08:06:26	\N	ASISTENCIA	📍 [OP-56] Llamado: 08:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS	\N	\N
 804	115	2026-11-13	08:40:46	14:00:35	ASISTENCIA	Kiosco HTML	\N	\N
@@ -2257,85 +2543,152 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 805	124	2026-11-13	09:02:22	14:00:54	COMPLETO	Kiosco HTML	15:58:33	18:49:51
 803	121	2026-11-13	08:36:41	13:58:26	ASISTENCIA	Kiosco HTML	\N	\N
 799	107	2026-11-13	07:52:35	08:01:01	COMPLETO	📍 [OP-55] Llamado: 08:00 | Fiscalia	14:00:46	15:53:29
+822	119	2026-11-17	08:59:59	14:02:14	COMPLETO	Kiosco HTML	16:10:00	19:01:31
+817	200	2026-11-17	08:39:10	13:27:27	ASISTENCIA	Kiosco HTML	19:01:43	\N
+828	103	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+809	105	2026-11-14	10:22:17	\N	RETARDO	Kiosco HTML | Retardo 82m	\N	\N
+808	124	2026-11-14	08:47:15	13:00:53	ASISTENCIA	Kiosco HTML	\N	\N
 798	104	2026-11-13	07:44:29	14:00:00	COMPLETO	📍 [OP-56] Llamado: 08:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS	15:01:21	21:08:56
 797	105	2026-11-13	07:44:19	14:00:00	ASISTENCIA	📍 [OP-55] Llamado: 08:00 | Fiscalia	\N	\N
 806	201	2026-11-13	\N	\N	COMPLETO	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada por OP)	14:25:56	21:00:19
 807	113	2026-11-13	\N	\N	RETARDO	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Retardo 14m | Kiosco HTML | Turno Vespertino (Mañana libre autorizada por OP)	15:14:35	21:03:12
 810	104	2026-11-14	\N	\N	ASISTENCIA	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	14:33:07	\N
-811	109	2026-11-14	\N	\N	ASISTENCIA	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	14:54:38	\N
-812	201	2026-11-14	\N	\N	ASISTENCIA	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	14:55:59	\N
+829	110	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+830	116	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
 813	113	2026-11-14	\N	\N	RETARDO	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Retardo 20m | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	15:20:04	\N
-666	202	2026-11-17	09:05:01	14:02:57	ASISTENCIA	Kiosco HTML	16:00:00	\N
-667	103	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-668	110	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-669	116	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-670	117	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-671	118	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-672	122	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-673	123	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-674	517	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-675	113	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-676	115	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-677	508	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-678	501	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-679	525	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-680	529	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-681	104	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-682	102	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-683	125	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-684	105	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-685	203	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-686	502	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-687	512	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-688	504	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-689	505	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-690	509	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-691	506	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-692	510	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-693	513	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-694	109	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-695	515	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-696	521	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-697	518	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-698	522	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-699	526	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-700	519	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-701	201	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-702	503	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-703	527	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-704	523	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-705	530	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-706	507	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-707	511	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-708	520	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-709	516	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-710	524	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-711	528	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-712	124	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-713	200	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-714	121	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-715	202	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-716	107	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-717	119	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-718	101	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-719	000	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
-720	104	2026-11-20	09:21:12	14:42:22	RETARDO	Kiosco HTML | Retardo 21m	\N	\N
-721	105	2026-11-20	09:20:47	14:00:00	RETARDO	Kiosco HTML | Retardo 20m	\N	\N
-722	107	2026-11-20	09:08:57	14:00:08	ASISTENCIA	Kiosco HTML	\N	\N
-723	109	2026-11-20	08:44:16	14:01:07	ASISTENCIA	Kiosco HTML	\N	\N
-724	113	2026-11-20	09:17:22	13:45:12	RETARDO	Kiosco HTML | Retardo 17m	\N	\N
-725	115	2026-11-20	08:44:13	14:00:44	ASISTENCIA	Kiosco HTML	\N	\N
-726	119	2026-11-20	09:04:22	14:01:21	ASISTENCIA	Kiosco HTML	\N	\N
-727	121	2026-11-20	08:46:23	14:00:00	ASISTENCIA	Kiosco HTML	\N	\N
-728	124	2026-11-20	09:03:50	14:01:27	ASISTENCIA	Kiosco HTML	\N	\N
-729	200	2026-11-20	08:46:19	13:39:55	ASISTENCIA	Kiosco HTML	\N	\N
-730	201	2026-11-20	09:19:10	14:00:00	RETARDO	Kiosco HTML | Retardo 19m	\N	\N
-731	202	2026-11-20	08:45:09	14:00:00	ASISTENCIA	Kiosco HTML	\N	\N
+812	201	2026-11-14	\N	\N	COMPLETO	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	14:55:59	20:47:53
+811	109	2026-11-14	\N	\N	COMPLETO	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	14:54:38	21:01:54
+814	202	2026-11-15	13:24:22	\N	RETARDO	📍 [OP-56] Llamado: 10:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Retardo 204m	\N	\N
+815	119	2026-11-15	13:27:59	\N	RETARDO	📍 [OP-56] Llamado: 08:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Retardo 327m	\N	\N
+825	105	2026-11-17	09:06:58	\N	ASISTENCIA	Kiosco HTML	\N	\N
+818	121	2026-11-17	08:39:53	13:27:33	ASISTENCIA	Kiosco HTML	\N	\N
+824	202	2026-11-17	09:05:01	14:02:57	COMPLETO	Kiosco HTML	16:00:00	19:00:36
+819	115	2026-11-17	08:50:01	14:02:18	ASISTENCIA	Kiosco HTML	\N	\N
+823	107	2026-11-17	09:04:32	14:02:31	COMPLETO	Kiosco HTML	16:00:00	19:00:41
+831	117	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+820	104	2026-11-17	08:57:12	14:34:43	ASISTENCIA	Kiosco HTML	19:00:55	\N
+816	109	2026-11-17	08:36:31	\N	OMISIÓN COMIDA	Kiosco HTML | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	19:00:57
+827	113	2026-11-17	09:19:05	14:04:06	RETARDO	Kiosco HTML | Retardo 19m	16:01:00	19:01:27
+826	201	2026-11-17	09:14:46	14:00:00	RETARDO	Kiosco HTML | Retardo 14m | Salida matutina ajustada auto 14:00 (omisión detectada al checar entrada vesp 16:05) | Kiosco HTML - Entrada Vespertina 16:05	16:05:10	19:01:09
+832	122	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+821	124	2026-11-17	08:59:18	14:00:00	COMPLETO	Kiosco HTML	16:00:00	19:01:35
+833	123	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+834	517	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+835	113	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+836	115	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+837	508	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+838	501	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+839	525	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+840	529	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+841	104	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+842	102	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+843	125	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+844	105	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+845	502	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+846	512	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+847	504	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+848	505	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+849	509	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+850	506	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+851	510	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+852	513	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+853	109	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+854	515	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+855	521	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+856	518	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+857	522	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+858	526	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+859	519	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+860	503	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+861	527	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+862	523	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+863	530	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+864	507	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+865	511	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+866	520	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+867	516	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+868	524	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+869	528	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+870	124	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+871	200	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+872	118	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+873	121	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+874	203	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+875	101	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+876	000	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+877	119	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+878	107	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+879	202	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+880	201	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+881	115	2026-11-18	08:42:28	14:01:45	ASISTENCIA	Kiosco HTML	\N	\N
+895	200	2026-11-19	08:54:42	13:27:46	COMPLETO	Kiosco HTML	16:26:22	18:59:39
+892	121	2026-11-19	08:43:48	13:27:53	COMPLETO	Kiosco HTML	16:26:19	18:59:44
+894	109	2026-11-19	08:54:20	14:00:11	COMPLETO	Kiosco HTML	16:01:02	19:00:15
+896	202	2026-11-19	08:58:48	14:08:53	COMPLETO	Kiosco HTML	16:01:49	19:00:23
+891	105	2026-11-18	09:34:47	14:08:57	RETARDO	Kiosco HTML | Retardo 34m	\N	\N
+902	113	2026-11-19	09:12:05	14:02:51	RETARDO	Kiosco HTML | Retardo 12m	16:08:46	19:00:37
+893	115	2026-11-19	08:43:54	14:00:08	ASISTENCIA	Kiosco HTML	\N	\N
+903	201	2026-11-19	11:12:52	14:00:00	RETARDO	Kiosco HTML | Retardo 132m | Salida matutina ajustada auto 14:00 (omisión detectada al checar entrada vesp 16:04) | Kiosco HTML - Entrada Vespertina 16:04	16:04:02	19:00:47
+897	107	2026-11-19	09:02:46	13:58:00	RETARDO	Kiosco HTML | 📍 [OP-57] Llamado: 09:00 | PREMIO ESTATAL DE DEPORTE 2026 | Retardo 405m	15:45:47	19:00:51
+901	119	2026-11-19	09:05:57	14:00:03	COMPLETO	Kiosco HTML	16:05:13	19:01:08
+900	124	2026-11-19	09:05:26	14:00:06	COMPLETO	Kiosco HTML	16:05:00	19:01:10
+899	104	2026-11-19	09:04:55	14:02:57	RETARDO	Kiosco HTML | 📍 [OP-57] Llamado: 09:00 | PREMIO ESTATAL DE DEPORTE 2026 | Retardo 421m	16:01:00	\N
+883	200	2026-11-18	08:42:57	13:29:54	COMPLETO	Kiosco HTML	16:57:26	18:58:03
+886	107	2026-11-18	08:59:25	14:02:26	COMPLETO	Kiosco HTML	15:58:06	18:58:30
+885	109	2026-11-18	08:43:21	\N	OMISIÓN COMIDA	Kiosco HTML | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	18:58:36
+890	113	2026-11-18	09:08:26	14:02:06	COMPLETO	Kiosco HTML	15:59:32	18:58:51
+882	201	2026-11-18	08:42:51	14:18:10	COMPLETO	Kiosco HTML	16:19:40	18:59:17
+887	202	2026-11-18	08:59:54	14:01:27	COMPLETO	Kiosco HTML	15:47:05	19:00:11
+889	119	2026-11-18	09:06:54	14:02:30	COMPLETO	Kiosco HTML	16:00:04	19:00:19
+884	104	2026-11-18	08:43:03	14:15:43	COMPLETO	Kiosco HTML	15:43:09	19:00:38
+888	124	2026-11-18	09:05:54	14:02:35	COMPLETO	Kiosco HTML	15:59:54	19:00:41
+898	105	2026-11-19	09:03:01	\N	ASISTENCIA	Kiosco HTML	\N	\N
+916	202	2026-11-23	\N	\N	PERMISO	📋 Permiso RH (VACACIONES: Sin Goce) - Dictaminó: Ana Lilia Villarreal Uribe	\N	\N
+917	202	2026-11-24	\N	\N	PERMISO	📋 Permiso RH (VACACIONES: Sin Goce) - Dictaminó: Ana Lilia Villarreal Uribe	\N	\N
+918	202	2026-11-25	\N	\N	PERMISO	📋 Permiso RH (VACACIONES: Sin Goce) - Dictaminó: Ana Lilia Villarreal Uribe	\N	\N
+919	202	2026-11-26	\N	\N	PERMISO	📋 Permiso RH (VACACIONES: Sin Goce) - Dictaminó: Ana Lilia Villarreal Uribe	\N	\N
+920	202	2026-11-27	\N	\N	PERMISO	📋 Permiso RH (VACACIONES: Sin Goce) - Dictaminó: Ana Lilia Villarreal Uribe	\N	\N
+921	202	2026-11-28	\N	\N	PERMISO	📋 Permiso RH (VACACIONES: Sin Goce) - Dictaminó: Ana Lilia Villarreal Uribe	\N	\N
+922	202	2026-11-29	\N	\N	PERMISO	📋 Permiso RH (VACACIONES: Sin Goce) - Dictaminó: Ana Lilia Villarreal Uribe	\N	\N
+923	202	2026-11-30	\N	\N	PERMISO	📋 Permiso RH (VACACIONES: Sin Goce) - Dictaminó: Ana Lilia Villarreal Uribe	\N	\N
+925	202	2026-11-14	\N	\N	VACACIONES	🌴 Vacaciones LFT (DÍAS SUELTOS / FRACCIONADOS)	\N	\N
+907	200	2026-11-20	08:46:19	13:39:55	COMPLETO	Kiosco HTML	16:26:06	18:57:14
+910	119	2026-11-20	09:04:22	14:01:21	COMPLETO	Kiosco HTML	16:02:03	19:00:03
+909	124	2026-11-20	09:03:50	14:01:27	COMPLETO	Kiosco HTML	16:01:43	19:00:14
+904	115	2026-11-20	08:44:13	14:00:44	ASISTENCIA	Kiosco HTML	\N	\N
+912	113	2026-11-20	09:17:22	13:45:12	RETARDO	Kiosco HTML | Retardo 17m	15:27:27	19:00:37
+915	104	2026-11-20	09:21:12	14:42:22	RETARDO	Kiosco HTML | Retardo 21m	15:40:27	18:58:51
+905	109	2026-11-20	08:44:16	14:01:07	COMPLETO	Kiosco HTML	15:59:38	19:00:06
+913	201	2026-11-20	09:19:10	14:00:00	RETARDO	Kiosco HTML | Retardo 19m	16:13:51	18:58:38
+911	107	2026-11-20	09:08:57	14:00:08	COMPLETO	Kiosco HTML	15:48:36	18:58:34
+914	105	2026-11-20	09:20:47	14:00:00	RETARDO	Kiosco HTML | Retardo 20m	\N	\N
+908	121	2026-11-20	08:46:23	14:00:00	ASISTENCIA	Kiosco HTML	18:58:36	\N
+906	202	2026-11-20	08:45:09	14:00:00	COMPLETO	Kiosco HTML	16:00:00	19:02:03
+932	105	2026-11-21	09:00:37	\N	ASISTENCIA	Kiosco HTML	\N	\N
+934	104	2026-11-21	09:03:04	\N	ASISTENCIA	Kiosco HTML	\N	\N
+938	201	2026-11-21	09:07:07	14:00:03	ASISTENCIA	Kiosco HTML	\N	\N
+933	115	2026-11-21	09:01:04	14:00:09	ASISTENCIA	Kiosco HTML	\N	\N
+940	113	2026-11-21	09:15:47	14:00:21	RETARDO	Kiosco HTML | Retardo 15m	\N	\N
+935	107	2026-11-21	09:03:28	14:00:25	ASISTENCIA	Kiosco HTML	\N	\N
+937	119	2026-11-21	09:06:07	14:00:49	ASISTENCIA	Kiosco HTML	\N	\N
+936	124	2026-11-21	09:05:34	14:00:55	ASISTENCIA	Kiosco HTML	\N	\N
+939	109	2026-11-21	09:08:48	14:01:43	ASISTENCIA	Kiosco HTML	\N	\N
+941	105	2026-11-23	08:37:03	\N	ASISTENCIA	Kiosco HTML	\N	\N
+942	104	2026-11-23	08:38:14	\N	ASISTENCIA	Kiosco HTML	\N	\N
+943	115	2026-11-23	08:44:25	\N	ASISTENCIA	Kiosco HTML	\N	\N
+944	109	2026-11-23	08:45:05	\N	ASISTENCIA	Kiosco HTML	\N	\N
+945	124	2026-11-23	08:51:19	\N	ASISTENCIA	Kiosco HTML	\N	\N
+946	119	2026-11-23	08:52:12	\N	ASISTENCIA	Kiosco HTML	\N	\N
+947	107	2026-11-23	08:59:36	\N	ASISTENCIA	Kiosco HTML	\N	\N
+948	113	2026-11-23	09:10:25	\N	RETARDO	Kiosco HTML | Retardo 10m	\N	\N
+949	121	2026-11-23	09:24:03	\N	RETARDO	Kiosco HTML | Retardo 24m	\N	\N
+950	200	2026-11-23	09:24:31	\N	RETARDO	Kiosco HTML | Retardo 24m	\N	\N
+951	201	2026-11-23	09:47:12	\N	RETARDO	Kiosco HTML | Retardo 47m	\N	\N
 \.
 
 
 --
--- Data for Name: control_horas_extras; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: control_horas_extras; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.control_horas_extras (id_autorizacion, id_registro_asistencia, id_empleado, nombre_empleado, id_evento, folio_op, nombre_evento, productor_responsable, fecha_jornada, hora_entrada, hora_salida_madrugada, corte_ordinario, horas_extra_calculadas, estatus_aprobacion, aprobado_por, fecha_aprobacion, observaciones) FROM stdin;
@@ -2351,7 +2704,7 @@ COPY public.control_horas_extras (id_autorizacion, id_registro_asistencia, id_em
 
 
 --
--- Data for Name: cronogramas_eventos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: cronogramas_eventos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.cronogramas_eventos (id_cronograma, folio, fecha, nombre_evento, ubicacion_general, folio_op, actividades, observaciones_generales, creado_por, fecha_creacion) FROM stdin;
@@ -2359,7 +2712,7 @@ COPY public.cronogramas_eventos (id_cronograma, folio, fecha, nombre_evento, ubi
 
 
 --
--- Data for Name: departamentos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: departamentos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.departamentos (id, nombre) FROM stdin;
@@ -2372,7 +2725,7 @@ COPY public.departamentos (id, nombre) FROM stdin;
 
 
 --
--- Data for Name: empleados; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: empleados; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_ing, licencia_vence, password, rol, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, foto_url, estatus_empleado, fecha_baja, motivo_baja) FROM stdin;
@@ -2380,7 +2733,6 @@ COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_
 110	Eduardo Alonso Valdez Gomez	PRODUCCION	eduardo.produccion@vprovideo.mx	6677769481	1976-10-01	2022-09-04	2050-02-25	EduardoA	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 116	Luz Damaris Quintero Pimentel	PRODUCCION		6674099301	2001-04-05	2025-03-10	2026-02-10	LuzD	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 117	Luis Quintin Mares Lopez	PRODUCCION	luis.camarografo@vprovideo.mx	6674766575	1990-05-06	2025-04-11	2025-10-11	vpro123	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-118	Hector Rementeria de la Rocha	PRODUCCION	hector.audio@vprovideo.mx	6671323708	2026-06-03	2022-11-26	2027-09-19	HectoR	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 122	Andrea Rivera Rivas	ADMINISTRACION	mkt@vprovideo.mx	6672090837	2000-09-08	2025-11-26	2026-01-15	AndreaR	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 123	Juan Pablo Espino Diaz	PRODUCCION	\N	6673278169	2003-06-17	2026-02-16	2026-01-31	JuanP	BAJA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 517	Ricardo Gonzalez	PRODUCCION		\N	1977-09-18	2024-08-22	2052-03-18	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
@@ -2394,7 +2746,6 @@ COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_
 102	Gerardo Villarreal Uribe	EDICION	gerardo@vprovideo.com	6673291087	1979-08-31	2015-12-27	2028-06-04	$2b$12$i4sfscS821ykcQvydKKPtOP1iA8Cwhcaskv383JWmW5e418fzAEee	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 125	Diego Villareal Lopez	ADMINISTRACION	diego@gmail.com	\N	2005-09-15	2005-09-15	2050-05-27	DiegoV	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 105	Jose Daniel Torres Arroyo	PRODUCCION	daniel.produccion@vprovideo.mx	6675788854	1999-01-28	2016-03-30	2100-02-21	$2b$12$GkNreszVLLBmt67EPXrk8eq5vqp1IzUQq/DayBhrESBKrWQZK/vUS	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-203	Pedro Villarreal Uribe	ADMINISTRACION	direccion@vprovideo.com	6672300488	1968-08-07	1964-08-07	2050-12-24	$2b$12$fXpITFlsgHoryqPp3q4MnOpzcmPswF.sI1XYbH9xxyI/Iv20VMtHq	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 502	Javier Garcia	PRODUCCION		\N	1900-01-01	2026-03-20	2027-12-12	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 512	Leonardo Leon	PRODUCCION		\N	2002-07-04	2021-06-21	2051-07-26	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 504	Ernesto Gutierrez	PRODUCCION		\N	1900-01-01	2026-03-20	2029-01-22	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
@@ -2410,7 +2761,6 @@ COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_
 522	Jose Carlos	PRODUCCION		\N	1980-03-30	2024-10-09	2052-02-07	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 526	Victor (homi)	PRODUCCION		\N	1988-02-10	2022-09-15	2051-04-30	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 519	Miguel	PRODUCCION		\N	1978-08-09	2024-02-11	2051-09-18	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-201	Cuauhtemoc Rivera Agundez	SISTEMAS	cuauhtemoc.manager@audiovideopro.com.mx	6674305026	1970-09-30	2021-03-31	2025-03-31	$2b$12$3nqc7ExmR0y2vyo5L8Ug1OwcwLsJ.28Lep/q3RGBbJ9oR80GaaBvm	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 503	Miguel Lara	PRODUCCION		\N	1900-01-01	2026-03-20	2028-12-21	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 527	Hair Sanchez	PRODUCCION		\N	1979-08-09	2024-11-12	2052-07-27	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 523	Luis Silva	PRODUCCION		\N	1983-10-31	2024-11-08	2050-03-06	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
@@ -2423,17 +2773,20 @@ COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_
 528	Carlos Aleman	PRODUCCION		\N	1981-09-08	2024-07-10	2050-04-25	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 124	Manuel Eduardo Madrid	PRODUCCION	coordinador@vprovideo.com		1999-05-18	2026-03-23	2028-08-21	$2b$12$yi/.y4i8H7Pyg7G9icRaZuS2coy11GdoYQNWSwa8nHTkWIzQL8fuu	COORDINADOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 200	Andrea Maria Vilarreal Lopez	EDICION	andrea@vprovideo.mx	6673903762	1994-07-23	1994-07-23	2050-02-10	$2b$12$b6tO9D1W7dEARjjJOU3hDuhpU1uqsnWZLhJnxhIGPt5MJUz0e.acm	ADMIN				SOLTERO		Culiacán					LICENCIATURA	Jefa de Edición	PLANTA	0.00	\N	ACTIVO	\N	\N
+118	Hector Rementeria de la Rocha	PRODUCCION	hector.audio@vprovideo.mx	6671323708	2026-06-03	2022-11-26	2027-09-19	$2b$12$X9p1CzXlbauypTK6LwTQQOoHPDrynohImYoNp/6by1gbDQgHAva9.	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 121	Sofia Alejandra Villarreal Lopez	VENTAS	sofia.ventas@vprovideo.com	6673903759	1996-08-11	1996-08-11	2050-01-09	$2b$12$1DGA/xLxy1otXVH0LXVDtOipXRXYtCO9PXSofyEZYQYo0DFjIRyKC	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+203	Pedro Villarreal Uribe	ADMINISTRACION	direccion@vprovideo.com	6672300488	1968-08-07	1964-08-07	2050-12-24	$2b$12$NIwgD1tRFKGpBkiajGSIEOlCZw1hFh6cvxirRcNzU837xvg5LJ57i	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+101	Ana Lilia Villarreal Uribe	ADMINISTRACION	ana.villarrealu@gmail.com	6671022524	1971-09-29	2012-04-04	2028-01-09	$2b$12$ofA.sPgwELWAJTzawCne5e2Jm5Q76nl7i0JXlvlsyuSTHKggshYbq	ADMIN	VIUA710929SK4			SOLTERO							LICENCIATURA	ADMINISTRACION Y RECURSOS HUMANOS	PLANTA	0.00	\N	ACTIVO	\N	\N
+000	Celular Azul / Samsung	PRODUCCION	live.stream@vprovideo.com	6672173818	2026-10-28	2026-10-29	\N	$2b$12$X4fQ5eX0sXuZtmv0CQlcHeAGm8y01F21aYFF7yObrepMQS5/oTW.e	COORDINADOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	CABINA STREAMING	\N	\N	\N	ACTIVO	\N	\N
+119	Manuel Antonio Madrid Zazueta	PRODUCCION	manuel@vprovideo.com	6671325182	1972-08-03	2019-11-26	2028-10-29	$2b$12$96Fw/6RABVtKdELqnoBXs.mVuGhN6LuNJJVF9TUZwMhkO5CcrQ2Qq	PRODUCTOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+107	Martin Eduardo Sanchez Estrada	PRODUCCION	geo@vprovideo.com	6678901234	1971-03-17	2016-06-01	2050-03-31	$2b$12$x2.aABcDfquVMc3gjo3JR.H5/lGp5gaLoYqNqgDeLbJvWJ1PGL7le	PRODUCTOR				SOLTERO							LICENCIATURA		PLANTA	0.00	\N	ACTIVO	\N	\N
 202	Edgar Javier Amarillas	SISTEMAS	live.stream@vprovideo.com	6672090481	1975-02-03	2024-09-24	2029-01-09	$2b$12$Kfzpr9LbUuRK3dIv/HMhOunhnQ3w6MGBXydLse2wTO/XyH8gje0XG	PRODUCCION	AAED750203V10	AAXE750203HSLMXD04	23967503642	SOLTERO	Av. Lázaro Cárdenas 1455, Los Pinos	Culiacán	80128	Juana Amarillas	6671762500	Mamá	LICENCIATURA	ING. SISTEMAS	PLANTA	0.00	\N	ACTIVO	\N	\N
-107	Martin Eduardo Sanchez Estrada	PRODUCCION	live.ventas@vprovideo.com	6678901234	1971-03-17	2016-06-01	2050-03-31	$2b$12$x2.aABcDfquVMc3gjo3JR.H5/lGp5gaLoYqNqgDeLbJvWJ1PGL7le	PRODUCTOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-119	Manuel Antonio Madrid Zazueta	PRODUCCION	manuel@vprovideo.com	6671325182	1972-08-03	2019-11-26	2026-10-25	$2b$12$96Fw/6RABVtKdELqnoBXs.mVuGhN6LuNJJVF9TUZwMhkO5CcrQ2Qq	PRODUCTOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-000	Celular Azul / Samsung	PRODUCCION	live.stream@vprovideo.com	6671000000	2000-01-01	2024-01-01	\N	$2b$12$giGHvn46PkQlA0vLCHj6l.EDFLqTpcVVYlaGYii3035kDYnE4CrGq	COORDINADOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	CABINA STREAMING	\N	\N	\N	ACTIVO	\N	\N
-101	Ana Lilia Villarreal Uribe	ADMINISTRACION	contabilidad@vprovideo.com	6671022524	1973-09-29	2015-11-26	2028-01-09	$2b$12$ofA.sPgwELWAJTzawCne5e2Jm5Q76nl7i0JXlvlsyuSTHKggshYbq	ADMIN	\N	\N	2396-750364-2	\N	\N	\N	\N	\N	\N	\N	\N	ADMINISTRACION Y RECURSOS HUMANOS	\N	\N	\N	ACTIVO	\N	\N
+201	Cuahutémoc Rivera Agúndez	SISTEMAS	pcdeoscar@gmail.com	6674305026	1970-09-30	2021-03-31	2025-03-31	$2b$12$3nqc7ExmR0y2vyo5L8Ug1OwcwLsJ.28Lep/q3RGBbJ9oR80GaaBvm	ADMIN	RIAC700930N79	RIAC700930HSLVGH03	23877052706	CASADO	SALVADOR MORENO LUNA 7181	Culiacán, Sinaloa	80143	6671644340	667 430 1783	ESPOSA E HIJOS	TÉCNICO	JEFE DEL DEPTO DE SISTEMAS	PLANTA	0.00	\N	ACTIVO	\N	\N
 \.
 
 
 --
--- Data for Name: log_accesos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: log_accesos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.log_accesos (id_log, fecha, hora, ip_origen, id_empleado, nombre_empleado, tipo_evento) FROM stdin;
@@ -2761,31 +3114,1437 @@ COPY public.log_accesos (id_log, fecha, hora, ip_origen, id_empleado, nombre_emp
 354	2026-10-27	18:03:24.667982	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
 355	2026-10-27	18:03:50.188186	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
 356	2026-10-27	18:03:50.336146	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
-357	2026-10-27	19:43:36.960702	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
-358	2026-10-27	19:43:37.074349	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
-359	2026-10-29	10:57:51.33945	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
-360	2026-10-29	10:57:51.426168	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
-361	2026-10-29	16:02:34.177885	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
-362	2026-10-29	16:02:34.346074	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
-363	2026-10-29	16:13:24.753478	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
-364	2026-10-29	16:13:24.850757	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
-365	2026-10-29	16:13:56.954907	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
-366	2026-10-29	16:13:57.13898	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
-367	2026-10-29	16:26:48.425914	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
-368	2026-10-29	16:26:48.603799	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
-369	2026-10-29	16:59:27.83138	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
-370	2026-10-29	16:59:27.94932	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
-371	2026-10-29	16:59:53.464564	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
-372	2026-10-29	16:59:53.592131	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
-373	2026-10-29	17:13:36.263252	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
-374	2026-10-29	17:13:36.355217	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
-375	2026-10-29	17:40:39.14797	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
-376	2026-10-29	17:40:39.245524	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+357	2026-10-27	18:40:03.611712	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+358	2026-10-27	18:40:03.751454	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+359	2026-10-27	20:31:25.260117	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+360	2026-10-27	20:31:25.369746	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+361	2026-10-27	20:33:03.413744	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+362	2026-10-27	20:33:03.528522	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+363	2026-10-27	23:10:17.89256	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+364	2026-10-27	23:10:18.023778	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+365	2026-10-27	23:25:55.906614	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+366	2026-10-27	23:25:56.023171	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+367	2026-10-27	23:33:24.551181	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+368	2026-10-27	23:33:24.664558	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+369	2026-10-28	00:03:47.223002	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+370	2026-10-28	00:03:47.427721	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+371	2026-10-28	00:04:52.879015	INTRANET	203	Pedro Villarreal Uribe	LOGIN_SISTEMA
+372	2026-10-28	00:05:45.847815	WEB_PORTAL	203	Pedro Villarreal Uribe	LOGIN_PLATAFORMA
+373	2026-10-28	00:57:39.727708	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+374	2026-10-28	00:57:39.845331	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+375	2026-10-28	01:00:11.676334	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+376	2026-10-28	01:00:11.790044	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+377	2026-10-28	01:17:52.660006	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+378	2026-10-28	01:17:52.771574	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+379	2026-10-28	01:30:01.387935	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+380	2026-10-28	01:30:01.507688	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+381	2026-10-28	01:36:07.160217	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+382	2026-10-28	01:36:07.269376	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+383	2026-10-28	16:15:09.105063	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+384	2026-10-28	16:15:09.212825	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+385	2026-10-28	16:19:00.595922	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+386	2026-10-28	16:19:00.740864	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+387	2026-10-28	16:36:24.720982	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+388	2026-10-28	16:36:24.873361	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+389	2026-10-28	16:36:56.46031	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+390	2026-10-28	16:36:57.467002	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+391	2026-10-28	17:46:02.269422	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+392	2026-10-28	17:46:02.450661	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+393	2026-10-28	17:46:49.162358	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+394	2026-10-28	17:46:49.278822	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+395	2026-10-28	17:51:48.868294	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+396	2026-10-28	17:51:48.9868	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+397	2026-10-28	17:54:08.674284	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+398	2026-10-28	17:54:08.784042	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+399	2026-10-28	18:09:01.226729	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+400	2026-10-28	18:09:01.342472	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+401	2026-10-28	19:36:55.791768	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+402	2026-10-28	19:36:55.905758	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+403	2026-10-28	19:49:58.916513	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+404	2026-10-28	19:49:59.028967	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+405	2026-10-28	19:59:11.980012	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+406	2026-10-28	19:59:12.092042	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+407	2026-10-28	20:32:06.493149	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+408	2026-10-28	20:32:06.608437	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+409	2026-10-28	20:49:00.61036	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+410	2026-10-28	20:49:00.713218	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+411	2026-10-28	20:58:36.201899	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+412	2026-10-28	20:58:36.326053	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+413	2026-10-28	23:29:00.951197	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+414	2026-10-28	23:29:01.079875	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+415	2026-10-28	23:32:00.889345	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+416	2026-10-28	23:32:01.019317	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+417	2026-10-29	01:03:42.383308	INTRANET	121	Sofia Alejandra Villarreal Lopez	LOGIN_SISTEMA
+418	2026-10-29	01:03:42.594339	WEB_PORTAL	121	Sofia Alejandra Villarreal Lopez	LOGIN_PLATAFORMA
+419	2026-10-29	01:20:40.973182	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+420	2026-10-29	01:20:41.095532	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+421	2026-10-29	01:27:26.939886	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+422	2026-10-29	01:27:27.053494	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+423	2026-10-29	01:49:31.961626	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+424	2026-10-29	01:49:32.073055	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+425	2026-10-29	16:37:28.546499	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+426	2026-10-29	16:37:28.661085	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+427	2026-10-29	16:38:02.914297	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+428	2026-10-29	16:38:03.034111	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+429	2026-10-29	19:00:29.435196	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+430	2026-10-29	19:00:29.54367	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+431	2026-10-29	19:13:56.275673	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+432	2026-10-29	19:13:56.477508	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+433	2026-10-29	20:27:14.622916	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+434	2026-10-29	20:27:14.729619	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+435	2026-10-29	21:34:17.563528	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+436	2026-10-29	21:34:17.679742	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+437	2026-10-29	23:23:05.203725	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+438	2026-10-29	23:23:05.321431	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+439	2026-10-29	23:53:30.382139	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+440	2026-10-29	23:53:30.49479	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+441	2026-10-30	00:02:29.482975	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+442	2026-10-30	00:02:29.587754	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+443	2026-10-30	00:45:18.318339	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+444	2026-10-30	00:45:18.422242	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+445	2026-10-30	01:21:50.178322	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+446	2026-10-30	01:21:50.287479	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+447	2026-10-30	16:04:03.943084	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+448	2026-10-30	16:04:04.062072	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+449	2026-10-30	16:05:16.268969	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+450	2026-10-30	16:05:16.379207	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+451	2026-10-30	16:08:45.850219	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+452	2026-10-30	16:08:45.971523	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+453	2026-10-30	16:14:44.153814	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+454	2026-10-30	16:14:44.274842	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+455	2026-10-30	16:45:00.954426	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+456	2026-10-30	16:45:01.070461	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+457	2026-10-30	16:47:24.930915	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+458	2026-10-30	16:47:25.053377	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+459	2026-10-30	17:02:02.146327	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+460	2026-10-30	17:02:02.258537	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+461	2026-10-30	17:02:24.015055	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+462	2026-10-30	17:02:24.132508	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+463	2026-10-30	17:04:28.502937	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+464	2026-10-30	17:04:28.640174	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+465	2026-10-30	17:40:06.341814	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+466	2026-10-30	17:40:06.456834	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+467	2026-10-30	18:00:01.077524	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+468	2026-10-30	18:00:01.258294	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+469	2026-10-30	18:32:31.134503	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+470	2026-10-30	18:32:31.243606	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+471	2026-10-30	18:36:19.216135	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+472	2026-10-30	18:36:19.327252	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+473	2026-10-30	18:44:48.052268	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+474	2026-10-30	18:44:48.175859	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+475	2026-10-30	19:05:00.606826	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+476	2026-10-30	19:05:00.721782	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+477	2026-10-30	19:05:04.965873	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+478	2026-10-30	19:05:05.101912	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+479	2026-10-30	19:17:40.751858	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+480	2026-10-30	19:17:40.876407	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+481	2026-10-30	19:18:29.954678	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+482	2026-10-30	19:18:30.098373	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+483	2026-10-30	19:19:10.123108	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+484	2026-10-30	19:19:10.25293	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+485	2026-10-30	19:20:27.084978	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+486	2026-10-30	19:20:27.192344	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+487	2026-10-30	19:20:39.288241	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+488	2026-10-30	19:20:39.401206	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+489	2026-10-30	19:22:33.611265	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+490	2026-10-30	19:22:33.780933	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+491	2026-10-30	19:26:13.590454	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+492	2026-10-30	19:26:13.697979	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+493	2026-10-30	19:36:40.652269	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+494	2026-10-30	19:36:40.75792	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+495	2026-10-30	19:37:15.400494	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+496	2026-10-30	19:37:15.527244	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+497	2026-10-30	19:37:18.658763	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+498	2026-10-30	19:37:18.780875	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+499	2026-10-30	19:42:45.440518	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+500	2026-10-30	19:42:45.552294	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+501	2026-10-30	20:24:18.395983	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+502	2026-10-30	20:24:18.521154	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+503	2026-10-30	21:07:46.460284	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+504	2026-10-30	21:07:46.56931	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+505	2026-10-30	23:18:52.382442	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+506	2026-10-30	23:18:52.516557	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+507	2026-10-30	23:31:58.890937	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+508	2026-10-30	23:31:58.992671	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+509	2026-10-30	23:43:40.91418	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+510	2026-10-30	23:43:41.02107	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+511	2026-10-31	00:05:20.592428	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+512	2026-10-31	00:05:20.700165	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+513	2026-10-31	00:15:04.69922	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+514	2026-10-31	00:15:04.811807	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+515	2026-10-31	01:23:54.476478	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+516	2026-10-31	01:23:54.596955	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+517	2026-10-31	01:31:40.716008	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+518	2026-10-31	01:31:40.860565	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+519	2026-10-31	01:39:47.900753	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+520	2026-10-31	01:39:48.019701	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+521	2026-10-31	01:54:02.831014	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+522	2026-10-31	01:54:02.950096	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+523	2026-10-31	01:57:26.555949	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+524	2026-10-31	01:57:26.664065	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+525	2026-10-31	16:00:33.108877	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+526	2026-10-31	16:00:33.219576	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+527	2026-10-31	16:01:12.353507	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+528	2026-10-31	16:01:12.512065	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+529	2026-10-31	16:07:34.32996	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+530	2026-10-31	16:07:34.461776	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+531	2026-10-31	16:20:00.860869	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+532	2026-10-31	16:20:00.967869	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+533	2026-10-31	16:24:08.409909	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+534	2026-10-31	16:24:08.532652	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+535	2026-10-31	16:25:28.741684	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+536	2026-10-31	16:25:28.839275	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+537	2026-10-31	16:37:18.795653	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+538	2026-10-31	16:37:18.917373	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+539	2026-10-31	16:43:46.944687	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+540	2026-10-31	16:43:47.050517	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+541	2026-10-31	16:50:56.827376	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+542	2026-10-31	16:50:56.945025	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+543	2026-10-31	16:58:12.914989	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+544	2026-10-31	16:58:13.241492	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+545	2026-10-31	16:59:05.291318	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+546	2026-10-31	16:59:05.45587	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+547	2026-10-31	17:13:20.360754	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+548	2026-10-31	17:13:20.514811	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+549	2026-10-31	17:21:39.073397	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+550	2026-10-31	17:21:39.199391	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+551	2026-10-31	17:28:34.245312	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+552	2026-10-31	17:28:34.539605	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+553	2026-10-31	17:28:51.057072	INTRANET	200	Andrea Maria Vilarreal Lopez	LOGIN_SISTEMA
+554	2026-10-31	17:28:51.159641	WEB_PORTAL	200	Andrea Maria Vilarreal Lopez	LOGIN_PLATAFORMA
+555	2026-10-31	17:30:25.994701	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+556	2026-10-31	17:30:26.11911	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+557	2026-10-31	17:48:55.612878	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+558	2026-10-31	17:48:55.719829	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+559	2026-10-31	17:49:21.684615	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+560	2026-10-31	17:49:21.795557	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+561	2026-10-31	17:49:53.176539	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+562	2026-10-31	17:49:53.275429	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+563	2026-10-31	17:50:52.612717	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+564	2026-10-31	17:50:52.724698	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+565	2026-10-31	17:51:04.784151	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+566	2026-10-31	17:51:04.893468	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+567	2026-10-31	17:53:44.093546	INTRANET	203	Pedro Villarreal Uribe	LOGIN_SISTEMA
+568	2026-10-31	17:53:44.323249	WEB_PORTAL	203	Pedro Villarreal Uribe	LOGIN_PLATAFORMA
+569	2026-10-31	17:54:00.307798	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+570	2026-10-31	17:54:00.428884	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+571	2026-10-31	17:54:28.2087	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+572	2026-10-31	17:54:28.323281	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+573	2026-10-31	17:56:18.018906	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+574	2026-10-31	17:56:18.141638	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+575	2026-10-31	18:03:10.625731	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+576	2026-10-31	18:03:10.743906	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+577	2026-10-31	18:05:35.209195	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+578	2026-10-31	18:05:35.324643	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+579	2026-10-31	18:06:50.733439	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+580	2026-10-31	18:06:50.863297	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+581	2026-10-31	18:12:01.646266	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+582	2026-10-31	18:12:01.844204	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+583	2026-10-31	18:12:50.124706	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+584	2026-10-31	18:12:50.229481	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+585	2026-10-31	18:14:30.632235	INTRANET	203	Pedro Villarreal Uribe	LOGIN_SISTEMA
+586	2026-10-31	18:14:30.786299	WEB_PORTAL	203	Pedro Villarreal Uribe	LOGIN_PLATAFORMA
+587	2026-10-31	18:16:18.617395	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+588	2026-10-31	18:16:18.756482	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+589	2026-10-31	18:18:53.55427	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+590	2026-10-31	18:18:53.664272	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+591	2026-10-31	18:21:55.285332	INTRANET	203	Pedro Villarreal Uribe	LOGIN_SISTEMA
+592	2026-10-31	18:21:55.426923	WEB_PORTAL	203	Pedro Villarreal Uribe	LOGIN_PLATAFORMA
+593	2026-10-31	18:22:51.863694	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+594	2026-10-31	18:22:52.023302	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+595	2026-10-31	18:31:11.056318	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+596	2026-10-31	18:31:11.157862	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+597	2026-10-31	18:43:45.640329	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+598	2026-10-31	18:43:45.799572	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+599	2026-10-31	18:52:19.61897	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+600	2026-10-31	18:52:19.722386	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+601	2026-10-31	18:55:29.268404	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+602	2026-10-31	18:55:29.388738	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+603	2026-10-31	19:05:24.845078	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+604	2026-10-31	19:05:24.944172	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+605	2026-10-31	19:10:43.484385	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+606	2026-10-31	19:10:43.617408	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+607	2026-10-31	19:34:26.905742	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+608	2026-10-31	19:34:27.009555	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+609	2026-10-31	19:39:28.142489	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+610	2026-10-31	19:39:28.296457	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+611	2026-10-31	19:41:07.172018	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+612	2026-10-31	19:41:07.278702	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+613	2026-10-31	19:41:46.200427	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+614	2026-10-31	19:41:46.369508	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+615	2026-10-31	20:07:30.674961	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+616	2026-10-31	20:07:30.783853	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+617	2026-10-31	20:09:38.187651	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+618	2026-10-31	20:09:38.304398	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+619	2026-10-31	20:10:19.651345	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+620	2026-10-31	20:10:19.762055	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+621	2026-10-31	20:15:04.118359	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+622	2026-10-31	20:15:04.220465	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+623	2026-10-31	20:24:44.358652	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+624	2026-10-31	20:24:44.496042	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+625	2026-10-31	20:29:57.861428	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+626	2026-10-31	20:29:57.972508	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+627	2026-10-31	20:39:33.516641	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+628	2026-10-31	20:39:33.654023	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+629	2026-10-31	20:41:26.92717	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+630	2026-10-31	20:41:27.030151	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+631	2026-11-01	16:52:47.08808	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+632	2026-11-01	16:52:47.229098	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+633	2026-11-01	16:54:10.420745	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+634	2026-11-01	16:54:10.567848	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+635	2026-11-02	21:33:11.759021	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+636	2026-11-02	21:33:11.88136	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+637	2026-11-03	15:12:17.999848	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+638	2026-11-03	15:12:18.113718	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+639	2026-11-03	17:10:37.812192	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+640	2026-11-03	17:10:38.196577	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+641	2026-11-03	17:45:20.412451	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+642	2026-11-03	17:45:20.521353	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+643	2026-11-03	18:13:49.817519	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+644	2026-11-03	18:13:49.937271	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+645	2026-11-03	18:17:37.929717	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+646	2026-11-03	18:17:38.083488	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+647	2026-11-03	18:18:27.569112	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+648	2026-11-03	18:18:27.696996	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+649	2026-11-03	20:40:57.377925	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+650	2026-11-03	20:40:57.507992	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+651	2026-11-03	20:57:40.976687	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+652	2026-11-03	20:57:41.124315	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+653	2026-11-03	23:01:09.783336	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+654	2026-11-03	23:01:09.914931	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+655	2026-11-03	23:08:41.606725	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+656	2026-11-03	23:08:41.748878	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+657	2026-11-04	01:20:34.464917	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+658	2026-11-04	01:20:34.574304	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+659	2026-11-04	01:42:21.663907	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+660	2026-11-04	01:42:21.789732	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+661	2026-11-04	03:49:33.14628	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+662	2026-11-04	03:49:33.288342	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+663	2026-11-04	05:37:59.996948	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+664	2026-11-04	05:38:00.111225	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+665	2026-11-04	16:05:30.594455	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+666	2026-11-04	16:05:30.694426	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+667	2026-11-04	16:08:05.163859	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+668	2026-11-04	16:08:05.275757	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+669	2026-11-05	00:54:54.608574	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+670	2026-11-05	00:54:54.719098	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+671	2026-11-05	00:56:50.632428	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+672	2026-11-05	00:56:50.741332	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+673	2026-11-05	01:00:31.296726	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+674	2026-11-05	01:00:31.497433	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+675	2026-11-05	01:08:18.904737	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+676	2026-11-05	01:08:19.068082	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+677	2026-11-05	01:26:07.258594	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+678	2026-11-05	01:26:07.409279	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+679	2026-11-05	05:26:09.643039	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+680	2026-11-05	05:26:09.761661	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+681	2026-11-05	15:54:26.485431	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+682	2026-11-05	15:54:26.598288	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+683	2026-11-05	16:15:39.896968	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+684	2026-11-05	16:15:40.02064	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+685	2026-11-05	16:19:00.874322	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+686	2026-11-05	16:19:00.992557	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+687	2026-11-05	16:27:43.493976	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+688	2026-11-05	16:27:43.637472	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+689	2026-11-05	16:36:17.767322	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+690	2026-11-05	16:36:18.028276	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+691	2026-11-05	16:47:38.561622	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+692	2026-11-05	16:47:38.686856	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+693	2026-11-05	17:33:37.620709	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+694	2026-11-05	17:33:37.767329	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+695	2026-11-05	17:55:36.407618	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+696	2026-11-05	17:55:36.519783	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+697	2026-11-05	17:58:49.182075	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+698	2026-11-05	17:58:49.323716	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+699	2026-11-05	17:58:49.965668	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+700	2026-11-05	17:58:50.071972	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+701	2026-11-05	18:13:43.888335	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+702	2026-11-05	18:13:44.016889	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+703	2026-11-05	18:33:28.72866	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+704	2026-11-05	18:33:28.953975	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+705	2026-11-05	18:53:24.504795	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+706	2026-11-05	18:53:24.646676	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+707	2026-11-05	19:05:21.059071	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+708	2026-11-05	19:05:21.392956	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+709	2026-11-05	19:21:17.553415	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+710	2026-11-05	19:21:17.680018	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+711	2026-11-05	19:34:52.066659	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+712	2026-11-05	19:34:52.194231	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+713	2026-11-05	19:40:43.245799	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+714	2026-11-05	19:40:43.372025	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+715	2026-11-05	19:47:51.951634	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+716	2026-11-05	19:47:52.094592	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+717	2026-11-05	19:57:24.088333	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+718	2026-11-05	19:57:24.208719	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+719	2026-11-05	20:10:38.675803	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+720	2026-11-05	20:10:38.812562	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+721	2026-11-05	20:12:58.707664	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+722	2026-11-05	20:12:58.868203	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+723	2026-11-05	20:12:59.104424	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+724	2026-11-05	20:12:59.212728	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+725	2026-11-05	20:25:29.02199	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+726	2026-11-05	20:25:29.169948	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+727	2026-11-05	23:14:28.301813	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+728	2026-11-05	23:14:28.410913	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+729	2026-11-05	23:19:51.719031	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+730	2026-11-05	23:19:51.836889	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+731	2026-11-05	23:24:55.757612	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+732	2026-11-05	23:24:55.915532	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+733	2026-11-05	23:25:08.345305	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+734	2026-11-05	23:25:08.448847	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+735	2026-11-05	23:26:03.571805	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+736	2026-11-05	23:26:03.675942	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+737	2026-11-05	23:27:39.056663	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+738	2026-11-05	23:27:39.18945	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+739	2026-11-05	23:28:35.06717	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+740	2026-11-05	23:28:35.173437	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+741	2026-11-05	23:37:37.369548	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+742	2026-11-05	23:37:37.503821	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+743	2026-11-05	23:41:04.55137	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+744	2026-11-05	23:41:04.699775	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+745	2026-11-05	23:42:52.284258	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+746	2026-11-05	23:42:52.399259	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+747	2026-11-05	23:43:01.991847	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+748	2026-11-05	23:43:02.104278	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+749	2026-11-05	23:45:58.086924	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+750	2026-11-05	23:45:58.229691	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+751	2026-11-05	23:51:50.272202	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+752	2026-11-05	23:51:50.392203	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+753	2026-11-05	23:54:08.74554	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+754	2026-11-05	23:54:08.867868	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+755	2026-11-05	23:58:51.365718	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+756	2026-11-05	23:58:51.476633	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+757	2026-11-06	00:08:46.410365	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+758	2026-11-06	00:08:46.527254	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+759	2026-11-06	00:21:20.343309	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+760	2026-11-06	00:21:20.463865	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+761	2026-11-06	00:55:48.408152	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+762	2026-11-06	00:55:48.525705	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+763	2026-11-06	01:10:27.294137	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+764	2026-11-06	01:10:27.396726	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+765	2026-11-06	01:12:37.461941	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+766	2026-11-06	01:12:37.560565	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+767	2026-11-06	01:18:57.431917	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+768	2026-11-06	01:18:57.546082	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+769	2026-11-06	01:20:12.035815	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+770	2026-11-06	01:20:12.154311	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+771	2026-11-06	01:21:16.330485	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+772	2026-11-06	01:21:16.435745	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+773	2026-11-06	01:21:51.716932	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+774	2026-11-06	01:21:51.823849	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+775	2026-11-06	01:23:00.026438	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+776	2026-11-06	01:23:00.134251	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+777	2026-11-06	01:24:22.169243	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+778	2026-11-06	01:24:22.291995	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+779	2026-11-06	01:33:05.380419	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+780	2026-11-06	01:33:05.505874	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+781	2026-11-06	01:41:26.756148	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+782	2026-11-06	01:41:26.895922	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+783	2026-11-06	01:42:40.704497	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+784	2026-11-06	01:42:40.817649	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+785	2026-11-06	01:44:55.014456	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+786	2026-11-06	01:44:55.140669	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+787	2026-11-06	01:46:39.304724	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+788	2026-11-06	01:46:39.424561	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+789	2026-11-06	01:49:11.021119	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+790	2026-11-06	01:49:11.14958	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+791	2026-11-06	01:56:35.76023	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+792	2026-11-06	01:56:35.867086	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+793	2026-11-06	01:57:58.38857	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+794	2026-11-06	01:57:58.500464	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+795	2026-11-06	16:00:20.503709	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+796	2026-11-06	16:00:20.604075	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+797	2026-11-06	16:01:09.906279	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+798	2026-11-06	16:01:10.044859	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+799	2026-11-06	16:02:47.502059	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+800	2026-11-06	16:02:47.622423	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+801	2026-11-06	16:03:30.044512	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+802	2026-11-06	16:03:30.150297	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+803	2026-11-06	16:03:57.763583	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+804	2026-11-06	16:03:57.868444	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+805	2026-11-06	16:07:18.086874	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+806	2026-11-06	16:07:18.212493	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+807	2026-11-06	16:07:58.982857	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+961	2026-11-09	15:55:50.033154	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+808	2026-11-06	16:07:59.132733	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+809	2026-11-06	16:08:28.769548	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+810	2026-11-06	16:08:28.916583	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+811	2026-11-06	16:09:17.486258	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+812	2026-11-06	16:09:17.598112	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+813	2026-11-06	16:12:22.788781	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+814	2026-11-06	16:12:22.893845	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+815	2026-11-06	16:13:53.403662	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+816	2026-11-06	16:13:53.588876	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+817	2026-11-06	16:22:16.770963	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+818	2026-11-06	16:22:16.878527	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+819	2026-11-06	16:40:47.677467	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+820	2026-11-06	16:40:47.787644	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+821	2026-11-06	16:54:55.404386	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+822	2026-11-06	16:54:55.52487	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+823	2026-11-06	17:04:46.861227	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+824	2026-11-06	17:04:46.990917	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+825	2026-11-06	17:07:29.454783	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+826	2026-11-06	17:07:29.565657	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+827	2026-11-06	17:08:05.655753	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+828	2026-11-06	17:08:05.766514	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+829	2026-11-06	17:09:26.729856	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+830	2026-11-06	17:09:26.855101	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+831	2026-11-06	17:24:43.305199	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+832	2026-11-06	17:24:43.436208	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+833	2026-11-06	19:23:41.6235	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+834	2026-11-06	19:23:41.745281	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+835	2026-11-06	19:30:09.647736	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+836	2026-11-06	19:30:09.754175	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+837	2026-11-06	19:31:02.699943	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+838	2026-11-06	19:31:02.836295	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+839	2026-11-06	19:38:06.988816	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+840	2026-11-06	19:38:07.159775	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+841	2026-11-06	19:49:54.537795	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+842	2026-11-06	19:49:54.701076	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+843	2026-11-06	20:01:02.318978	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+844	2026-11-06	20:01:02.457214	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+845	2026-11-06	20:14:29.415602	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+846	2026-11-06	20:14:29.534171	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+847	2026-11-06	20:20:21.991038	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+848	2026-11-06	20:20:22.120844	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+849	2026-11-06	20:21:27.062543	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+850	2026-11-06	20:21:27.33554	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+851	2026-11-06	20:22:28.957618	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+852	2026-11-06	20:22:29.079087	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+853	2026-11-06	20:40:38.772383	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+854	2026-11-06	20:40:38.898627	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+855	2026-11-06	20:44:36.785014	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+856	2026-11-06	20:44:37.022997	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+857	2026-11-06	20:45:51.154373	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+858	2026-11-06	20:45:51.286153	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+859	2026-11-06	21:00:43.072039	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+860	2026-11-06	21:00:43.212814	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+861	2026-11-06	21:02:17.977159	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+862	2026-11-06	21:02:18.135894	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+863	2026-11-06	21:12:59.707551	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+864	2026-11-06	21:12:59.847957	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+865	2026-11-06	21:14:32.112354	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+866	2026-11-06	21:14:32.267438	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+867	2026-11-06	23:09:58.173847	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+868	2026-11-06	23:09:58.286633	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+869	2026-11-06	23:14:11.403933	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+870	2026-11-06	23:14:11.541169	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+871	2026-11-06	23:38:30.851654	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+872	2026-11-06	23:38:30.980315	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+873	2026-11-06	23:44:13.233184	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+874	2026-11-06	23:44:13.349925	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+875	2026-11-06	23:57:14.245425	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+876	2026-11-06	23:57:14.373112	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+877	2026-11-07	00:05:00.134803	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+878	2026-11-07	00:05:00.265356	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+879	2026-11-07	00:05:35.448649	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+880	2026-11-07	00:05:35.570638	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+881	2026-11-07	00:07:44.438204	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+882	2026-11-07	00:07:44.54414	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+883	2026-11-07	00:53:53.099025	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+884	2026-11-07	00:53:53.23291	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+885	2026-11-07	00:56:24.554215	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+886	2026-11-07	00:56:24.700891	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+887	2026-11-07	01:09:51.685009	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+888	2026-11-07	01:09:51.88184	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+889	2026-11-07	01:10:25.218643	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+890	2026-11-07	01:10:25.347856	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+891	2026-11-07	01:11:38.771809	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+892	2026-11-07	01:11:38.902307	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+893	2026-11-07	01:25:09.682645	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+894	2026-11-07	01:25:09.800669	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+895	2026-11-07	01:29:59.881976	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+896	2026-11-07	01:30:00.005252	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+897	2026-11-07	01:30:38.073359	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+898	2026-11-07	01:30:38.206752	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+899	2026-11-07	01:32:42.65572	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+900	2026-11-07	01:32:42.858507	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+901	2026-11-07	01:47:47.276358	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+902	2026-11-07	01:47:47.480364	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+903	2026-11-07	01:52:38.372821	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+904	2026-11-07	01:52:38.500365	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+905	2026-11-07	16:03:12.53032	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+906	2026-11-07	16:03:12.634912	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+907	2026-11-07	16:04:45.255032	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+908	2026-11-07	16:04:45.383079	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+909	2026-11-07	16:11:55.953367	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+910	2026-11-07	16:11:56.077568	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+911	2026-11-07	16:21:15.338695	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+912	2026-11-07	16:21:15.456268	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+913	2026-11-07	16:23:26.491068	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+914	2026-11-07	16:23:26.60063	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+915	2026-11-07	16:30:04.036753	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+916	2026-11-07	16:30:04.153842	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+917	2026-11-07	16:36:37.642271	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+918	2026-11-07	16:36:37.754469	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+919	2026-11-07	16:38:53.391293	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+920	2026-11-07	16:38:53.513562	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+921	2026-11-07	16:49:26.432897	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+922	2026-11-07	16:49:26.553188	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+923	2026-11-07	17:05:42.470356	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+924	2026-11-07	17:05:42.574576	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+925	2026-11-07	17:14:09.150714	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+926	2026-11-07	17:14:09.270187	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+927	2026-11-07	17:15:36.436411	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+928	2026-11-07	17:15:36.597603	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+929	2026-11-07	17:22:23.142868	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+930	2026-11-07	17:22:23.254668	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+931	2026-11-07	17:30:35.769352	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+932	2026-11-07	17:30:35.90282	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+933	2026-11-07	17:47:03.438326	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+934	2026-11-07	17:47:03.585085	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+935	2026-11-07	18:32:05.229446	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+936	2026-11-07	18:32:05.35053	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+937	2026-11-07	19:01:41.948084	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+938	2026-11-07	19:01:42.149268	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+939	2026-11-07	19:02:40.350064	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+940	2026-11-07	19:02:40.480611	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+941	2026-11-07	19:04:45.916971	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+942	2026-11-07	19:04:45.9216	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+943	2026-11-07	19:04:46.036708	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+944	2026-11-07	19:04:46.157439	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+945	2026-11-07	19:25:51.959905	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+946	2026-11-07	19:25:52.117599	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+947	2026-11-07	19:42:57.39209	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+948	2026-11-07	19:42:57.505686	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+949	2026-11-07	19:55:31.190454	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+950	2026-11-07	19:55:31.321149	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+951	2026-11-07	20:00:22.250992	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+952	2026-11-07	20:00:22.383419	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+953	2026-11-07	20:18:18.441097	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+954	2026-11-07	20:18:18.586452	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+955	2026-11-07	20:20:36.696419	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+956	2026-11-07	20:20:36.819164	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+957	2026-11-07	20:35:51.893939	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+958	2026-11-07	20:35:52.039274	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+959	2026-11-07	20:54:18.987555	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+960	2026-11-07	20:54:19.141429	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+962	2026-11-09	15:55:50.149791	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+963	2026-11-09	16:05:10.457443	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+964	2026-11-09	16:05:10.568274	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+965	2026-11-09	16:17:34.837916	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+966	2026-11-09	16:17:34.977864	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+967	2026-11-09	16:21:42.116159	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+968	2026-11-09	16:21:42.237088	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+969	2026-11-09	16:22:24.31105	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+970	2026-11-09	16:22:24.419245	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+971	2026-11-09	16:33:58.74737	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+972	2026-11-09	16:33:58.883286	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+973	2026-11-09	17:11:07.930987	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+974	2026-11-09	17:11:08.06257	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+975	2026-11-09	19:29:18.937167	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+976	2026-11-09	19:29:19.128994	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+977	2026-11-09	19:50:56.096658	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+978	2026-11-09	19:50:56.24791	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+979	2026-11-09	20:16:51.071649	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+980	2026-11-09	20:16:51.216609	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+981	2026-11-09	20:48:48.029821	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+982	2026-11-09	20:48:48.141648	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+983	2026-11-09	22:59:52.539538	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+984	2026-11-09	22:59:52.641675	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+985	2026-11-09	23:10:33.674261	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+986	2026-11-09	23:10:33.781965	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+987	2026-11-09	23:13:59.931145	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+988	2026-11-09	23:14:00.041565	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+989	2026-11-09	23:44:31.047958	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+990	2026-11-09	23:44:31.674681	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+991	2026-11-10	00:53:26.847446	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+992	2026-11-10	00:53:26.948406	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+993	2026-11-10	17:24:47.650988	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+994	2026-11-10	17:24:47.810566	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+995	2026-11-11	16:00:24.255511	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+996	2026-11-11	16:00:24.420185	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+997	2026-11-11	16:05:03.089557	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+998	2026-11-11	16:05:03.199718	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+999	2026-11-11	16:10:25.993915	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1000	2026-11-11	16:10:26.139268	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1001	2026-11-11	16:23:27.559427	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1002	2026-11-11	16:23:27.684203	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1003	2026-11-11	16:24:06.955329	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1004	2026-11-11	16:24:07.080098	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1005	2026-11-11	16:27:32.865814	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1006	2026-11-11	16:27:32.985223	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1007	2026-11-11	16:35:27.630332	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1008	2026-11-11	16:35:27.762506	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1009	2026-11-11	16:43:04.634745	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1010	2026-11-11	16:43:04.771151	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1011	2026-11-11	16:44:23.09948	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1012	2026-11-11	16:44:23.217011	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1013	2026-11-11	16:47:22.778335	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1014	2026-11-11	16:47:22.897983	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1015	2026-11-11	16:47:54.799223	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1016	2026-11-11	16:47:54.913831	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1017	2026-11-11	16:50:36.487306	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1018	2026-11-11	16:50:36.612077	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1019	2026-11-11	16:52:53.748447	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1020	2026-11-11	16:52:53.869102	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1021	2026-11-11	16:55:10.850127	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1022	2026-11-11	16:55:11.076532	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1023	2026-11-11	16:55:56.842843	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1024	2026-11-11	16:55:57.206831	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1025	2026-11-11	16:58:31.859462	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1026	2026-11-11	16:58:31.985591	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1027	2026-11-11	17:07:04.923031	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1028	2026-11-11	17:07:05.036624	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1029	2026-11-11	17:10:51.68697	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1030	2026-11-11	17:10:51.923754	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1031	2026-11-11	17:12:02.808464	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1032	2026-11-11	17:12:02.963287	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1033	2026-11-11	17:17:55.453523	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1034	2026-11-11	17:17:55.579026	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1035	2026-11-11	17:21:54.483742	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1036	2026-11-11	17:21:54.613606	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1037	2026-11-11	17:30:07.182829	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1038	2026-11-11	17:30:07.311044	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1039	2026-11-11	17:33:02.605599	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+1040	2026-11-11	17:33:02.74681	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+1041	2026-11-11	17:33:13.448304	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1042	2026-11-11	17:33:13.567206	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1043	2026-11-11	17:33:27.405098	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1044	2026-11-11	17:33:27.535474	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1045	2026-11-11	17:37:28.498035	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1046	2026-11-11	17:37:28.61614	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1047	2026-11-11	17:37:57.427477	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1048	2026-11-11	17:37:57.540341	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1049	2026-11-11	17:44:11.896647	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1050	2026-11-11	17:44:12.008886	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1051	2026-11-11	17:47:59.084417	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1052	2026-11-11	17:47:59.237617	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1053	2026-11-11	17:50:04.594942	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+1054	2026-11-11	17:50:04.715114	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+1055	2026-11-11	18:01:47.037317	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1056	2026-11-11	18:01:47.162546	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1057	2026-11-11	18:07:42.475656	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1058	2026-11-11	18:07:42.616918	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1059	2026-11-11	18:23:37.894684	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1060	2026-11-11	18:23:38.04452	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1061	2026-11-11	18:23:49.7855	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1062	2026-11-11	18:23:49.922893	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1063	2026-11-11	18:25:54.245578	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1064	2026-11-11	18:25:54.400814	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1065	2026-11-11	18:31:34.23619	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1066	2026-11-11	18:31:34.352705	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1067	2026-11-11	18:42:09.189674	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1068	2026-11-11	18:42:09.317633	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1069	2026-11-11	18:52:28.998978	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1070	2026-11-11	18:52:29.146431	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1071	2026-11-11	18:57:02.589344	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1072	2026-11-11	18:57:02.700107	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1073	2026-11-11	18:57:38.378462	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1074	2026-11-11	18:57:38.48112	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1075	2026-11-11	18:58:48.939885	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1076	2026-11-11	18:58:49.054027	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1077	2026-11-11	18:58:58.714207	INTRANET	113	Carlos Jacobo Quezada Mendoza	LOGIN_SISTEMA
+1078	2026-11-11	18:58:58.826799	WEB_PORTAL	113	Carlos Jacobo Quezada Mendoza	LOGIN_PLATAFORMA
+1079	2026-11-11	19:04:43.625914	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1080	2026-11-11	19:04:43.762819	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1081	2026-11-11	19:12:03.19132	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1082	2026-11-11	19:12:03.319168	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1083	2026-11-11	19:26:54.730646	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1084	2026-11-11	19:26:54.849514	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1085	2026-11-11	19:27:32.859095	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1086	2026-11-11	19:27:33.000639	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1087	2026-11-11	19:30:12.014874	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1088	2026-11-11	19:30:12.141147	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1089	2026-11-11	19:30:12.328929	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1090	2026-11-11	19:30:12.482269	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1091	2026-11-11	19:32:28.539098	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1092	2026-11-11	19:32:28.689431	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1093	2026-11-11	19:37:10.009325	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1094	2026-11-11	19:37:10.122519	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1095	2026-11-11	19:40:05.85079	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+1096	2026-11-11	19:40:06.046856	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+1097	2026-11-11	19:42:13.998898	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1098	2026-11-11	19:42:14.102878	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1099	2026-11-11	19:42:36.346411	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+1100	2026-11-11	19:42:36.455269	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+1101	2026-11-11	19:42:57.268771	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1102	2026-11-11	19:42:57.375172	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1103	2026-11-11	19:48:29.045206	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1104	2026-11-11	19:48:29.179929	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1105	2026-11-11	19:49:57.033133	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1106	2026-11-11	19:49:57.161824	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1107	2026-11-11	19:51:48.701592	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1108	2026-11-11	19:51:48.826933	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1109	2026-11-11	19:56:43.703332	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1110	2026-11-11	19:56:43.857159	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1111	2026-11-11	19:58:06.598789	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1112	2026-11-11	19:58:06.712222	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1113	2026-11-11	20:14:08.248029	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1114	2026-11-11	20:14:08.448966	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1115	2026-11-11	20:30:44.022284	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1116	2026-11-11	20:30:44.136031	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1117	2026-11-11	20:34:06.609098	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1118	2026-11-11	20:34:06.739952	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1119	2026-11-11	20:57:25.900967	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1120	2026-11-11	20:57:26.024155	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1121	2026-11-11	23:01:34.242654	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1122	2026-11-11	23:01:34.385252	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1123	2026-11-11	23:06:37.112977	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1124	2026-11-11	23:06:37.219899	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1125	2026-11-11	23:12:34.943505	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1126	2026-11-11	23:12:35.078894	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1127	2026-11-11	23:13:45.370612	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1128	2026-11-11	23:13:45.516362	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1129	2026-11-11	23:33:20.989985	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1130	2026-11-11	23:33:21.22303	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1131	2026-11-11	23:39:19.385192	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+1132	2026-11-11	23:39:19.494433	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+1133	2026-11-11	23:47:53.392798	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1134	2026-11-11	23:47:53.597081	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1135	2026-11-11	23:51:49.345578	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1136	2026-11-11	23:51:49.565985	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1137	2026-11-11	23:55:45.614189	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1138	2026-11-11	23:55:45.740675	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1139	2026-11-12	00:11:26.925714	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1140	2026-11-12	00:11:27.06939	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1141	2026-11-12	00:24:23.457525	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1142	2026-11-12	00:24:23.569365	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1143	2026-11-12	00:24:45.109719	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1144	2026-11-12	00:24:45.231064	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1145	2026-11-12	00:41:29.603866	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1146	2026-11-12	00:41:29.731676	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1147	2026-11-12	01:01:15.403002	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1148	2026-11-12	01:01:15.526631	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1149	2026-11-12	01:08:22.423955	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1150	2026-11-12	01:08:22.564785	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1151	2026-11-12	01:12:21.543177	INTRANET	113	Carlos Jacobo Quezada Mendoza	LOGIN_SISTEMA
+1152	2026-11-12	01:12:21.65787	WEB_PORTAL	113	Carlos Jacobo Quezada Mendoza	LOGIN_PLATAFORMA
+1153	2026-11-12	01:18:57.674328	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1154	2026-11-12	01:18:57.791328	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1155	2026-11-12	01:28:29.251518	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1156	2026-11-12	01:28:29.401983	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1157	2026-11-12	01:28:52.145182	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1158	2026-11-12	01:28:52.274039	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1159	2026-11-12	01:29:13.914166	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1160	2026-11-12	01:29:14.043466	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1161	2026-11-12	01:31:06.638272	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1162	2026-11-12	01:31:06.774058	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1163	2026-11-12	01:47:05.203283	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1164	2026-11-12	01:47:05.367956	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1165	2026-11-12	01:52:24.919225	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1166	2026-11-12	01:52:25.035658	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1167	2026-11-12	04:40:11.631152	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1168	2026-11-12	04:40:11.728753	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1169	2026-11-12	16:07:22.019021	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1170	2026-11-12	16:07:22.131901	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1171	2026-11-12	16:21:49.551611	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1172	2026-11-12	16:21:49.744748	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1173	2026-11-12	16:22:54.945903	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1174	2026-11-12	16:22:55.076407	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1175	2026-11-12	16:50:42.903884	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1176	2026-11-12	16:50:43.011281	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1177	2026-11-12	17:28:25.184292	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1178	2026-11-12	17:28:25.348681	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1179	2026-11-12	17:35:26.690703	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1180	2026-11-12	17:35:26.838188	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1181	2026-11-12	17:46:35.740082	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1182	2026-11-12	17:46:36.057371	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1183	2026-11-12	17:50:49.889978	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1184	2026-11-12	17:50:50.045352	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1185	2026-11-12	18:08:15.815428	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1186	2026-11-12	18:08:16.098741	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1187	2026-11-12	18:10:52.837284	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1188	2026-11-12	18:10:53.033053	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1189	2026-11-12	18:12:18.953208	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1190	2026-11-12	18:12:19.086138	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1191	2026-11-12	18:14:15.89232	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1192	2026-11-12	18:14:16.025246	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1193	2026-11-12	18:16:40.370732	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1194	2026-11-12	18:16:40.549518	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1195	2026-11-12	18:49:59.379218	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1196	2026-11-12	18:49:59.570845	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1197	2026-11-12	18:51:03.521518	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1198	2026-11-12	18:51:03.679933	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1199	2026-11-12	18:56:33.610745	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1200	2026-11-12	18:56:33.782215	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1201	2026-11-12	19:22:20.559152	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1202	2026-11-12	19:22:20.685009	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1203	2026-11-12	19:31:28.129376	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1204	2026-11-12	19:31:28.240899	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1205	2026-11-12	19:49:12.465327	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1206	2026-11-12	19:49:12.591906	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1207	2026-11-12	20:05:53.528296	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1208	2026-11-12	20:05:53.737532	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1209	2026-11-12	20:19:22.692734	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1210	2026-11-12	20:19:22.797194	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1211	2026-11-12	20:20:07.158616	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1212	2026-11-12	20:20:07.370693	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1213	2026-11-12	20:33:19.426662	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1214	2026-11-12	20:33:19.574688	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1215	2026-11-12	20:50:41.48843	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1216	2026-11-12	20:50:41.699116	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1217	2026-11-12	23:07:58.908909	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1218	2026-11-12	23:07:59.070196	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1219	2026-11-12	23:10:10.762897	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1220	2026-11-12	23:10:11.263146	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1221	2026-11-12	23:23:16.570229	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1222	2026-11-12	23:23:16.804117	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1223	2026-11-12	23:28:14.873592	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1224	2026-11-12	23:28:14.986895	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1225	2026-11-12	23:30:50.602752	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1226	2026-11-12	23:30:50.716032	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1227	2026-11-12	23:31:44.094539	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1228	2026-11-12	23:31:44.205288	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1229	2026-11-12	23:33:34.82738	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1230	2026-11-12	23:33:35.025796	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1231	2026-11-12	23:35:12.18637	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1232	2026-11-12	23:35:12.294173	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1233	2026-11-12	23:36:16.627537	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1234	2026-11-12	23:36:16.73033	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1235	2026-11-12	23:36:54.710052	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1236	2026-11-12	23:36:54.815654	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1237	2026-11-12	23:41:47.263569	INTRANET	200	Andrea Maria Vilarreal Lopez	LOGIN_SISTEMA
+1238	2026-11-12	23:41:47.369748	WEB_PORTAL	200	Andrea Maria Vilarreal Lopez	LOGIN_PLATAFORMA
+1239	2026-11-12	23:58:25.415494	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1240	2026-11-12	23:58:25.601112	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1241	2026-11-13	00:00:52.008651	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1242	2026-11-13	00:00:52.136056	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1243	2026-11-13	00:01:58.843995	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1244	2026-11-13	00:01:59.026929	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1245	2026-11-13	00:05:16.241697	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1246	2026-11-13	00:05:16.359657	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1247	2026-11-13	00:22:06.396302	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1248	2026-11-13	00:22:06.577042	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1249	2026-11-13	00:25:45.866357	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1250	2026-11-13	00:25:46.054341	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1251	2026-11-13	00:38:43.087614	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1252	2026-11-13	00:38:43.257192	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1253	2026-11-13	01:37:38.790394	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1254	2026-11-13	01:37:38.915877	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1255	2026-11-13	15:06:57.087791	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1256	2026-11-13	15:06:57.261525	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1257	2026-11-13	16:06:24.569983	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1258	2026-11-13	16:06:24.677722	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1259	2026-11-13	16:19:20.888004	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1260	2026-11-13	16:19:21.038468	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1261	2026-11-13	16:50:53.112556	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1262	2026-11-13	16:50:53.231997	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1263	2026-11-13	16:53:10.396804	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1264	2026-11-13	16:53:10.511877	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1265	2026-11-13	17:11:41.663571	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1266	2026-11-13	17:11:41.782815	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1267	2026-11-13	17:21:36.901335	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1268	2026-11-13	17:21:37.024061	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1269	2026-11-13	17:35:12.57123	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1270	2026-11-13	17:35:12.676527	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1271	2026-11-13	18:16:17.922289	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1272	2026-11-13	18:16:18.078516	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1273	2026-11-13	18:55:17.804752	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1274	2026-11-13	18:55:17.940966	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1275	2026-11-13	18:59:15.407256	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1276	2026-11-13	18:59:15.544545	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1277	2026-11-13	19:05:37.08466	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1278	2026-11-13	19:05:37.226037	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1279	2026-11-13	19:43:41.004488	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1280	2026-11-13	19:43:41.118365	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1281	2026-11-13	19:44:01.197533	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1282	2026-11-13	19:44:01.297165	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1283	2026-11-13	19:48:36.286964	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1284	2026-11-13	19:48:36.409165	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1285	2026-11-13	20:04:45.946448	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1286	2026-11-13	20:04:46.108403	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1287	2026-11-13	22:28:03.132759	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1288	2026-11-13	22:28:03.263015	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1289	2026-11-13	23:07:07.580101	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1290	2026-11-13	23:07:07.684282	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1291	2026-11-13	23:25:07.808741	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1292	2026-11-13	23:25:07.970689	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1293	2026-11-14	01:05:22.399728	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1294	2026-11-14	01:05:22.541996	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1295	2026-11-14	01:11:58.639795	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1296	2026-11-14	01:11:58.763834	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1297	2026-11-14	01:14:06.331752	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1298	2026-11-14	01:14:06.450079	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1299	2026-11-14	01:15:59.219743	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1300	2026-11-14	01:15:59.348012	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1301	2026-11-14	01:30:20.90052	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1302	2026-11-14	01:30:21.031745	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1303	2026-11-14	01:31:25.22927	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1304	2026-11-14	01:31:25.353918	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1305	2026-11-14	01:32:01.589484	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1306	2026-11-14	01:32:01.725771	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1307	2026-11-14	01:35:45.745245	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1308	2026-11-14	01:35:45.908124	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1309	2026-11-14	01:38:41.786737	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1310	2026-11-14	01:38:41.904495	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1311	2026-11-14	17:06:56.878595	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1312	2026-11-14	17:06:57.025972	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1313	2026-11-14	21:58:34.018427	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1314	2026-11-14	21:58:34.174591	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1315	2026-11-14	22:28:08.572949	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1316	2026-11-14	22:28:08.704908	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1317	2026-11-14	23:08:05.04307	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1318	2026-11-14	23:08:05.171829	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1319	2026-11-14	23:08:28.72942	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1320	2026-11-14	23:08:28.856687	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1321	2026-11-14	23:10:09.271496	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1322	2026-11-14	23:10:09.403584	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1323	2026-11-14	23:22:27.095821	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1324	2026-11-14	23:22:27.230358	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1325	2026-11-14	23:27:16.879516	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1326	2026-11-14	23:27:17.008564	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1327	2026-11-14	23:28:17.036521	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1328	2026-11-14	23:28:17.154469	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1329	2026-11-14	23:42:34.425786	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1330	2026-11-14	23:42:34.562313	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1331	2026-11-14	23:50:54.404163	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1332	2026-11-14	23:50:54.539808	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1333	2026-11-15	00:56:04.928967	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1334	2026-11-15	00:56:05.047076	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1335	2026-11-15	01:23:40.560164	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1336	2026-11-15	01:23:40.676906	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1337	2026-11-15	03:07:52.908456	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1338	2026-11-15	03:07:53.028287	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1339	2026-11-15	03:09:21.635172	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1340	2026-11-15	03:09:21.848215	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1341	2026-11-15	03:27:03.59265	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1342	2026-11-15	03:27:03.731416	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1343	2026-11-15	03:28:55.358156	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1344	2026-11-15	03:28:55.492039	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1345	2026-11-15	03:36:34.628155	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1346	2026-11-15	03:36:34.755314	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1347	2026-11-15	03:37:27.769201	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1348	2026-11-15	03:37:27.886181	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1349	2026-11-15	03:42:11.656712	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1350	2026-11-15	03:42:11.77272	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1351	2026-11-17	16:20:55.606612	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1352	2026-11-17	16:20:55.719287	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1353	2026-11-17	16:26:48.313886	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1354	2026-11-17	16:26:48.437698	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1355	2026-11-17	17:28:58.212425	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1356	2026-11-17	17:28:58.362345	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1357	2026-11-17	17:29:24.305853	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1358	2026-11-17	17:29:24.428321	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1359	2026-11-17	17:31:04.833658	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1360	2026-11-17	17:31:04.95669	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1361	2026-11-17	17:33:03.544316	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1362	2026-11-17	17:33:03.675373	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1363	2026-11-17	17:34:01.680802	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1364	2026-11-17	17:34:01.807087	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1365	2026-11-17	17:36:45.282232	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1366	2026-11-17	17:36:45.421419	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1367	2026-11-17	17:45:09.291685	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1368	2026-11-17	17:45:09.524758	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1369	2026-11-17	17:54:40.915518	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1370	2026-11-17	17:54:41.039442	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1371	2026-11-17	17:54:51.51541	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1372	2026-11-17	17:54:51.633165	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1373	2026-11-17	18:03:52.389119	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1374	2026-11-17	18:03:59.359134	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1375	2026-11-17	18:04:05.113442	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1376	2026-11-17	18:04:06.208709	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1377	2026-11-17	18:04:06.825954	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1378	2026-11-17	18:04:07.321765	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1379	2026-11-17	18:04:07.732368	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1380	2026-11-17	18:04:08.03014	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1381	2026-11-17	18:04:08.201091	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1382	2026-11-17	18:04:08.385342	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1383	2026-11-17	18:04:18.65061	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1384	2026-11-17	18:04:19.190393	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1385	2026-11-17	18:04:21.066016	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1386	2026-11-17	18:04:22.749164	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1387	2026-11-17	18:04:22.955321	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1388	2026-11-17	18:04:23.166215	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1389	2026-11-17	18:04:23.168305	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1390	2026-11-17	18:04:23.780295	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1391	2026-11-17	18:04:23.790583	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1392	2026-11-17	18:04:24.219801	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1393	2026-11-17	18:04:24.235824	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1394	2026-11-17	18:04:24.246353	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1395	2026-11-17	18:04:24.370027	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1396	2026-11-17	18:04:24.373098	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1397	2026-11-17	18:04:24.761446	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1398	2026-11-17	18:04:24.766197	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1399	2026-11-17	18:04:37.508403	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1400	2026-11-17	18:04:41.343215	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1401	2026-11-17	18:04:41.548081	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1402	2026-11-17	18:04:41.74303	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1403	2026-11-17	18:04:41.744777	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1404	2026-11-17	18:04:42.169484	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1405	2026-11-17	18:14:06.024701	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1406	2026-11-17	18:14:06.178928	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1407	2026-11-17	19:53:41.280965	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1408	2026-11-17	19:53:41.397817	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1409	2026-11-17	19:58:51.714443	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1410	2026-11-17	19:58:51.827018	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1411	2026-11-17	20:02:43.691275	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1412	2026-11-17	20:02:43.976122	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1413	2026-11-17	20:03:15.368283	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1414	2026-11-17	20:03:15.544561	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1415	2026-11-17	20:09:21.457457	INTRANET	113	Carlos Jacobo Quezada Mendoza	LOGIN_SISTEMA
+1416	2026-11-17	20:09:21.558223	WEB_PORTAL	113	Carlos Jacobo Quezada Mendoza	LOGIN_PLATAFORMA
+1417	2026-11-17	20:54:25.551033	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1418	2026-11-17	20:54:25.670435	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1419	2026-11-17	20:59:44.310852	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1420	2026-11-17	20:59:44.442917	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1421	2026-11-17	21:01:05.740864	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1422	2026-11-17	21:01:05.940534	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1423	2026-11-17	21:01:17.840064	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1424	2026-11-17	21:01:17.98679	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1425	2026-11-17	21:01:41.993514	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1426	2026-11-17	21:01:42.310677	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1427	2026-11-17	21:16:03.664904	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1428	2026-11-17	21:16:03.790349	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1429	2026-11-17	23:08:20.111543	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1430	2026-11-17	23:08:20.298759	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1431	2026-11-17	23:11:40.417099	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+1432	2026-11-17	23:11:40.731126	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+1433	2026-11-17	23:14:42.523188	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1434	2026-11-17	23:14:42.642697	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1435	2026-11-17	23:16:20.933257	INTRANET	113	Carlos Jacobo Quezada Mendoza	LOGIN_SISTEMA
+1436	2026-11-17	23:16:21.058931	WEB_PORTAL	113	Carlos Jacobo Quezada Mendoza	LOGIN_PLATAFORMA
+1437	2026-11-17	23:16:59.363007	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1438	2026-11-17	23:16:59.479615	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1439	2026-11-17	23:17:04.50496	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+1440	2026-11-17	23:17:04.691045	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+1441	2026-11-17	23:20:05.45181	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1442	2026-11-17	23:20:05.554742	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1443	2026-11-17	23:23:32.723599	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1444	2026-11-17	23:23:32.844868	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1445	2026-11-17	23:25:53.736884	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1446	2026-11-17	23:25:53.855326	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1447	2026-11-17	23:26:52.315285	INTRANET	113	Carlos Jacobo Quezada Mendoza	LOGIN_SISTEMA
+1448	2026-11-17	23:26:52.42054	WEB_PORTAL	113	Carlos Jacobo Quezada Mendoza	LOGIN_PLATAFORMA
+1449	2026-11-17	23:27:23.134907	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1450	2026-11-17	23:27:23.234011	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1451	2026-11-17	23:28:31.248392	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+1452	2026-11-17	23:28:31.350502	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+1453	2026-11-17	23:29:40.5258	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1454	2026-11-17	23:29:40.773997	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1455	2026-11-17	23:33:11.42247	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1456	2026-11-17	23:33:11.538007	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1457	2026-11-17	23:37:26.699904	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1458	2026-11-17	23:37:26.825299	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1459	2026-11-17	23:38:15.542309	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1460	2026-11-17	23:38:15.672891	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1461	2026-11-17	23:43:26.778662	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1462	2026-11-17	23:43:26.934663	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1463	2026-11-17	23:43:56.077151	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1464	2026-11-17	23:43:56.208467	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1465	2026-11-17	23:50:55.230776	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1466	2026-11-17	23:50:55.70033	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1467	2026-11-17	23:55:19.574035	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1468	2026-11-17	23:55:19.682514	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1469	2026-11-17	23:56:11.236574	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1470	2026-11-17	23:56:11.347019	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1471	2026-11-18	00:06:00.699582	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+1472	2026-11-18	00:06:00.81803	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+1473	2026-11-18	00:06:34.530001	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1474	2026-11-18	00:06:34.65045	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1475	2026-11-18	00:07:20.433815	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1476	2026-11-18	00:07:20.545753	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1477	2026-11-18	00:11:44.747544	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1478	2026-11-18	00:11:44.856203	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1479	2026-11-18	00:31:16.358137	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1480	2026-11-18	00:31:16.567207	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1481	2026-11-18	00:37:56.196942	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1482	2026-11-18	00:37:56.333046	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1483	2026-11-18	00:56:26.694858	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1484	2026-11-18	00:56:26.800009	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1485	2026-11-18	01:19:29.42801	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1486	2026-11-18	01:19:29.730932	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1487	2026-11-18	01:23:51.747692	INTRANET	102	Gerardo Villarreal Uribe	LOGIN_SISTEMA
+1488	2026-11-18	01:23:51.962689	WEB_PORTAL	102	Gerardo Villarreal Uribe	LOGIN_PLATAFORMA
+1489	2026-11-18	01:35:25.683583	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1490	2026-11-18	01:35:25.816368	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1491	2026-11-18	01:44:21.830931	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1492	2026-11-18	01:44:21.933539	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1493	2026-11-18	01:46:50.416926	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1494	2026-11-18	01:46:50.535903	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1495	2026-11-18	01:53:17.613007	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1496	2026-11-18	01:53:17.736505	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1497	2026-11-18	15:44:36.008888	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1498	2026-11-18	15:44:36.15438	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1499	2026-11-18	16:17:47.283187	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1500	2026-11-18	16:17:47.40781	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1501	2026-11-18	16:33:49.815534	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1502	2026-11-18	16:33:50.02643	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1503	2026-11-18	16:34:13.990895	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1504	2026-11-18	16:34:14.389645	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1505	2026-11-18	16:40:17.775796	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1506	2026-11-18	16:40:17.930297	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1507	2026-11-18	16:41:44.01916	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1508	2026-11-18	16:41:44.150274	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1509	2026-11-18	16:49:21.730618	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1510	2026-11-18	16:49:21.855081	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1511	2026-11-18	16:51:21.07342	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1512	2026-11-18	16:51:21.229254	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1513	2026-11-18	17:03:15.527041	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1514	2026-11-18	17:03:15.638039	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1515	2026-11-18	17:28:34.969471	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1516	2026-11-18	17:28:35.119143	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1517	2026-11-18	17:51:21.600972	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1518	2026-11-18	17:51:21.717842	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1519	2026-11-18	18:06:54.702866	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1520	2026-11-18	18:06:54.805554	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1521	2026-11-18	18:43:14.020072	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1522	2026-11-18	18:43:14.146599	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1523	2026-11-18	18:56:18.447456	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1524	2026-11-18	18:56:18.581299	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1525	2026-11-18	19:02:40.872499	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1526	2026-11-18	19:02:40.999595	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1527	2026-11-18	19:24:22.922909	INTRANET	113	Carlos Jacobo Quezada Mendoza	LOGIN_SISTEMA
+1528	2026-11-18	19:24:23.029508	WEB_PORTAL	113	Carlos Jacobo Quezada Mendoza	LOGIN_PLATAFORMA
+1529	2026-11-18	19:38:18.81738	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1530	2026-11-18	19:38:18.933484	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1531	2026-11-18	19:58:09.63518	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1532	2026-11-18	19:58:09.824321	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1533	2026-11-18	20:01:17.485929	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1534	2026-11-18	20:01:17.654416	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1535	2026-11-18	20:03:19.826949	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1536	2026-11-18	20:03:19.959815	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1537	2026-11-18	20:22:09.277956	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1538	2026-11-18	20:22:09.42883	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1539	2026-11-18	20:32:33.903107	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1540	2026-11-18	20:32:34.030663	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1541	2026-11-18	20:40:01.192113	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1542	2026-11-18	20:40:01.30679	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1543	2026-11-18	21:16:25.067585	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1544	2026-11-18	21:16:25.19603	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1545	2026-11-18	23:21:00.81424	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1546	2026-11-18	23:21:00.917719	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1547	2026-11-18	23:23:14.571129	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1548	2026-11-18	23:23:14.689514	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1549	2026-11-18	23:29:24.430735	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1550	2026-11-18	23:29:24.551828	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1551	2026-11-18	23:32:21.083273	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1552	2026-11-18	23:32:21.201283	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1553	2026-11-18	23:33:20.341276	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1554	2026-11-18	23:33:20.484433	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1555	2026-11-18	23:33:50.566996	INTRANET	113	Carlos Jacobo Quezada Mendoza	LOGIN_SISTEMA
+1556	2026-11-18	23:33:50.67606	WEB_PORTAL	113	Carlos Jacobo Quezada Mendoza	LOGIN_PLATAFORMA
+1557	2026-11-18	23:34:15.607232	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1558	2026-11-18	23:34:15.733984	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1559	2026-11-18	23:36:24.209471	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1560	2026-11-18	23:36:24.315168	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1561	2026-11-18	23:47:18.99355	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1562	2026-11-18	23:47:19.146233	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1563	2026-11-18	23:48:04.59905	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1564	2026-11-18	23:48:04.76705	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1565	2026-11-19	00:31:42.086136	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1566	2026-11-19	00:31:42.215741	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1567	2026-11-19	01:00:32.11133	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1568	2026-11-19	01:00:32.299453	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1569	2026-11-19	01:03:33.042006	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1570	2026-11-19	01:03:33.168153	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1571	2026-11-19	01:13:30.193302	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1572	2026-11-19	01:13:30.336022	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1573	2026-11-19	01:19:22.482501	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1574	2026-11-19	01:19:22.608857	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1575	2026-11-19	01:28:45.568506	INTRANET	200	Andrea Maria Vilarreal Lopez	LOGIN_SISTEMA
+1576	2026-11-19	01:28:45.688295	WEB_PORTAL	200	Andrea Maria Vilarreal Lopez	LOGIN_PLATAFORMA
+1577	2026-11-19	01:39:27.726034	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1578	2026-11-19	01:39:27.887237	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1579	2026-11-19	05:40:20.820391	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1580	2026-11-19	05:40:20.952447	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1581	2026-11-19	16:01:26.057113	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1582	2026-11-19	16:01:26.219503	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1583	2026-11-19	16:42:31.822771	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1584	2026-11-19	16:42:31.938232	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1585	2026-11-19	18:43:36.741309	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1586	2026-11-19	18:43:36.855692	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1587	2026-11-19	18:46:55.185063	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1588	2026-11-19	18:46:55.29414	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1589	2026-11-19	19:05:45.049873	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1590	2026-11-19	19:05:45.177361	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1591	2026-11-19	20:01:13.016516	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1592	2026-11-19	20:01:13.123702	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1593	2026-11-19	20:01:39.135707	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1594	2026-11-19	20:01:39.25512	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1595	2026-11-19	20:03:13.180821	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+1596	2026-11-19	20:03:13.294987	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+1597	2026-11-19	20:03:52.531483	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1598	2026-11-19	20:03:52.63978	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1599	2026-11-19	20:05:10.015161	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1600	2026-11-19	20:05:10.136117	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1601	2026-11-19	20:06:02.963176	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1602	2026-11-19	20:06:03.07804	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1603	2026-11-19	20:06:39.279899	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+1604	2026-11-19	20:06:39.399325	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+1605	2026-11-19	20:07:04.340557	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1606	2026-11-19	20:07:04.448819	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1607	2026-11-19	20:07:30.865474	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1608	2026-11-19	20:07:30.983731	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1609	2026-11-19	21:00:57.069259	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1610	2026-11-19	21:00:57.220431	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1611	2026-11-19	21:01:48.884753	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1612	2026-11-19	21:01:49.004883	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1613	2026-11-19	21:02:09.716464	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1614	2026-11-19	21:02:09.846156	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1615	2026-11-19	22:20:09.823371	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1616	2026-11-19	22:20:09.997471	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1617	2026-11-19	23:59:43.40749	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1618	2026-11-19	23:59:43.537334	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1619	2026-11-20	00:19:08.645228	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1620	2026-11-20	00:19:08.920903	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1621	2026-11-20	00:22:54.852953	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1622	2026-11-20	00:22:54.966182	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1623	2026-11-20	00:48:08.639824	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1624	2026-11-20	00:48:08.79524	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1625	2026-11-20	01:21:01.115903	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1626	2026-11-20	01:21:01.40278	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1627	2026-11-20	01:49:46.952646	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1628	2026-11-20	01:49:47.093717	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1629	2026-11-20	16:26:51.124411	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1630	2026-11-20	16:26:51.283326	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1631	2026-11-20	16:40:59.624399	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1632	2026-11-20	16:40:59.724529	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1633	2026-11-20	17:19:04.230372	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1634	2026-11-20	17:19:04.468613	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1635	2026-11-20	17:19:42.491368	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1636	2026-11-20	17:19:42.608887	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1637	2026-11-20	17:36:03.667139	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1638	2026-11-20	17:36:03.882182	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1639	2026-11-20	17:40:56.496604	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1640	2026-11-20	17:40:56.608398	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1641	2026-11-20	17:55:01.049385	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1642	2026-11-20	17:55:01.262352	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1643	2026-11-20	18:11:56.74159	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1644	2026-11-20	18:11:56.893098	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1645	2026-11-20	18:27:20.145591	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1646	2026-11-20	18:27:20.288521	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1647	2026-11-20	18:36:26.702041	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1648	2026-11-20	18:36:26.840593	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1649	2026-11-20	19:04:36.213747	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1650	2026-11-20	19:04:36.36378	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1651	2026-11-20	19:26:08.81285	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1652	2026-11-20	19:26:08.957576	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1653	2026-11-20	19:53:34.796437	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1654	2026-11-20	19:53:34.915319	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1655	2026-11-20	20:22:13.409109	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+1656	2026-11-20	20:22:13.526813	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+1657	2026-11-20	20:30:40.098417	INTRANET	107	Martin Eduardo Sanchez Estrada	LOGIN_SISTEMA
+1658	2026-11-20	20:30:40.208302	WEB_PORTAL	107	Martin Eduardo Sanchez Estrada	LOGIN_PLATAFORMA
+1659	2026-11-20	20:31:50.11946	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1660	2026-11-20	20:31:50.223748	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1661	2026-11-20	21:36:23.287204	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1662	2026-11-20	21:36:23.400575	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1663	2026-11-20	21:57:33.792846	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1664	2026-11-20	21:57:33.91106	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1665	2026-11-20	22:03:42.300481	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1666	2026-11-20	22:03:42.430975	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1667	2026-11-20	22:05:03.216328	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1668	2026-11-20	22:05:03.366826	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1669	2026-11-20	23:00:44.581458	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1670	2026-11-20	23:00:44.733168	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1671	2026-11-20	23:16:57.513031	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1672	2026-11-20	23:16:57.66364	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1673	2026-11-20	23:20:36.589537	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1674	2026-11-20	23:20:36.742235	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1675	2026-11-20	23:48:39.968141	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1676	2026-11-20	23:48:40.106993	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1677	2026-11-20	23:50:01.07219	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1678	2026-11-20	23:50:01.225865	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1679	2026-11-20	23:51:59.985991	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1680	2026-11-20	23:52:00.10652	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1681	2026-11-21	00:04:35.983262	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1682	2026-11-21	00:04:36.130273	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1683	2026-11-21	00:20:09.056203	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1684	2026-11-21	00:20:09.205887	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1685	2026-11-21	00:31:24.416487	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1686	2026-11-21	00:31:24.530499	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1687	2026-11-21	00:56:31.807868	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1688	2026-11-21	00:56:31.925669	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1689	2026-11-21	01:05:59.844378	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1690	2026-11-21	01:06:00.025092	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1691	2026-11-21	01:53:39.126849	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+1692	2026-11-21	01:53:39.276174	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+1693	2026-11-21	01:56:53.103057	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1694	2026-11-21	01:56:53.220486	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1695	2026-11-21	16:14:09.614178	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1696	2026-11-21	16:14:09.754328	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1697	2026-11-21	16:44:01.38624	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1698	2026-11-21	16:44:01.499913	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1699	2026-11-21	17:27:02.902144	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1700	2026-11-21	17:27:03.034171	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1701	2026-11-21	17:39:22.851893	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1702	2026-11-21	17:39:22.972239	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1703	2026-11-21	18:03:05.317291	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1704	2026-11-21	18:03:05.436585	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1705	2026-11-21	18:08:32.078263	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1706	2026-11-21	18:08:32.210383	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1707	2026-11-21	18:09:55.914709	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+1708	2026-11-21	18:09:56.148357	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+1709	2026-11-21	18:23:53.052964	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1710	2026-11-21	18:23:53.176414	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1711	2026-11-21	18:36:59.653719	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1712	2026-11-21	18:36:59.791663	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1713	2026-11-21	18:46:24.234829	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1714	2026-11-21	18:46:24.377336	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1715	2026-11-21	19:13:50.581006	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1716	2026-11-21	19:13:50.711233	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1717	2026-11-21	19:33:56.26466	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1718	2026-11-21	19:33:56.411023	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1719	2026-11-21	19:49:58.642027	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1720	2026-11-21	19:49:58.762663	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1721	2026-11-21	20:02:36.606204	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1722	2026-11-21	20:02:36.729103	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1723	2026-11-21	20:45:13.515572	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1724	2026-11-21	20:45:13.637543	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1725	2026-11-23	16:47:39.914729	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1726	2026-11-23	16:47:40.026354	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1727	2026-11-23	17:11:30.279169	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1728	2026-11-23	17:11:30.614577	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1729	2026-11-23	17:33:12.729094	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1730	2026-11-23	17:33:12.82725	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1731	2026-11-23	17:42:11.322315	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1732	2026-11-23	17:42:11.42249	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1733	2026-11-23	17:49:55.860233	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1734	2026-11-23	17:49:56.141154	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1735	2026-11-23	18:00:38.782506	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1736	2026-11-23	18:00:38.902652	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1737	2026-11-23	18:06:24.56569	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1738	2026-11-23	18:06:24.575407	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1739	2026-11-23	18:06:24.585912	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1740	2026-11-23	18:06:26.868078	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1741	2026-11-23	18:06:27.074748	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1742	2026-11-23	18:06:27.074854	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1743	2026-11-23	18:06:27.110773	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1744	2026-11-23	18:06:27.148612	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1745	2026-11-23	18:06:27.83032	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1746	2026-11-23	18:06:28.667068	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1747	2026-11-23	18:06:28.667374	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1748	2026-11-23	18:06:29.980592	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1749	2026-11-23	18:06:31.218511	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1750	2026-11-23	18:06:33.139989	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1751	2026-11-23	18:06:34.292873	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1752	2026-11-23	18:06:34.295661	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1753	2026-11-23	18:06:34.520597	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1754	2026-11-23	18:06:34.979929	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1755	2026-11-23	18:06:35.55736	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1756	2026-11-23	18:06:35.757319	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1757	2026-11-23	18:06:35.760394	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1758	2026-11-23	18:06:36.813924	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1759	2026-11-23	18:06:42.104232	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1760	2026-11-23	18:06:43.495891	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1761	2026-11-23	18:07:07.906147	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1762	2026-11-23	18:07:08.072422	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1763	2026-11-23	18:12:20.015445	INTRANET	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_SISTEMA
+1764	2026-11-23	18:12:20.123717	WEB_PORTAL	109	Osiel Cuauhtemoc Hernandez Aldape	LOGIN_PLATAFORMA
+1765	2026-11-23	18:51:47.254939	INTRANET	201	Cuahutémoc Rivera Agúndez	LOGIN_SISTEMA
+1766	2026-11-23	18:51:47.377245	WEB_PORTAL	201	Cuahutémoc Rivera Agúndez	LOGIN_PLATAFORMA
+1767	2026-11-23	18:57:48.217485	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1768	2026-11-23	18:57:48.348878	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1769	2026-11-23	18:58:03.360505	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+1770	2026-11-23	18:58:03.547816	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+1771	2026-11-23	19:03:02.84826	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1772	2026-11-23	19:03:02.97477	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1773	2026-11-23	19:05:46.899076	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1774	2026-11-23	19:05:47.120373	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1775	2026-11-23	19:09:39.323627	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1776	2026-11-23	19:09:39.426177	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1777	2026-11-23	19:12:09.136061	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+1778	2026-11-23	19:12:09.238018	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+1779	2026-11-23	19:29:34.51053	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1780	2026-11-23	19:29:34.631972	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+1781	2026-11-23	19:32:12.646623	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+1782	2026-11-23	19:32:12.882433	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
 \.
 
 
 --
--- Data for Name: op_agenda; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: op_agenda; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.op_agenda (id, titulo, fecha_inicio, fecha_fin, todo_el_dia, tipo_evento, color_fondo, locacion, recursos_tecnicos, personal_asignado, notas_adicionales, creado_por, fecha_creacion, estatus) FROM stdin;
@@ -3091,7 +4850,7 @@ COPY public.op_agenda (id, titulo, fecha_inicio, fecha_fin, todo_el_dia, tipo_ev
 
 
 --
--- Data for Name: rh_capacitacion; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_capacitacion; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_capacitacion (id_capacitacion, id_empleado, nombre_curso, tipo, institucion, fecha_inicio, fecha_fin, horas_duracion, resultado, calificacion, tiene_constancia, constancia_url, costo, pagado_por_empresa, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -3099,7 +4858,7 @@ COPY public.rh_capacitacion (id_capacitacion, id_empleado, nombre_curso, tipo, i
 
 
 --
--- Data for Name: rh_contratos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_contratos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_contratos (id_contrato, id_empleado, folio_contrato, tipo_contrato, fecha_inicio, fecha_fin, es_indefinido, puesto_contratado, departamento, salario_mensual, dias_vacaciones_anuales, jornada, horario, clausulas_especiales, archivo_contrato_url, firmado_empleado, firmado_empresa, fecha_firma, estatus_contrato, renovacion_de, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -3107,15 +4866,18 @@ COPY public.rh_contratos (id_contrato, id_empleado, folio_contrato, tipo_contrat
 
 
 --
--- Data for Name: rh_documentos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_documentos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_documentos (id_documento, id_empleado, tipo_documento, nombre_archivo, archivo_url, formato, fecha_emision, fecha_vencimiento, esta_vigente, verificado_por_rh, observaciones, subido_por, fecha_subida) FROM stdin;
+1	201	INE / Identificación Oficial	inemia.jpeg	data:image/jpeg;base64,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RqwZSux7ijvvLjWSCXBhJJx3/wC5yso437YI6wfzFHEDTxo80W7ZCRmB068ceUkkLVUYWRVey288t4xYW6YOvaBNmMVmm+U4y85V0+/8hNlwICRfUVQdS+599/117EQX+q2dDNtujadqa17tqBKqlA604cWZeREOAVc6/wCtseq9s+TMR2RB66dXXVkwKIjzXF+NLTKznTj32nRTtMO1t8M4YpNgWD+E6YzRFVl3GlMBRnMddMEXVVVTEHmX/vG3X9238dUUkGgBjAQBIr/udsu/dc/11fuG2HUmHXlEVogQkH11knFd8fdX+Nu4cdNNdPu8HHUFllW302nknB0VVVTbpZqatxnnmKZ+dwstcf8AL3j/AN725dbRQYdfbdbceXaSbUW8mtyAIk8MGGFJkCd351652w38w197YbZcdWUXVYYWwYa0337AGw+FcVsoINLba16wz1/7554+0d/XURWRRZ6cz7yw07fDDCABK1PqvZulAFXezUe6y0wzzT5130UVSQ5/1+x5iQwNAhnjvKdDsyiNgfXpklkJFcq6y970z04/3+y3z3mvqN6jvFbWTafv1T00sEwqMaUxP/kpJKIEMopX504MXf2kmtimsgj84UbZCFVeIe7+hlzXWUuisyiZQR96maJSZtghqpugsk7vyxVfeBPfOOaRfcDE/p6zqOKFHnT4vk//AG9Jrq8fO7JbqION/wB/0dxY49JZB5o0VrLnHfS0ERPOObyGf/vT3ne6CWiCL/XDLGVZT9RBthNq5NJtB5byQYMkSCOiTKq//ffLC2EjGDlfZlsop3R1p9hQ8FxE1VdLqqIsRaiqXDDu++/3GCerTn1N9JV7A5TPlBvBJUBBQIsDP2Cs0gAevjLGeafjfCKaXPq5hRd1lptpn19R5gwINckYerWWfUAA00X2LPjzb7TLvS+rhxRB5RJZdr/TJ1EYwcowk6PmojskwuQl6jrDK+//AF0qvgAVZeYTUT422738LGKMJCXEipmk9eJExtwM5zii78+7+4QSZUTfSa028dzx0iDNHCGCNiphlDLJNghzy89ouz9q24yD2AWVYVc788jzzuvLDPMDOqnjopJMEApiu7y687+0t21ZfoMLICNVRRnqGMmzUNHEGqhgpvFEdKskqx89+8z+z0/WHfxODLHJMGQACQ/PMXMOCopkvjkGPeuh7w10w120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	jpeg	2023-02-15	2033-02-16	t	f		Cuauhtemoc Rivera Agundez	2026-10-29 20:18:25.638253
+2	201	Otro Documento Laboral	Compr_RayX_201.jpg	data:image/jpeg;base64,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	jpg	\N	\N	t	f		Cuahutémoc Rivera Agúndez	2026-11-05 19:43:19.135704
+3	201	Certificado Médico	receta_Odonto_06_11_26.jpeg	data:image/jpeg;base64,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	jpeg	2026-11-06	2026-12-06	t	f	Ojala que tenga dias/horas pa pagar estos retardos si no ... ni modo	Cuahutémoc Rivera Agúndez	2026-11-06 19:25:46.687187
 \.
 
 
 --
--- Data for Name: rh_entrevistas; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_entrevistas; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_entrevistas (id_entrevista, id_solicitud, id_empleado, tipo_entrevista, fecha_entrevista, hora_inicio, hora_fin, entrevistador, modalidad, link_videollamada, resultado, calificacion_general, puntualidad, presentacion, conocimientos_tecnicos, actitud, comunicacion, comentarios, recomendacion, archivo_prueba_url, registrado_por, fecha_registro) FROM stdin;
@@ -3123,7 +4885,7 @@ COPY public.rh_entrevistas (id_entrevista, id_solicitud, id_empleado, tipo_entre
 
 
 --
--- Data for Name: rh_evaluaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_evaluaciones; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_evaluaciones (id_evaluacion, id_empleado, periodo, tipo, evaluador, puesto_evaluador, puntualidad, calidad_trabajo, trabajo_equipo, responsabilidad, iniciativa, comunicacion, cumplimiento_objetivos, calificacion_final, nivel_desempeno, fortalezas, areas_mejora, plan_accion, comentarios_empleado, firma_empleado, archivo_evaluacion_url, registrado_por, fecha_registro) FROM stdin;
@@ -3131,7 +4893,7 @@ COPY public.rh_evaluaciones (id_evaluacion, id_empleado, periodo, tipo, evaluado
 
 
 --
--- Data for Name: rh_historial; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_historial; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_historial (id_historial, id_empleado, fecha_evento, tipo_evento, descripcion, datos_anteriores, datos_nuevos, referencia_tabla, referencia_id, registrado_por, es_automatico) FROM stdin;
@@ -3144,18 +4906,26 @@ COPY public.rh_historial (id_historial, id_empleado, fecha_evento, tipo_evento, 
 8	202	2026-10-24 19:48:14.227468	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	202	SISTEMA	t
 9	200	2026-10-27 17:45:18.151053	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	200	SISTEMA	t
 10	202	2026-10-27 18:21:40.353105	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	202	SISTEMA	t
-11	201	2026-10-29 10:37:38.480429	NUEVO_PERMISO	Permiso PER-2026-001 de 1 días (PENDIENTE)	\N	\N	rh_permisos	3	Cuauhtemoc Rivera Agundez	t
-12	201	2026-10-29 10:38:01.970403	PERMISO_APROBADO	Permiso PER-2026-001 dictaminado como APROBADO (Con goce de sueldo)	\N	\N	rh_permisos	3	Direccion General (Ana Lilia Villarreal)	t
-13	201	2026-10-29 10:52:05.03831	NUEVO_PERMISO	Permiso PER-2026-001 de 1 días (PENDIENTE)	\N	\N	rh_permisos	4	Cuauhtemoc Rivera Agundez	t
-14	201	2026-10-29 10:52:05.169421	PERMISO_APROBADO	Permiso PER-2026-001 dictaminado como APROBADO (Con goce de sueldo)	\N	\N	rh_permisos	4	Ana Lilia Villarreal (Administracion)	t
-15	201	2026-10-29 11:40:57.348734	NUEVO_PERMISO	Permiso PER-2026-001 de 1 días (PENDIENTE)	\N	\N	rh_permisos	5	Cuauhtemoc Rivera Agundez	t
-16	101	2026-11-18 13:34:56.175419	ACTUALIZACION_DATOS	Actualización de datos: nss	\N	\N	empleados	101	PRUEBA_SISTEMAS	t
-17	202	2026-11-20 12:44:53.789704	NUEVO_PERMISO	Permiso PER-2026-002 de 3 días (PENDIENTE)	\N	\N	rh_permisos	6	Edgar Javier Amarillas	t
+11	201	2026-10-29 20:14:02.350034	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	201	SISTEMA	t
+12	201	2026-10-30 17:05:47.352849	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	201	SISTEMA	t
+13	201	2026-11-05 05:32:01.598691	NUEVO_PERMISO	Permiso PER-2026-001 de 1 días (PENDIENTE)	\N	\N	rh_permisos	1	Cuahutémoc Rivera Agúndez	t
+14	107	2026-11-05 16:36:38.690914	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	107	SISTEMA	t
+15	202	2026-11-05 20:29:05.754126	NUEVO_PERMISO	Permiso PER-2026-002 de 1 días (PENDIENTE)	\N	\N	rh_permisos	2	Edgar Javier Amarillas	t
+16	201	2026-11-05 23:27:19.559112	NUEVO_PERMISO	Permiso PER-2026-003 de 1 días (PENDIENTE)	\N	\N	rh_permisos	3	Cuahutémoc Rivera Agúndez	t
+17	201	2026-11-06 19:02:09.362498	PERMISO_APROBADO	Permiso PER-2026-001 dictaminado como APROBADO (Con goce de sueldo)	\N	\N	rh_permisos	1	Ana Lilia Villarreal Uribe	t
+18	201	2026-11-06 19:02:44.509015	PERMISO_APROBADO	Permiso PER-2026-003 dictaminado como APROBADO (Con goce de sueldo)	\N	\N	rh_permisos	3	Ana Lilia Villarreal Uribe	t
+19	202	2026-11-06 19:03:05.802045	PERMISO_APROBADO	Permiso PER-2026-002 dictaminado como APROBADO (Con goce de sueldo)	\N	\N	rh_permisos	2	Ana Lilia Villarreal Uribe	t
+21	201	2026-11-12 17:52:25.816809	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	201	SISTEMA	t
+22	101	2026-11-18 20:03:42.527184	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	101	Ana Lilia Villarreal Uribe	t
+26	202	2026-11-20 19:08:51.727591	SOLICITUD_VACACIONES	Periodo 2026-11-13 a 2026-11-20	\N	\N	rh_vacaciones	2	Ana Lilia Villarreal Uribe	t
+27	202	2026-11-20 23:45:49.079174	ACTUALIZACION_VACACIONES	Estatus/datos vacación ID 2 actualizados	\N	\N	rh_vacaciones	2	SISTEMA	t
+28	202	2026-11-21 00:01:02.681951	ACTUALIZACION_VACACIONES	Estatus/datos vacación ID 2 actualizados	\N	\N	rh_vacaciones	2	SISTEMA	t
+29	202	2026-11-21 00:02:31.790557	ACTUALIZACION_VACACIONES	Estatus/datos vacación ID 2 actualizados	\N	\N	rh_vacaciones	2	SISTEMA	t
 \.
 
 
 --
--- Data for Name: rh_incapacidades; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_incapacidades; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_incapacidades (id_incapacidad, id_empleado, folio_incapacidad, tipo, fecha_inicio, fecha_fin, dias_incapacidad, numero_imss, medico_tratante, diagnostico, porcentaje_pago_imss, archivo_incapacidad_url, estatus, validado_por_rh, fecha_validacion, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -3163,16 +4933,18 @@ COPY public.rh_incapacidades (id_incapacidad, id_empleado, folio_incapacidad, ti
 
 
 --
--- Data for Name: rh_permisos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_permisos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_permisos (id_permiso, id_empleado, folio_permiso, tipo_permiso, fecha_solicitud, fecha_inicio, fecha_fin, dias_solicitados, con_goce_de_sueldo, justificacion, archivo_justificante, estatus, aprobado_por, fecha_aprobacion, motivo_rechazo, impacta_asistencia, observaciones_rh, registrado_por, fecha_registro, modalidad, horas_solicitadas, hora_inicio, hora_fin) FROM stdin;
-5	201	PER-2026-001	ASUNTOS PERSONALES	2026-10-29	2026-11-08	2026-11-08	1	t	es el cumple de Hellen Irina	\N	PENDIENTE	\N	\N	\N	t	\N	Cuauhtemoc Rivera Agundez	2026-10-29 11:40:57.348734	DIAS	\N	\N	\N
+1	201	PER-2026-001	CITA MÉDICA (IMSS/PARTICULAR)	2026-11-05	2026-11-05	2026-11-05	1	t	Cita medica con dentista	\N	APROBADO	Ana Lilia Villarreal Uribe	2026-11-06	\N	t		Cuahutémoc Rivera Agúndez	2026-11-05 05:32:01.598691	DIAS	0.00	\N	\N
+2	202	PER-2026-002	OTRO PERMISO LABORAL	2026-11-05	2026-11-05	2026-11-05	1	t	Solicito la tarde del 05-nov-2026 debido a dolor muscular de piernas	\N	APROBADO	Ana Lilia Villarreal Uribe	2026-11-06	\N	t		Edgar Javier Amarillas	2026-11-05 20:29:05.754126	DIAS	0.00	\N	\N
+3	201	PER-2026-003	CITA MÉDICA (IMSS/PARTICULAR)	2026-11-05	2026-11-06	2026-11-06	0	t	cita previa con dentista	\N	APROBADO	Ana Lilia Villarreal Uribe	2026-11-06	\N	t		Cuahutémoc Rivera Agúndez	2026-11-05 23:27:19.559112	HORAS	3.00	09:00:00	12:00:00
 \.
 
 
 --
--- Data for Name: rh_solicitudes_empleo; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_solicitudes_empleo; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_solicitudes_empleo (id_solicitud, folio, fecha_solicitud, nombre_completo, email, tel_celular, fecha_nac, rfc, curp, domicilio, escolaridad, carrera_especialidad, cedula_profesional, puesto_solicitado, depto_solicitado, experiencia_anios, experiencia_descripcion, habilidades, pretension_salarial, como_se_entero, referido_por, disponibilidad_inmediata, fecha_disponible, tiene_auto, tiene_licencia, cv_url, estatus, observaciones_rh, id_empleado_resultado, creado_por, fecha_creacion) FROM stdin;
@@ -3180,163 +4952,164 @@ COPY public.rh_solicitudes_empleo (id_solicitud, folio, fecha_solicitud, nombre_
 
 
 --
--- Data for Name: rh_vacaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rh_vacaciones; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.rh_vacaciones (id_vacacion, id_empleado, anio_periodo, dias_correspondientes, dias_tomados, dias_pendientes, fecha_inicio_goce, fecha_fin_goce, fecha_limite_goce, tipo, estatus, aprobado_por, fecha_aprobacion, notificado_admon, fecha_notif_admon, observaciones, registrado_por, fecha_registro) FROM stdin;
 1	201	2026	20	8	12	2026-10-08	2026-10-15	\N	PERIODO CONTINUO	APROBADO	\N	\N	f	\N	Disfrute fraccionado a solicitud del colaborador	Cuauhtemoc Rivera Agundez	2026-10-08 14:09:15.333036
+2	202	2026	14	6	8	2026-11-13	2026-11-19	\N	DÍAS SUELTOS / FRACCIONADOS	APROBADO	\N	\N	f	\N	Periodo vacacional 13 al 19 de noviembre (6 dias laborables, domingo 15 descanso legal LFT Art. 69). Reincorporacion laboral: 20 de noviembre.	Ana Lilia Villarreal Uribe	2026-11-20 19:08:51.727591
 \.
 
 
 --
--- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.archivos_compartidos_id_transferencia_seq', 190, true);
+SELECT pg_catalog.setval('public.archivos_compartidos_id_transferencia_seq', 398, true);
 
 
 --
--- Name: asistencia_eventos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: asistencia_eventos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.asistencia_eventos_id_seq', 1, false);
 
 
 --
--- Name: chat_admin_mensajes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: chat_admin_mensajes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.chat_admin_mensajes_id_seq', 7, true);
-
-
---
--- Name: chat_directo_mensajes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.chat_directo_mensajes_id_seq', 1, true);
+SELECT pg_catalog.setval('public.chat_admin_mensajes_id_seq', 13, true);
 
 
 --
--- Name: chat_soporte_mensajes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: chat_directo_mensajes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.chat_soporte_mensajes_id_seq', 2, true);
-
-
---
--- Name: control_asistencia_id_registro_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.control_asistencia_id_registro_seq', 731, true);
+SELECT pg_catalog.setval('public.chat_directo_mensajes_id_seq', 22, true);
 
 
 --
--- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: chat_soporte_mensajes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.chat_soporte_mensajes_id_seq', 30, true);
+
+
+--
+-- Name: control_asistencia_id_registro_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.control_asistencia_id_registro_seq', 951, true);
+
+
+--
+-- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.control_horas_extras_id_autorizacion_seq', 8, true);
 
 
 --
--- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.cronogramas_eventos_id_cronograma_seq', 1, false);
 
 
 --
--- Name: departamentos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: departamentos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.departamentos_id_seq', 5, true);
 
 
 --
--- Name: log_accesos_id_log_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: log_accesos_id_log_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.log_accesos_id_log_seq', 376, true);
+SELECT pg_catalog.setval('public.log_accesos_id_log_seq', 1782, true);
 
 
 --
--- Name: op_agenda_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: op_agenda_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.op_agenda_id_seq', 298, true);
 
 
 --
--- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.rh_capacitacion_id_capacitacion_seq', 1, false);
 
 
 --
--- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.rh_contratos_id_contrato_seq', 1, false);
 
 
 --
--- Name: rh_documentos_id_documento_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_documentos_id_documento_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.rh_documentos_id_documento_seq', 1, false);
+SELECT pg_catalog.setval('public.rh_documentos_id_documento_seq', 3, true);
 
 
 --
--- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.rh_entrevistas_id_entrevista_seq', 1, false);
 
 
 --
--- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.rh_evaluaciones_id_evaluacion_seq', 1, false);
 
 
 --
--- Name: rh_historial_id_historial_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_historial_id_historial_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.rh_historial_id_historial_seq', 17, true);
+SELECT pg_catalog.setval('public.rh_historial_id_historial_seq', 29, true);
 
 
 --
--- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.rh_incapacidades_id_incapacidad_seq', 1, false);
 
 
 --
--- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.rh_permisos_id_permiso_seq', 6, true);
 
 
 --
--- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.rh_solicitudes_empleo_id_solicitud_seq', 1, false);
 
 
 --
--- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.rh_vacaciones_id_vacacion_seq', 1, true);
+SELECT pg_catalog.setval('public.rh_vacaciones_id_vacacion_seq', 2, true);
 
 
 --
--- Name: archivos_compartidos archivos_compartidos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: archivos_compartidos archivos_compartidos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.archivos_compartidos
@@ -3344,7 +5117,7 @@ ALTER TABLE ONLY public.archivos_compartidos
 
 
 --
--- Name: asistencia_eventos asistencia_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: asistencia_eventos asistencia_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.asistencia_eventos
@@ -3352,7 +5125,7 @@ ALTER TABLE ONLY public.asistencia_eventos
 
 
 --
--- Name: chat_admin_mensajes chat_admin_mensajes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: chat_admin_mensajes chat_admin_mensajes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.chat_admin_mensajes
@@ -3360,7 +5133,7 @@ ALTER TABLE ONLY public.chat_admin_mensajes
 
 
 --
--- Name: chat_directo_mensajes chat_directo_mensajes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: chat_directo_mensajes chat_directo_mensajes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.chat_directo_mensajes
@@ -3368,7 +5141,7 @@ ALTER TABLE ONLY public.chat_directo_mensajes
 
 
 --
--- Name: chat_soporte_mensajes chat_soporte_mensajes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: chat_soporte_mensajes chat_soporte_mensajes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.chat_soporte_mensajes
@@ -3376,7 +5149,7 @@ ALTER TABLE ONLY public.chat_soporte_mensajes
 
 
 --
--- Name: control_asistencia control_asistencia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: control_asistencia control_asistencia_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.control_asistencia
@@ -3384,7 +5157,7 @@ ALTER TABLE ONLY public.control_asistencia
 
 
 --
--- Name: control_horas_extras control_horas_extras_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: control_horas_extras control_horas_extras_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.control_horas_extras
@@ -3392,7 +5165,7 @@ ALTER TABLE ONLY public.control_horas_extras
 
 
 --
--- Name: cronogramas_eventos cronogramas_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: cronogramas_eventos cronogramas_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.cronogramas_eventos
@@ -3400,7 +5173,7 @@ ALTER TABLE ONLY public.cronogramas_eventos
 
 
 --
--- Name: departamentos departamentos_nombre_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: departamentos departamentos_nombre_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.departamentos
@@ -3408,7 +5181,7 @@ ALTER TABLE ONLY public.departamentos
 
 
 --
--- Name: departamentos departamentos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: departamentos departamentos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.departamentos
@@ -3416,7 +5189,7 @@ ALTER TABLE ONLY public.departamentos
 
 
 --
--- Name: log_accesos log_accesos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: log_accesos log_accesos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.log_accesos
@@ -3424,7 +5197,7 @@ ALTER TABLE ONLY public.log_accesos
 
 
 --
--- Name: op_agenda op_agenda_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: op_agenda op_agenda_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.op_agenda
@@ -3432,7 +5205,7 @@ ALTER TABLE ONLY public.op_agenda
 
 
 --
--- Name: rh_capacitacion rh_capacitacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_capacitacion rh_capacitacion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_capacitacion
@@ -3440,7 +5213,7 @@ ALTER TABLE ONLY public.rh_capacitacion
 
 
 --
--- Name: rh_contratos rh_contratos_folio_contrato_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_contratos rh_contratos_folio_contrato_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -3448,7 +5221,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_contratos rh_contratos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_contratos rh_contratos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -3456,7 +5229,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_documentos rh_documentos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_documentos rh_documentos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_documentos
@@ -3464,7 +5237,7 @@ ALTER TABLE ONLY public.rh_documentos
 
 
 --
--- Name: rh_entrevistas rh_entrevistas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_entrevistas rh_entrevistas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_entrevistas
@@ -3472,7 +5245,7 @@ ALTER TABLE ONLY public.rh_entrevistas
 
 
 --
--- Name: rh_evaluaciones rh_evaluaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones rh_evaluaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_evaluaciones
@@ -3480,7 +5253,7 @@ ALTER TABLE ONLY public.rh_evaluaciones
 
 
 --
--- Name: rh_historial rh_historial_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_historial rh_historial_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_historial
@@ -3488,7 +5261,7 @@ ALTER TABLE ONLY public.rh_historial
 
 
 --
--- Name: rh_incapacidades rh_incapacidades_folio_incapacidad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_incapacidades rh_incapacidades_folio_incapacidad_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_incapacidades
@@ -3496,7 +5269,7 @@ ALTER TABLE ONLY public.rh_incapacidades
 
 
 --
--- Name: rh_incapacidades rh_incapacidades_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_incapacidades rh_incapacidades_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_incapacidades
@@ -3504,7 +5277,7 @@ ALTER TABLE ONLY public.rh_incapacidades
 
 
 --
--- Name: rh_permisos rh_permisos_folio_permiso_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_permisos rh_permisos_folio_permiso_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_permisos
@@ -3512,7 +5285,7 @@ ALTER TABLE ONLY public.rh_permisos
 
 
 --
--- Name: rh_permisos rh_permisos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_permisos rh_permisos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_permisos
@@ -3520,7 +5293,7 @@ ALTER TABLE ONLY public.rh_permisos
 
 
 --
--- Name: rh_solicitudes_empleo rh_solicitudes_empleo_folio_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo rh_solicitudes_empleo_folio_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo
@@ -3528,7 +5301,7 @@ ALTER TABLE ONLY public.rh_solicitudes_empleo
 
 
 --
--- Name: rh_solicitudes_empleo rh_solicitudes_empleo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo rh_solicitudes_empleo_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo
@@ -3536,7 +5309,7 @@ ALTER TABLE ONLY public.rh_solicitudes_empleo
 
 
 --
--- Name: rh_vacaciones rh_vacaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_vacaciones rh_vacaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_vacaciones
@@ -3544,7 +5317,7 @@ ALTER TABLE ONLY public.rh_vacaciones
 
 
 --
--- Name: control_asistencia uq_empleado_fecha; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: control_asistencia uq_empleado_fecha; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.control_asistencia
@@ -3552,7 +5325,7 @@ ALTER TABLE ONLY public.control_asistencia
 
 
 --
--- Name: empleados vpro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: empleados vpro_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.empleados
@@ -3560,161 +5333,182 @@ ALTER TABLE ONLY public.empleados
 
 
 --
--- Name: idx_archivos_destino; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_archivos_destino; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_archivos_destino ON public.archivos_compartidos USING btree (id_empleado_destino);
 
 
 --
--- Name: idx_archivos_estatus; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_archivos_estatus; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_archivos_estatus ON public.archivos_compartidos USING btree (estatus);
 
 
 --
--- Name: idx_archivos_origen; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_archivos_origen; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_archivos_origen ON public.archivos_compartidos USING btree (id_empleado_origen);
 
 
 --
--- Name: idx_archivos_paquete; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_archivos_paquete; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_archivos_paquete ON public.archivos_compartidos USING btree (folio_paquete);
 
 
 --
--- Name: idx_chat_admin_emp; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_chat_admin_emp; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_chat_admin_emp ON public.chat_admin_mensajes USING btree (id_empleado, fecha_hora);
 
 
 --
--- Name: idx_chat_dir_dest; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_chat_admin_fecha; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_chat_admin_fecha ON public.chat_admin_mensajes USING btree (fecha_hora DESC);
+
+
+--
+-- Name: idx_chat_admin_id_empleado; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_chat_admin_id_empleado ON public.chat_admin_mensajes USING btree (id_empleado);
+
+
+--
+-- Name: idx_chat_admin_leido_admin; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_chat_admin_leido_admin ON public.chat_admin_mensajes USING btree (leido_por_admin);
+
+
+--
+-- Name: idx_chat_dir_dest; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_chat_dir_dest ON public.chat_directo_mensajes USING btree (destinatario_id);
 
 
 --
--- Name: idx_chat_dir_dest_leido; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_chat_dir_dest_leido; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_chat_dir_dest_leido ON public.chat_directo_mensajes USING btree (destinatario_id, leido);
 
 
 --
--- Name: idx_chat_dir_rem; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_chat_dir_rem; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_chat_dir_rem ON public.chat_directo_mensajes USING btree (remitente_id);
 
 
 --
--- Name: idx_chat_dir_sala; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_chat_dir_sala; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_chat_dir_sala ON public.chat_directo_mensajes USING btree (sala_id, fecha_hora);
 
 
 --
--- Name: idx_chat_soporte_emp_cons; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_chat_soporte_emp_cons; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_chat_soporte_emp_cons ON public.chat_soporte_mensajes USING btree (id_empleado_consulta, fecha_hora);
 
 
 --
--- Name: idx_chat_soporte_fec; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_chat_soporte_fec; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_chat_soporte_fec ON public.chat_soporte_mensajes USING btree (fecha_hora);
 
 
 --
--- Name: idx_chat_soporte_fijado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_chat_soporte_fijado; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_chat_soporte_fijado ON public.chat_soporte_mensajes USING btree (es_fijado);
 
 
 --
--- Name: idx_chat_soporte_leido_ti; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_chat_soporte_leido_ti; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_chat_soporte_leido_ti ON public.chat_soporte_mensajes USING btree (id_empleado_consulta, leido_por_ti);
 
 
 --
--- Name: idx_rh_contratos_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_contratos_empleado; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_rh_contratos_empleado ON public.rh_contratos USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_contratos_estatus; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_contratos_estatus; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_rh_contratos_estatus ON public.rh_contratos USING btree (estatus_contrato);
 
 
 --
--- Name: idx_rh_historial_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_historial_empleado; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_rh_historial_empleado ON public.rh_historial USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_historial_tipo; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_historial_tipo; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_rh_historial_tipo ON public.rh_historial USING btree (tipo_evento);
 
 
 --
--- Name: idx_rh_incap_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_incap_empleado; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_rh_incap_empleado ON public.rh_incapacidades USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_permisos_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_permisos_empleado; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_rh_permisos_empleado ON public.rh_permisos USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_permisos_estatus; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_permisos_estatus; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_rh_permisos_estatus ON public.rh_permisos USING btree (estatus);
 
 
 --
--- Name: idx_rh_solicitudes_estatus; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_solicitudes_estatus; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_rh_solicitudes_estatus ON public.rh_solicitudes_empleo USING btree (estatus);
 
 
 --
--- Name: idx_rh_vacaciones_empleado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_rh_vacaciones_empleado; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_rh_vacaciones_empleado ON public.rh_vacaciones USING btree (id_empleado);
 
 
 --
--- Name: control_asistencia fk_empleado; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: control_asistencia fk_empleado; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.control_asistencia
@@ -3722,7 +5516,7 @@ ALTER TABLE ONLY public.control_asistencia
 
 
 --
--- Name: rh_contratos fk_renovacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_contratos fk_renovacion; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -3730,7 +5524,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_capacitacion rh_capacitacion_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_capacitacion rh_capacitacion_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_capacitacion
@@ -3738,7 +5532,7 @@ ALTER TABLE ONLY public.rh_capacitacion
 
 
 --
--- Name: rh_contratos rh_contratos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_contratos rh_contratos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -3746,7 +5540,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_documentos rh_documentos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_documentos rh_documentos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_documentos
@@ -3754,7 +5548,7 @@ ALTER TABLE ONLY public.rh_documentos
 
 
 --
--- Name: rh_entrevistas rh_entrevistas_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_entrevistas rh_entrevistas_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_entrevistas
@@ -3762,7 +5556,7 @@ ALTER TABLE ONLY public.rh_entrevistas
 
 
 --
--- Name: rh_entrevistas rh_entrevistas_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_entrevistas rh_entrevistas_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_entrevistas
@@ -3770,7 +5564,7 @@ ALTER TABLE ONLY public.rh_entrevistas
 
 
 --
--- Name: rh_evaluaciones rh_evaluaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_evaluaciones rh_evaluaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_evaluaciones
@@ -3778,7 +5572,7 @@ ALTER TABLE ONLY public.rh_evaluaciones
 
 
 --
--- Name: rh_historial rh_historial_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_historial rh_historial_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_historial
@@ -3786,7 +5580,7 @@ ALTER TABLE ONLY public.rh_historial
 
 
 --
--- Name: rh_incapacidades rh_incapacidades_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_incapacidades rh_incapacidades_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_incapacidades
@@ -3794,7 +5588,7 @@ ALTER TABLE ONLY public.rh_incapacidades
 
 
 --
--- Name: rh_permisos rh_permisos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_permisos rh_permisos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_permisos
@@ -3802,7 +5596,7 @@ ALTER TABLE ONLY public.rh_permisos
 
 
 --
--- Name: rh_solicitudes_empleo rh_solicitudes_empleo_id_empleado_resultado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_solicitudes_empleo rh_solicitudes_empleo_id_empleado_resultado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo
@@ -3810,7 +5604,7 @@ ALTER TABLE ONLY public.rh_solicitudes_empleo
 
 
 --
--- Name: rh_vacaciones rh_vacaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rh_vacaciones rh_vacaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rh_vacaciones
@@ -3818,16 +5612,8 @@ ALTER TABLE ONLY public.rh_vacaciones
 
 
 --
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE USAGE ON SCHEMA public FROM PUBLIC;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
---
 -- PostgreSQL database dump complete
 --
 
-\unrestrict StKW2VeYAhzKDJ4s5BYB6yT5XthUUrBtgFwV4B4F6ZLKOfhbngWFvDdWYile5DZ
+\unrestrict Yz91aIIQvjMfasXm2VwfcHGuUrdNQVUBaB4KuS4DWG66xYIEqtWzJhAOFatuSiZ
 

@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict payj5BGmQmwhdrb1g1werBG0hOplWWyzjRdCFHuS49qaCjVezSH8kV02BcUiWma
+\restrict 8S473LCDyHqguup720ViKVfng5SLVJUcJ0h5f1VrlShkxA4MdTowjLSBJBoLlTM
 
--- Dumped from database version 18.4
+-- Dumped from database version 18.6 (Debian 18.6-1.pgdg13+2)
 -- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
@@ -21,29 +21,12 @@ SET row_security = off;
 
 ALTER TABLE IF EXISTS ONLY public.autos DROP CONSTRAINT IF EXISTS autos_pkey;
 DROP TABLE IF EXISTS public.autos;
--- *not* dropping schema, since initdb creates it
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
---
-
--- *not* creating schema, since initdb creates it
-
-
-ALTER SCHEMA public OWNER TO postgres;
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
---
-
-COMMENT ON SCHEMA public IS '';
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: autos; Type: TABLE; Schema: public; Owner: postgres
+-- Name: autos; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.autos (
@@ -77,10 +60,8 @@ CREATE TABLE public.autos (
 );
 
 
-ALTER TABLE public.autos OWNER TO postgres;
-
 --
--- Data for Name: autos; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: autos; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.autos (num_control, marca, modelo, serie, fecha_compra, estado_actual, servicios_hechos, observaciones_comentarios, seguro_vence, mantenimiento_fecha, tipo_vehiculo, anio, placa, color, carga_maxima, kilometraje_actual, estado_mant_preventivo, aseguradora, no_poliza, status_seguro, forma_pago_seguro, prima_total, seguro_inicio, impuesto_anio, impuesto_monto, impuesto_fecha_pago, impuesto_fecha_vencimiento) FROM stdin;
@@ -90,11 +71,12 @@ VPToyota	Toyota	Hilux	Camionetona	2020-02-14	le truena la primera	Rutinarios	tod
 VPFord	Ford	1996	Vans	2019-10-11	BUENO	Revision General de motor / Encendido	Como decia se apaga a veces	2026-01-05	2025-01-05	\N	\N	\N	\N	\N	0	\N	\N	\N	\N	\N	0.00	\N	\N	0.00	\N	\N
 VPH100	Hyundai	2015	Tenis vans	2021-03-15	EN REPARACIÓN	rutinasrios	ok	2026-05-14	2025-06-10	Auto					0	En su ultima salida a los cerros de barobampo gasto demasiada gasolina, se la llevaron a revisar los inyectores.			ACTIVA	Anual	0.00	\N		0.00	\N	\N
 VPMercedes	Mercedes Benz	2022	Vans	2021-02-14	EXCELENTE	Rutinarios	Todo Ok.	2026-01-10	2025-02-06	Auto					0	⚠️ [REPORTE PREVIO REASIGNADO AUTOMÁTICAMENTE]: E C			ACTIVA	Anual	0.00	\N		0.00	\N	\N
+Hiace	Toyota			\N	EXCELENTE			\N	\N	Auto			Blanco		0				ACTIVA	Anual	0.00	\N		0.00	\N	\N
 \.
 
 
 --
--- Name: autos autos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: autos autos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.autos
@@ -102,16 +84,8 @@ ALTER TABLE ONLY public.autos
 
 
 --
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE USAGE ON SCHEMA public FROM PUBLIC;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
---
 -- PostgreSQL database dump complete
 --
 
-\unrestrict payj5BGmQmwhdrb1g1werBG0hOplWWyzjRdCFHuS49qaCjVezSH8kV02BcUiWma
+\unrestrict 8S473LCDyHqguup720ViKVfng5SLVJUcJ0h5f1VrlShkxA4MdTowjLSBJBoLlTM
 

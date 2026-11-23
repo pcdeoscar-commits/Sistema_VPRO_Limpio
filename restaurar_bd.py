@@ -84,20 +84,33 @@ def main():
 
     print("\n--- 1. Creando bases de datos si no existen ---")
     for db in DATABASES:
-        create_sql = f"SELECT 'CREATE DATABASE {db}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{db}')\\gexec"
-        cmd = [
+        check_cmd = [
             psql_cmd,
             "-U", db_user,
             "-h", db_host,
             "-p", db_port,
             "-d", "postgres",
-            "-c", create_sql
+            "-tAc", f"SELECT 1 FROM pg_database WHERE datname = '{db}'"
         ]
-        res = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if res.returncode == 0:
+        res = subprocess.run(check_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace")
+        if (res.stdout or "").strip() == "1":
             print(f"✔ Base de datos verificada: {db}")
         else:
-            print(f"⚠ Aviso al verificar {db}: {res.stderr.strip() or res.stdout.strip()}")
+            print(f"➕ Creando base de datos {db}...", end="", flush=True)
+            create_cmd = [
+                psql_cmd,
+                "-U", db_user,
+                "-h", db_host,
+                "-p", db_port,
+                "-d", "postgres",
+                "-c", f"CREATE DATABASE {db}"
+            ]
+            res_create = subprocess.run(create_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace")
+            if res_create.returncode == 0:
+                print(" [CREADA]")
+            else:
+                msg = (res_create.stderr or "").strip() or (res_create.stdout or "").strip()
+                print(f" [AVISO: {msg}]")
 
     print("\n--- 2. Restaurando volcados SQL (tablas, datos, secuencias) ---")
     exitos = 0
@@ -116,7 +129,7 @@ def main():
             "-d", db,
             "-f", str(sql_file)
         ]
-        res = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        res = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace")
         if res.returncode == 0:
             print(" [OK]")
             exitos += 1
@@ -167,7 +180,7 @@ def main():
                 UPDATE public.eventos SET personal_roles_op = '[]'::jsonb WHERE personal_roles_op IS NULL;
                 UPDATE public.eventos SET fec_fin_evento = fec_del_evento WHERE fec_fin_evento IS NULL AND fec_del_evento IS NOT NULL;
             """
-        ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace")
         print("✔ Esquema completo y columnas de public.eventos (db_eventos) verificados.")
     except Exception:
         pass
@@ -209,7 +222,7 @@ def main():
             subprocess.run([
                 psql_cmd, "-U", db_user, "-h", db_host, "-p", db_port, "-d", db,
                 "-c", sync_seq_sql
-            ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace")
         except Exception:
             pass
     print("✔ Secuencias sincronizadas en todas las bases de datos.")

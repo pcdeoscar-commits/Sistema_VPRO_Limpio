@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict grLXbx4v3R66ncg0rqa64xjPcxu0gJfUWxXp3ofhykCjTgB7pMupNRaVIa9BLHb
+\restrict payj5BGmQmwhdrb1g1werBG0hOplWWyzjRdCFHuS49qaCjVezSH8kV02BcUiWma
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -21,12 +21,29 @@ SET row_security = off;
 
 ALTER TABLE IF EXISTS ONLY public.autos DROP CONSTRAINT IF EXISTS autos_pkey;
 DROP TABLE IF EXISTS public.autos;
+-- *not* dropping schema, since initdb creates it
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+ALTER SCHEMA public OWNER TO postgres;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: autos; Type: TABLE; Schema: public; Owner: -
+-- Name: autos; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.autos (
@@ -60,8 +77,10 @@ CREATE TABLE public.autos (
 );
 
 
+ALTER TABLE public.autos OWNER TO postgres;
+
 --
--- Data for Name: autos; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: autos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.autos (num_control, marca, modelo, serie, fecha_compra, estado_actual, servicios_hechos, observaciones_comentarios, seguro_vence, mantenimiento_fecha, tipo_vehiculo, anio, placa, color, carga_maxima, kilometraje_actual, estado_mant_preventivo, aseguradora, no_poliza, status_seguro, forma_pago_seguro, prima_total, seguro_inicio, impuesto_anio, impuesto_monto, impuesto_fecha_pago, impuesto_fecha_vencimiento) FROM stdin;
@@ -75,7 +94,7 @@ VPMercedes	Mercedes Benz	2022	Vans	2021-02-14	EXCELENTE	Rutinarios	Todo Ok.	2026
 
 
 --
--- Name: autos autos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: autos autos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.autos
@@ -83,8 +102,16 @@ ALTER TABLE ONLY public.autos
 
 
 --
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict grLXbx4v3R66ncg0rqa64xjPcxu0gJfUWxXp3ofhykCjTgB7pMupNRaVIa9BLHb
+\unrestrict payj5BGmQmwhdrb1g1werBG0hOplWWyzjRdCFHuS49qaCjVezSH8kV02BcUiWma
 

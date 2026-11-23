@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict YVMTdsnUezo2FeUabCS5I7oVnSJRwgWPXwMEMSDSMdVgzxdaSezOsd8LOB3aRhj
+\restrict p74h4QhZPOHDikKtb5G2o9V20O64hA07m5Vj3eXUiIjXsYCmzLf7iHCSZZfpnv6
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -24,12 +24,29 @@ ALTER TABLE IF EXISTS ONLY public.clientes DROP CONSTRAINT IF EXISTS cliente_emp
 ALTER TABLE IF EXISTS public.clientes ALTER COLUMN id_cliente DROP DEFAULT;
 DROP SEQUENCE IF EXISTS public.clientes_id_cliente_seq;
 DROP TABLE IF EXISTS public.clientes;
+-- *not* dropping schema, since initdb creates it
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+ALTER SCHEMA public OWNER TO postgres;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: clientes; Type: TABLE; Schema: public; Owner: -
+-- Name: clientes; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.clientes (
@@ -47,8 +64,10 @@ CREATE TABLE public.clientes (
 );
 
 
+ALTER TABLE public.clientes OWNER TO postgres;
+
 --
--- Name: clientes_id_cliente_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: clientes_id_cliente_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.clientes_id_cliente_seq
@@ -60,22 +79,24 @@ CREATE SEQUENCE public.clientes_id_cliente_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.clientes_id_cliente_seq OWNER TO postgres;
+
 --
--- Name: clientes_id_cliente_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: clientes_id_cliente_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.clientes_id_cliente_seq OWNED BY public.clientes.id_cliente;
 
 
 --
--- Name: clientes id_cliente; Type: DEFAULT; Schema: public; Owner: -
+-- Name: clientes id_cliente; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.clientes ALTER COLUMN id_cliente SET DEFAULT nextval('public.clientes_id_cliente_seq'::regclass);
 
 
 --
--- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.clientes (cliente_empresa, gte_gral, estado, ciudad, tel_de_ofna, email_de_empresa, nombre_contacto_princ, cel_contact_princ, nombre_contacto_a, cel_contact_a, id_cliente) FROM stdin;
@@ -101,18 +122,25 @@ GOBIERNO FEDERAL	GFNolose	000000	CDMX	111111	GFnolose@nolose.com	GFNolose	222222
 GOBIERNO DEL ESTADO DE SINALOA	Eleazar(PapiRINGO)	Sinaloa	Culiacan	22222222222	nolose@nolose.com	Papi	3333333333	Angel	6674602906	13
 CESAVESIN										32
 COCA - COLA	ACTUALIZAR Please elnombr del Gte. Gral.	Sinaloa	Culiacan	000000000	ccolanolose@ccola	Eunice Hernandez	222222222	Alma D. Carrillo López	333333333	21
+PERIODICO EL DEBATE										38
+AYUNTAMIENTO DE AHOME										39
+MAJA SPORTWEAR										40
+MERCADITO MOVIL										41
+BLAST MARKETING										42
+GRUPO FGL TRADE										43
+KUWA										44
 \.
 
 
 --
--- Name: clientes_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: clientes_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.clientes_id_cliente_seq', 35, true);
+SELECT pg_catalog.setval('public.clientes_id_cliente_seq', 44, true);
 
 
 --
--- Name: clientes cliente_empresa_unico; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: clientes cliente_empresa_unico; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.clientes
@@ -120,7 +148,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- Name: clientes clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: clientes clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.clientes
@@ -128,8 +156,16 @@ ALTER TABLE ONLY public.clientes
 
 
 --
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict YVMTdsnUezo2FeUabCS5I7oVnSJRwgWPXwMEMSDSMdVgzxdaSezOsd8LOB3aRhj
+\unrestrict p74h4QhZPOHDikKtb5G2o9V20O64hA07m5Vj3eXUiIjXsYCmzLf7iHCSZZfpnv6
 

@@ -1,13 +1,13 @@
 # 📦 MANUAL DE RESTAURACIÓN Y REINSTALACIÓN COMPLETA
 ## Sistema VPRO Workspace ERP & CRM (Dashboard Integral)
-**Versión de Respaldo:** 20 de Octubre de 2026  
-**Archivo de Respaldo:** `VPRO_RESPALDO_COMPLETO_20261020.zip`
+**Versión de Respaldo:** 23 de Noviembre de 2026  
+**Archivo de Respaldo:** `VPRO_RESPALDO_COMPLETO_20261123.zip`
 
 ---
 
 ## 🎯 ¿Qué incluye este Respaldo?
 1. **Código Fuente Completo:** Backend en FastAPI (`api_core.py`), Frontend SPA 100% Offline (`prueba_web/`), todos los routers (`rh`, `inventario`, `checkout`, `eventos`, `gastos`, etc.) y utilidades (`core/`).
-2. **Bases de Datos Actualizadas (`database_dumps/`):** Volcados SQL limpios con datos al día (20/Oct/2026):
+2. **Bases de Datos Actualizadas (`database_dumps/`):** Volcados SQL limpios con datos al día (23/Nov/2026):
    - `db_autos.sql`
    - `db_clientes.sql`
    - `db_eventos.sql`
@@ -49,9 +49,8 @@ Antes de restaurar el respaldo, asegúrate de tener instalado:
 ## 🚀 PASO A PASO: GUÍA DE REINSTALACIÓN (4 PASOS FÁCILES)
 
 ### PASO 1: Descomprimir el Respaldo
-1. Copia `VPRO_RESPALDO_COMPLETO_20261020.zip` en la ubicación donde desees instalar el sistema, por ejemplo:
-   `C:\Curso_de_Python\Graficos\VPRO_Dashboard_V2_TODO_NUEVO` o en tu `Escritorio`.
-2. Haz clic derecho -> **Extraer todo...** y entra a la carpeta extraída.
+1. Si pasaste el archivo por **VPRO Transfer**, bájalo desde la pestaña **Archivos Recibidos** en tu laptop o cópialo a la ubicación deseada (ejemplo: `C:\Curso_de_Python\Graficos\VPRO_Dashboard_V2_TODO_NUEVO` o en tu `Escritorio`).
+2. Haz clic derecho en `VPRO_RESPALDO_COMPLETO_20261123.zip` -> **Extraer todo...** y entra a la carpeta extraída.
 
 ---
 

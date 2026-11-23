@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 0BahySiZ9ecaVQGC7Js90baLOn1YLTejzIFMNcMwM5vqA8Q8aHHZRnDEtUKmW24
+\restrict StKW2VeYAhzKDJ4s5BYB6yT5XthUUrBtgFwV4B4F6ZLKOfhbngWFvDdWYile5DZ
 
 -- Dumped from database version 18.4
 -- Dumped by pg_dump version 18.4
@@ -41,6 +41,15 @@ DROP INDEX IF EXISTS public.idx_rh_historial_tipo;
 DROP INDEX IF EXISTS public.idx_rh_historial_empleado;
 DROP INDEX IF EXISTS public.idx_rh_contratos_estatus;
 DROP INDEX IF EXISTS public.idx_rh_contratos_empleado;
+DROP INDEX IF EXISTS public.idx_chat_soporte_leido_ti;
+DROP INDEX IF EXISTS public.idx_chat_soporte_fijado;
+DROP INDEX IF EXISTS public.idx_chat_soporte_fec;
+DROP INDEX IF EXISTS public.idx_chat_soporte_emp_cons;
+DROP INDEX IF EXISTS public.idx_chat_dir_sala;
+DROP INDEX IF EXISTS public.idx_chat_dir_rem;
+DROP INDEX IF EXISTS public.idx_chat_dir_dest_leido;
+DROP INDEX IF EXISTS public.idx_chat_dir_dest;
+DROP INDEX IF EXISTS public.idx_chat_admin_emp;
 DROP INDEX IF EXISTS public.idx_archivos_paquete;
 DROP INDEX IF EXISTS public.idx_archivos_origen;
 DROP INDEX IF EXISTS public.idx_archivos_estatus;
@@ -68,6 +77,9 @@ ALTER TABLE IF EXISTS ONLY public.departamentos DROP CONSTRAINT IF EXISTS depart
 ALTER TABLE IF EXISTS ONLY public.cronogramas_eventos DROP CONSTRAINT IF EXISTS cronogramas_eventos_pkey;
 ALTER TABLE IF EXISTS ONLY public.control_horas_extras DROP CONSTRAINT IF EXISTS control_horas_extras_pkey;
 ALTER TABLE IF EXISTS ONLY public.control_asistencia DROP CONSTRAINT IF EXISTS control_asistencia_pkey;
+ALTER TABLE IF EXISTS ONLY public.chat_soporte_mensajes DROP CONSTRAINT IF EXISTS chat_soporte_mensajes_pkey;
+ALTER TABLE IF EXISTS ONLY public.chat_directo_mensajes DROP CONSTRAINT IF EXISTS chat_directo_mensajes_pkey;
+ALTER TABLE IF EXISTS ONLY public.chat_admin_mensajes DROP CONSTRAINT IF EXISTS chat_admin_mensajes_pkey;
 ALTER TABLE IF EXISTS ONLY public.asistencia_eventos DROP CONSTRAINT IF EXISTS asistencia_eventos_pkey;
 ALTER TABLE IF EXISTS ONLY public.archivos_compartidos DROP CONSTRAINT IF EXISTS archivos_compartidos_pkey;
 ALTER TABLE IF EXISTS public.rh_vacaciones ALTER COLUMN id_vacacion DROP DEFAULT;
@@ -86,6 +98,9 @@ ALTER TABLE IF EXISTS public.departamentos ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS public.cronogramas_eventos ALTER COLUMN id_cronograma DROP DEFAULT;
 ALTER TABLE IF EXISTS public.control_horas_extras ALTER COLUMN id_autorizacion DROP DEFAULT;
 ALTER TABLE IF EXISTS public.control_asistencia ALTER COLUMN id_registro DROP DEFAULT;
+ALTER TABLE IF EXISTS public.chat_soporte_mensajes ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.chat_directo_mensajes ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE IF EXISTS public.chat_admin_mensajes ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS public.asistencia_eventos ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE IF EXISTS public.archivos_compartidos ALTER COLUMN id_transferencia DROP DEFAULT;
 DROP SEQUENCE IF EXISTS public.rh_vacaciones_id_vacacion_seq;
@@ -121,16 +136,39 @@ DROP SEQUENCE IF EXISTS public.control_horas_extras_id_autorizacion_seq;
 DROP TABLE IF EXISTS public.control_horas_extras;
 DROP SEQUENCE IF EXISTS public.control_asistencia_id_registro_seq;
 DROP TABLE IF EXISTS public.control_asistencia;
+DROP SEQUENCE IF EXISTS public.chat_soporte_mensajes_id_seq;
+DROP TABLE IF EXISTS public.chat_soporte_mensajes;
+DROP SEQUENCE IF EXISTS public.chat_directo_mensajes_id_seq;
+DROP TABLE IF EXISTS public.chat_directo_mensajes;
+DROP SEQUENCE IF EXISTS public.chat_admin_mensajes_id_seq;
+DROP TABLE IF EXISTS public.chat_admin_mensajes;
 DROP SEQUENCE IF EXISTS public.asistencia_eventos_id_seq;
 DROP TABLE IF EXISTS public.asistencia_eventos;
 DROP SEQUENCE IF EXISTS public.archivos_compartidos_id_transferencia_seq;
 DROP TABLE IF EXISTS public.archivos_compartidos;
+-- *not* dropping schema, since initdb creates it
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+ALTER SCHEMA public OWNER TO postgres;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: archivos_compartidos; Type: TABLE; Schema: public; Owner: -
+-- Name: archivos_compartidos; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.archivos_compartidos (
@@ -159,8 +197,10 @@ CREATE TABLE public.archivos_compartidos (
 );
 
 
+ALTER TABLE public.archivos_compartidos OWNER TO postgres;
+
 --
--- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.archivos_compartidos_id_transferencia_seq
@@ -172,15 +212,17 @@ CREATE SEQUENCE public.archivos_compartidos_id_transferencia_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.archivos_compartidos_id_transferencia_seq OWNER TO postgres;
+
 --
--- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.archivos_compartidos_id_transferencia_seq OWNED BY public.archivos_compartidos.id_transferencia;
 
 
 --
--- Name: asistencia_eventos; Type: TABLE; Schema: public; Owner: -
+-- Name: asistencia_eventos; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.asistencia_eventos (
@@ -192,8 +234,10 @@ CREATE TABLE public.asistencia_eventos (
 );
 
 
+ALTER TABLE public.asistencia_eventos OWNER TO postgres;
+
 --
--- Name: asistencia_eventos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: asistencia_eventos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.asistencia_eventos_id_seq
@@ -205,15 +249,152 @@ CREATE SEQUENCE public.asistencia_eventos_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.asistencia_eventos_id_seq OWNER TO postgres;
+
 --
--- Name: asistencia_eventos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: asistencia_eventos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.asistencia_eventos_id_seq OWNED BY public.asistencia_eventos.id;
 
 
 --
--- Name: control_asistencia; Type: TABLE; Schema: public; Owner: -
+-- Name: chat_admin_mensajes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.chat_admin_mensajes (
+    id integer NOT NULL,
+    id_empleado character varying(50) NOT NULL,
+    autor_id character varying(50) NOT NULL,
+    autor_nombre character varying(255) NOT NULL,
+    autor_rol character varying(100),
+    mensaje text NOT NULL,
+    tipo_mensaje character varying(50) DEFAULT 'TEXTO'::character varying,
+    archivo_url text,
+    metadata_extra jsonb DEFAULT '{}'::jsonb,
+    fecha_hora timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    leido_por_admin boolean DEFAULT false,
+    leido_por_empleado boolean DEFAULT false
+);
+
+
+ALTER TABLE public.chat_admin_mensajes OWNER TO postgres;
+
+--
+-- Name: chat_admin_mensajes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.chat_admin_mensajes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.chat_admin_mensajes_id_seq OWNER TO postgres;
+
+--
+-- Name: chat_admin_mensajes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.chat_admin_mensajes_id_seq OWNED BY public.chat_admin_mensajes.id;
+
+
+--
+-- Name: chat_directo_mensajes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.chat_directo_mensajes (
+    id integer NOT NULL,
+    sala_id character varying(120) NOT NULL,
+    remitente_id character varying(50) NOT NULL,
+    destinatario_id character varying(50) NOT NULL,
+    remitente_nombre character varying(255) NOT NULL,
+    mensaje text NOT NULL,
+    tipo_mensaje character varying(50) DEFAULT 'TEXTO'::character varying,
+    archivo_url text,
+    reacciones jsonb DEFAULT '{}'::jsonb,
+    metadata_extra jsonb DEFAULT '{}'::jsonb,
+    fecha_hora timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    leido boolean DEFAULT false
+);
+
+
+ALTER TABLE public.chat_directo_mensajes OWNER TO postgres;
+
+--
+-- Name: chat_directo_mensajes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.chat_directo_mensajes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.chat_directo_mensajes_id_seq OWNER TO postgres;
+
+--
+-- Name: chat_directo_mensajes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.chat_directo_mensajes_id_seq OWNED BY public.chat_directo_mensajes.id;
+
+
+--
+-- Name: chat_soporte_mensajes; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.chat_soporte_mensajes (
+    id integer NOT NULL,
+    id_empleado character varying(50) NOT NULL,
+    autor_nombre character varying(255) NOT NULL,
+    autor_rol character varying(100),
+    mensaje text NOT NULL,
+    tipo_mensaje character varying(50) DEFAULT 'TEXTO'::character varying,
+    archivo_url text,
+    es_fijado boolean DEFAULT false,
+    reacciones jsonb DEFAULT '{}'::jsonb,
+    metadata_extra jsonb DEFAULT '{}'::jsonb,
+    fecha_hora timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    id_empleado_consulta character varying(50),
+    autor_id character varying(50),
+    leido_por_ti boolean DEFAULT false,
+    leido_por_empleado boolean DEFAULT false
+);
+
+
+ALTER TABLE public.chat_soporte_mensajes OWNER TO postgres;
+
+--
+-- Name: chat_soporte_mensajes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.chat_soporte_mensajes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.chat_soporte_mensajes_id_seq OWNER TO postgres;
+
+--
+-- Name: chat_soporte_mensajes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.chat_soporte_mensajes_id_seq OWNED BY public.chat_soporte_mensajes.id;
+
+
+--
+-- Name: control_asistencia; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.control_asistencia (
@@ -229,8 +410,10 @@ CREATE TABLE public.control_asistencia (
 );
 
 
+ALTER TABLE public.control_asistencia OWNER TO postgres;
+
 --
--- Name: control_asistencia_id_registro_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: control_asistencia_id_registro_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.control_asistencia_id_registro_seq
@@ -242,15 +425,17 @@ CREATE SEQUENCE public.control_asistencia_id_registro_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.control_asistencia_id_registro_seq OWNER TO postgres;
+
 --
--- Name: control_asistencia_id_registro_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: control_asistencia_id_registro_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.control_asistencia_id_registro_seq OWNED BY public.control_asistencia.id_registro;
 
 
 --
--- Name: control_horas_extras; Type: TABLE; Schema: public; Owner: -
+-- Name: control_horas_extras; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.control_horas_extras (
@@ -274,8 +459,10 @@ CREATE TABLE public.control_horas_extras (
 );
 
 
+ALTER TABLE public.control_horas_extras OWNER TO postgres;
+
 --
--- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.control_horas_extras_id_autorizacion_seq
@@ -287,15 +474,17 @@ CREATE SEQUENCE public.control_horas_extras_id_autorizacion_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.control_horas_extras_id_autorizacion_seq OWNER TO postgres;
+
 --
--- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.control_horas_extras_id_autorizacion_seq OWNED BY public.control_horas_extras.id_autorizacion;
 
 
 --
--- Name: cronogramas_eventos; Type: TABLE; Schema: public; Owner: -
+-- Name: cronogramas_eventos; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.cronogramas_eventos (
@@ -312,8 +501,10 @@ CREATE TABLE public.cronogramas_eventos (
 );
 
 
+ALTER TABLE public.cronogramas_eventos OWNER TO postgres;
+
 --
--- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.cronogramas_eventos_id_cronograma_seq
@@ -325,15 +516,17 @@ CREATE SEQUENCE public.cronogramas_eventos_id_cronograma_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.cronogramas_eventos_id_cronograma_seq OWNER TO postgres;
+
 --
--- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.cronogramas_eventos_id_cronograma_seq OWNED BY public.cronogramas_eventos.id_cronograma;
 
 
 --
--- Name: departamentos; Type: TABLE; Schema: public; Owner: -
+-- Name: departamentos; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.departamentos (
@@ -342,8 +535,10 @@ CREATE TABLE public.departamentos (
 );
 
 
+ALTER TABLE public.departamentos OWNER TO postgres;
+
 --
--- Name: departamentos_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: departamentos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.departamentos_id_seq
@@ -355,19 +550,21 @@ CREATE SEQUENCE public.departamentos_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.departamentos_id_seq OWNER TO postgres;
+
 --
--- Name: departamentos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: departamentos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.departamentos_id_seq OWNED BY public.departamentos.id;
 
 
 --
--- Name: empleados; Type: TABLE; Schema: public; Owner: -
+-- Name: empleados; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.empleados (
-    id_empleado character varying(3) NOT NULL,
+    id_empleado character varying(20) NOT NULL,
     nombre character varying,
     depto character varying,
     email character varying,
@@ -376,30 +573,32 @@ CREATE TABLE public.empleados (
     fecha_ing date NOT NULL,
     licencia_vence date,
     password text,
-    rol character varying(20) DEFAULT 'PRODUCTOR'::character varying,
-    rfc character varying(13),
-    curp character varying(18),
-    nss character varying(11),
-    estado_civil character varying(20),
+    rol character varying(50) DEFAULT 'PRODUCTOR'::character varying,
+    rfc character varying(50),
+    curp character varying(50),
+    nss character varying(50),
+    estado_civil character varying(50),
     domicilio text,
     ciudad character varying(100),
-    cp character varying(5),
-    contacto_emergencia character varying(150),
-    tel_emergencia character varying(20),
-    parentesco_emergencia character varying(50),
-    escolaridad character varying(50),
-    puesto character varying(100),
-    tipo_contrato character varying(30),
+    cp character varying(20),
+    contacto_emergencia character varying(250),
+    tel_emergencia character varying(50),
+    parentesco_emergencia character varying(100),
+    escolaridad character varying(100),
+    puesto character varying(150),
+    tipo_contrato character varying(100),
     salario_mensual numeric(12,2),
     foto_url text,
-    estatus_empleado character varying(20) DEFAULT 'ACTIVO'::character varying,
+    estatus_empleado character varying(50) DEFAULT 'ACTIVO'::character varying,
     fecha_baja date,
     motivo_baja text
 );
 
 
+ALTER TABLE public.empleados OWNER TO postgres;
+
 --
--- Name: log_accesos; Type: TABLE; Schema: public; Owner: -
+-- Name: log_accesos; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.log_accesos (
@@ -413,8 +612,10 @@ CREATE TABLE public.log_accesos (
 );
 
 
+ALTER TABLE public.log_accesos OWNER TO postgres;
+
 --
--- Name: log_accesos_id_log_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: log_accesos_id_log_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.log_accesos_id_log_seq
@@ -426,15 +627,17 @@ CREATE SEQUENCE public.log_accesos_id_log_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.log_accesos_id_log_seq OWNER TO postgres;
+
 --
--- Name: log_accesos_id_log_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: log_accesos_id_log_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.log_accesos_id_log_seq OWNED BY public.log_accesos.id_log;
 
 
 --
--- Name: op_agenda; Type: TABLE; Schema: public; Owner: -
+-- Name: op_agenda; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.op_agenda (
@@ -455,8 +658,10 @@ CREATE TABLE public.op_agenda (
 );
 
 
+ALTER TABLE public.op_agenda OWNER TO postgres;
+
 --
--- Name: op_agenda_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: op_agenda_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.op_agenda_id_seq
@@ -468,20 +673,22 @@ CREATE SEQUENCE public.op_agenda_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.op_agenda_id_seq OWNER TO postgres;
+
 --
--- Name: op_agenda_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: op_agenda_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.op_agenda_id_seq OWNED BY public.op_agenda.id;
 
 
 --
--- Name: rh_capacitacion; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_capacitacion; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_capacitacion (
     id_capacitacion integer NOT NULL,
-    id_empleado character varying(3) NOT NULL,
+    id_empleado character varying(20) NOT NULL,
     nombre_curso character varying(200) NOT NULL,
     tipo character varying(50) DEFAULT 'INTERNA'::character varying,
     institucion character varying(150),
@@ -500,8 +707,10 @@ CREATE TABLE public.rh_capacitacion (
 );
 
 
+ALTER TABLE public.rh_capacitacion OWNER TO postgres;
+
 --
--- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_capacitacion_id_capacitacion_seq
@@ -513,20 +722,22 @@ CREATE SEQUENCE public.rh_capacitacion_id_capacitacion_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_capacitacion_id_capacitacion_seq OWNER TO postgres;
+
 --
--- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_capacitacion_id_capacitacion_seq OWNED BY public.rh_capacitacion.id_capacitacion;
 
 
 --
--- Name: rh_contratos; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_contratos; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_contratos (
     id_contrato integer NOT NULL,
-    id_empleado character varying(3) NOT NULL,
+    id_empleado character varying(20) NOT NULL,
     folio_contrato character varying(30),
     tipo_contrato character varying(50) DEFAULT 'PLANTA'::character varying,
     fecha_inicio date NOT NULL,
@@ -551,8 +762,10 @@ CREATE TABLE public.rh_contratos (
 );
 
 
+ALTER TABLE public.rh_contratos OWNER TO postgres;
+
 --
--- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_contratos_id_contrato_seq
@@ -564,20 +777,22 @@ CREATE SEQUENCE public.rh_contratos_id_contrato_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_contratos_id_contrato_seq OWNER TO postgres;
+
 --
--- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_contratos_id_contrato_seq OWNED BY public.rh_contratos.id_contrato;
 
 
 --
--- Name: rh_documentos; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_documentos; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_documentos (
     id_documento integer NOT NULL,
-    id_empleado character varying(3) NOT NULL,
+    id_empleado character varying(20) NOT NULL,
     tipo_documento character varying(80),
     nombre_archivo character varying(200),
     archivo_url text,
@@ -592,8 +807,10 @@ CREATE TABLE public.rh_documentos (
 );
 
 
+ALTER TABLE public.rh_documentos OWNER TO postgres;
+
 --
--- Name: rh_documentos_id_documento_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_documentos_id_documento_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_documentos_id_documento_seq
@@ -605,21 +822,23 @@ CREATE SEQUENCE public.rh_documentos_id_documento_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_documentos_id_documento_seq OWNER TO postgres;
+
 --
--- Name: rh_documentos_id_documento_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_documentos_id_documento_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_documentos_id_documento_seq OWNED BY public.rh_documentos.id_documento;
 
 
 --
--- Name: rh_entrevistas; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_entrevistas; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_entrevistas (
     id_entrevista integer NOT NULL,
     id_solicitud integer,
-    id_empleado character varying(3),
+    id_empleado character varying(20),
     tipo_entrevista character varying(50) DEFAULT 'INICIAL'::character varying,
     fecha_entrevista date,
     hora_inicio time without time zone,
@@ -642,8 +861,10 @@ CREATE TABLE public.rh_entrevistas (
 );
 
 
+ALTER TABLE public.rh_entrevistas OWNER TO postgres;
+
 --
--- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_entrevistas_id_entrevista_seq
@@ -655,20 +876,22 @@ CREATE SEQUENCE public.rh_entrevistas_id_entrevista_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_entrevistas_id_entrevista_seq OWNER TO postgres;
+
 --
--- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_entrevistas_id_entrevista_seq OWNED BY public.rh_entrevistas.id_entrevista;
 
 
 --
--- Name: rh_evaluaciones; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_evaluaciones; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_evaluaciones (
     id_evaluacion integer NOT NULL,
-    id_empleado character varying(3) NOT NULL,
+    id_empleado character varying(20) NOT NULL,
     periodo character varying(30),
     tipo character varying(50) DEFAULT 'SEMESTRAL'::character varying,
     evaluador character varying(150),
@@ -693,8 +916,10 @@ CREATE TABLE public.rh_evaluaciones (
 );
 
 
+ALTER TABLE public.rh_evaluaciones OWNER TO postgres;
+
 --
--- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_evaluaciones_id_evaluacion_seq
@@ -706,20 +931,22 @@ CREATE SEQUENCE public.rh_evaluaciones_id_evaluacion_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_evaluaciones_id_evaluacion_seq OWNER TO postgres;
+
 --
--- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_evaluaciones_id_evaluacion_seq OWNED BY public.rh_evaluaciones.id_evaluacion;
 
 
 --
--- Name: rh_historial; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_historial; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_historial (
     id_historial integer NOT NULL,
-    id_empleado character varying(3) NOT NULL,
+    id_empleado character varying(20) NOT NULL,
     fecha_evento timestamp without time zone DEFAULT now(),
     tipo_evento character varying(60) NOT NULL,
     descripcion text,
@@ -732,8 +959,10 @@ CREATE TABLE public.rh_historial (
 );
 
 
+ALTER TABLE public.rh_historial OWNER TO postgres;
+
 --
--- Name: rh_historial_id_historial_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_historial_id_historial_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_historial_id_historial_seq
@@ -745,20 +974,22 @@ CREATE SEQUENCE public.rh_historial_id_historial_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_historial_id_historial_seq OWNER TO postgres;
+
 --
--- Name: rh_historial_id_historial_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_historial_id_historial_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_historial_id_historial_seq OWNED BY public.rh_historial.id_historial;
 
 
 --
--- Name: rh_incapacidades; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_incapacidades; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_incapacidades (
     id_incapacidad integer NOT NULL,
-    id_empleado character varying(3) NOT NULL,
+    id_empleado character varying(20) NOT NULL,
     folio_incapacidad character varying(30),
     tipo character varying(50) DEFAULT 'ENFERMEDAD GENERAL'::character varying,
     fecha_inicio date NOT NULL,
@@ -778,8 +1009,10 @@ CREATE TABLE public.rh_incapacidades (
 );
 
 
+ALTER TABLE public.rh_incapacidades OWNER TO postgres;
+
 --
--- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_incapacidades_id_incapacidad_seq
@@ -791,20 +1024,22 @@ CREATE SEQUENCE public.rh_incapacidades_id_incapacidad_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_incapacidades_id_incapacidad_seq OWNER TO postgres;
+
 --
--- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_incapacidades_id_incapacidad_seq OWNED BY public.rh_incapacidades.id_incapacidad;
 
 
 --
--- Name: rh_permisos; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_permisos; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_permisos (
     id_permiso integer NOT NULL,
-    id_empleado character varying(3) NOT NULL,
+    id_empleado character varying(20) NOT NULL,
     folio_permiso character varying(20),
     tipo_permiso character varying(50) DEFAULT 'PERSONAL'::character varying,
     fecha_solicitud date DEFAULT CURRENT_DATE,
@@ -821,12 +1056,18 @@ CREATE TABLE public.rh_permisos (
     impacta_asistencia boolean DEFAULT true,
     observaciones_rh text,
     registrado_por character varying(100),
-    fecha_registro timestamp without time zone DEFAULT now()
+    fecha_registro timestamp without time zone DEFAULT now(),
+    modalidad character varying(20) DEFAULT 'DIAS'::character varying,
+    horas_solicitadas numeric(4,2) DEFAULT NULL::numeric,
+    hora_inicio time without time zone,
+    hora_fin time without time zone
 );
 
 
+ALTER TABLE public.rh_permisos OWNER TO postgres;
+
 --
--- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_permisos_id_permiso_seq
@@ -838,15 +1079,17 @@ CREATE SEQUENCE public.rh_permisos_id_permiso_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_permisos_id_permiso_seq OWNER TO postgres;
+
 --
--- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_permisos_id_permiso_seq OWNED BY public.rh_permisos.id_permiso;
 
 
 --
--- Name: rh_solicitudes_empleo; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_solicitudes_empleo; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_solicitudes_empleo (
@@ -878,14 +1121,16 @@ CREATE TABLE public.rh_solicitudes_empleo (
     cv_url text,
     estatus character varying(30) DEFAULT 'RECIBIDA'::character varying,
     observaciones_rh text,
-    id_empleado_resultado character varying(3),
+    id_empleado_resultado character varying(20),
     creado_por character varying(100),
     fecha_creacion timestamp without time zone DEFAULT now()
 );
 
 
+ALTER TABLE public.rh_solicitudes_empleo OWNER TO postgres;
+
 --
--- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq
@@ -897,20 +1142,22 @@ CREATE SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq OWNER TO postgres;
+
 --
--- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_solicitudes_empleo_id_solicitud_seq OWNED BY public.rh_solicitudes_empleo.id_solicitud;
 
 
 --
--- Name: rh_vacaciones; Type: TABLE; Schema: public; Owner: -
+-- Name: rh_vacaciones; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.rh_vacaciones (
     id_vacacion integer NOT NULL,
-    id_empleado character varying(3) NOT NULL,
+    id_empleado character varying(20) NOT NULL,
     anio_periodo integer NOT NULL,
     dias_correspondientes integer NOT NULL,
     dias_tomados integer DEFAULT 0,
@@ -930,8 +1177,10 @@ CREATE TABLE public.rh_vacaciones (
 );
 
 
+ALTER TABLE public.rh_vacaciones OWNER TO postgres;
+
 --
--- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.rh_vacaciones_id_vacacion_seq
@@ -943,141 +1192,164 @@ CREATE SEQUENCE public.rh_vacaciones_id_vacacion_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rh_vacaciones_id_vacacion_seq OWNER TO postgres;
+
 --
--- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.rh_vacaciones_id_vacacion_seq OWNED BY public.rh_vacaciones.id_vacacion;
 
 
 --
--- Name: archivos_compartidos id_transferencia; Type: DEFAULT; Schema: public; Owner: -
+-- Name: archivos_compartidos id_transferencia; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.archivos_compartidos ALTER COLUMN id_transferencia SET DEFAULT nextval('public.archivos_compartidos_id_transferencia_seq'::regclass);
 
 
 --
--- Name: asistencia_eventos id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: asistencia_eventos id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.asistencia_eventos ALTER COLUMN id SET DEFAULT nextval('public.asistencia_eventos_id_seq'::regclass);
 
 
 --
--- Name: control_asistencia id_registro; Type: DEFAULT; Schema: public; Owner: -
+-- Name: chat_admin_mensajes id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.chat_admin_mensajes ALTER COLUMN id SET DEFAULT nextval('public.chat_admin_mensajes_id_seq'::regclass);
+
+
+--
+-- Name: chat_directo_mensajes id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.chat_directo_mensajes ALTER COLUMN id SET DEFAULT nextval('public.chat_directo_mensajes_id_seq'::regclass);
+
+
+--
+-- Name: chat_soporte_mensajes id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.chat_soporte_mensajes ALTER COLUMN id SET DEFAULT nextval('public.chat_soporte_mensajes_id_seq'::regclass);
+
+
+--
+-- Name: control_asistencia id_registro; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.control_asistencia ALTER COLUMN id_registro SET DEFAULT nextval('public.control_asistencia_id_registro_seq'::regclass);
 
 
 --
--- Name: control_horas_extras id_autorizacion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: control_horas_extras id_autorizacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.control_horas_extras ALTER COLUMN id_autorizacion SET DEFAULT nextval('public.control_horas_extras_id_autorizacion_seq'::regclass);
 
 
 --
--- Name: cronogramas_eventos id_cronograma; Type: DEFAULT; Schema: public; Owner: -
+-- Name: cronogramas_eventos id_cronograma; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cronogramas_eventos ALTER COLUMN id_cronograma SET DEFAULT nextval('public.cronogramas_eventos_id_cronograma_seq'::regclass);
 
 
 --
--- Name: departamentos id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: departamentos id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.departamentos ALTER COLUMN id SET DEFAULT nextval('public.departamentos_id_seq'::regclass);
 
 
 --
--- Name: log_accesos id_log; Type: DEFAULT; Schema: public; Owner: -
+-- Name: log_accesos id_log; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.log_accesos ALTER COLUMN id_log SET DEFAULT nextval('public.log_accesos_id_log_seq'::regclass);
 
 
 --
--- Name: op_agenda id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: op_agenda id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.op_agenda ALTER COLUMN id SET DEFAULT nextval('public.op_agenda_id_seq'::regclass);
 
 
 --
--- Name: rh_capacitacion id_capacitacion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_capacitacion id_capacitacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_capacitacion ALTER COLUMN id_capacitacion SET DEFAULT nextval('public.rh_capacitacion_id_capacitacion_seq'::regclass);
 
 
 --
--- Name: rh_contratos id_contrato; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_contratos id_contrato; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_contratos ALTER COLUMN id_contrato SET DEFAULT nextval('public.rh_contratos_id_contrato_seq'::regclass);
 
 
 --
--- Name: rh_documentos id_documento; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_documentos id_documento; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_documentos ALTER COLUMN id_documento SET DEFAULT nextval('public.rh_documentos_id_documento_seq'::regclass);
 
 
 --
--- Name: rh_entrevistas id_entrevista; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_entrevistas id_entrevista; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_entrevistas ALTER COLUMN id_entrevista SET DEFAULT nextval('public.rh_entrevistas_id_entrevista_seq'::regclass);
 
 
 --
--- Name: rh_evaluaciones id_evaluacion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_evaluaciones id_evaluacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_evaluaciones ALTER COLUMN id_evaluacion SET DEFAULT nextval('public.rh_evaluaciones_id_evaluacion_seq'::regclass);
 
 
 --
--- Name: rh_historial id_historial; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_historial id_historial; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_historial ALTER COLUMN id_historial SET DEFAULT nextval('public.rh_historial_id_historial_seq'::regclass);
 
 
 --
--- Name: rh_incapacidades id_incapacidad; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_incapacidades id_incapacidad; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_incapacidades ALTER COLUMN id_incapacidad SET DEFAULT nextval('public.rh_incapacidades_id_incapacidad_seq'::regclass);
 
 
 --
--- Name: rh_permisos id_permiso; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_permisos id_permiso; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_permisos ALTER COLUMN id_permiso SET DEFAULT nextval('public.rh_permisos_id_permiso_seq'::regclass);
 
 
 --
--- Name: rh_solicitudes_empleo id_solicitud; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_solicitudes_empleo id_solicitud; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo ALTER COLUMN id_solicitud SET DEFAULT nextval('public.rh_solicitudes_empleo_id_solicitud_seq'::regclass);
 
 
 --
--- Name: rh_vacaciones id_vacacion; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rh_vacaciones id_vacacion; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_vacaciones ALTER COLUMN id_vacacion SET DEFAULT nextval('public.rh_vacaciones_id_vacacion_seq'::regclass);
 
 
 --
--- Data for Name: archivos_compartidos; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: archivos_compartidos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.archivos_compartidos (id_transferencia, id_empleado_origen, nombre_origen, id_empleado_destino, nombre_destino, nombre_archivo_original, nombre_archivo_fisico, tamano_bytes, tamano_legible, tipo_mime, mensaje, folio_paquete, fecha_subida, descargado, veces_descargado, fecha_primer_descarga, fecha_limite_borrado, estatus, ip_origen, es_lan_origen, ip_descarga, es_lan_descarga) FROM stdin;
@@ -1268,11 +1540,14 @@ COPY public.archivos_compartidos (id_transferencia, id_empleado_origen, nombre_o
 88	101	Ana Lilia Villarreal Uribe	201	Cuauhtemoc Rivera Agundez	ORDEN DE PROD.No156 Enlace vía ZOOM gobernadora y noticiero canal II,  15-sep-26.xls	trans_1791914705_b849ae4f_ORDEN_DE_PROD.No156_Enlace_v_a_ZOOM_gobernadora_y_noticiero_canal_II___15-sep-26.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1791914705-CC5967	2026-10-13 12:05:05.812331	t	1	2026-10-13 14:00:12.379174	2026-10-14 14:00:12.379174	EXPIRADO_BORRADO	189.195.177.20	f	127.0.0.1	t
 90	101	Ana Lilia Villarreal Uribe	201	Cuauhtemoc Rivera Agundez	ORDEN DE PROD.No154 Proveeduria internet a 10 modulos y cableado a stand, dias 09,10 y 11sept. Villa Juarez.xls	trans_1791914705_65b12d82_ORDEN_DE_PROD.No154_Proveeduria_internet_a_10_modulos_y_cableado_a_stand__dias_09_10_y_11sept._Villa_Juarez.xls	55808	54.5 KB	application/vnd.ms-excel		TRF-1791914705-CC5967	2026-10-13 12:05:05.812331	t	1	2026-10-13 14:00:24.361228	2026-10-14 14:00:24.361228	EXPIRADO_BORRADO	189.195.177.20	f	127.0.0.1	t
 22	101	Ana Lilia Villarreal Uribe	201	Cuauhtemoc Rivera Agundez	ORDEN DE PROD. No.002-El Debate.xls	trans_1791914585_432bdf6f_ORDEN_DE_PROD._No.002-El_Debate.xls	54272	53.0 KB	application/vnd.ms-excel		TRF-1791914585-D96C68	2026-10-13 12:03:05.747693	t	2	2026-10-13 14:01:28.825873	2026-10-14 14:01:28.825873	EXPIRADO_BORRADO	189.195.177.20	f	127.0.0.1	t
+190	200	Andrea Maria Vilarreal Lopez	201	Cuauhtemoc Rivera Agundez	foto 2.png	trans_1793046232_0e07a9af_foto_2.png	1553882	1.5 MB	image/png	imagen con el logo arreglado	TRF-1793046231-W1RX9M	2026-10-26 20:23:52.636548	f	0	\N	\N	DESCARTADO_RECEPTOR	100.64.0.13	f	\N	\N
+188	200	Andrea Maria Vilarreal Lopez	201	Cuauhtemoc Rivera Agundez	foto.png	trans_1793045217_f72d79eb_foto.png	1543481	1.5 MB	image/png	le mando la imagen y el video que solicito	TRF-1793045216-KKUGZE	2026-10-26 20:06:57.25393	t	2	2026-10-26 20:08:25.499584	2026-10-27 20:08:25.499584	EXPIRADO_BORRADO	100.64.0.9	f	100.64.0.13	f
+189	200	Andrea Maria Vilarreal Lopez	201	Cuauhtemoc Rivera Agundez	Video para vpropedia.mp4	trans_1793045226_e419ab14_Video_para_vpropedia.mp4	147423619	140.6 MB	video/mp4	le mando la imagen y el video que solicito	TRF-1793045216-KKUGZE	2026-10-26 20:07:06.454796	t	1	2026-10-26 20:08:11.557703	2026-10-27 20:08:11.557703	EXPIRADO_BORRADO	100.64.0.18	f	100.64.0.18	f
 \.
 
 
 --
--- Data for Name: asistencia_eventos; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: asistencia_eventos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.asistencia_eventos (id, id_empleado, nombre_empleado, cliente, fecha_evento) FROM stdin;
@@ -1280,7 +1555,34 @@ COPY public.asistencia_eventos (id, id_empleado, nombre_empleado, cliente, fecha
 
 
 --
--- Data for Name: control_asistencia; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: chat_admin_mensajes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.chat_admin_mensajes (id, id_empleado, autor_id, autor_nombre, autor_rol, mensaje, tipo_mensaje, archivo_url, metadata_extra, fecha_hora, leido_por_admin, leido_por_empleado) FROM stdin;
+5	201	201	Cuauhtemoc Rivera Agundez	SISTEMA	📋 *NUEVA SOLICITUD DE PERMISO LABORAL*\n• *Folio:* PER-2026-001\n• *Colaborador:* Cuauhtemoc Rivera Agundez (ID: 201)\n• *Tipo:* ASUNTOS PERSONALES\n• *Periodo:* Del 2026-11-08 al 2026-11-08 (1 día(s))\n• *Goce de Sueldo:* Con Goce\n• *Motivo:* es el cumple de Hellen Irina\n• *Estatus:* ⏳ PENDIENTE DE REVISIÓN EN RH	SOLICITUD_PERMISO	\N	{"dias": 1, "folio": "PER-2026-001", "estatus": "PENDIENTE", "con_goce": true, "fecha_fin": "2026-11-08", "id_permiso": 5, "id_empleado": "201", "fecha_inicio": "2026-11-08", "tipo_permiso": "ASUNTOS PERSONALES"}	2026-10-29 11:40:57.348734	t	t
+6	201	000	Celular Azul / Samsung	ADMIN	Enterado	TEXTO	\N	{}	2026-10-29 11:51:51.953849	t	f
+7	202	202	Edgar Javier Amarillas	SISTEMA	📋 *NUEVA SOLICITUD DE PERMISO LABORAL*\n• *Folio:* PER-2026-002\n• *Colaborador:* Edgar Javier Amarillas (ID: 202)\n• *Modalidad:* 📅 Día(s) Completo(s)\n• *Tipo:* VACACIONES\n• *Periodo / Horario:* Del 2026-11-25 al 2026-11-27 (3 día(s))\n• *Goce de Sueldo:* Sin Goce\n• *Motivo:* Test de prueba\n• *Estatus:* ⏳ PENDIENTE DE REVISIÓN EN RH	SOLICITUD_PERMISO	\N	{"dias": 3, "folio": "PER-2026-002", "horas": null, "estatus": "PENDIENTE", "con_goce": false, "hora_fin": null, "fecha_fin": "2026-11-27", "modalidad": "DIAS", "id_permiso": 6, "hora_inicio": null, "id_empleado": "202", "fecha_inicio": "2026-11-25", "tipo_permiso": "VACACIONES"}	2026-11-20 12:44:53.789704	f	t
+\.
+
+
+--
+-- Data for Name: chat_directo_mensajes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.chat_directo_mensajes (id, sala_id, remitente_id, destinatario_id, remitente_nombre, mensaje, tipo_mensaje, archivo_url, reacciones, metadata_extra, fecha_hora, leido) FROM stdin;
+\.
+
+
+--
+-- Data for Name: chat_soporte_mensajes; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.chat_soporte_mensajes (id, id_empleado, autor_nombre, autor_rol, mensaje, tipo_mensaje, archivo_url, es_fijado, reacciones, metadata_extra, fecha_hora, id_empleado_consulta, autor_id, leido_por_ti, leido_por_empleado) FROM stdin;
+\.
+
+
+--
+-- Data for Name: control_asistencia; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, hora_salida, estatus, observaciones, hora_entrada_v, hora_salida_v) FROM stdin;
@@ -1400,6 +1702,7 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 115	113	2026-08-31	09:18:09	14:26:24	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	19:01:31	\N
 117	200	2026-08-31	14:00:02	19:02:02	RETARDO	Kiosco - T. Matutino | Kiosco - Fin Jornada	\N	\N
 118	109	2026-08-31	19:04:09	\N	RETARDO	Kiosco - T. Vespertino	\N	\N
+736	200	2026-11-06	08:44:39	14:00:03	ASISTENCIA	Kiosco HTML	16:00:03	\N
 109	124	2026-08-31	08:51:01	14:02:02	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:05:59	19:04:25
 110	119	2026-08-31	08:51:07	14:02:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	16:06:10	19:04:31
 114	107	2026-08-31	09:04:55	14:03:07	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:51:35	19:05:44
@@ -1565,6 +1868,7 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 306	113	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
 307	202	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
 308	107	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
+641	105	2026-10-26	09:05:00	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 288	121	2026-09-18	09:28:23	16:43:04	RETARDO	Kiosco - T. Matutino | Kiosco - Fin Jornada	\N	\N
 289	200	2026-09-18	09:28:26	16:43:26	RETARDO	Kiosco - T. Matutino | Kiosco - Fin Jornada	\N	\N
 309	201	2026-09-19	09:00:00	14:00:00	A TIEMPO	Ajuste manual: Turno Matutino (09:00 a 14:00)	\N	\N
@@ -1772,6 +2076,7 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 518	115	2026-10-12	08:54:44	14:00:36	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 521	200	2026-10-12	09:44:26	\N	OMISIÓN COMIDA	Kiosco - T. Matutino | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	16:45:51
 519	113	2026-10-12	09:06:39	14:02:00	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:56:24	19:01:21
+737	115	2026-11-06	08:44:49	14:00:06	ASISTENCIA	Kiosco HTML	16:00:06	\N
 517	124	2026-10-12	08:47:43	14:01:11	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:53:53	19:01:50
 524	121	2026-10-13	08:43:16	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 526	115	2026-10-13	08:46:28	14:02:13	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
@@ -1893,7 +2198,6 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 611	119	2026-10-22	08:56:24	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 612	202	2026-10-22	09:03:32	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
 609	121	2026-10-22	08:53:26	13:34:50	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
-636	113	2026-10-24	09:21:11	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 621	200	2026-10-23	08:45:59	13:04:07	ASISTENCIA	Kiosco - T. Matutino | Kiosco - Comida	\N	\N
 637	105	2026-10-24	09:21:36	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 618	109	2026-10-22	15:13:49	\N	ASISTENCIA	Kiosco - T. Vespertino	\N	\N
@@ -1904,21 +2208,134 @@ COPY public.control_asistencia (id_registro, id_empleado, fecha, hora_entrada, h
 628	119	2026-10-23	09:12:00	14:02:06	GIRA / COMIDA	📍 [EN GIRA] Entrada: 09:12 | Kiosco - Salida Matutina / Comida	\N	\N
 625	124	2026-10-23	09:03:41	14:02:12	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:58:00	19:00:07
 629	202	2026-10-23	09:12:00	14:12:28	GIRA / COMIDA	📍 [EN GIRA] Entrada: 09:12 | Kiosco - Salida Matutina / Comida	\N	\N
-638	200	2026-10-24	09:31:11	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 626	113	2026-10-23	09:15:30	13:36:37	RETARDO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino	19:00:09	\N
-639	107	2026-10-24	10:14:12	\N	RETARDO	Kiosco - T. Matutino	\N	\N
 623	104	2026-10-23	08:55:08	14:49:16	COMPLETO	Kiosco - T. Matutino | Kiosco - Comida | Kiosco - T. Vespertino | Kiosco - T. Vespertino	15:47:07	19:05:20
-630	202	2026-10-24	08:58:06	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-631	104	2026-10-24	09:00:43	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-632	124	2026-10-24	09:02:47	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-633	119	2026-10-24	09:03:22	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-634	115	2026-10-24	09:04:56	\N	ASISTENCIA	Kiosco - T. Matutino	\N	\N
-635	201	2026-10-24	09:14:06	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+635	201	2026-10-24	09:14:06	12:23:32	RETARDO	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+639	107	2026-10-24	10:14:12	13:59:26	RETARDO	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+636	113	2026-10-24	09:21:11	14:00:01	RETARDO	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+634	115	2026-10-24	09:04:56	14:00:11	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+630	202	2026-10-24	08:58:06	14:00:21	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+631	104	2026-10-24	09:00:43	12:24:26	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML	14:00:28	\N
+638	200	2026-10-24	09:31:11	14:00:49	RETARDO	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+632	124	2026-10-24	09:02:47	14:00:57	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+633	119	2026-10-24	09:03:22	14:01:03	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+644	109	2026-10-26	09:12:00	\N	RETARDO	Kiosco - T. Matutino	\N	\N
+646	115	2026-10-26	09:00:00	14:00:44	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+655	104	2026-10-27	09:06:16	\N	ASISTENCIA	Kiosco HTML	\N	\N
+640	104	2026-10-26	09:00:00	14:07:42	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:42:35	19:01:06
+649	202	2026-10-26	09:00:00	14:02:22	ASISTENCIA	Kiosco - T. Matutino | Kiosco HTML	\N	\N
+645	113	2026-10-26	09:01:00	14:02:56	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:12:30	19:01:09
+656	124	2026-10-27	09:06:50	\N	ASISTENCIA	Kiosco HTML	\N	\N
+657	119	2026-10-27	09:07:29	\N	ASISTENCIA	Kiosco HTML	\N	\N
+648	201	2026-10-26	09:20:00	15:51:37	RETARDO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML	19:01:12	\N
+651	115	2026-10-27	08:55:25	\N	ASISTENCIA	Kiosco HTML	\N	\N
+652	200	2026-10-27	09:00:24	\N	ASISTENCIA	Kiosco HTML	\N	\N
+643	107	2026-10-26	09:00:00	14:01:30	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	15:56:42	18:58:11
+642	119	2026-10-26	09:00:00	14:01:07	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:09:06	18:59:34
+650	200	2026-10-26	13:56:27	\N	OMISIÓN COMIDA	Kiosco HTML | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos) | 🚨 ADVERTENCIA: OMISIÓN DE COMIDA (Entrada 09:00 - Salida 19:00 sin registrar alimentos)	\N	18:59:39
+647	124	2026-10-26	09:00:00	14:01:14	COMPLETO	Kiosco - T. Matutino | Kiosco HTML | Kiosco HTML | Kiosco HTML	16:08:51	18:59:48
+653	121	2026-10-27	09:00:36	\N	ASISTENCIA	Kiosco HTML	\N	\N
+654	202	2026-10-27	09:02:38	\N	ASISTENCIA	Kiosco HTML	\N	\N
+658	113	2026-10-27	09:09:02	\N	ASISTENCIA	Kiosco HTML	\N	\N
+659	107	2026-10-27	09:09:34	\N	ASISTENCIA	Kiosco HTML	\N	\N
+660	109	2026-10-27	09:15:19	\N	ASISTENCIA	Kiosco HTML	\N	\N
+661	105	2026-10-27	09:15:34	\N	ASISTENCIA	Kiosco HTML	\N	\N
+662	201	2026-10-27	10:18:39	\N	ASISTENCIA	Kiosco HTML	\N	\N
+738	121	2026-11-06	08:49:10	14:00:09	ASISTENCIA	Kiosco HTML	16:00:09	\N
+739	124	2026-11-06	08:56:47	14:00:12	ASISTENCIA	Kiosco HTML	16:00:12	\N
+740	105	2026-11-06	08:57:04	14:00:15	ASISTENCIA	📍 [OP-51] Llamado: 09:00 | INAUGURACION DE CORREDOR DE LA SALUD	16:00:15	\N
+741	202	2026-11-06	08:57:21	14:00:18	ASISTENCIA	Kiosco HTML	16:00:18	\N
+742	104	2026-11-06	08:57:24	14:00:21	ASISTENCIA	📍 [OP-51] Llamado: 09:00 | INAUGURACION DE CORREDOR DE LA SALUD	16:00:21	\N
+743	119	2026-11-06	08:57:32	14:00:24	ASISTENCIA	Kiosco HTML	16:00:24	\N
+745	113	2026-11-06	09:19:39	14:00:30	RETARDO	Kiosco HTML | Retardo 19m	16:00:30	\N
+746	201	2026-11-06	12:00:47	14:00:33	PERMISO	📋 Permiso RH (CITA MÉDICA (IMSS/PARTICULAR): Con Goce) - Dictaminó: Ana Lilia Villarreal Uribe	16:00:33	\N
+744	107	2026-11-06	09:02:56	14:00:27	ASISTENCIA	Kiosco HTML	16:00:27	\N
+800	202	2026-11-13	07:53:34	\N	ASISTENCIA	📍 [OP-56] Llamado: 08:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS	\N	\N
+802	119	2026-11-13	08:06:26	\N	ASISTENCIA	📍 [OP-56] Llamado: 08:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS	\N	\N
+804	115	2026-11-13	08:40:46	14:00:35	ASISTENCIA	Kiosco HTML	\N	\N
+801	109	2026-11-13	07:54:22	14:00:00	COMPLETO	📍 [OP-56] Llamado: 08:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS	15:00:00	21:02:00
+805	124	2026-11-13	09:02:22	14:00:54	COMPLETO	Kiosco HTML	15:58:33	18:49:51
+803	121	2026-11-13	08:36:41	13:58:26	ASISTENCIA	Kiosco HTML	\N	\N
+799	107	2026-11-13	07:52:35	08:01:01	COMPLETO	📍 [OP-55] Llamado: 08:00 | Fiscalia	14:00:46	15:53:29
+798	104	2026-11-13	07:44:29	14:00:00	COMPLETO	📍 [OP-56] Llamado: 08:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS	15:01:21	21:08:56
+797	105	2026-11-13	07:44:19	14:00:00	ASISTENCIA	📍 [OP-55] Llamado: 08:00 | Fiscalia	\N	\N
+806	201	2026-11-13	\N	\N	COMPLETO	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada por OP)	14:25:56	21:00:19
+807	113	2026-11-13	\N	\N	RETARDO	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Retardo 14m | Kiosco HTML | Turno Vespertino (Mañana libre autorizada por OP)	15:14:35	21:03:12
+810	104	2026-11-14	\N	\N	ASISTENCIA	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	14:33:07	\N
+811	109	2026-11-14	\N	\N	ASISTENCIA	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	14:54:38	\N
+812	201	2026-11-14	\N	\N	ASISTENCIA	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	14:55:59	\N
+813	113	2026-11-14	\N	\N	RETARDO	📍 [OP-56] Llamado Estudio: 15:00 | TORNEO DE LIGA DE BALONCESTO DEL PACIFICO 2026 ASCENSO TEBACAS | Retardo 20m | Kiosco HTML | Turno Vespertino (Mañana libre autorizada)	15:20:04	\N
+666	202	2026-11-17	09:05:01	14:02:57	ASISTENCIA	Kiosco HTML	16:00:00	\N
+667	103	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+668	110	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+669	116	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+670	117	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+671	118	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+672	122	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+673	123	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+674	517	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+675	113	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+676	115	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+677	508	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+678	501	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+679	525	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+680	529	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+681	104	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+682	102	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+683	125	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+684	105	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+685	203	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+686	502	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+687	512	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+688	504	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+689	505	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+690	509	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+691	506	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+692	510	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+693	513	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+694	109	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+695	515	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+696	521	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+697	518	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+698	522	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+699	526	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+700	519	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+701	201	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+702	503	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+703	527	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+704	523	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+705	530	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+706	507	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+707	511	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+708	520	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+709	516	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+710	524	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+711	528	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+712	124	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+713	200	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+714	121	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+715	202	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+716	107	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+717	119	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+718	101	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+719	000	2026-11-16	\N	\N	DESCANSO	🗓️ Descanso Obligatorio (Revolución Mexicana - LFT Art. 74)	\N	\N
+720	104	2026-11-20	09:21:12	14:42:22	RETARDO	Kiosco HTML | Retardo 21m	\N	\N
+721	105	2026-11-20	09:20:47	14:00:00	RETARDO	Kiosco HTML | Retardo 20m	\N	\N
+722	107	2026-11-20	09:08:57	14:00:08	ASISTENCIA	Kiosco HTML	\N	\N
+723	109	2026-11-20	08:44:16	14:01:07	ASISTENCIA	Kiosco HTML	\N	\N
+724	113	2026-11-20	09:17:22	13:45:12	RETARDO	Kiosco HTML | Retardo 17m	\N	\N
+725	115	2026-11-20	08:44:13	14:00:44	ASISTENCIA	Kiosco HTML	\N	\N
+726	119	2026-11-20	09:04:22	14:01:21	ASISTENCIA	Kiosco HTML	\N	\N
+727	121	2026-11-20	08:46:23	14:00:00	ASISTENCIA	Kiosco HTML	\N	\N
+728	124	2026-11-20	09:03:50	14:01:27	ASISTENCIA	Kiosco HTML	\N	\N
+729	200	2026-11-20	08:46:19	13:39:55	ASISTENCIA	Kiosco HTML	\N	\N
+730	201	2026-11-20	09:19:10	14:00:00	RETARDO	Kiosco HTML | Retardo 19m	\N	\N
+731	202	2026-11-20	08:45:09	14:00:00	ASISTENCIA	Kiosco HTML	\N	\N
 \.
 
 
 --
--- Data for Name: control_horas_extras; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: control_horas_extras; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.control_horas_extras (id_autorizacion, id_registro_asistencia, id_empleado, nombre_empleado, id_evento, folio_op, nombre_evento, productor_responsable, fecha_jornada, hora_entrada, hora_salida_madrugada, corte_ordinario, horas_extra_calculadas, estatus_aprobacion, aprobado_por, fecha_aprobacion, observaciones) FROM stdin;
@@ -1934,7 +2351,7 @@ COPY public.control_horas_extras (id_autorizacion, id_registro_asistencia, id_em
 
 
 --
--- Data for Name: cronogramas_eventos; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: cronogramas_eventos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.cronogramas_eventos (id_cronograma, folio, fecha, nombre_evento, ubicacion_general, folio_op, actividades, observaciones_generales, creado_por, fecha_creacion) FROM stdin;
@@ -1942,7 +2359,7 @@ COPY public.cronogramas_eventos (id_cronograma, folio, fecha, nombre_evento, ubi
 
 
 --
--- Data for Name: departamentos; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: departamentos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.departamentos (id, nombre) FROM stdin;
@@ -1955,7 +2372,7 @@ COPY public.departamentos (id, nombre) FROM stdin;
 
 
 --
--- Data for Name: empleados; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: empleados; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_ing, licencia_vence, password, rol, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, foto_url, estatus_empleado, fecha_baja, motivo_baja) FROM stdin;
@@ -1970,18 +2387,14 @@ COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_
 113	Carlos Jacobo Quezada Mendoza	PRODUCCION	carlos.edicion@vprovideo.mx	6674667614	2000-02-12	2023-12-07	2027-09-19	$2b$12$0/2ZlsvvQ3VvA5iB7fKDIO3SvhQF9orN6Em70sA1TjaR2L/b0uqcu	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 115	Ibon Araceli Campos Medina	ADMINISTRACION	notieneemail@hotmail.com	6674305028	1973-08-16	2025-02-09	2030-03-09	IbonA	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 508	Jaime Muro	PRODUCCION		\N	1900-01-01	2026-03-20	2050-05-22	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-101	Ana Lilia Villarreal Uribe	ADMINISTRACION	contabilidad@vprovideo.com	6671022524	1973-09-29	2015-11-26	2028-01-09	$2b$12$PdjiLZAyyKN1G/Oi7nAqkeUo7tZ492LZRYIP43gg9/Q6fjxvcz5.q	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 501	eduardo el condor	PRODUCCION	direcciown@vprovideo.com	\N	2026-09-08	2026-11-02	2026-12-12	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 525	Carlos Castillo	PRODUCCION		\N	1981-06-07	2023-12-10	2053-10-25	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 529	Kiosco Bodega	KIOSKO		\N	2026-05-19	2026-05-09	2099-12-25	KioskO	LOGISTICA	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 104	Jose Francisco Torres Sanchez	PRODUCCION	francisco.tecnico@vprovideo.mx	6672072138	1975-12-06	2016-12-04	2026-12-16	$2b$12$maVMyOl/cY9wwGFeGYj5guBuA1ZEUcSeE1cTFqA0fFvjHZMPpo5rm	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 102	Gerardo Villarreal Uribe	EDICION	gerardo@vprovideo.com	6673291087	1979-08-31	2015-12-27	2028-06-04	$2b$12$i4sfscS821ykcQvydKKPtOP1iA8Cwhcaskv383JWmW5e418fzAEee	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-121	Sofia Alejandra Villarreal Lopez	VENTAS	sofia.ventas@vprovideo.com	6673903759	1996-08-11	1996-08-11	2050-01-09	SofiA	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 125	Diego Villareal Lopez	ADMINISTRACION	diego@gmail.com	\N	2005-09-15	2005-09-15	2050-05-27	DiegoV	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-202	Edgar Javier Amarillas	SISTEMAS	live.stream@vprovideo.com	6672090481	1975-02-03	2024-09-24	2029-01-09	$2b$12$Kfzpr9LbUuRK3dIv/HMhOunhnQ3w6MGBXydLse2wTO/XyH8gje0XG	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 105	Jose Daniel Torres Arroyo	PRODUCCION	daniel.produccion@vprovideo.mx	6675788854	1999-01-28	2016-03-30	2100-02-21	$2b$12$GkNreszVLLBmt67EPXrk8eq5vqp1IzUQq/DayBhrESBKrWQZK/vUS	PRODUCCION	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 203	Pedro Villarreal Uribe	ADMINISTRACION	direccion@vprovideo.com	6672300488	1968-08-07	1964-08-07	2050-12-24	$2b$12$fXpITFlsgHoryqPp3q4MnOpzcmPswF.sI1XYbH9xxyI/Iv20VMtHq	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-200	Andrea Maria Vilarreal Lopez	EDICION	andrea@vprovideo.mx	6673903762	1994-07-23	1994-07-23	2050-02-10	$2b$12$b6tO9D1W7dEARjjJOU3hDuhpU1uqsnWZLhJnxhIGPt5MJUz0e.acm	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 502	Javier Garcia	PRODUCCION		\N	1900-01-01	2026-03-20	2027-12-12	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 512	Leonardo Leon	PRODUCCION		\N	2002-07-04	2021-06-21	2051-07-26	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 504	Ernesto Gutierrez	PRODUCCION		\N	1900-01-01	2026-03-20	2029-01-22	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
@@ -2008,14 +2421,19 @@ COPY public.empleados (id_empleado, nombre, depto, email, cel, fecha_nac, fecha_
 516	Martin Miranda	PRODUCCION		\N	1978-08-04	2024-08-22	2053-07-27	vpro_sin_acceso	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 524	Carlos Pinzon	PRODUCCION		\N	1982-09-18	2023-11-07	2051-08-19	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 528	Carlos Aleman	PRODUCCION		\N	1981-09-08	2024-07-10	2050-04-25	vpro123	PROVEEDOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-107	Martin Eduardo Sanchez Estrada	PRODUCCION	live.ventas@vprovideo.com	6678901234	1971-03-17	2016-06-01	2050-03-31	$2b$12$x2.aABcDfquVMc3gjo3JR.H5/lGp5gaLoYqNqgDeLbJvWJ1PGL7le	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
-119	Manuel Antonio Madrid Zazueta	PRODUCCION	manuel@vprovideo.com	6671325182	1972-08-03	2019-11-26	2026-10-25	$2b$12$96Fw/6RABVtKdELqnoBXs.mVuGhN6LuNJJVF9TUZwMhkO5CcrQ2Qq	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
 124	Manuel Eduardo Madrid	PRODUCCION	coordinador@vprovideo.com		1999-05-18	2026-03-23	2028-08-21	$2b$12$yi/.y4i8H7Pyg7G9icRaZuS2coy11GdoYQNWSwa8nHTkWIzQL8fuu	COORDINADOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+200	Andrea Maria Vilarreal Lopez	EDICION	andrea@vprovideo.mx	6673903762	1994-07-23	1994-07-23	2050-02-10	$2b$12$b6tO9D1W7dEARjjJOU3hDuhpU1uqsnWZLhJnxhIGPt5MJUz0e.acm	ADMIN				SOLTERO		Culiacán					LICENCIATURA	Jefa de Edición	PLANTA	0.00	\N	ACTIVO	\N	\N
+121	Sofia Alejandra Villarreal Lopez	VENTAS	sofia.ventas@vprovideo.com	6673903759	1996-08-11	1996-08-11	2050-01-09	$2b$12$1DGA/xLxy1otXVH0LXVDtOipXRXYtCO9PXSofyEZYQYo0DFjIRyKC	ADMIN	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+202	Edgar Javier Amarillas	SISTEMAS	live.stream@vprovideo.com	6672090481	1975-02-03	2024-09-24	2029-01-09	$2b$12$Kfzpr9LbUuRK3dIv/HMhOunhnQ3w6MGBXydLse2wTO/XyH8gje0XG	PRODUCCION	AAED750203V10	AAXE750203HSLMXD04	23967503642	SOLTERO	Av. Lázaro Cárdenas 1455, Los Pinos	Culiacán	80128	Juana Amarillas	6671762500	Mamá	LICENCIATURA	ING. SISTEMAS	PLANTA	0.00	\N	ACTIVO	\N	\N
+107	Martin Eduardo Sanchez Estrada	PRODUCCION	live.ventas@vprovideo.com	6678901234	1971-03-17	2016-06-01	2050-03-31	$2b$12$x2.aABcDfquVMc3gjo3JR.H5/lGp5gaLoYqNqgDeLbJvWJ1PGL7le	PRODUCTOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+119	Manuel Antonio Madrid Zazueta	PRODUCCION	manuel@vprovideo.com	6671325182	1972-08-03	2019-11-26	2026-10-25	$2b$12$96Fw/6RABVtKdELqnoBXs.mVuGhN6LuNJJVF9TUZwMhkO5CcrQ2Qq	PRODUCTOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	ACTIVO	\N	\N
+000	Celular Azul / Samsung	PRODUCCION	live.stream@vprovideo.com	6671000000	2000-01-01	2024-01-01	\N	$2b$12$giGHvn46PkQlA0vLCHj6l.EDFLqTpcVVYlaGYii3035kDYnE4CrGq	COORDINADOR	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	CABINA STREAMING	\N	\N	\N	ACTIVO	\N	\N
+101	Ana Lilia Villarreal Uribe	ADMINISTRACION	contabilidad@vprovideo.com	6671022524	1973-09-29	2015-11-26	2028-01-09	$2b$12$ofA.sPgwELWAJTzawCne5e2Jm5Q76nl7i0JXlvlsyuSTHKggshYbq	ADMIN	\N	\N	2396-750364-2	\N	\N	\N	\N	\N	\N	\N	\N	ADMINISTRACION Y RECURSOS HUMANOS	\N	\N	\N	ACTIVO	\N	\N
 \.
 
 
 --
--- Data for Name: log_accesos; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: log_accesos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.log_accesos (id_log, fecha, hora, ip_origen, id_empleado, nombre_empleado, tipo_evento) FROM stdin;
@@ -2192,11 +2610,182 @@ COPY public.log_accesos (id_log, fecha, hora, ip_origen, id_empleado, nombre_emp
 203	2026-10-23	16:58:35.783451	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
 204	2026-10-23	17:30:31.980308	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
 205	2026-10-23	17:30:32.053176	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+206	2026-10-24	19:16:54.436447	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+207	2026-10-24	19:16:54.58011	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+208	2026-10-24	19:43:25.379264	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+209	2026-10-24	19:43:25.518599	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+210	2026-10-24	20:14:05.075603	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+211	2026-10-24	20:14:05.220093	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+212	2026-10-24	20:35:04.825446	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+213	2026-10-24	20:35:04.943504	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+214	2026-10-26	16:10:13.114226	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+215	2026-10-26	16:10:13.504058	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+216	2026-10-26	16:20:12.974089	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+217	2026-10-26	16:20:13.110044	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+218	2026-10-26	17:21:42.937764	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+219	2026-10-26	17:21:43.067946	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+220	2026-10-26	17:21:58.726998	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+221	2026-10-26	17:21:58.836598	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+222	2026-10-26	17:22:31.114592	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+223	2026-10-26	17:23:51.660458	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+224	2026-10-26	17:25:33.209413	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+225	2026-10-26	17:37:38.813339	INTRANET	101	Ana Lilia Villarreal Uribe	LOGIN_SISTEMA
+226	2026-10-26	17:37:39.063185	WEB_PORTAL	101	Ana Lilia Villarreal Uribe	LOGIN_PLATAFORMA
+227	2026-10-26	18:24:40.74867	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+228	2026-10-26	18:24:40.894427	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+229	2026-10-26	18:41:59.551194	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+230	2026-10-26	18:41:59.666217	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+231	2026-10-26	18:43:02.448596	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+232	2026-10-26	18:43:02.570737	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+233	2026-10-26	18:54:18.726454	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+234	2026-10-26	18:54:18.854293	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+235	2026-10-26	19:00:18.822983	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+236	2026-10-26	19:00:18.985706	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+237	2026-10-26	19:02:53.183994	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+238	2026-10-26	19:02:53.306347	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+239	2026-10-26	19:04:07.300383	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+240	2026-10-26	19:04:07.43923	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+241	2026-10-26	19:04:39.837897	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+242	2026-10-26	19:04:39.991581	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+243	2026-10-26	19:08:58.244272	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+244	2026-10-26	19:08:58.378079	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+245	2026-10-26	19:09:36.939789	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+246	2026-10-26	19:09:37.049022	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+247	2026-10-26	19:11:03.825596	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+248	2026-10-26	19:11:03.94249	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+249	2026-10-26	19:12:27.562742	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+250	2026-10-26	19:12:27.684251	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+251	2026-10-26	19:21:11.450428	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+252	2026-10-26	19:21:11.618584	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+253	2026-10-26	19:56:19.266918	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+254	2026-10-26	19:56:19.38852	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+255	2026-10-26	20:05:45.833129	INTRANET	200	Andrea Maria Vilarreal Lopez	LOGIN_SISTEMA
+256	2026-10-26	20:05:45.966155	WEB_PORTAL	200	Andrea Maria Vilarreal Lopez	LOGIN_PLATAFORMA
+257	2026-10-26	20:05:51.281588	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+258	2026-10-26	20:05:51.462429	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+259	2026-10-26	20:19:59.177966	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+260	2026-10-26	20:19:59.31109	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+261	2026-10-26	20:24:33.475453	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+262	2026-10-26	20:24:33.607686	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+263	2026-10-26	20:25:39.933359	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+264	2026-10-26	20:25:40.087662	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+265	2026-10-26	20:25:55.944408	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+266	2026-10-26	20:25:56.097506	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+267	2026-10-26	20:27:59.161668	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+268	2026-10-26	20:27:59.284903	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+269	2026-10-26	20:28:36.916121	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+270	2026-10-26	20:28:37.045934	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+271	2026-10-26	20:30:32.857441	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+272	2026-10-26	20:30:32.987348	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+273	2026-10-26	20:32:28.723478	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+274	2026-10-26	20:32:28.853469	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+275	2026-10-26	20:35:10.617208	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+276	2026-10-26	20:35:10.741588	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+277	2026-10-26	20:43:49.814357	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+278	2026-10-26	20:43:49.930284	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+279	2026-10-26	23:11:58.207146	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+280	2026-10-26	23:11:58.321501	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+281	2026-10-26	23:28:22.843873	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+282	2026-10-26	23:28:22.974829	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+283	2026-10-26	23:40:53.162343	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+284	2026-10-26	23:40:53.295822	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+285	2026-10-26	23:49:39.823496	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+286	2026-10-26	23:49:40.003656	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+287	2026-10-26	23:50:20.558886	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+288	2026-10-26	23:50:20.8698	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+289	2026-10-26	23:51:55.760928	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+290	2026-10-26	23:51:55.894828	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+291	2026-10-26	23:52:33.3597	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+292	2026-10-26	23:52:33.483834	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+293	2026-10-26	23:54:51.453867	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+294	2026-10-26	23:54:51.694934	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+295	2026-10-26	23:55:29.944022	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+296	2026-10-26	23:55:30.078691	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+297	2026-10-26	23:57:42.902369	INTRANET	104	Jose Francisco Torres Sanchez	LOGIN_SISTEMA
+298	2026-10-26	23:57:43.081342	WEB_PORTAL	104	Jose Francisco Torres Sanchez	LOGIN_PLATAFORMA
+299	2026-10-27	00:02:58.695944	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+300	2026-10-27	00:02:58.822522	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+301	2026-10-27	00:08:08.982659	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+302	2026-10-27	00:08:09.316946	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+303	2026-10-27	00:09:39.980724	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+304	2026-10-27	00:09:40.095355	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+305	2026-10-27	00:22:54.004103	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+306	2026-10-27	00:22:54.366229	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+307	2026-10-27	00:35:17.971096	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+308	2026-10-27	00:35:18.123896	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+309	2026-10-27	00:48:24.676917	INTRANET	121	Sofia Alejandra Villarreal Lopez	LOGIN_SISTEMA
+310	2026-10-27	00:48:47.913978	WEB_PORTAL	121	Sofia Alejandra Villarreal Lopez	LOGIN_PLATAFORMA
+311	2026-10-27	01:08:58.68388	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+312	2026-10-27	01:08:58.863443	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+313	2026-10-27	01:13:22.466208	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+314	2026-10-27	01:13:22.669135	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+315	2026-10-27	01:43:44.525548	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+316	2026-10-27	01:43:44.675361	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+317	2026-10-27	01:44:35.8668	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+318	2026-10-27	01:44:35.999246	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+319	2026-10-27	01:47:05.831929	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+320	2026-10-27	01:47:05.970033	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+321	2026-10-27	16:09:52.328742	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+322	2026-10-27	16:09:52.434558	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+323	2026-10-27	16:12:59.476598	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+324	2026-10-27	16:12:59.599024	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+325	2026-10-27	16:15:44.432932	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+326	2026-10-27	16:15:44.5622	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+327	2026-10-27	16:29:07.18167	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+328	2026-10-27	16:29:07.306186	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+329	2026-10-27	17:17:09.680089	INTRANET	200	Andrea Maria Vilarreal Lopez	LOGIN_SISTEMA
+330	2026-10-27	17:17:09.797958	WEB_PORTAL	200	Andrea Maria Vilarreal Lopez	LOGIN_PLATAFORMA
+331	2026-10-27	17:21:30.61676	INTRANET	113	Carlos Jacobo Quezada Mendoza	LOGIN_SISTEMA
+332	2026-10-27	17:21:30.739142	WEB_PORTAL	113	Carlos Jacobo Quezada Mendoza	LOGIN_PLATAFORMA
+333	2026-10-27	17:22:44.408721	INTRANET	105	Jose Daniel Torres Arroyo	LOGIN_SISTEMA
+334	2026-10-27	17:22:44.53297	WEB_PORTAL	105	Jose Daniel Torres Arroyo	LOGIN_PLATAFORMA
+335	2026-10-27	17:23:34.704951	INTRANET	200	Andrea Maria Vilarreal Lopez	LOGIN_SISTEMA
+336	2026-10-27	17:23:34.823902	WEB_PORTAL	200	Andrea Maria Vilarreal Lopez	LOGIN_PLATAFORMA
+337	2026-10-27	17:26:50.790993	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+338	2026-10-27	17:26:51.013706	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+339	2026-10-27	17:27:20.901511	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+340	2026-10-27	17:27:21.009611	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+341	2026-10-27	17:28:02.691233	INTRANET	200	Andrea Maria Vilarreal Lopez	LOGIN_SISTEMA
+342	2026-10-27	17:28:02.852134	WEB_PORTAL	200	Andrea Maria Vilarreal Lopez	LOGIN_PLATAFORMA
+343	2026-10-27	17:42:18.616279	INTRANET	200	Andrea Maria Vilarreal Lopez	LOGIN_SISTEMA
+344	2026-10-27	17:42:18.724973	WEB_PORTAL	200	Andrea Maria Vilarreal Lopez	LOGIN_PLATAFORMA
+345	2026-10-27	17:51:18.311003	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+346	2026-10-27	17:51:18.436963	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+347	2026-10-27	17:54:38.965055	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+348	2026-10-27	17:54:39.084835	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+349	2026-10-27	17:58:01.11426	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+350	2026-10-27	17:58:01.252868	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+351	2026-10-27	17:58:27.819144	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+352	2026-10-27	17:58:28.011079	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+353	2026-10-27	18:03:24.528702	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+354	2026-10-27	18:03:24.667982	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+355	2026-10-27	18:03:50.188186	INTRANET	119	Manuel Antonio Madrid Zazueta	LOGIN_SISTEMA
+356	2026-10-27	18:03:50.336146	WEB_PORTAL	119	Manuel Antonio Madrid Zazueta	LOGIN_PLATAFORMA
+357	2026-10-27	19:43:36.960702	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+358	2026-10-27	19:43:37.074349	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+359	2026-10-29	10:57:51.33945	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+360	2026-10-29	10:57:51.426168	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+361	2026-10-29	16:02:34.177885	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+362	2026-10-29	16:02:34.346074	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+363	2026-10-29	16:13:24.753478	INTRANET	124	Manuel Eduardo Madrid	LOGIN_SISTEMA
+364	2026-10-29	16:13:24.850757	WEB_PORTAL	124	Manuel Eduardo Madrid	LOGIN_PLATAFORMA
+365	2026-10-29	16:13:56.954907	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+366	2026-10-29	16:13:57.13898	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+367	2026-10-29	16:26:48.425914	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+368	2026-10-29	16:26:48.603799	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+369	2026-10-29	16:59:27.83138	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+370	2026-10-29	16:59:27.94932	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+371	2026-10-29	16:59:53.464564	INTRANET	202	Edgar Javier Amarillas	LOGIN_SISTEMA
+372	2026-10-29	16:59:53.592131	WEB_PORTAL	202	Edgar Javier Amarillas	LOGIN_PLATAFORMA
+373	2026-10-29	17:13:36.263252	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+374	2026-10-29	17:13:36.355217	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
+375	2026-10-29	17:40:39.14797	INTRANET	201	Cuauhtemoc Rivera Agundez	LOGIN_SISTEMA
+376	2026-10-29	17:40:39.245524	WEB_PORTAL	201	Cuauhtemoc Rivera Agundez	LOGIN_PLATAFORMA
 \.
 
 
 --
--- Data for Name: op_agenda; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: op_agenda; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.op_agenda (id, titulo, fecha_inicio, fecha_fin, todo_el_dia, tipo_evento, color_fondo, locacion, recursos_tecnicos, personal_asignado, notas_adicionales, creado_por, fecha_creacion, estatus) FROM stdin;
@@ -2502,7 +3091,7 @@ COPY public.op_agenda (id, titulo, fecha_inicio, fecha_fin, todo_el_dia, tipo_ev
 
 
 --
--- Data for Name: rh_capacitacion; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_capacitacion; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.rh_capacitacion (id_capacitacion, id_empleado, nombre_curso, tipo, institucion, fecha_inicio, fecha_fin, horas_duracion, resultado, calificacion, tiene_constancia, constancia_url, costo, pagado_por_empresa, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -2510,7 +3099,7 @@ COPY public.rh_capacitacion (id_capacitacion, id_empleado, nombre_curso, tipo, i
 
 
 --
--- Data for Name: rh_contratos; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_contratos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.rh_contratos (id_contrato, id_empleado, folio_contrato, tipo_contrato, fecha_inicio, fecha_fin, es_indefinido, puesto_contratado, departamento, salario_mensual, dias_vacaciones_anuales, jornada, horario, clausulas_especiales, archivo_contrato_url, firmado_empleado, firmado_empresa, fecha_firma, estatus_contrato, renovacion_de, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -2518,7 +3107,7 @@ COPY public.rh_contratos (id_contrato, id_empleado, folio_contrato, tipo_contrat
 
 
 --
--- Data for Name: rh_documentos; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_documentos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.rh_documentos (id_documento, id_empleado, tipo_documento, nombre_archivo, archivo_url, formato, fecha_emision, fecha_vencimiento, esta_vigente, verificado_por_rh, observaciones, subido_por, fecha_subida) FROM stdin;
@@ -2526,7 +3115,7 @@ COPY public.rh_documentos (id_documento, id_empleado, tipo_documento, nombre_arc
 
 
 --
--- Data for Name: rh_entrevistas; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_entrevistas; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.rh_entrevistas (id_entrevista, id_solicitud, id_empleado, tipo_entrevista, fecha_entrevista, hora_inicio, hora_fin, entrevistador, modalidad, link_videollamada, resultado, calificacion_general, puntualidad, presentacion, conocimientos_tecnicos, actitud, comunicacion, comentarios, recomendacion, archivo_prueba_url, registrado_por, fecha_registro) FROM stdin;
@@ -2534,7 +3123,7 @@ COPY public.rh_entrevistas (id_entrevista, id_solicitud, id_empleado, tipo_entre
 
 
 --
--- Data for Name: rh_evaluaciones; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_evaluaciones; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.rh_evaluaciones (id_evaluacion, id_empleado, periodo, tipo, evaluador, puesto_evaluador, puntualidad, calidad_trabajo, trabajo_equipo, responsabilidad, iniciativa, comunicacion, cumplimiento_objetivos, calificacion_final, nivel_desempeno, fortalezas, areas_mejora, plan_accion, comentarios_empleado, firma_empleado, archivo_evaluacion_url, registrado_por, fecha_registro) FROM stdin;
@@ -2542,7 +3131,7 @@ COPY public.rh_evaluaciones (id_evaluacion, id_empleado, periodo, tipo, evaluado
 
 
 --
--- Data for Name: rh_historial; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_historial; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.rh_historial (id_historial, id_empleado, fecha_evento, tipo_evento, descripcion, datos_anteriores, datos_nuevos, referencia_tabla, referencia_id, registrado_por, es_automatico) FROM stdin;
@@ -2552,11 +3141,21 @@ COPY public.rh_historial (id_historial, id_empleado, fecha_evento, tipo_evento, 
 4	118	2026-10-08 13:58:21.459777	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	118	SISTEMA	t
 5	118	2026-10-08 14:04:10.375251	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	118	SISTEMA	t
 7	201	2026-10-08 14:09:15.333036	SOLICITUD_VACACIONES	Periodo 2026-10-08 a 2026-10-15	\N	\N	rh_vacaciones	1	Cuauhtemoc Rivera Agundez	t
+8	202	2026-10-24 19:48:14.227468	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	202	SISTEMA	t
+9	200	2026-10-27 17:45:18.151053	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	200	SISTEMA	t
+10	202	2026-10-27 18:21:40.353105	ACTUALIZACION_DATOS	Actualización de datos: nombre, depto, email, cel, rfc, curp, nss, estado_civil, domicilio, ciudad, cp, contacto_emergencia, tel_emergencia, parentesco_emergencia, escolaridad, puesto, tipo_contrato, salario_mensual, estatus_empleado	\N	\N	empleados	202	SISTEMA	t
+11	201	2026-10-29 10:37:38.480429	NUEVO_PERMISO	Permiso PER-2026-001 de 1 días (PENDIENTE)	\N	\N	rh_permisos	3	Cuauhtemoc Rivera Agundez	t
+12	201	2026-10-29 10:38:01.970403	PERMISO_APROBADO	Permiso PER-2026-001 dictaminado como APROBADO (Con goce de sueldo)	\N	\N	rh_permisos	3	Direccion General (Ana Lilia Villarreal)	t
+13	201	2026-10-29 10:52:05.03831	NUEVO_PERMISO	Permiso PER-2026-001 de 1 días (PENDIENTE)	\N	\N	rh_permisos	4	Cuauhtemoc Rivera Agundez	t
+14	201	2026-10-29 10:52:05.169421	PERMISO_APROBADO	Permiso PER-2026-001 dictaminado como APROBADO (Con goce de sueldo)	\N	\N	rh_permisos	4	Ana Lilia Villarreal (Administracion)	t
+15	201	2026-10-29 11:40:57.348734	NUEVO_PERMISO	Permiso PER-2026-001 de 1 días (PENDIENTE)	\N	\N	rh_permisos	5	Cuauhtemoc Rivera Agundez	t
+16	101	2026-11-18 13:34:56.175419	ACTUALIZACION_DATOS	Actualización de datos: nss	\N	\N	empleados	101	PRUEBA_SISTEMAS	t
+17	202	2026-11-20 12:44:53.789704	NUEVO_PERMISO	Permiso PER-2026-002 de 3 días (PENDIENTE)	\N	\N	rh_permisos	6	Edgar Javier Amarillas	t
 \.
 
 
 --
--- Data for Name: rh_incapacidades; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_incapacidades; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.rh_incapacidades (id_incapacidad, id_empleado, folio_incapacidad, tipo, fecha_inicio, fecha_fin, dias_incapacidad, numero_imss, medico_tratante, diagnostico, porcentaje_pago_imss, archivo_incapacidad_url, estatus, validado_por_rh, fecha_validacion, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -2564,15 +3163,16 @@ COPY public.rh_incapacidades (id_incapacidad, id_empleado, folio_incapacidad, ti
 
 
 --
--- Data for Name: rh_permisos; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_permisos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.rh_permisos (id_permiso, id_empleado, folio_permiso, tipo_permiso, fecha_solicitud, fecha_inicio, fecha_fin, dias_solicitados, con_goce_de_sueldo, justificacion, archivo_justificante, estatus, aprobado_por, fecha_aprobacion, motivo_rechazo, impacta_asistencia, observaciones_rh, registrado_por, fecha_registro) FROM stdin;
+COPY public.rh_permisos (id_permiso, id_empleado, folio_permiso, tipo_permiso, fecha_solicitud, fecha_inicio, fecha_fin, dias_solicitados, con_goce_de_sueldo, justificacion, archivo_justificante, estatus, aprobado_por, fecha_aprobacion, motivo_rechazo, impacta_asistencia, observaciones_rh, registrado_por, fecha_registro, modalidad, horas_solicitadas, hora_inicio, hora_fin) FROM stdin;
+5	201	PER-2026-001	ASUNTOS PERSONALES	2026-10-29	2026-11-08	2026-11-08	1	t	es el cumple de Hellen Irina	\N	PENDIENTE	\N	\N	\N	t	\N	Cuauhtemoc Rivera Agundez	2026-10-29 11:40:57.348734	DIAS	\N	\N	\N
 \.
 
 
 --
--- Data for Name: rh_solicitudes_empleo; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_solicitudes_empleo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.rh_solicitudes_empleo (id_solicitud, folio, fecha_solicitud, nombre_completo, email, tel_celular, fecha_nac, rfc, curp, domicilio, escolaridad, carrera_especialidad, cedula_profesional, puesto_solicitado, depto_solicitado, experiencia_anios, experiencia_descripcion, habilidades, pretension_salarial, como_se_entero, referido_por, disponibilidad_inmediata, fecha_disponible, tiene_auto, tiene_licencia, cv_url, estatus, observaciones_rh, id_empleado_resultado, creado_por, fecha_creacion) FROM stdin;
@@ -2580,7 +3180,7 @@ COPY public.rh_solicitudes_empleo (id_solicitud, folio, fecha_solicitud, nombre_
 
 
 --
--- Data for Name: rh_vacaciones; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: rh_vacaciones; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.rh_vacaciones (id_vacacion, id_empleado, anio_periodo, dias_correspondientes, dias_tomados, dias_pendientes, fecha_inicio_goce, fecha_fin_goce, fecha_limite_goce, tipo, estatus, aprobado_por, fecha_aprobacion, notificado_admon, fecha_notif_admon, observaciones, registrado_por, fecha_registro) FROM stdin;
@@ -2589,133 +3189,154 @@ COPY public.rh_vacaciones (id_vacacion, id_empleado, anio_periodo, dias_correspo
 
 
 --
--- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: archivos_compartidos_id_transferencia_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.archivos_compartidos_id_transferencia_seq', 187, true);
+SELECT pg_catalog.setval('public.archivos_compartidos_id_transferencia_seq', 190, true);
 
 
 --
--- Name: asistencia_eventos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: asistencia_eventos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.asistencia_eventos_id_seq', 1, false);
 
 
 --
--- Name: control_asistencia_id_registro_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: chat_admin_mensajes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.control_asistencia_id_registro_seq', 498, true);
+SELECT pg_catalog.setval('public.chat_admin_mensajes_id_seq', 7, true);
 
 
 --
--- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: chat_directo_mensajes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.chat_directo_mensajes_id_seq', 1, true);
+
+
+--
+-- Name: chat_soporte_mensajes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.chat_soporte_mensajes_id_seq', 2, true);
+
+
+--
+-- Name: control_asistencia_id_registro_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.control_asistencia_id_registro_seq', 731, true);
+
+
+--
+-- Name: control_horas_extras_id_autorizacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.control_horas_extras_id_autorizacion_seq', 8, true);
 
 
 --
--- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: cronogramas_eventos_id_cronograma_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.cronogramas_eventos_id_cronograma_seq', 1, false);
 
 
 --
--- Name: departamentos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: departamentos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.departamentos_id_seq', 5, true);
 
 
 --
--- Name: log_accesos_id_log_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: log_accesos_id_log_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.log_accesos_id_log_seq', 205, true);
+SELECT pg_catalog.setval('public.log_accesos_id_log_seq', 376, true);
 
 
 --
--- Name: op_agenda_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: op_agenda_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.op_agenda_id_seq', 298, true);
 
 
 --
--- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_capacitacion_id_capacitacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.rh_capacitacion_id_capacitacion_seq', 1, false);
 
 
 --
--- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_contratos_id_contrato_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.rh_contratos_id_contrato_seq', 1, false);
 
 
 --
--- Name: rh_documentos_id_documento_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_documentos_id_documento_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.rh_documentos_id_documento_seq', 1, false);
 
 
 --
--- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_entrevistas_id_entrevista_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.rh_entrevistas_id_entrevista_seq', 1, false);
 
 
 --
--- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_evaluaciones_id_evaluacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.rh_evaluaciones_id_evaluacion_seq', 1, false);
 
 
 --
--- Name: rh_historial_id_historial_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_historial_id_historial_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.rh_historial_id_historial_seq', 7, true);
+SELECT pg_catalog.setval('public.rh_historial_id_historial_seq', 17, true);
 
 
 --
--- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_incapacidades_id_incapacidad_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.rh_incapacidades_id_incapacidad_seq', 1, false);
 
 
 --
--- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_permisos_id_permiso_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.rh_permisos_id_permiso_seq', 1, false);
+SELECT pg_catalog.setval('public.rh_permisos_id_permiso_seq', 6, true);
 
 
 --
--- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_solicitudes_empleo_id_solicitud_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.rh_solicitudes_empleo_id_solicitud_seq', 1, false);
 
 
 --
--- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: rh_vacaciones_id_vacacion_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.rh_vacaciones_id_vacacion_seq', 1, true);
 
 
 --
--- Name: archivos_compartidos archivos_compartidos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: archivos_compartidos archivos_compartidos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.archivos_compartidos
@@ -2723,7 +3344,7 @@ ALTER TABLE ONLY public.archivos_compartidos
 
 
 --
--- Name: asistencia_eventos asistencia_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: asistencia_eventos asistencia_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.asistencia_eventos
@@ -2731,7 +3352,31 @@ ALTER TABLE ONLY public.asistencia_eventos
 
 
 --
--- Name: control_asistencia control_asistencia_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: chat_admin_mensajes chat_admin_mensajes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.chat_admin_mensajes
+    ADD CONSTRAINT chat_admin_mensajes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: chat_directo_mensajes chat_directo_mensajes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.chat_directo_mensajes
+    ADD CONSTRAINT chat_directo_mensajes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: chat_soporte_mensajes chat_soporte_mensajes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.chat_soporte_mensajes
+    ADD CONSTRAINT chat_soporte_mensajes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: control_asistencia control_asistencia_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.control_asistencia
@@ -2739,7 +3384,7 @@ ALTER TABLE ONLY public.control_asistencia
 
 
 --
--- Name: control_horas_extras control_horas_extras_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: control_horas_extras control_horas_extras_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.control_horas_extras
@@ -2747,7 +3392,7 @@ ALTER TABLE ONLY public.control_horas_extras
 
 
 --
--- Name: cronogramas_eventos cronogramas_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: cronogramas_eventos cronogramas_eventos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.cronogramas_eventos
@@ -2755,7 +3400,7 @@ ALTER TABLE ONLY public.cronogramas_eventos
 
 
 --
--- Name: departamentos departamentos_nombre_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: departamentos departamentos_nombre_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.departamentos
@@ -2763,7 +3408,7 @@ ALTER TABLE ONLY public.departamentos
 
 
 --
--- Name: departamentos departamentos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: departamentos departamentos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.departamentos
@@ -2771,7 +3416,7 @@ ALTER TABLE ONLY public.departamentos
 
 
 --
--- Name: log_accesos log_accesos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: log_accesos log_accesos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.log_accesos
@@ -2779,7 +3424,7 @@ ALTER TABLE ONLY public.log_accesos
 
 
 --
--- Name: op_agenda op_agenda_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: op_agenda op_agenda_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.op_agenda
@@ -2787,7 +3432,7 @@ ALTER TABLE ONLY public.op_agenda
 
 
 --
--- Name: rh_capacitacion rh_capacitacion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_capacitacion rh_capacitacion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_capacitacion
@@ -2795,7 +3440,7 @@ ALTER TABLE ONLY public.rh_capacitacion
 
 
 --
--- Name: rh_contratos rh_contratos_folio_contrato_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_contratos rh_contratos_folio_contrato_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -2803,7 +3448,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_contratos rh_contratos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_contratos rh_contratos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -2811,7 +3456,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_documentos rh_documentos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_documentos rh_documentos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_documentos
@@ -2819,7 +3464,7 @@ ALTER TABLE ONLY public.rh_documentos
 
 
 --
--- Name: rh_entrevistas rh_entrevistas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_entrevistas rh_entrevistas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_entrevistas
@@ -2827,7 +3472,7 @@ ALTER TABLE ONLY public.rh_entrevistas
 
 
 --
--- Name: rh_evaluaciones rh_evaluaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_evaluaciones rh_evaluaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_evaluaciones
@@ -2835,7 +3480,7 @@ ALTER TABLE ONLY public.rh_evaluaciones
 
 
 --
--- Name: rh_historial rh_historial_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_historial rh_historial_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_historial
@@ -2843,7 +3488,7 @@ ALTER TABLE ONLY public.rh_historial
 
 
 --
--- Name: rh_incapacidades rh_incapacidades_folio_incapacidad_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_incapacidades rh_incapacidades_folio_incapacidad_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_incapacidades
@@ -2851,7 +3496,7 @@ ALTER TABLE ONLY public.rh_incapacidades
 
 
 --
--- Name: rh_incapacidades rh_incapacidades_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_incapacidades rh_incapacidades_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_incapacidades
@@ -2859,7 +3504,7 @@ ALTER TABLE ONLY public.rh_incapacidades
 
 
 --
--- Name: rh_permisos rh_permisos_folio_permiso_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_permisos rh_permisos_folio_permiso_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_permisos
@@ -2867,7 +3512,7 @@ ALTER TABLE ONLY public.rh_permisos
 
 
 --
--- Name: rh_permisos rh_permisos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_permisos rh_permisos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_permisos
@@ -2875,7 +3520,7 @@ ALTER TABLE ONLY public.rh_permisos
 
 
 --
--- Name: rh_solicitudes_empleo rh_solicitudes_empleo_folio_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_solicitudes_empleo rh_solicitudes_empleo_folio_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo
@@ -2883,7 +3528,7 @@ ALTER TABLE ONLY public.rh_solicitudes_empleo
 
 
 --
--- Name: rh_solicitudes_empleo rh_solicitudes_empleo_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_solicitudes_empleo rh_solicitudes_empleo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo
@@ -2891,7 +3536,7 @@ ALTER TABLE ONLY public.rh_solicitudes_empleo
 
 
 --
--- Name: rh_vacaciones rh_vacaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_vacaciones rh_vacaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_vacaciones
@@ -2899,7 +3544,7 @@ ALTER TABLE ONLY public.rh_vacaciones
 
 
 --
--- Name: control_asistencia uq_empleado_fecha; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: control_asistencia uq_empleado_fecha; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.control_asistencia
@@ -2907,7 +3552,7 @@ ALTER TABLE ONLY public.control_asistencia
 
 
 --
--- Name: empleados vpro_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: empleados vpro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.empleados
@@ -2915,98 +3560,161 @@ ALTER TABLE ONLY public.empleados
 
 
 --
--- Name: idx_archivos_destino; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_archivos_destino; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_archivos_destino ON public.archivos_compartidos USING btree (id_empleado_destino);
 
 
 --
--- Name: idx_archivos_estatus; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_archivos_estatus; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_archivos_estatus ON public.archivos_compartidos USING btree (estatus);
 
 
 --
--- Name: idx_archivos_origen; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_archivos_origen; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_archivos_origen ON public.archivos_compartidos USING btree (id_empleado_origen);
 
 
 --
--- Name: idx_archivos_paquete; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_archivos_paquete; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_archivos_paquete ON public.archivos_compartidos USING btree (folio_paquete);
 
 
 --
--- Name: idx_rh_contratos_empleado; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_chat_admin_emp; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_chat_admin_emp ON public.chat_admin_mensajes USING btree (id_empleado, fecha_hora);
+
+
+--
+-- Name: idx_chat_dir_dest; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_chat_dir_dest ON public.chat_directo_mensajes USING btree (destinatario_id);
+
+
+--
+-- Name: idx_chat_dir_dest_leido; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_chat_dir_dest_leido ON public.chat_directo_mensajes USING btree (destinatario_id, leido);
+
+
+--
+-- Name: idx_chat_dir_rem; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_chat_dir_rem ON public.chat_directo_mensajes USING btree (remitente_id);
+
+
+--
+-- Name: idx_chat_dir_sala; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_chat_dir_sala ON public.chat_directo_mensajes USING btree (sala_id, fecha_hora);
+
+
+--
+-- Name: idx_chat_soporte_emp_cons; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_chat_soporte_emp_cons ON public.chat_soporte_mensajes USING btree (id_empleado_consulta, fecha_hora);
+
+
+--
+-- Name: idx_chat_soporte_fec; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_chat_soporte_fec ON public.chat_soporte_mensajes USING btree (fecha_hora);
+
+
+--
+-- Name: idx_chat_soporte_fijado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_chat_soporte_fijado ON public.chat_soporte_mensajes USING btree (es_fijado);
+
+
+--
+-- Name: idx_chat_soporte_leido_ti; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_chat_soporte_leido_ti ON public.chat_soporte_mensajes USING btree (id_empleado_consulta, leido_por_ti);
+
+
+--
+-- Name: idx_rh_contratos_empleado; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_rh_contratos_empleado ON public.rh_contratos USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_contratos_estatus; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rh_contratos_estatus; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_rh_contratos_estatus ON public.rh_contratos USING btree (estatus_contrato);
 
 
 --
--- Name: idx_rh_historial_empleado; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rh_historial_empleado; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_rh_historial_empleado ON public.rh_historial USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_historial_tipo; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rh_historial_tipo; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_rh_historial_tipo ON public.rh_historial USING btree (tipo_evento);
 
 
 --
--- Name: idx_rh_incap_empleado; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rh_incap_empleado; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_rh_incap_empleado ON public.rh_incapacidades USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_permisos_empleado; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rh_permisos_empleado; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_rh_permisos_empleado ON public.rh_permisos USING btree (id_empleado);
 
 
 --
--- Name: idx_rh_permisos_estatus; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rh_permisos_estatus; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_rh_permisos_estatus ON public.rh_permisos USING btree (estatus);
 
 
 --
--- Name: idx_rh_solicitudes_estatus; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rh_solicitudes_estatus; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_rh_solicitudes_estatus ON public.rh_solicitudes_empleo USING btree (estatus);
 
 
 --
--- Name: idx_rh_vacaciones_empleado; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_rh_vacaciones_empleado; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_rh_vacaciones_empleado ON public.rh_vacaciones USING btree (id_empleado);
 
 
 --
--- Name: control_asistencia fk_empleado; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: control_asistencia fk_empleado; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.control_asistencia
@@ -3014,7 +3722,7 @@ ALTER TABLE ONLY public.control_asistencia
 
 
 --
--- Name: rh_contratos fk_renovacion; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_contratos fk_renovacion; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -3022,7 +3730,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_capacitacion rh_capacitacion_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_capacitacion rh_capacitacion_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_capacitacion
@@ -3030,7 +3738,7 @@ ALTER TABLE ONLY public.rh_capacitacion
 
 
 --
--- Name: rh_contratos rh_contratos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_contratos rh_contratos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_contratos
@@ -3038,7 +3746,7 @@ ALTER TABLE ONLY public.rh_contratos
 
 
 --
--- Name: rh_documentos rh_documentos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_documentos rh_documentos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_documentos
@@ -3046,7 +3754,7 @@ ALTER TABLE ONLY public.rh_documentos
 
 
 --
--- Name: rh_entrevistas rh_entrevistas_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_entrevistas rh_entrevistas_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_entrevistas
@@ -3054,7 +3762,7 @@ ALTER TABLE ONLY public.rh_entrevistas
 
 
 --
--- Name: rh_entrevistas rh_entrevistas_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_entrevistas rh_entrevistas_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_entrevistas
@@ -3062,7 +3770,7 @@ ALTER TABLE ONLY public.rh_entrevistas
 
 
 --
--- Name: rh_evaluaciones rh_evaluaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_evaluaciones rh_evaluaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_evaluaciones
@@ -3070,7 +3778,7 @@ ALTER TABLE ONLY public.rh_evaluaciones
 
 
 --
--- Name: rh_historial rh_historial_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_historial rh_historial_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_historial
@@ -3078,7 +3786,7 @@ ALTER TABLE ONLY public.rh_historial
 
 
 --
--- Name: rh_incapacidades rh_incapacidades_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_incapacidades rh_incapacidades_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_incapacidades
@@ -3086,7 +3794,7 @@ ALTER TABLE ONLY public.rh_incapacidades
 
 
 --
--- Name: rh_permisos rh_permisos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_permisos rh_permisos_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_permisos
@@ -3094,7 +3802,7 @@ ALTER TABLE ONLY public.rh_permisos
 
 
 --
--- Name: rh_solicitudes_empleo rh_solicitudes_empleo_id_empleado_resultado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_solicitudes_empleo rh_solicitudes_empleo_id_empleado_resultado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_solicitudes_empleo
@@ -3102,7 +3810,7 @@ ALTER TABLE ONLY public.rh_solicitudes_empleo
 
 
 --
--- Name: rh_vacaciones rh_vacaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: rh_vacaciones rh_vacaciones_id_empleado_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.rh_vacaciones
@@ -3110,8 +3818,16 @@ ALTER TABLE ONLY public.rh_vacaciones
 
 
 --
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 0BahySiZ9ecaVQGC7Js90baLOn1YLTejzIFMNcMwM5vqA8Q8aHHZRnDEtUKmW24
+\unrestrict StKW2VeYAhzKDJ4s5BYB6yT5XthUUrBtgFwV4B4F6ZLKOfhbngWFvDdWYile5DZ
 

@@ -777,10 +777,11 @@ def registrar_retorno_checkin(payload: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/checkout/pendientes/{id_empleado}/{nombre_usuario}")
-def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
-    """Consulta las OPs que tienen checkouts pendientes para el usuario."""
+def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str, rol: str = ""):
+    """Consulta las OPs que tienen checkouts o bitácoras de incidencias pendientes para el usuario."""
     try:
         target_user = nombre_usuario.strip()
+        es_coord = es_coordinador_bodega(id_empleado=id_empleado, nombre=target_user, rol=rol)
         with engine_eventos.connect() as conn:
             query_pendientes = text("""
                 SELECT e.id_evento, encode(e.para_q_cliente::bytea, 'hex'), encode(e.nombre_evento::bytea, 'hex'), 
@@ -876,36 +877,50 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str):
                         })
                         continue
 
-                # 4. Si es productor responsable y miembros de su crew tienen pendientes (salida, retorno o incidencias)
-                if es_productor and not any(op["id_evento"] == id_ev for op in ops_pendientes):
-                    pendientes_crew = conn.execute(
-                        text("SELECT count(id_maestro) FROM public.checkouts_maestro WHERE folio_op = :id AND estado_bodega != 'RECIBIDO'"),
+                # 4. Si es productor responsable o coordinador de bodega, revisar si miembros del crew tienen pendientes de incidencias tras check-in (RECIBIDO)
+                if es_productor or es_coord:
+                    checkouts_recibidos_pend = conn.execute(
+                        text("""SELECT cm.id_empleado 
+                                FROM public.checkouts_maestro cm
+                                WHERE cm.folio_op = :id 
+                                  AND cm.estado_bodega = 'RECIBIDO'
+                                  AND (
+                                      cm.incidencias_generales IS NULL OR 
+                                      TRIM(cm.incidencias_generales) = '' OR 
+                                      cm.incidencias_generales LIKE '%ES NECESARIO REPORTAR INCIDENCIAS%' OR
+                                      cm.incidencias_generales ILIKE '%DESPACHO AUTORIZADO%' OR
+                                      cm.incidencias_generales ILIKE '%OPERACION LIMPIA%'
+                                  )"""),
                         {"id": id_ev}
-                    ).scalar() or 0
-                    pendientes_inc_crew = conn.execute(
-                        text("""SELECT count(id_maestro) FROM public.checkouts_maestro 
-                                WHERE folio_op = :id AND (
-                                    incidencias_generales IS NULL OR 
-                                    TRIM(incidencias_generales) = '' OR 
-                                    incidencias_generales LIKE '%ES NECESARIO REPORTAR INCIDENCIAS%' OR
-                                    incidencias_generales ILIKE '%DESPACHO AUTORIZADO%' OR
-                                    incidencias_generales ILIKE '%OPERACION LIMPIA%'
-                                )"""),
-                        {"id": id_ev}
-                    ).scalar() or 0
-                    total_creados = conn.execute(
-                        text("SELECT count(id_maestro) FROM public.checkouts_maestro WHERE folio_op = :id"),
-                        {"id": id_ev}
-                    ).scalar() or 0
-                    if pendientes_crew > 0 or pendientes_inc_crew > 0 or (len(convocados) > total_creados):
-                        ops_pendientes.append({
-                            "id_evento": id_ev, 
-                            "folio": id_ev,
-                            "cliente": cliente,
-                            "evento": evento,
-                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}", 
-                            "estado": "PENDIENTE_CREW"
-                        })
+                    ).mappings().fetchall()
+
+                    if checkouts_recibidos_pend:
+                        ids_p = list(set([str(r["id_empleado"]).strip() for r in checkouts_recibidos_pend if r["id_empleado"]]))
+                        dict_nombres = {}
+                        if ids_p:
+                            try:
+                                with engine_personal.connect() as conn_p:
+                                    ids_fmt = "', '".join(ids_p)
+                                    df_emp = conn_p.execute(text(f"SELECT TRIM(id_empleado), encode(nombre::bytea,'hex') FROM public.empleados WHERE id_empleado IN ('{ids_fmt}')")).fetchall()
+                                    dict_nombres = {r[0]: safe_decode_hex(r[1]) for r in df_emp}
+                            except Exception as e_p:
+                                print(f"⚠️ Error cargando nombres personal pendientes: {e_p}")
+
+                        nombres_faltantes = [dict_nombres.get(emp_id, f"Empleado #{emp_id}") for emp_id in ids_p]
+                        op_existente = next((op for op in ops_pendientes if op["id_evento"] == id_ev), None)
+                        if op_existente:
+                            op_existente["faltantes"] = nombres_faltantes
+                        else:
+                            ops_pendientes.append({
+                                "id_evento": id_ev, 
+                                "folio": id_ev,
+                                "cliente": cliente,
+                                "evento": evento,
+                                "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}", 
+                                "estado": "PENDIENTE_CREW",
+                                "faltantes": nombres_faltantes,
+                                "descripcion": f"Check-in concluido en bodega. Falta bitácora de: {', '.join(nombres_faltantes)}"
+                            })
             return ops_pendientes
     except Exception as e: 
         raise HTTPException(status_code=500, detail=str(e))

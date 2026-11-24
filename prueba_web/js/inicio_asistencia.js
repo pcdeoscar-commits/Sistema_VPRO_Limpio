@@ -75,7 +75,7 @@ function obtenerEstiloNotifOP(estado) {
         };
     }
 
-    // 3. 🟪 Pendiente de Equipo / Crew para el Productor (Púrpura / Morado)
+    // 3. 🟪 Pendiente de Equipo / Crew para el Productor o Coordinador (Púrpura / Morado)
     if (est.includes('CREW') || est.includes('EQUIPO')) {
         return {
             colorTexto: '#6d28d9',
@@ -86,8 +86,8 @@ function obtenerEstiloNotifOP(estado) {
             badgeColor: '#5b21b6',
             badgeBorder: '#a78bfa',
             icono: 'ph-users-three',
-            etiqueta: '👥 Pendiente de tu Crew (Productor)',
-            descripcion: 'Colaboradores convocados tienen salidas o incidencias pendientes.'
+            etiqueta: '👥 Incidencias Pendientes en Crew',
+            descripcion: 'Check-in concluido en bodega. Hay colaboradores con reporte de incidencias pendiente.'
         };
     }
 
@@ -204,7 +204,7 @@ async function cargarDatosInicio() {
             // Lanzar todas las peticiones en paralelo
             const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos, resOpsSinConv, resMisPermisos] = await Promise.allSettled([
             fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${idEmp}`),
-            fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '')}`),
+            fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '')}?rol=${encodeURIComponent(rolUser)}`),
             fetch(`${API_URL}/api/rh/alertas?id_empleado=${idEmp}`),
             fetch(`${API_URL}/api/rh/vacaciones/${idEmp}`),
             fetch(`${API_URL}/api/gastos/pendientes-auditoria`),
@@ -442,9 +442,15 @@ async function cargarDatosInicio() {
                                                 ${cfg.etiqueta}
                                             </span>
                                             <span style="font-size:11.5px;color:#64748b;font-weight:500;">
-                                                ${cfg.descripcion}
+                                                ${op.descripcion || cfg.descripcion}
                                             </span>
                                         </div>
+                                        ${op.faltantes && op.faltantes.length > 0 ? `
+                                            <div style="margin-top:6px;font-size:12px;color:#991b1b;background:#fee2e2;border:1px solid #fca5a5;padding:3px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;font-weight:600;">
+                                                <i class="ph ph-warning-circle" style="font-size:15px;color:#dc2626;"></i>
+                                                <span>⚠️ Falta reporte de incidencias: <b>${op.faltantes.join(', ')}</b></span>
+                                            </div>
+                                        ` : ''}
                                     </div>
                                     <button type="button" onclick="event.stopPropagation(); window.open('chat.html?folio=${op.folio||op.id_evento}', '_blank');" 
                                             title="Abrir Chat Operativo de esta OP"

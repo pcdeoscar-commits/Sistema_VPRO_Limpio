@@ -552,29 +552,36 @@ async function inicializarModuloCheckout() {
                     return;
                 } else {
                     selOP.innerHTML = `<option value="">--- Seleccione una Orden de Producción ---</option>` +
-                        ordenesCheckoutDisponibles.map(op => `<option value="${op}">${op}</option>`).join('');
+                        ordenesCheckoutDisponibles.map(op => {
+                            const idEv = (typeof op === 'object' && op !== null) ? op.id_evento : (String(op).match(/\[ID:(\d+)\]/i) ? String(op).match(/\[ID:(\d+)\]/i)[1] : (String(op).match(/OP-(\d+)/i) ? String(op).match(/OP-(\d+)/i)[1] : op));
+                            const lbl = (typeof op === 'object' && op !== null) ? op.label : op;
+                            return `<option value="${idEv}" data-id-evento="${idEv}">${lbl}</option>`;
+                        }).join('');
                 }
             }
 
             // Si venimos referenciados desde una notificación:
             if (opPreseleccionadaCheckout) {
                 const idBuscado = opPreseleccionadaCheckout.id;
-                const prefijo = `OP-${String(idBuscado).padStart(3, '0')}`;
-                let encontrada = ordenesCheckoutDisponibles.find(op => op.startsWith(prefijo));
+                let encontrada = ordenesCheckoutDisponibles.find(op => {
+                    if (typeof op === 'object' && op !== null) {
+                        return op.id_evento == idBuscado || op.folio == String(idBuscado);
+                    }
+                    return String(op).includes(`[ID:${idBuscado}]`) || String(op).includes(`OP-${idBuscado}`);
+                });
                 
-                // Si la OP no venía en init-data (ej. ya finalizada o usuario coordinador), agregarla dinámicamente
-                if (!encontrada && opPreseleccionadaCheckout.label) {
-                    encontrada = opPreseleccionadaCheckout.label;
-                    if (selOP) {
+                const labelEncontrada = encontrada ? ((typeof encontrada === 'object') ? encontrada.label : encontrada) : opPreseleccionadaCheckout.label;
+                const idFinal = encontrada ? ((typeof encontrada === 'object') ? encontrada.id_evento : idBuscado) : idBuscado;
+
+                if (selOP) {
+                    if (![...selOP.options].some(o => o.value == String(idFinal))) {
                         const opt = document.createElement('option');
-                        opt.value = encontrada;
-                        opt.textContent = encontrada;
+                        opt.value = String(idFinal);
+                        opt.dataset.idEvento = String(idFinal);
+                        opt.textContent = labelEncontrada || `OP-${idFinal}`;
                         selOP.appendChild(opt);
                     }
-                }
-
-                if (encontrada && selOP) {
-                    selOP.value = encontrada;
+                    selOP.value = String(idFinal);
                     opPreseleccionadaCheckout = null;
                     await alCambiarOPCheckout();
                     return;
@@ -595,17 +602,27 @@ async function inicializarModuloCheckout() {
     }
 }
 
-async function alCambiarOPCheckout() {
+function obtenerIdEventoCheckout() {
     const selOP = document.getElementById('checkout-sel-op');
-    if (!selOP || !selOP.value) {
+    if (!selOP || !selOP.value) return null;
+    const selectedOpt = selOP.options[selOP.selectedIndex];
+    if (selectedOpt && selectedOpt.dataset && selectedOpt.dataset.idEvento) {
+        return parseInt(selectedOpt.dataset.idEvento);
+    }
+    const valInt = parseInt(selOP.value);
+    if (!isNaN(valInt) && String(valInt) === selOP.value) return valInt;
+    const mId = String(selOP.value).match(/\[ID:(\d+)\]/i);
+    if (mId) return parseInt(mId[1]);
+    const match = String(selOP.value).match(/OP-(\d+)/i);
+    return match ? parseInt(match[1]) : null;
+}
+
+async function alCambiarOPCheckout() {
+    const idEvento = obtenerIdEventoCheckout();
+    if (!idEvento) {
         limpiarModuloCheckout();
         return;
     }
-
-    const opVal = selOP.value;
-    const match = opVal.match(/OP-(\d+)/i);
-    if (!match) return;
-    const idEvento = parseInt(match[1]);
 
     await cargarStatusCheckout(idEvento);
 }
@@ -653,21 +670,15 @@ async function alCambiarEmpleadoCheckout() {
     if (!selEmp || !selEmp.value) return;
 
     empleadoActivoCheckout = selEmp.value;
-    const selOP = document.getElementById('checkout-sel-op');
-    if (!selOP || !selOP.value) return;
-    const match = selOP.value.match(/OP-(\d+)/i);
-    if (!match) return;
-    const idEvento = parseInt(match[1]);
+    const idEvento = obtenerIdEventoCheckout();
+    if (!idEvento) return;
 
     await cargarStatusCheckout(idEvento, empleadoActivoCheckout);
 }
 
 async function cargarStatusCheckoutActual() {
-    const selOP = document.getElementById('checkout-sel-op');
-    if (!selOP || !selOP.value) return;
-    const match = selOP.value.match(/OP-(\d+)/i);
-    if (!match) return;
-    const idEvento = parseInt(match[1]);
+    const idEvento = obtenerIdEventoCheckout();
+    if (!idEvento) return;
     await cargarStatusCheckout(idEvento, empleadoActivoCheckout);
 }
 
@@ -1337,15 +1348,11 @@ async function guardarComoPlantillaKit() {
 }
 
 async function finalizarSalidaCheckout() {
-    const selOP = document.getElementById('checkout-sel-op');
-    if (!selOP || !selOP.value) {
-        alert("⚠️ Debes seleccionar una Orden de Producción.");
+    const idEvento = obtenerIdEventoCheckout();
+    if (!idEvento) {
+        alert("⚠️ Debes seleccionar una Orden de Producción válida.");
         return;
     }
-
-    const match = selOP.value.match(/OP-(\d+)/i);
-    if (!match) return;
-    const idEvento = parseInt(match[1]);
 
     if (!esConvocadoActual) {
         alert("⚠️ No formas parte del personal convocado en esta Orden de Producción. No tienes autorización para realizar checkouts de hardware en este evento.");
@@ -1555,10 +1562,8 @@ async function finalizarCheckinCheckout() {
         return;
     }
 
-    const selOP = document.getElementById('checkout-sel-op');
-    const match = selOP?.value?.match(/OP-(\d+)/i);
-    if (!match) return;
-    const idEvento = parseInt(match[1]);
+    const idEvento = obtenerIdEventoCheckout();
+    if (!idEvento) return;
 
     // Verificar si algún artículo no fue cotejado
     const sinCotejar = itemsCheckoutCheckin.filter(it => !it.COTEJADO);
@@ -1691,10 +1696,8 @@ function marcarDiaCheckinSinIncidencias(fecIso) {
 }
 
 async function guardarIncidenciasPendientesCheckout() {
-    const selOP = document.getElementById('checkout-sel-op');
-    const match = selOP?.value?.match(/OP-(\d+)/i);
-    if (!match) return;
-    const idEvento = parseInt(match[1]);
+    const idEvento = obtenerIdEventoCheckout();
+    if (!idEvento) return;
     const empId = empleadoActivoCheckout || (usuarioLogueado?.id_empleado || "001");
     
     sincronizarIncidenciasMultidiaCheckin();

@@ -108,7 +108,8 @@ def empleado_tiene_checkout_bloqueado(id_empleado: str, nombre_empleado: str = "
             query = text("""
                 SELECT cm.folio_op, cm.incidencias_generales, ev.nombre_evento, 
                        COALESCE(ev.es_viaje_foraneo, FALSE) AS es_viaje_foraneo,
-                       COALESCE(ev.personal_remoto_foraneo, '{}'::text[]) AS personal_remoto_foraneo
+                       COALESCE(ev.personal_remoto_foraneo, '{}'::text[]) AS personal_remoto_foraneo,
+                       ev.folio
                 FROM public.checkouts_maestro cm
                 LEFT JOIN public.eventos ev ON cm.folio_op = ev.id_evento
                 WHERE TRIM(cm.id_empleado) = :emp
@@ -144,7 +145,8 @@ def empleado_tiene_checkout_bloqueado(id_empleado: str, nombre_empleado: str = "
                             
                 if not es_exento_remoto:
                     nom_ev = reparar_mojibake(safe_decode_hex(r["nombre_evento"])) if r["nombre_evento"] else f"Evento OP-{f_op}"
-                    ops_bloqueantes.append({"folio": f_op, "evento": nom_ev})
+                    folio_lbl = (r["folio"] or "").strip() or str(f_op)
+                    ops_bloqueantes.append({"folio": folio_lbl, "evento": nom_ev})
                     
             return (len(ops_bloqueantes) > 0), ops_bloqueantes
     except Exception as e:
@@ -183,7 +185,8 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
                       encode(COALESCE(e.chofer, '')::bytea, 'hex'),
                       encode(COALESCE((COALESCE(e.personal_convocado_op, '{}'::text[]) || COALESCE(e.personal_remoto_foraneo, '{}'::text[]))::text, '[]')::bytea, 'hex'),
                       encode(COALESCE(e.choferes_por_vehiculo::text, '{}')::bytea, 'hex'),
-                      COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada_para_edicion
+                      COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada_para_edicion,
+                      encode(COALESCE(e.folio, '')::bytea, 'hex')
                FROM public.eventos e
                WHERE e.habilitada_para_edicion = TRUE
                   OR (
@@ -225,10 +228,15 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
             conv_raw = safe_decode_hex(r[6])
             cpv_raw = safe_decode_hex(r[7]) if len(r) > 7 else "{}"
             es_hab = bool(r[8]) if len(r) > 8 else False
+            folio_real = (safe_decode_hex(r[9]) if len(r) > 9 and r[9] else str(id_ev)).strip()
             
             if es_coord or usuario_pertenece_a_op(nom_usuario, resp_p, resp_g, chof, conv_raw, cpv_raw):
                 label_hab = " 🔓 [REHABILITADA]" if es_hab else ""
-                ordenes.append(f"OP-{str(id_ev).zfill(3)} | {cli} - {nom}{label_hab}")
+                ordenes.append({
+                    "id_evento": id_ev,
+                    "folio": folio_real,
+                    "label": f"OP-{folio_real} | {cli} - {nom}{label_hab}"
+                })
 
         lista_kits = [safe_decode_hex(k[0]) for k in kits_rows]
         
@@ -321,6 +329,14 @@ def buscar_kit_operador(nombre_kit: str, id_empleado: str):
 def extraer_estado_checkout(id_evento: int, id_empleado: str, usuario_nombre: Optional[str] = None, rol: Optional[str] = None):
     """Consulta el estado del checkout de una OP para un empleado específico."""
     try:
+        # 🛡️ Soporte bidireccional: si id_evento no existe directamente como clave primaria
+        # pero coincide con un folio comercial, traducir al id_evento real
+        with engine_eventos.connect() as conn_chk:
+            existe_id = conn_chk.execute(text("SELECT 1 FROM public.eventos WHERE id_evento = :id"), {"id": id_evento}).scalar()
+            if not existe_id:
+                id_traducido = conn_chk.execute(text("SELECT id_evento FROM public.eventos WHERE folio = :f"), {"f": str(id_evento)}).scalar()
+                if id_traducido:
+                    id_evento = id_traducido
         nom_usuario = (usuario_nombre or "").strip()
         rol_usuario = (rol or "").strip()
         puesto_usuario = ""
@@ -640,6 +656,14 @@ def registrar_retorno_checkin(payload: dict):
 
         id_maestro = int(payload["id_maestro"])
         id_op = int(payload["id_evento"])
+        folio_vpro_real = f"OP-{id_op}"
+        try:
+            with engine_eventos.connect() as conn_fol:
+                f_encontrado = conn_fol.execute(text("SELECT folio FROM public.eventos WHERE id_evento = :id"), {"id": id_op}).scalar()
+                if f_encontrado:
+                    folio_vpro_real = f"OP-{str(f_encontrado).strip()}"
+        except Exception:
+            pass
         incidencias_gen = str(payload["incidencias_generales"])
         items = payload["items"]
         
@@ -718,7 +742,7 @@ def registrar_retorno_checkin(payload: dict):
                             (:codigo_equipo, CURRENT_DATE, :folio_vpro, :id_empleado, :tipo_evento, :descripcion, :costo_asociado, :estado_final, :departamento)
                     """), {
                         "codigo_equipo": cod_eq.upper(), 
-                        "folio_vpro": f"OP-{id_op}", 
+                        "folio_vpro": folio_vpro_real, 
                         "id_empleado": "000", 
                         "tipo_evento": "FALLA_EN_SET" if es_danado else "CHECKIN_REVISIÓN", 
                         "descripcion": obs_regreso, 
@@ -738,7 +762,7 @@ def registrar_retorno_checkin(payload: dict):
                             "num_serv": ticket_ruta, 
                             "eq": cod_eq.upper(), 
                             "desc": obs_regreso, 
-                            "fol": f"OP-{id_op}"
+                            "fol": folio_vpro_real
                         })
 
             if "[PROVEEDOR_INCIDENTE:" in incidencias_gen:
@@ -766,8 +790,8 @@ def registrar_retorno_checkin(payload: dict):
                             """), {
                                 "num_serv": ticket_prov,
                                 "reportante": prov_nom,
-                                "desc": f"Falta/Daño reportado en Check-in de OP-{id_op}: {prov_nota}",
-                                "fol": f"OP-{id_op}"
+                                "desc": f"Falta/Daño reportado en Check-in de {folio_vpro_real}: {prov_nota}",
+                                "fol": folio_vpro_real
                             })
                 except Exception as ex_p:
                     print(f"⚠️ Alerta al procesar culpa del proveedor: {ex_p}")
@@ -786,7 +810,8 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str, rol: s
             query_pendientes = text("""
                 SELECT e.id_evento, encode(e.para_q_cliente::bytea, 'hex'), encode(e.nombre_evento::bytea, 'hex'), 
                        (COALESCE(e.personal_convocado_op, '{}'::text[]) || COALESCE(e.personal_remoto_foraneo, '{}'::text[])) AS personal_convocado_op, encode(e.resp_de_produccion::bytea, 'hex'),
-                       COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada_para_edicion
+                       COALESCE(e.habilitada_para_edicion, FALSE) AS habilitada_para_edicion,
+                       encode(COALESCE(e.folio, '')::bytea, 'hex')
                 FROM public.eventos e
                 WHERE e.habilitada_para_edicion = TRUE
                    OR (
@@ -808,6 +833,7 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str, rol: s
                 personal_raw = r[3]
                 resp_prod = reparar_mojibake(safe_decode_hex(r[4])).strip() if r[4] else ""
                 es_hab = bool(r[5]) if len(r) > 5 else False
+                folio_real = (safe_decode_hex(r[6]) if len(r) > 6 and r[6] else str(id_ev)).strip()
                 
                 convocados = []
                 if personal_raw:
@@ -842,10 +868,10 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str, rol: s
                         tag_hab = " 🔓 [REHABILITADA]" if es_hab else ""
                         ops_pendientes.append({
                             "id_evento": id_ev, 
-                            "folio": id_ev,
+                            "folio": folio_real,
                             "cliente": cliente,
                             "evento": evento,
-                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}{tag_hab}", 
+                            "label": f"OP-{folio_real} | {cliente} - {evento}{tag_hab}", 
                             "estado": "REHABILITADA" if es_hab else "SALIDA_PENDIENTE"
                         })
                         continue
@@ -853,10 +879,10 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str, rol: s
                     elif estado_actual_bodega == 'DESPACHADO':
                         ops_pendientes.append({
                             "id_evento": id_ev, 
-                            "folio": id_ev,
+                            "folio": folio_real,
                             "cliente": cliente,
                             "evento": evento,
-                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}", 
+                            "label": f"OP-{folio_real} | {cliente} - {evento}", 
                             "estado": "DESPACHADO"
                         })
                         continue
@@ -869,10 +895,10 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str, rol: s
                     ):
                         ops_pendientes.append({
                             "id_evento": id_ev, 
-                            "folio": id_ev,
+                            "folio": folio_real,
                             "cliente": cliente,
                             "evento": evento,
-                            "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}", 
+                            "label": f"OP-{folio_real} | {cliente} - {evento}", 
                             "estado": "INCIDENCIAS_PENDIENTES"
                         })
                         continue
@@ -913,10 +939,10 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str, rol: s
                         else:
                             ops_pendientes.append({
                                 "id_evento": id_ev, 
-                                "folio": id_ev,
+                                "folio": folio_real,
                                 "cliente": cliente,
                                 "evento": evento,
-                                "label": f"OP-{str(id_ev).zfill(3)} | {cliente} - {evento}", 
+                                "label": f"OP-{folio_real} | {cliente} - {evento}", 
                                 "estado": "PENDIENTE_CREW",
                                 "faltantes": nombres_faltantes,
                                 "descripcion": f"Check-in concluido en bodega. Falta bitácora de: {', '.join(nombres_faltantes)}"
@@ -929,6 +955,12 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str, rol: s
 def obtener_historial_checkouts_op(id_evento: int):
     """Consulta el historial de todos los checkouts y retornos de una OP."""
     try:
+        with engine_eventos.connect() as conn:
+            existe_id = conn.execute(text("SELECT 1 FROM public.eventos WHERE id_evento = :id"), {"id": id_evento}).scalar()
+            if not existe_id:
+                id_traducido = conn.execute(text("SELECT id_evento FROM public.eventos WHERE folio = :f"), {"f": str(id_evento)}).scalar()
+                if id_traducido:
+                    id_evento = id_traducido
         with engine_eventos.connect() as conn:
             q_maestro = text("""
                 SELECT id_maestro, id_empleado, fecha, hora, estado_bodega, 

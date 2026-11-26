@@ -1313,8 +1313,10 @@ function inicializarLectorKiosco() {
                 const resultado = await respuesta.json();
 
                 if (respuesta.ok && resultado.status !== "WARNING") {
-                    // 🗣️ Le pasamos el ID escaneado (qrCode) y el nombre de respaldo
-                    decirSaludoKiosco(qrCode, resultado.nombre_empleado || "");
+                    try {
+                        // 🗣️ Le pasamos el ID escaneado (qrCode) y el nombre de respaldo
+                        decirSaludoKiosco(qrCode, resultado.nombre_empleado || "");
+                    } catch (errVoz) { console.warn("Aviso en voz kiosco:", errVoz); }
                 }
                 
                 try {

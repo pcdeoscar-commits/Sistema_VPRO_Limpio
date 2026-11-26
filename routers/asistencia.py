@@ -785,10 +785,26 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
     hora_str = ahora.strftime('%H:%M:%S')
 
     try:
+        emp_id_clean = payload.id_empleado.strip()
         with engine_personal.begin() as conn:
             # 🔍 Consultar datos del colaborador de forma global para todos los flujos
-            row_emp = conn.execute(text("SELECT nombre FROM public.empleados WHERE TRIM(id_empleado) = :emp LIMIT 1"), {"emp": payload.id_empleado.strip()}).mappings().first()
-            nom_emp = str(row_emp["nombre"]).strip() if row_emp and row_emp.get("nombre") else "Empleado"
+            row_emp = conn.execute(text("""
+                SELECT id_empleado, nombre 
+                FROM public.empleados 
+                WHERE TRIM(id_empleado) = :emp 
+                   OR LTRIM(TRIM(id_empleado), '0') = LTRIM(:emp, '0')
+                LIMIT 1
+            """), {"emp": emp_id_clean}).mappings().first()
+
+            if not row_emp:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"El código '{emp_id_clean}' no corresponde a ningún empleado registrado en el catálogo."
+                )
+
+            emp_id_real = str(row_emp["id_empleado"]).strip()
+            payload.id_empleado = emp_id_real
+            nom_emp = str(row_emp["nombre"]).strip() if row_emp.get("nombre") else "Empleado"
 
             # 🌴 Validar si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad activa hoy
             rh_activo = conn.execute(text("""

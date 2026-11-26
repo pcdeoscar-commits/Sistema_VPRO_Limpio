@@ -193,7 +193,7 @@ def inicializar_modulo_checkout(id_empleado: str, usuario_nombre: Optional[str] 
                       UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
                       AND NOT EXISTS (
                           SELECT 1 FROM public.informes_gastos_maestro igm 
-                          WHERE igm.folio_vpro = e.id_evento
+                          WHERE igm.folio_vpro = e.id_evento OR CAST(igm.folio_vpro AS TEXT) = e.folio
                       )
                   )
                ORDER BY e.id_evento DESC
@@ -818,7 +818,7 @@ def obtener_ops_pendientes_usuario(id_empleado: str, nombre_usuario: str, rol: s
                        UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
                        AND NOT EXISTS (
                            SELECT 1 FROM public.informes_gastos_maestro igm 
-                           WHERE igm.folio_vpro = e.id_evento
+                           WHERE igm.folio_vpro = e.id_evento OR CAST(igm.folio_vpro AS TEXT) = e.folio
                        )
                    )
                 ORDER BY e.id_evento DESC

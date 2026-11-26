@@ -72,7 +72,7 @@ def obtener_ops_activas_empleado(nombre_empleado: str):
         WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
           AND NOT EXISTS (
               SELECT 1 FROM public.informes_gastos_maestro igm 
-              WHERE igm.folio_vpro = e.id_evento
+              WHERE igm.folio_vpro = e.id_evento OR CAST(igm.folio_vpro AS TEXT) = e.folio
           )
         ORDER BY e.id_evento DESC
     """)

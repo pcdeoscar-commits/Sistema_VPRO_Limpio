@@ -125,7 +125,7 @@ def obtener_ops_pendientes_convocados():
                 WHERE UPPER(COALESCE(e.estatus, 'ACTIVA')) != 'CERRADA (HISTÓRICO)'
                   AND NOT EXISTS (
                       SELECT 1 FROM public.informes_gastos_maestro igm 
-                      WHERE igm.folio_vpro = e.id_evento
+                      WHERE igm.folio_vpro = e.id_evento OR CAST(igm.folio_vpro AS TEXT) = e.folio
                   )
                 ORDER BY e.id_evento DESC
             """)
@@ -188,7 +188,7 @@ def obtener_folios_activos_e_historicos():
                    UPPER(COALESCE(estatus, '')) != 'CERRADA (HISTÓRICO)'
                    AND NOT EXISTS (
                        SELECT 1 FROM public.informes_gastos_maestro m 
-                       WHERE m.folio_vpro = id_evento
+                       WHERE m.folio_vpro = id_evento OR CAST(m.folio_vpro AS TEXT) = folio
                    )
                )
             ORDER BY id_evento DESC
@@ -202,7 +202,7 @@ def obtener_folios_activos_e_historicos():
                   UPPER(COALESCE(estatus, '')) = 'CERRADA (HISTÓRICO)'
                   OR EXISTS (
                       SELECT 1 FROM public.informes_gastos_maestro m 
-                      WHERE m.folio_vpro = id_evento
+                      WHERE m.folio_vpro = id_evento OR CAST(m.folio_vpro AS TEXT) = folio
                   )
               )
             ORDER BY id_evento DESC

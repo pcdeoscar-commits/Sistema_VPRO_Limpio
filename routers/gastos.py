@@ -110,7 +110,7 @@ def listar_folios_pendientes_gastos():
         WHERE UPPER(COALESCE(e.estatus, '')) != 'CERRADA (HISTÓRICO)'
           AND NOT EXISTS (
             SELECT 1 FROM public.informes_gastos_maestro m 
-            WHERE m.folio_vpro = e.id_evento
+            WHERE m.folio_vpro = e.id_evento OR CAST(m.folio_vpro AS TEXT) = e.folio
         )
         ORDER BY e.id_evento DESC
     """)
@@ -416,7 +416,7 @@ def obtener_expediente_informe_completo(id_informe: int):
                m.num_personas, m.subtotal, m.monto_entregado, m.restante, m.revisado,
                e.folio
         FROM public.informes_gastos_maestro m
-        LEFT JOIN public.eventos e ON m.folio_vpro = e.id_evento
+        LEFT JOIN public.eventos e ON (m.folio_vpro = e.id_evento OR CAST(m.folio_vpro AS TEXT) = e.folio)
         WHERE m.id_informe = :id
     """)
     query_d = text("""
@@ -492,7 +492,7 @@ def obtener_gastos_pendientes_auditoria():
             query = text("""
                 SELECT igm.folio_vpro, igm.id_empleado, encode(e.nombre_evento::bytea, 'hex'), encode(e.para_q_cliente::bytea, 'hex'), e.folio 
                 FROM public.informes_gastos_maestro igm 
-                LEFT JOIN public.eventos e ON igm.folio_vpro = e.id_evento 
+                LEFT JOIN public.eventos e ON (igm.folio_vpro = e.id_evento OR CAST(igm.folio_vpro AS TEXT) = e.folio) 
                 WHERE igm.revisado IS FALSE OR igm.revisado IS NULL
             """)
             res = conn.execute(query).fetchall()
@@ -519,7 +519,7 @@ def listar_informes_auditoria():
             query = text("""
                 SELECT m.id_informe, m.folio_vpro, m.revisado, m.id_empleado, encode(e.nombre_evento::bytea, 'hex'), e.folio
                 FROM public.informes_gastos_maestro m 
-                LEFT JOIN public.eventos e ON m.folio_vpro = e.id_evento 
+                LEFT JOIN public.eventos e ON (m.folio_vpro = e.id_evento OR CAST(m.folio_vpro AS TEXT) = e.folio) 
                 ORDER BY m.id_informe DESC
             """)
             rows = conn.execute(query).fetchall()

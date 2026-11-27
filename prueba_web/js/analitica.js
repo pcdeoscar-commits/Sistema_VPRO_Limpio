@@ -50,8 +50,10 @@ async function cargarModuloAnalitica() {
     const fFin = elHasta ? elHasta.value : "";
 
     try {
-        const url = `${API_URL}/api/dashboard/resumen?fecha_inicio=${fIni}&fecha_fin=${fFin}`;
-        const res = await fetch(url);
+        const [res, resAv] = await Promise.all([
+            fetch(`${API_URL}/api/dashboard/resumen?fecha_inicio=${fIni}&fecha_fin=${fFin}`),
+            fetch(`${API_URL}/api/dashboard/estadisticas-avanzadas?fecha_inicio=${fIni}&fecha_fin=${fFin}`)
+        ]);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
@@ -61,11 +63,20 @@ async function cargarModuloAnalitica() {
 
         // 1. FINANZAS
         const kpiGasto = document.getElementById("kpi-an-gasto-mes");
+        const kpiDesglose = document.getElementById("kpi-an-gasto-desglose");
         const kpiEqDan = document.getElementById("kpi-an-equipos-danados");
         const kpiFlota = document.getElementById("kpi-an-flota-taller");
         const kpiSeg = document.getElementById("kpi-an-seguros-vencer");
 
         if (kpiGasto) kpiGasto.innerText = `$${Number(fin.gasto_mes || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+        if (kpiDesglose) {
+            kpiDesglose.innerText = `Operación: $${Number(fin.gasto_operacion || 0).toLocaleString('es-MX', { minimumFractionDigits: 0 })} · Taller: $${Number(fin.gasto_reparaciones || 0).toLocaleString('es-MX', { minimumFractionDigits: 0 })}`;
+        }
+
+        if (resAv && resAv.ok) {
+            const av = await resAv.json();
+            renderEstadisticasAvanzadasFase3(av);
+        }
         if (kpiEqDan) kpiEqDan.innerText = fin.equipos_danados || 0;
         if (kpiFlota) kpiFlota.innerText = fin.flota_taller || 0;
         if (kpiSeg) kpiSeg.innerText = fin.seguros_vencer || 0;
@@ -278,5 +289,74 @@ function renderGraficaEfectividad(efectividad) {
             plugins: { legend: { position: 'bottom' } }
         }
     });
+}
+
+function renderEstadisticasAvanzadasFase3(av) {
+    // 1. Tabla Rentabilidad / Gastos por OP
+    const tbodyRent = document.getElementById("tbody-an-rentabilidad-ops");
+    if (tbodyRent) {
+        const ops = av.ops_gastos || [];
+        if (ops.length === 0) {
+            tbodyRent.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">Sin gastos comprobados en el rango seleccionado.</td></tr>';
+        } else {
+            tbodyRent.innerHTML = ops.map(o => `
+                <tr>
+                    <td style="font-weight:700; color:#1e40af;">OP-${o.folio}</td>
+                    <td>${o.nombre_evento}</td>
+                    <td>${o.cliente}</td>
+                    <td>${o.fecha}</td>
+                    <td>$${Number(o.viatico_entregado || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                    <td style="font-weight:700; color:#047857;">$${Number(o.gasto_comprobado || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    // 2. Resumen RRHH
+    const contRrhh = document.getElementById("an-rrhh-resumen");
+    if (contRrhh && av.rrhh) {
+        const r = av.rrhh;
+        const tot = (r.a_tiempo || 0) + (r.retardos || 0);
+        const pctPunt = tot > 0 ? ((r.a_tiempo / tot) * 100).toFixed(1) : "100.0";
+        const deptosHtml = (r.por_depto || []).slice(0, 6).map(d => `
+            <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+                <span style="font-weight:600;">${d.depto}</span>
+                <span>✅ ${d.a_tiempo} · ⚠️ ${d.retardos} ret.</span>
+            </div>
+        `).join('');
+        contRrhh.innerHTML = `
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:14px;">
+                <div style="background:#f0fdf4; padding:10px; border-radius:8px; text-align:center;">
+                    <div style="font-size:11px; color:#166534; font-weight:700;">PUNTUALIDAD</div>
+                    <div style="font-size:20px; font-weight:800; color:#15803d;">${pctPunt}%</div>
+                </div>
+                <div style="background:#fef3c7; padding:10px; border-radius:8px; text-align:center;">
+                    <div style="font-size:11px; color:#92400e; font-weight:700;">RETARDOS</div>
+                    <div style="font-size:20px; font-weight:800; color:#b45309;">${r.retardos || 0}</div>
+                </div>
+                <div style="background:#eef2ff; padding:10px; border-radius:8px; text-align:center;">
+                    <div style="font-size:11px; color:#3730a3; font-weight:700;">HRS EXTRA AUT.</div>
+                    <div style="font-size:20px; font-weight:800; color:#4338ca;">${Number(r.horas_extra_totales || 0).toFixed(1)}h</div>
+                </div>
+            </div>
+            ${deptosHtml || '<div style="color:#64748b;">Sin checadas en este rango.</div>'}
+        `;
+    }
+
+    // 3. Top Equipos Más Utilizados
+    const contEq = document.getElementById("an-top-equipos-lista");
+    if (contEq) {
+        const eqs = av.top_equipos || [];
+        if (eqs.length === 0) {
+            contEq.innerHTML = '<div style="color:#64748b;">Sin historial de salidas de equipo aún.</div>';
+        } else {
+            contEq.innerHTML = eqs.map((eq, idx) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid #f1f5f9;">
+                    <span><b>#${idx + 1}</b> ${eq.codigo}</span>
+                    <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:10px; font-size:11.5px; font-weight:700;">${eq.usos} salidas</span>
+                </div>
+            `).join('');
+        }
+    }
 }
 

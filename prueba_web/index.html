@@ -8622,11 +8622,11 @@
 
                         <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px 20px; border-radius: 12px;">
 
-                            <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Gasto en Reparaciones</div>
+                            <div style="font-size: 12px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Gasto Total (Operación + Taller)</div>
 
                             <div id="kpi-an-gasto-mes" style="font-size: 28px; font-weight: 800; color: #1d4ed8; margin-top: 4px;">$0.00</div>
 
-                            <div style="font-size: 11.5px; color: #1e3a8a; margin-top: 4px;">En rango seleccionado</div>
+                            <div id="kpi-an-gasto-desglose" style="font-size: 11.5px; color: #1e3a8a; margin-top: 4px;">En rango seleccionado</div>
 
                         </div>
 
@@ -8698,6 +8698,18 @@
 
                     </div>
 
+                </div>
+
+                <div id="an-tabla-rentabilidad-ops" style="margin-top: 24px; background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                    <h4 style="margin: 0 0 12px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph ph-receipt" style="color: #059669;"></i> Gastos Comprobados por Orden de Producción (OP)
+                    </h4>
+                    <div style="overflow-x: auto;">
+                        <table class="tabla-vpro" style="width: 100%; font-size: 13px;">
+                            <thead><tr><th>OP</th><th>Evento</th><th>Cliente</th><th>Fecha</th><th>Viático Entregado</th><th>Gasto Comprobado</th></tr></thead>
+                            <tbody id="tbody-an-rentabilidad-ops"><tr><td colspan="6" style="text-align:center; color:#64748b;">Cargando...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
 
 
@@ -8854,6 +8866,21 @@
 
                     </div>
 
+                </div>
+
+                <div id="an-panel-rrhh-equipos" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px; margin-top: 24px;">
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                        <h4 style="margin: 0 0 12px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-clock-user" style="color: #6366f1;"></i> Estadísticas de Puntualidad y Horas Extra (RRHH)
+                        </h4>
+                        <div id="an-rrhh-resumen" style="font-size: 13px; color: #334155;">Cargando estadísticas RRHH...</div>
+                    </div>
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                        <h4 style="margin: 0 0 12px 0; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-video-camera" style="color: #0284c7;"></i> Top Equipos Más Utilizados en OPs
+                        </h4>
+                        <div id="an-top-equipos-lista" style="font-size: 13px; color: #334155;">Cargando uso de inventario...</div>
+                    </div>
                 </div>
 
 
@@ -12203,7 +12230,7 @@
 
     <script src="js/incidencias.js?v=20261118_acordeon_logistica_v5"></script>
 
-    <script src="js/analitica.js"></script>
+    <script src="js/analitica.js?v=20261126_fase3_kpi"></script>
 
     <script src="js/rh.js?v=20261120_privilegios_rh"></script>
 

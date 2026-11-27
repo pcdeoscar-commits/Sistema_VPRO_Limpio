@@ -11,18 +11,58 @@ def obtener_analitica_panel_ceo(
     desde: str = Query(..., description="Fecha inicio YYYY-MM-DD"), 
     hasta: str = Query(..., description="Fecha fin YYYY-MM-DD")
 ):
-    """Panel ejecutivo CEO para indicadores consolidados de rentabilidad."""
-    return {
-        "status": "SUCCESS", 
-        "total_eventos": 0, 
-        "cliente_top": "Deshabilitado", 
-        "ranking_clientes": [], 
-        "equipos_reparacion": 0, 
-        "desviacion": "0%", 
-        "top_empleados": [], 
-        "taller_tracking": [], 
-        "incidencias_por_depto": []
-    }
+    """Panel ejecutivo CEO para indicadores consolidados de operación, clientes y taller."""
+    try:
+        with get_db_cursor("db_eventos", cursor_factory=RealDictCursor) as cur_ev:
+            cur_ev.execute("""
+                SELECT COUNT(*) AS total
+                FROM public.eventos
+                WHERE fec_del_evento BETWEEN %s AND %s
+                  AND UPPER(COALESCE(estatus, 'ACTIVA')) NOT LIKE '%%CANCELAD%%'
+            """, (desde, hasta))
+            total_eventos = cur_ev.fetchone()["total"]
+
+            cur_ev.execute("""
+                SELECT para_q_cliente AS cliente, COUNT(*) AS total
+                FROM public.eventos
+                WHERE fec_del_evento BETWEEN %s AND %s
+                  AND para_q_cliente IS NOT NULL AND TRIM(para_q_cliente) != ''
+                GROUP BY para_q_cliente
+                ORDER BY total DESC
+                LIMIT 5
+            """, (desde, hasta))
+            ranking_clientes = cur_ev.fetchall()
+            cliente_top = ranking_clientes[0]["cliente"] if ranking_clientes else "Sin eventos en periodo"
+
+        with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cur_inv:
+            cur_inv.execute("""
+                SELECT COUNT(*) AS total
+                FROM public.reparaciones
+                WHERE UPPER(COALESCE(etapa_taller, '')) NOT IN ('CERRADO', 'LIBERADO', 'COMPLETADO')
+            """)
+            equipos_reparacion = cur_inv.fetchone()["total"]
+
+            cur_inv.execute("""
+                SELECT COALESCE(departamento, 'General') AS depto, COUNT(*) AS total
+                FROM public.historial_equipo
+                GROUP BY COALESCE(departamento, 'General')
+                ORDER BY total DESC
+            """)
+            incidencias_por_depto = cur_inv.fetchall()
+
+        return {
+            "status": "SUCCESS",
+            "total_eventos": total_eventos,
+            "cliente_top": cliente_top,
+            "ranking_clientes": ranking_clientes,
+            "equipos_reparacion": equipos_reparacion,
+            "desviacion": "0%",
+            "top_empleados": [],
+            "taller_tracking": [],
+            "incidencias_por_depto": incidencias_por_depto
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/dashboard/filtros")
 def obtener_filtros_disponibles():
@@ -166,10 +206,31 @@ def obtener_resumen_dashboard(
             cursor_autos.execute("SELECT COUNT(*) as vencen_pronto FROM public.autos WHERE seguro_vence BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days';")
             seguros_vencer = cursor_autos.fetchone()["vencen_pronto"]
 
+        # 4.5️⃣ LLAVE 4: GASTOS REALES DE OPERACIÓN Y PROVEEDORES
+        gasto_operacion = 0.0
+        with get_db_cursor("db_eventos", cursor_factory=RealDictCursor) as cursor_g:
+            q_g = "SELECT COALESCE(SUM(subtotal), 0) AS total_op FROM public.informes_gastos_maestro WHERE 1=1"
+            p_g = []
+            if fecha_inicio and fecha_fin:
+                q_g += " AND fecha_registro BETWEEN %s AND %s"
+                p_g.extend([fecha_inicio, fecha_fin])
+            cursor_g.execute(q_g, tuple(p_g))
+            gasto_operacion = float(cursor_g.fetchone()["total_op"] or 0.0)
+
+        proveedores_activos = 0
+        try:
+            with get_db_cursor("db_proveedores") as cur_prov:
+                cur_prov.execute("SELECT COUNT(*) FROM public.proveedores;")
+                proveedores_activos = cur_prov.fetchone()[0] or 0
+        except Exception:
+            proveedores_activos = 0
+
         # 5️⃣ EMPAQUETADO FINAL
         return {
             "finanzas": {
-                "gasto_mes": float(gasto_total),
+                "gasto_mes": float(gasto_total) + gasto_operacion,
+                "gasto_reparaciones": float(gasto_total),
+                "gasto_operacion": gasto_operacion,
                 "equipos_danados": sum(d['total'] for d in deptos_danos), 
                 "flota_taller": autos_en_taller, 
                 "seguros_vencer": seguros_vencer, 
@@ -179,7 +240,7 @@ def obtener_resumen_dashboard(
             "comercial": {
                 "ops_mes": ops_mes,
                 "cliente_top": cliente_top,
-                "proveedores_activos": 0,
+                "proveedores_activos": proveedores_activos,
                 "top_clientes": top_clientes, 
                 "ops_por_mes": ops_por_mes    
             },
@@ -190,6 +251,119 @@ def obtener_resumen_dashboard(
                 "top_empleados": top_empleados,
                 "efectividad_checkouts": efectividad_checkouts
             }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/dashboard/estadisticas-avanzadas", tags=["📊 Dashboard"])
+def obtener_estadisticas_avanzadas(
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None
+):
+    """
+    Estadísticas ejecutivas Fase 3:
+    1. Rentabilidad / Gastos Operativos por OP.
+    2. Puntualidad, Retardos y Horas Extra de RRHH.
+    3. Top de Equipos más utilizados en OPs.
+    """
+    try:
+        # 1. Gastos y Rentabilidad por OP
+        ops_gastos = []
+        top_equipos = []
+        with get_db_cursor("db_eventos", cursor_factory=RealDictCursor) as cur_ev:
+            q_rent = """
+                SELECT COALESCE(e.folio, e.id_evento::text) AS folio,
+                       e.nombre_evento,
+                       e.para_q_cliente AS cliente,
+                       e.fec_del_evento,
+                       COALESCE(SUM(g.subtotal), 0) AS gasto_comprobado,
+                       COALESCE(SUM(g.monto_entregado), 0) AS viatico_entregado
+                FROM public.eventos e
+                LEFT JOIN public.informes_gastos_maestro g
+                    ON (g.folio_vpro = e.id_evento OR g.folio_vpro::text = TRIM(e.folio))
+                WHERE 1=1
+            """
+            p_rent = []
+            if fecha_inicio and fecha_fin:
+                q_rent += " AND e.fec_del_evento BETWEEN %s AND %s"
+                p_rent.extend([fecha_inicio, fecha_fin])
+            q_rent += """
+                GROUP BY e.id_evento, e.folio, e.nombre_evento, e.para_q_cliente, e.fec_del_evento
+                HAVING COALESCE(SUM(g.subtotal), 0) > 0 OR COALESCE(SUM(g.monto_entregado), 0) > 0
+                ORDER BY gasto_comprobado DESC
+                LIMIT 10
+            """
+            cur_ev.execute(q_rent, tuple(p_rent))
+            ops_gastos = [
+                {
+                    "folio": str(r["folio"]),
+                    "nombre_evento": str(r["nombre_evento"] or ""),
+                    "cliente": str(r["cliente"] or ""),
+                    "fecha": str(r["fec_del_evento"] or ""),
+                    "gasto_comprobado": float(r["gasto_comprobado"] or 0),
+                    "viatico_entregado": float(r["viatico_entregado"] or 0),
+                }
+                for r in cur_ev.fetchall()
+            ]
+
+            cur_ev.execute("""
+                SELECT TRIM(d.codigo_equipo) AS codigo, COUNT(*) AS usos, COALESCE(SUM(d.cantidad), 0) AS unidades
+                FROM public.checkouts_detalle d
+                WHERE d.codigo_equipo IS NOT NULL AND TRIM(d.codigo_equipo) != ''
+                GROUP BY TRIM(d.codigo_equipo)
+                ORDER BY usos DESC
+                LIMIT 8
+            """)
+            top_equipos = [dict(r) for r in cur_ev.fetchall()]
+
+        # 2. Estadísticas de Puntualidad y Horas Extra (RRHH)
+        rrhh_stats = {"a_tiempo": 0, "retardos": 0, "descansos": 0, "horas_extra_totales": 0.0, "por_depto": []}
+        with get_db_cursor("db_personal", cursor_factory=RealDictCursor) as cur_p:
+            q_asist = """
+                SELECT UPPER(COALESCE(c.estatus, '')) AS est,
+                       COALESCE(e.depto, 'GENERAL') AS depto,
+                       COUNT(*) AS total
+                FROM public.control_asistencia c
+                LEFT JOIN public.empleados e ON TRIM(c.id_empleado::text) = TRIM(e.id_empleado::text)
+                WHERE 1=1
+            """
+            p_a = []
+            if fecha_inicio and fecha_fin:
+                q_asist += " AND c.fecha BETWEEN %s AND %s"
+                p_a.extend([fecha_inicio, fecha_fin])
+            q_asist += " GROUP BY UPPER(COALESCE(c.estatus, '')), COALESCE(e.depto, 'GENERAL')"
+            cur_p.execute(q_asist, tuple(p_a))
+
+            mapa_depto = {}
+            for r in cur_p.fetchall():
+                est = r["est"]
+                depto = r["depto"]
+                cnt = int(r["total"] or 0)
+                if depto not in mapa_depto:
+                    mapa_depto[depto] = {"depto": depto, "a_tiempo": 0, "retardos": 0}
+                if "RETARDO" in est:
+                    rrhh_stats["retardos"] += cnt
+                    mapa_depto[depto]["retardos"] += cnt
+                elif est in ("DESCANSO", "PERMISO", "VACACIONES", "INCAPACIDAD"):
+                    rrhh_stats["descansos"] += cnt
+                else:
+                    rrhh_stats["a_tiempo"] += cnt
+                    mapa_depto[depto]["a_tiempo"] += cnt
+
+            rrhh_stats["por_depto"] = sorted(mapa_depto.values(), key=lambda x: x["a_tiempo"] + x["retardos"], reverse=True)
+
+            cur_p.execute("""
+                SELECT COALESCE(SUM(horas_extra_calculadas), 0) AS he
+                FROM public.control_horas_extras
+                WHERE UPPER(COALESCE(estatus_aprobacion, '')) = 'AUTORIZADO'
+            """)
+            rrhh_stats["horas_extra_totales"] = float(cur_p.fetchone()["he"] or 0.0)
+
+        return {
+            "ops_gastos": ops_gastos,
+            "top_equipos": top_equipos,
+            "rrhh": rrhh_stats
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

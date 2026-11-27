@@ -231,3 +231,77 @@ def obtener_cotizacion(id_cotizacion: int):
             return {"datos_json": datos} if datos else {}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{id_cotizacion}")
+def eliminar_cotizacion(id_cotizacion: int):
+    """Elimina una cotización del historial por su ID."""
+    try:
+        from core.database import engine_eventos
+        from sqlalchemy import text
+        with engine_eventos.begin() as conn:
+            res = conn.execute(
+                text("DELETE FROM cotizaciones_historial WHERE id_cotizacion = :id RETURNING id_cotizacion"),
+                {"id": id_cotizacion}
+            ).fetchone()
+            if not res:
+                raise HTTPException(status_code=404, detail="Cotización no encontrada")
+        return {"status": "SUCCESS", "mensaje": f"Cotización {id_cotizacion} eliminada correctamente."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{id_cotizacion}/convertir-op")
+def convertir_cotizacion_a_op(id_cotizacion: int):
+    """Extrae los datos clave de una cotización para prellenar automáticamente una nueva Orden de Producción."""
+    try:
+        from core.database import engine_eventos
+        from sqlalchemy import text
+        import json
+
+        with engine_eventos.connect() as conn:
+            row = conn.execute(
+                text("""
+                    SELECT id_cotizacion, folio, fecha, cliente, contacto, total, datos_json
+                    FROM cotizaciones_historial
+                    WHERE id_cotizacion = :id
+                """),
+                {"id": id_cotizacion}
+            ).mappings().first()
+
+            if not row:
+                raise HTTPException(status_code=404, detail="Cotización no encontrada")
+
+            datos = row.get("datos_json")
+            if isinstance(datos, str):
+                try:
+                    datos = json.loads(datos)
+                except Exception:
+                    datos = {}
+            datos = datos or {}
+
+            items = datos.get("items") or []
+            resumen_items = ", ".join(
+                f"{it.get('cantidad', 1)}x {it.get('concepto', '')}".strip()
+                for it in items if it.get("concepto")
+            )
+
+            return {
+                "status": "SUCCESS",
+                "id_cotizacion": row["id_cotizacion"],
+                "folio_cotizacion": row.get("folio") or f"COT-{id_cotizacion}",
+                "prefill_op": {
+                    "para_q_cliente": datos.get("cliente") or row.get("cliente") or "",
+                    "quien_solicita": datos.get("contacto") or row.get("contacto") or "",
+                    "nombre_evento": datos.get("proyecto") or datos.get("evento") or f"Proyecto {row.get('folio') or id_cotizacion}",
+                    "locacion": datos.get("locacion") or datos.get("lugar") or "",
+                    "fec_del_evento": datos.get("fecha_evento") or str(row.get("fecha") or ""),
+                    "nota": f"Generada desde Cotización {row.get('folio') or id_cotizacion} (Total: ${float(row.get('total') or 0):,.2f}). Conceptos: {resumen_items}"[:500]
+                }
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

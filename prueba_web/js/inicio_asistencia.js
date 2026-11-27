@@ -202,7 +202,7 @@ async function cargarDatosInicio() {
             const esSeguimientoMantenimiento = true;
 
             // Lanzar todas las peticiones en paralelo
-            const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos, resOpsSinConv, resMisPermisos] = await Promise.allSettled([
+            const [resTrans, resCheck, resAlertas, resVac, resGastos, resPermisosPend, resDanosTodos, resOpsSinConv, resMisPermisos, resAclaracionesPend] = await Promise.allSettled([
             fetch(`${API_URL}/api/transferencias/pendientes_notificacion/${idEmp}`),
             fetch(`${API_URL}/api/checkout/pendientes/${idEmp}/${encodeURIComponent(usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '')}?rol=${encodeURIComponent(rolUser)}`),
             fetch(`${API_URL}/api/rh/alertas?id_empleado=${idEmp}`),
@@ -211,7 +211,8 @@ async function cargarDatosInicio() {
             esAdminRH ? fetch(`${API_URL}/api/rh/permisos/pendientes`) : Promise.resolve({ ok: false }),
             esSeguimientoMantenimiento ? fetch(`${API_URL}/api/inventario/radar-danos?id_empleado=${encodeURIComponent(idEmp)}&rol=${encodeURIComponent(rolUser)}`) : Promise.resolve({ ok: false }),
             esCoordOProductor ? fetch(`${API_URL}/api/eventos/pendientes-convocados`) : Promise.resolve({ ok: false }),
-            fetch(`${API_URL}/api/rh/permisos?id_empleado=${idEmp}`)
+            fetch(`${API_URL}/api/rh/permisos?id_empleado=${idEmp}`),
+            esAdminRH ? fetch(`${API_URL}/api/asistencia/aclaraciones?estatus=PENDIENTE`) : Promise.resolve({ ok: false })
         ]);
 
         // ── Helper: construir tarjeta-grupo tipo accordion/dropdown ──────
@@ -671,6 +672,41 @@ async function cargarDatosInicio() {
                 }
             }
         } catch(e) { console.error('Error al renderizar permisos pendientes:', e); }
+
+        // ─── F2. Solicitudes de Aclaración de Checada Pendientes (Solo Admin/RRHH) ───
+        try {
+            if (resAclaracionesPend && resAclaracionesPend.status === 'fulfilled' && resAclaracionesPend.value.ok) {
+                const acls = await resAclaracionesPend.value.json();
+                if (Array.isArray(acls) && acls.length > 0) {
+                    const mapCampo = {
+                        hora_entrada: 'Ent. Matutina',
+                        hora_salida: 'Sal. Matutina',
+                        hora_entrada_v: 'Ent. Vespertina',
+                        hora_salida_v: 'Sal. Vespertina'
+                    };
+                    gruposHtml.push(buildDropdownCard({
+                        icon: 'ph-clock-clockwise',
+                        color: '#0284c7', bg: '#f0f9ff', border: '#38bdf8',
+                        titulo: '🕒 Aclaraciones de Checada Pendientes',
+                        badge: `${acls.length} pendiente${acls.length !== 1 ? 's' : ''}`,
+                        badgeColor: '#0284c7',
+                        items: acls,
+                        renderItem: (a) => `
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; background:white; border:1px solid #bae6fd; border-radius:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                <div style="flex:1; min-width:220px;">
+                                    <div style="font-size:13px; font-weight:700; color:#0f172a;">${a.nombre_empleado || 'Empleado'} · <span style="color:#0369a1;">${a.fecha}</span></div>
+                                    <div style="font-size:12px; color:#334155; margin-top:2px;"><b>${mapCampo[a.campo] || a.campo}:</b> ${a.hora_solicitada} hrs</div>
+                                    <div style="font-size:11.5px; color:#64748b; font-style:italic; margin-top:2px;">"${a.motivo}"</div>
+                                </div>
+                                <div style="display:flex; gap:6px;">
+                                    <button onclick="dictaminarAclaracionChecada(${a.id_aclaracion}, 'APROBAR')" style="background:#10b981; color:white; border:none; padding:6px 11px; border-radius:6px; cursor:pointer; font-size:11.5px; font-weight:700;">✅ Aprobar</button>
+                                    <button onclick="dictaminarAclaracionChecada(${a.id_aclaracion}, 'RECHAZAR')" style="background:#ef4444; color:white; border:none; padding:6px 11px; border-radius:6px; cursor:pointer; font-size:11.5px; font-weight:700;">❌ Rechazar</button>
+                                </div>
+                            </div>`
+                    }));
+                }
+            }
+        } catch(e) { console.error('Error al renderizar aclaraciones pendientes:', e); }
 
         // ─── G. Mis Solicitudes de Permiso en Revisión (Para el Colaborador) ───
         try {
@@ -2027,5 +2063,90 @@ window.procesarEnvioPermisoDesdeInicio = async function(idEmp, nomEmp, datos) {
             text: `No se pudo enviar la solicitud: ${e.message}`,
             confirmButtonColor: '#dc2626'
         });
+    }
+};
+
+window.abrirModalAclaracionChecada = async function() {
+    if (!usuarioLogueado) return;
+    const hoyIso = formatearFechaLocal(new Date());
+    const { value: formVals } = await Swal.fire({
+        title: '🕒 Solicitar Aclaración de Checada',
+        html: `
+            <div style="text-align:left; font-size:13px; display:flex; flex-direction:column; gap:10px;">
+                <div>
+                    <label style="font-weight:700; display:block; margin-bottom:4px;">Fecha de la checada:</label>
+                    <input type="date" id="acl-fecha" class="swal2-input" style="margin:0; width:100%;" value="${hoyIso}" max="${hoyIso}">
+                </div>
+                <div>
+                    <label style="font-weight:700; display:block; margin-bottom:4px;">Marca a corregir / agregar:</label>
+                    <select id="acl-campo" class="swal2-select" style="margin:0; width:100%;">
+                        <option value="hora_entrada">☀️ Entrada Matutina</option>
+                        <option value="hora_salida">☀️ Salida Matutina (Comida)</option>
+                        <option value="hora_entrada_v">🌙 Entrada Vespertina</option>
+                        <option value="hora_salida_v">🌙 Salida Vespertina (Fin jornada)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-weight:700; display:block; margin-bottom:4px;">Hora real:</label>
+                    <input type="time" id="acl-hora" class="swal2-input" style="margin:0; width:100%;" value="09:00">
+                </div>
+                <div>
+                    <label style="font-weight:700; display:block; margin-bottom:4px;">Motivo / Justificación:</label>
+                    <textarea id="acl-motivo" class="swal2-textarea" style="margin:0; width:100%;" placeholder="Ej. Se trabó el lector / cita médica autorizada / salida a locación..."></textarea>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Enviar a RRHH',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#2563eb',
+        preConfirm: () => {
+            const fecha = document.getElementById('acl-fecha').value;
+            const campo = document.getElementById('acl-campo').value;
+            const hora_solicitada = document.getElementById('acl-hora').value;
+            const motivo = document.getElementById('acl-motivo').value.trim();
+            if (!fecha || !hora_solicitada || !motivo) {
+                Swal.showValidationMessage('Completa la fecha, la hora real y el motivo.');
+                return false;
+            }
+            return { fecha, campo, hora_solicitada, motivo };
+        }
+    });
+
+    if (!formVals) return;
+    try {
+        const res = await fetch(`${API_URL}/api/asistencia/aclaraciones`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id_empleado: usuarioLogueado.id_empleado,
+                nombre_empleado: usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '',
+                ...formVals
+            })
+        });
+        if (!res.ok) throw new Error('Error en servidor');
+        Swal.fire('Enviada', 'Tu solicitud de aclaración fue enviada a RRHH para su revisión.', 'success');
+    } catch (e) {
+        Swal.fire('Error', 'No se pudo enviar la solicitud.', 'error');
+    }
+};
+
+window.dictaminarAclaracionChecada = async function(idAclaracion, accion) {
+    try {
+        const res = await fetch(`${API_URL}/api/asistencia/aclaraciones/${idAclaracion}/dictaminar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                accion,
+                dictaminado_por: usuarioLogueado ? (usuarioLogueado.nombre_completo || usuarioLogueado.nombre) : 'ADMIN'
+            })
+        });
+        if (!res.ok) throw new Error('No se pudo dictaminar');
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Listo', `Aclaración ${accion === 'APROBAR' ? 'aprobada y aplicada al checador' : 'rechazada'}.`, 'success');
+        }
+        if (typeof cargarDatosInicio === 'function') cargarDatosInicio();
+    } catch (e) {
+        alert('Error al dictaminar aclaración.');
     }
 };

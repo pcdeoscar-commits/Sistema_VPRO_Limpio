@@ -1973,3 +1973,80 @@ def guardar_incidencia_dia_evento(id_evento: int, payload: dict):
         return {"status": "OK", "mensaje": f"Incidencia para la fecha {fecha} guardada correctamente."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al guardar incidencia del día: {e}")
+
+
+@router.post("/verificar-conflictos")
+def verificar_conflictos_op(payload: dict):
+    """
+    Detecta traslapes de personal convocado o vehículos en otras OPs activas
+    cuyas fechas se crucen con el rango [fec_del_evento, fec_fin_evento].
+    """
+    f_ini = str(payload.get("fec_del_evento") or "").strip()
+    f_fin = str(payload.get("fec_fin_evento") or f_ini).strip()
+    if not f_ini:
+        return {"conflictos_personal": [], "conflictos_vehiculos": []}
+
+    id_actual = payload.get("id_evento")
+    personal_req = [str(p).strip() for p in (payload.get("personal_convocado_op") or []) if str(p).strip()]
+    carros_req = [str(c).strip() for c in (payload.get("carros_usados_op") or []) if str(c).strip()]
+
+    if not personal_req and not carros_req:
+        return {"conflictos_personal": [], "conflictos_vehiculos": []}
+
+    try:
+        import unicodedata
+        def _norm(t):
+            return ''.join(c for c in unicodedata.normalize('NFD', str(t).strip().upper()) if unicodedata.category(c) != 'Mn')
+
+        pers_norm = {_norm(p): p for p in personal_req}
+        carros_norm = {_norm(c): c for c in carros_req}
+
+        with engine_eventos.connect() as conn:
+            ops = conn.execute(text("""
+                SELECT id_evento, COALESCE(folio, id_evento::text) AS folio, nombre_evento,
+                       fec_del_evento, COALESCE(fec_fin_evento, fec_del_evento) AS fec_fin,
+                       personal_convocado_op, personal_remoto_foraneo, carros_usados_op
+                FROM public.eventos
+                WHERE UPPER(COALESCE(estatus, 'ACTIVA')) NOT LIKE '%CANCELAD%'
+                  AND UPPER(COALESCE(estatus, 'ACTIVA')) NOT LIKE '%CERRADA%'
+                  AND fec_del_evento <= CAST(:f_fin AS date)
+                  AND COALESCE(fec_fin_evento, fec_del_evento) >= CAST(:f_ini AS date)
+                  AND (:id_act IS NULL OR id_evento != :id_act)
+            """), {"f_ini": f_ini, "f_fin": f_fin, "id_act": int(id_actual) if str(id_actual or "").isdigit() else None}).mappings().all()
+
+        conflictos_personal = []
+        conflictos_vehiculos = []
+
+        for op in ops:
+            folio_op = str(op["folio"])
+            nom_ev = str(op["nombre_evento"] or "")
+            rango_op = f"{op['fec_del_evento']} al {op['fec_fin']}"
+
+            op_pers = list(op.get("personal_convocado_op") or []) + list(op.get("personal_remoto_foraneo") or [])
+            for p_op in op_pers:
+                p_n = _norm(p_op)
+                if p_n in pers_norm:
+                    conflictos_personal.append({
+                        "recurso": pers_norm[p_n],
+                        "folio": folio_op,
+                        "nombre_evento": nom_ev,
+                        "fechas": rango_op
+                    })
+
+            op_carros = list(op.get("carros_usados_op") or [])
+            for c_op in op_carros:
+                c_n = _norm(c_op)
+                if c_n in carros_norm:
+                    conflictos_vehiculos.append({
+                        "recurso": carros_norm[c_n],
+                        "folio": folio_op,
+                        "nombre_evento": nom_ev,
+                        "fechas": rango_op
+                    })
+
+        return {
+            "conflictos_personal": conflictos_personal,
+            "conflictos_vehiculos": conflictos_vehiculos
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al verificar conflictos: {e}")

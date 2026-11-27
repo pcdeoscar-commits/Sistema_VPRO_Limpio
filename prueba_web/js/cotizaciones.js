@@ -270,9 +270,11 @@ function renderTablaCotizacionesBoveda() {
             <td>${c.contacto || ''}</td>
             <td>${c.fecha || ''}</td>
             <td>$${(c.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-            <td style="display:flex; gap:10px;">
+            <td style="display:flex; gap:8px; align-items:center;">
                 ${pdfBtn}
                 <button onclick="cargarCotizacionParaEdicion(${c.id_cotizacion})" style="background: none; border: none; cursor: pointer; color: #3b82f6;" title="Cargar a formulario">✏️</button>
+                <button onclick="convertirCotizacionAOP(${c.id_cotizacion})" style="background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 6px; padding: 2px 7px; cursor: pointer; color: #047857; font-size: 11px; font-weight: 700;" title="Convertir esta cotización en Orden de Producción">🚀 A OP</button>
+                <button onclick="eliminarCotizacionBoveda(${c.id_cotizacion}, '${(c.folio || '').replace(/'/g, '')}')" style="background: none; border: none; cursor: pointer; color: #ef4444;" title="Eliminar cotización">🗑️</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -355,5 +357,48 @@ async function cargarCotizacionParaEdicion(idCotizacion) {
     } catch (e) {
         console.error(e);
         alert("Error al cargar la cotización para edición.");
+    }
+}
+
+async function eliminarCotizacionBoveda(idCotizacion, folio) {
+    if (!confirm(`¿Eliminar permanentemente la cotización ${folio || idCotizacion}?`)) return;
+    try {
+        const res = await fetch(`${API_URL}/api/cotizaciones/${idCotizacion}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("No se pudo eliminar");
+        if (typeof cargarHistorialCotizacionesCatalogo === "function") cargarHistorialCotizacionesCatalogo();
+    } catch (e) {
+        alert("Error al eliminar la cotización.");
+    }
+}
+
+async function convertirCotizacionAOP(idCotizacion) {
+    try {
+        const res = await fetch(`${API_URL}/api/cotizaciones/${idCotizacion}/convertir-op`, { method: "POST" });
+        if (!res.ok) throw new Error("Error al convertir cotización");
+        const data = await res.json();
+        const p = data.prefill_op || {};
+
+        if (typeof cambiarVista === "function") cambiarVista("vista-eventos");
+        if (typeof limpiarFormularioOP === "function") limpiarFormularioOP();
+
+        setTimeout(() => {
+            const setVal = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+            setVal("op-cliente", p.para_q_cliente);
+            setVal("op-quien-solicita", p.quien_solicita);
+            setVal("op-nombre", p.nombre_evento);
+            setVal("op-locacion", p.locacion);
+            setVal("op-fecha-evento", p.fec_del_evento);
+            setVal("op-nota", p.nota);
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    icon: "success",
+                    title: `Cotización ${data.folio_cotizacion} pre-cargada`,
+                    text: "Revisa el productor responsable, personal convocado y guarda la OP.",
+                    confirmButtonColor: "#4f46e5"
+                });
+            }
+        }, 350);
+    } catch (e) {
+        alert("Error al convertir la cotización a Orden de Producción.");
     }
 }

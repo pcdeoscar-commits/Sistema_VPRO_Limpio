@@ -225,5 +225,51 @@ def aplicar_migraciones_automaticas():
         except Exception as e_del_perm:
             logger.warning(f"[Auto-Migraciones] Nota en borrado permiso PER-2026-004: {e_del_perm}")
 
+        # 12. Fase 2: Tabla relacional de Bitácora Vehicular (Mantenimientos y Combustible) en db_autos
+        try:
+            with get_db_cursor("db_autos", commit=True) as cur_autos:
+                cur_autos.execute("""
+                    CREATE TABLE IF NOT EXISTS public.autos_bitacora (
+                        id_bitacora SERIAL PRIMARY KEY,
+                        num_control VARCHAR(50) NOT NULL,
+                        fecha DATE NOT NULL DEFAULT CURRENT_DATE,
+                        tipo_registro VARCHAR(50) NOT NULL DEFAULT 'MANTENIMIENTO',
+                        kilometraje INTEGER,
+                        litros NUMERIC(10,2) DEFAULT 0,
+                        costo NUMERIC(12,2) DEFAULT 0,
+                        folio_op VARCHAR(50),
+                        descripcion TEXT,
+                        usuario_registro VARCHAR(150),
+                        fecha_registro TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_autos_bitacora_nc ON public.autos_bitacora (num_control, fecha DESC);
+                """)
+                logger.info("[Auto-Migraciones] Tabla autos_bitacora asegurada en db_autos.")
+        except Exception as e_autos:
+            logger.warning(f"[Auto-Migraciones] Nota al crear autos_bitacora: {e_autos}")
+
+        # 13. Fase 2: Tabla de Solicitudes de Aclaración de Checadas en db_personal
+        try:
+            with get_db_cursor("db_personal", commit=True) as cur_acl:
+                cur_acl.execute("""
+                    CREATE TABLE IF NOT EXISTS public.asistencia_aclaraciones (
+                        id_aclaracion SERIAL PRIMARY KEY,
+                        id_empleado VARCHAR(50) NOT NULL,
+                        nombre_empleado VARCHAR(150),
+                        fecha DATE NOT NULL,
+                        campo VARCHAR(30) NOT NULL,
+                        hora_solicitada TIME NOT NULL,
+                        motivo TEXT NOT NULL,
+                        estatus VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+                        dictaminado_por VARCHAR(150),
+                        fecha_solicitud TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        fecha_dictamen TIMESTAMP WITHOUT TIME ZONE
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_aclaraciones_estatus ON public.asistencia_aclaraciones (estatus, fecha DESC);
+                """)
+                logger.info("[Auto-Migraciones] Tabla asistencia_aclaraciones asegurada en db_personal.")
+        except Exception as e_acl:
+            logger.warning(f"[Auto-Migraciones] Nota al crear asistencia_aclaraciones: {e_acl}")
+
     except Exception as e:
         logger.warning(f"[Auto-Migraciones] Advertencia al sincronizar esquemas: {e}")

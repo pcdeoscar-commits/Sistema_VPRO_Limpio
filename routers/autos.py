@@ -73,6 +73,65 @@ def guardar_o_actualizar_auto(auto: dict):
     except Exception as e: 
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/bitacora/{num_control}")
+def obtener_bitacora_vehiculo(num_control: str):
+    """Obtiene el historial relacional de mantenimientos, servicios y cargas de combustible de una unidad."""
+    query = text("""
+        SELECT id_bitacora, num_control, fecha, tipo_registro, kilometraje,
+               litros, costo, folio_op, descripcion, usuario_registro, fecha_registro
+        FROM public.autos_bitacora
+        WHERE TRIM(num_control) = TRIM(:nc)
+        ORDER BY fecha DESC, id_bitacora DESC
+    """)
+    try:
+        with engine_autos.connect() as conn:
+            rows = conn.execute(query, {"nc": num_control}).mappings().fetchall()
+            return [serialize_row_dates(dict(row)) for row in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/bitacora/guardar")
+def registrar_bitacora_vehiculo(payload: dict):
+    """Registra un mantenimiento o carga de combustible y actualiza el kilometraje de la unidad si es mayor."""
+    num_control = str(payload.get("num_control") or "").strip()
+    if not num_control:
+        raise HTTPException(status_code=400, detail="num_control es obligatorio.")
+
+    km = payload.get("kilometraje")
+    km_val = int(km) if km not in (None, "", "null") else None
+
+    try:
+        with engine_autos.begin() as conn:
+            conn.execute(text("""
+                INSERT INTO public.autos_bitacora
+                    (num_control, fecha, tipo_registro, kilometraje, litros, costo, folio_op, descripcion, usuario_registro)
+                VALUES
+                    (:nc, COALESCE(CAST(:fecha AS date), CURRENT_DATE), :tipo, :km, :litros, :costo, :folio_op, :desc, :usr)
+            """), {
+                "nc": num_control,
+                "fecha": payload.get("fecha") or None,
+                "tipo": str(payload.get("tipo_registro") or "MANTENIMIENTO").upper().strip(),
+                "km": km_val,
+                "litros": float(payload.get("litros") or 0),
+                "costo": float(payload.get("costo") or 0),
+                "folio_op": str(payload.get("folio_op") or "").strip() or None,
+                "desc": str(payload.get("descripcion") or "").strip(),
+                "usr": str(payload.get("usuario_registro") or "").strip() or None
+            })
+
+            if km_val is not None:
+                conn.execute(text("""
+                    UPDATE public.autos
+                    SET kilometraje_actual = GREATEST(COALESCE(kilometraje_actual, 0), :km)
+                    WHERE TRIM(num_control) = :nc
+                """), {"km": km_val, "nc": num_control})
+
+        return {"status": "SUCCESS", "mensaje": "Movimiento registrado en bitácora vehicular."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.delete("/{num_control}")
 def eliminar_vehiculo(num_control: str):
     """Elimina permanentemente una unidad de la flota por su número de control."""

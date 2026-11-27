@@ -2073,6 +2073,49 @@ async function guardarOrdenOP(event, silencioso = false) {
         empleado_que_creo_la_op: usuarioLogueado ? usuarioLogueado.nombre_completo : ""
     };
 
+    // 🛡️ Verificación de traslapes de personal y vehículos antes de guardar (Fase 2)
+    if (!silencioso && payload.fec_del_evento) {
+        try {
+            const resConf = await fetch(`${API_URL}/api/eventos/verificar-conflictos`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id_evento: payload.id_evento || null,
+                    fec_del_evento: payload.fec_del_evento,
+                    fec_fin_evento: payload.fec_fin_evento || payload.fec_del_evento,
+                    personal_convocado_op: payload.personal_convocado_op || [],
+                    carros_usados_op: payload.carros_usados_op || []
+                })
+            });
+            if (resConf.ok) {
+                const confData = await resConf.json();
+                const cp = confData.conflictos_personal || [];
+                const cv = confData.conflictos_vehiculos || [];
+                if (cp.length > 0 || cv.length > 0) {
+                    const listaHtml = [
+                        ...cp.map(c => `<li>👤 <b>${c.recurso}</b> ya está en <b>OP-${c.folio}</b> (${c.nombre_evento}) [${c.fechas}]</li>`),
+                        ...cv.map(c => `<li>🚐 <b>${c.recurso}</b> ya está asignado a <b>OP-${c.folio}</b> (${c.nombre_evento}) [${c.fechas}]</li>`)
+                    ].join("");
+
+                    if (typeof Swal !== "undefined") {
+                        const respSwal = await Swal.fire({
+                            icon: "warning",
+                            title: "⚠️ Traslape de Recursos Detectado",
+                            html: `<div style="text-align:left; font-size:13px;"><p>Los siguientes recursos tienen otra OP activa en estas fechas:</p><ul style="padding-left:18px; margin-top:6px;">${listaHtml}</ul></div>`,
+                            showCancelButton: true,
+                            confirmButtonText: "Guardar de todas formas",
+                            cancelButtonText: "Cancelar y revisar",
+                            confirmButtonColor: "#d97706"
+                        });
+                        if (!respSwal.isConfirmed) return false;
+                    } else if (!confirm("⚠️ Hay traslapes de personal o vehículos con otra OP en estas fechas. ¿Deseas guardar de todas formas?")) {
+                        return false;
+                    }
+                }
+            }
+        } catch (eConf) { console.warn("Nota verificando traslapes:", eConf); }
+    }
+
     try {
         const respuesta = await fetch(`${API_URL}/api/eventos/guardar`, {
             method: "POST",

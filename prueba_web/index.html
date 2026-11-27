@@ -2614,7 +2614,12 @@
 
 
 
-                <h3 style="color: #0f172a; margin-top: 32px;"><i class="ph ph-clock"></i> Mi Asistencia Reciente (Últimos 7 Días)</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 32px; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="color: #0f172a; margin: 0;"><i class="ph ph-clock"></i> Mi Asistencia Reciente (Últimos 7 Días)</h3>
+                    <button type="button" onclick="abrirModalAclaracionChecada()" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 7px 14px; border-radius: 8px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-note-pencil"></i> Solicitar Aclaración de Checada
+                    </button>
+                </div>
 
                 <div class="tabla-container" style="background: white; padding: 0;">
 
@@ -12176,9 +12181,9 @@
 
     <script src="js/navegacion.js?v=20261120_auditoria_admin_v2"></script>
 
-    <script src="js/inicio_asistencia.js?v=20261126_kiosco_blindado_v8"></script>
+    <script src="js/inicio_asistencia.js?v=20261126_fase2_aclaraciones"></script>
 
-    <script src="js/eventos_impresion.js?v=20261114_incidencias_multidia_v15"></script>
+    <script src="js/eventos_impresion.js?v=20261126_fase2_conflictos"></script>
 
     <script src="js/eventos_op.js?v=20261118_evidencias_chat_v1"></script>
 
@@ -12206,7 +12211,7 @@
 
     <script src="js/transfer.js?v=20261120_clean_ui_10gb"></script>
 
-    <script src="js/cotizaciones.js"></script>
+    <script src="js/cotizaciones.js?v=20261126_fase2_op"></script>
     <script src="js/notificaciones_flotantes.js?v=20261121_v1"></script>
 
 </body>

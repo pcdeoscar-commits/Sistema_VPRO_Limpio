@@ -1552,3 +1552,137 @@ def autorizar_horas_extras(payload: AutorizarHorasExtrasPayload):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/aclaraciones", tags=["🕒 Checador Asistencia"])
+def crear_solicitud_aclaracion_checada(payload: dict):
+    """Permite a un colaborador solicitar la aclaración/corrección de una checada omitida o errónea."""
+    id_emp = str(payload.get("id_empleado") or "").strip()
+    fecha = str(payload.get("fecha") or "").strip()
+    campo = str(payload.get("campo") or "").strip()
+    hora_sol = str(payload.get("hora_solicitada") or "").strip()
+    motivo = str(payload.get("motivo") or "").strip()
+    nombre_emp = str(payload.get("nombre_empleado") or "").strip()
+
+    campos_validos = {"hora_entrada", "hora_salida", "hora_entrada_v", "hora_salida_v"}
+    if not id_emp or not fecha or campo not in campos_validos or not hora_sol or not motivo:
+        raise HTTPException(status_code=400, detail="Faltan datos obligatorios o el campo de horario es inválido.")
+
+    try:
+        with engine_personal.begin() as conn:
+            if not nombre_emp:
+                row_e = conn.execute(
+                    text("SELECT nombre FROM public.empleados WHERE TRIM(id_empleado) = :emp LIMIT 1"),
+                    {"emp": id_emp}
+                ).mappings().first()
+                nombre_emp = str(row_e["nombre"]).strip() if row_e else f"ID {id_emp}"
+
+            conn.execute(text("""
+                INSERT INTO public.asistencia_aclaraciones
+                    (id_empleado, nombre_empleado, fecha, campo, hora_solicitada, motivo, estatus)
+                VALUES
+                    (:emp, :nom, CAST(:fecha AS date), :campo, CAST(:hora AS time), :motivo, 'PENDIENTE')
+            """), {
+                "emp": id_emp,
+                "nom": nombre_emp,
+                "fecha": fecha,
+                "campo": campo,
+                "hora": hora_sol if len(hora_sol) == 8 else f"{hora_sol}:00",
+                "motivo": motivo
+            })
+        return {"status": "SUCCESS", "mensaje": "Solicitud de aclaración enviada a RRHH."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/aclaraciones", tags=["🕒 Checador Asistencia"])
+def listar_aclaraciones_checada(estatus: Optional[str] = "PENDIENTE", id_empleado: Optional[str] = None):
+    """Lista solicitudes de aclaración de checada (por estatus o por empleado)."""
+    try:
+        with engine_personal.connect() as conn:
+            conds = ["1=1"]
+            params = {}
+            if estatus and estatus.upper() != "TODAS":
+                conds.append("UPPER(estatus) = :est")
+                params["est"] = estatus.upper().strip()
+            if id_empleado:
+                conds.append("TRIM(id_empleado) = :emp")
+                params["emp"] = id_empleado.strip()
+
+            rows = conn.execute(text(f"""
+                SELECT id_aclaracion, id_empleado, nombre_empleado, fecha, campo,
+                       hora_solicitada, motivo, estatus, dictaminado_por, fecha_solicitud, fecha_dictamen
+                FROM public.asistencia_aclaraciones
+                WHERE {' AND '.join(conds)}
+                ORDER BY fecha_solicitud DESC
+            """), params).mappings().all()
+
+            return [
+                {
+                    **dict(r),
+                    "fecha": str(r["fecha"]),
+                    "hora_solicitada": str(r["hora_solicitada"])[:5] if r["hora_solicitada"] else "--:--",
+                    "fecha_solicitud": str(r["fecha_solicitud"]) if r["fecha_solicitud"] else None,
+                    "fecha_dictamen": str(r["fecha_dictamen"]) if r["fecha_dictamen"] else None,
+                }
+                for r in rows
+            ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/aclaraciones/{id_aclaracion}/dictaminar", tags=["🕒 Checador Asistencia"])
+def dictaminar_aclaracion_checada(id_aclaracion: int, payload: dict):
+    """Aprueba o rechaza una aclaración de checada. Si se aprueba, actualiza control_asistencia automáticamente."""
+    accion = str(payload.get("accion") or "").upper().strip()
+    dictaminador = str(payload.get("dictaminado_por") or "RRHH / ADMIN").strip()
+    if accion not in ("APROBAR", "RECHAZAR"):
+        raise HTTPException(status_code=400, detail="Acción inválida. Use APROBAR o RECHAZAR.")
+
+    campos_validos = {"hora_entrada", "hora_salida", "hora_entrada_v", "hora_salida_v"}
+    ahora = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(hours=7)
+
+    try:
+        with engine_personal.begin() as conn:
+            acl = conn.execute(text("""
+                SELECT * FROM public.asistencia_aclaraciones WHERE id_aclaracion = :id
+            """), {"id": id_aclaracion}).mappings().first()
+
+            if not acl:
+                raise HTTPException(status_code=404, detail="Solicitud de aclaración no encontrada.")
+
+            nuevo_est = "APROBADA" if accion == "APROBAR" else "RECHAZADA"
+            conn.execute(text("""
+                UPDATE public.asistencia_aclaraciones
+                SET estatus = :est, dictaminado_por = :dic, fecha_dictamen = :fec
+                WHERE id_aclaracion = :id
+            """), {"est": nuevo_est, "dic": dictaminador, "fec": ahora, "id": id_aclaracion})
+
+            if accion == "APROBAR" and acl["campo"] in campos_validos:
+                campo_col = acl["campo"]
+                nota_acl = f"Aclaración aprobada por {dictaminador} ({acl['motivo']})"
+                existe_reg = conn.execute(text("""
+                    SELECT id_registro FROM public.control_asistencia
+                    WHERE TRIM(id_empleado) = :emp AND fecha = :fec
+                """), {"emp": str(acl["id_empleado"]).strip(), "fec": acl["fecha"]}).fetchone()
+
+                if existe_reg:
+                    conn.execute(text(f"""
+                        UPDATE public.control_asistencia
+                        SET {campo_col} = :hora,
+                            observaciones = COALESCE(observaciones, '') || ' | ' || :nota
+                        WHERE id_registro = :id_reg
+                    """), {"hora": acl["hora_solicitada"], "nota": nota_acl, "id_reg": existe_reg[0]})
+                else:
+                    conn.execute(text(f"""
+                        INSERT INTO public.control_asistencia
+                            (id_empleado, fecha, {campo_col}, estatus, observaciones)
+                        VALUES
+                            (:emp, :fec, :hora, 'ASISTENCIA', :nota)
+                    """), {"emp": str(acl["id_empleado"]).strip(), "fec": acl["fecha"], "hora": acl["hora_solicitada"], "nota": nota_acl})
+
+        return {"status": "SUCCESS", "mensaje": f"Aclaración {nuevo_est.lower()} correctamente."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

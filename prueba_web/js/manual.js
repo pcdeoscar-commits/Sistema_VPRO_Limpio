@@ -201,9 +201,10 @@ function abrirAyudaContextual(vistaForzada = null) {
         width: 680,
         html: `
             <div style="text-align:left;">
-                <div style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                <div style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid #e2e8f0; padding-bottom:10px; flex-wrap:wrap;">
                     <button type="button" id="ayuda-tab-actual" style="background:#0f172a; color:white; border:none; padding:7px 14px; border-radius:7px; font-size:12.5px; font-weight:700; cursor:pointer;">📍 Guía de esta Pantalla</button>
                     <button type="button" id="ayuda-tab-todas" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:7px 14px; border-radius:7px; font-size:12.5px; font-weight:700; cursor:pointer;">🔍 Buscar otras Guías</button>
+                    <button type="button" id="ayuda-tab-ia" style="background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; padding:7px 14px; border-radius:7px; font-size:12.5px; font-weight:700; cursor:pointer;">🤖 Preguntar a IA</button>
                     <button type="button" id="ayuda-btn-completo" style="margin-left:auto; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:7px 12px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer;">📖 Manual Completo</button>
                 </div>
                 <div id="ayuda-panel-actual">
@@ -213,6 +214,18 @@ function abrirAyudaContextual(vistaForzada = null) {
                     <input type="text" id="ayuda-buscador-input" placeholder="🔍 Busca: permiso, ticket, kiosco, cotización, op..." style="width:100%; box-sizing:border-box; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; margin-bottom:10px;">
                     <div id="ayuda-lista-resultados" style="max-height:300px; overflow-y:auto;">${renderBuscador("")}</div>
                 </div>
+                <div id="ayuda-panel-ia" style="display:none;">
+                    <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; padding:10px 12px; font-size:12px; color:#5b21b6; margin-bottom:10px;">
+                        ✨ Pregunta cualquier duda operativa sobre el sistema VPRO (ej. <i>"¿Por qué no puedo enviar mi informe de gastos?"</i>).
+                    </div>
+                    <div style="display:flex; gap:8px; margin-bottom:10px;">
+                        <input type="text" id="ayuda-ia-input" placeholder="Escribe tu pregunta..." style="flex:1; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+                        <button type="button" id="ayuda-ia-enviar" style="background:#6d28d9; color:white; border:none; padding:9px 16px; border-radius:8px; font-weight:700; cursor:pointer; font-size:13px;">Enviar</button>
+                    </div>
+                    <div id="ayuda-ia-respuesta" style="min-height:90px; max-height:240px; overflow-y:auto; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; font-size:13px; color:#1e293b; line-height:1.55;">
+                        Escribe una duda arriba para consultar al Copiloto VPRO.
+                    </div>
+                </div>
             </div>
         `,
         showConfirmButton: true,
@@ -221,22 +234,56 @@ function abrirAyudaContextual(vistaForzada = null) {
         didOpen: () => {
             const tabAct = document.getElementById("ayuda-tab-actual");
             const tabTod = document.getElementById("ayuda-tab-todas");
+            const tabIa = document.getElementById("ayuda-tab-ia");
             const panAct = document.getElementById("ayuda-panel-actual");
             const panTod = document.getElementById("ayuda-panel-todas");
+            const panIa = document.getElementById("ayuda-panel-ia");
             const btnComp = document.getElementById("ayuda-btn-completo");
             const inpBusq = document.getElementById("ayuda-buscador-input");
+            const inpIa = document.getElementById("ayuda-ia-input");
+            const btnIa = document.getElementById("ayuda-ia-enviar");
+            const outIa = document.getElementById("ayuda-ia-respuesta");
 
-            tabAct.onclick = () => {
-                panAct.style.display = "block"; panTod.style.display = "none";
-                tabAct.style.background = "#0f172a"; tabAct.style.color = "white"; tabAct.style.border = "none";
-                tabTod.style.background = "#f1f5f9"; tabTod.style.color = "#334155"; tabTod.style.border = "1px solid #cbd5e1";
+            const activarTab = (btn, pan) => {
+                [panAct, panTod, panIa].forEach(p => { if (p) p.style.display = "none"; });
+                [tabAct, tabTod].forEach(b => {
+                    if (b) { b.style.background = "#f1f5f9"; b.style.color = "#334155"; b.style.border = "1px solid #cbd5e1"; }
+                });
+                if (tabIa) { tabIa.style.background = "#f5f3ff"; tabIa.style.color = "#6d28d9"; tabIa.style.border = "1px solid #ddd6fe"; }
+                if (pan) pan.style.display = "block";
+                if (btn) { btn.style.background = btn === tabIa ? "#6d28d9" : "#0f172a"; btn.style.color = "white"; btn.style.border = "none"; }
             };
-            tabTod.onclick = () => {
-                panAct.style.display = "none"; panTod.style.display = "block";
-                tabTod.style.background = "#0f172a"; tabTod.style.color = "white"; tabTod.style.border = "none";
-                tabAct.style.background = "#f1f5f9"; tabAct.style.color = "#334155"; tabAct.style.border = "1px solid #cbd5e1";
-                if (inpBusq) inpBusq.focus();
+
+            tabAct.onclick = () => activarTab(tabAct, panAct);
+            tabTod.onclick = () => { activarTab(tabTod, panTod); if (inpBusq) inpBusq.focus(); };
+            tabIa.onclick = () => { activarTab(tabIa, panIa); if (inpIa) inpIa.focus(); };
+
+            const enviarPreguntaIA = async () => {
+                const preg = (inpIa ? inpIa.value : "").trim();
+                if (!preg) return;
+                outIa.innerHTML = `<span style="color:#6d28d9;">🤖 Analizando tu consulta...</span>`;
+                try {
+                    const idEmp = (typeof usuarioLogueado !== "undefined" && usuarioLogueado && usuarioLogueado.id_empleado) ? String(usuarioLogueado.id_empleado) : "anon";
+                    const res = await fetch(`${API_URL}/api/ia/asistente`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            pregunta: preg,
+                            modulo_actual: idActual,
+                            rol: rolActual,
+                            id_empleado: idEmp
+                        })
+                    });
+                    const data = await res.json();
+                    const txt = (data.texto || "Sin respuesta.").replace(/\n/g, "<br>");
+                    outIa.innerHTML = txt;
+                } catch (e) {
+                    outIa.innerHTML = `<span style="color:#b91c1c;">No se pudo conectar con el asistente IA. Usa las guías rápidas.</span>`;
+                }
             };
+            if (btnIa) btnIa.onclick = enviarPreguntaIA;
+            if (inpIa) inpIa.onkeydown = (ev) => { if (ev.key === "Enter") { ev.preventDefault(); enviarPreguntaIA(); } };
+
             btnComp.onclick = () => {
                 Swal.close();
                 abrirManualCompleto();

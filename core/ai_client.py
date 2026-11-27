@@ -19,7 +19,13 @@ from typing import Optional, Dict, Any, Tuple
 import requests
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
+GEMINI_FALLBACK_MODELS = [
+    GEMINI_MODEL,
+    "gemini-3.8-flash",
+    "gemini-3-flash-preview",
+    "gemini-3.1-flash-lite-preview",
+]
 LIMITE_DIARIO_USUARIO = int(os.getenv("IA_LIMITE_DIARIO_USUARIO", "40"))
 
 # Estado global en memoria (reseteo diario automático)
@@ -126,7 +132,6 @@ def consultar_gemini(
         if cached and (time.time() - cached[0]) < 21600:
             return {"ok": True, "status": "OK", "texto": cached[1], "desde_cache": True}
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={api_key}"
     parts = [{"text": prompt}]
     if imagen_bytes:
         parts.append({
@@ -143,49 +148,65 @@ def consultar_gemini(
     if system_instruction:
         body["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
-    try:
-        resp = requests.post(url, json=body, timeout=25)
-        if resp.status_code == 429 or "RESOURCE_EXHAUSTED" in resp.text:
-            _ESTADO_CUOTA["cuota_agotada"] = True
-            _ESTADO_CUOTA["ultimo_error"] = "Cuota de Gemini API agotada (HTTP 429)."
-            _ESTADO_CUOTA["fecha_alerta"] = datetime.datetime.now().isoformat(timespec="seconds")
-            return {
-                "ok": False,
-                "status": "QUOTA_EXHAUSTED",
-                "texto": "⚠️ La cuota de IA se ha agotado temporalmente. El sistema continúa operando en modo manual; avisa a Sistemas/Dirección.",
-                "desde_cache": False,
-            }
+    modelos_a_probar = []
+    for m in GEMINI_FALLBACK_MODELS:
+        if m and m not in modelos_a_probar:
+            modelos_a_probar.append(m)
 
-        if not resp.ok:
-            return {
-                "ok": False,
-                "status": "API_ERROR",
-                "texto": f"No se pudo obtener respuesta de IA (HTTP {resp.status_code}). Usa el modo manual mientras se restablece.",
-                "desde_cache": False,
-            }
+    ultimo_status = "API_ERROR"
+    ultimo_msg = "No se pudo obtener respuesta de IA."
 
-        data = resp.json()
-        candidatos = data.get("candidates") or []
-        texto_out = ""
-        if candidatos:
-            partes_out = (candidatos[0].get("content") or {}).get("parts") or []
-            texto_out = "\n".join(p.get("text", "") for p in partes_out if p.get("text")).strip()
+    for modelo_actual in modelos_a_probar:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo_actual}:generateContent?key={api_key}"
+        try:
+            resp = requests.post(url, json=body, timeout=28)
+            if resp.status_code == 429 or "RESOURCE_EXHAUSTED" in resp.text:
+                _ESTADO_CUOTA["cuota_agotada"] = True
+                _ESTADO_CUOTA["ultimo_error"] = "Cuota de Gemini API agotada (HTTP 429)."
+                _ESTADO_CUOTA["fecha_alerta"] = datetime.datetime.now().isoformat(timespec="seconds")
+                ultimo_status = "QUOTA_EXHAUSTED"
+                ultimo_msg = "⚠️ La cuota de IA se ha agotado temporalmente. El sistema continúa operando en modo manual; avisa a Sistemas/Dirección."
+                continue
 
-        if not texto_out:
-            return {"ok": False, "status": "EMPTY", "texto": "La IA no devolvió contenido utilizable.", "desde_cache": False}
+            if resp.status_code in (404, 503):
+                ultimo_status = "API_ERROR"
+                ultimo_msg = f"Modelo {modelo_actual} no disponible temporalmente (HTTP {resp.status_code})."
+                continue
 
-        _CONTEO_DIARIO[clave_usr] = usos_usr + 1
-        _ESTADO_CUOTA["consultas_hoy"] += 1
-        _ESTADO_CUOTA["cuota_agotada"] = False
+            if not resp.ok:
+                return {
+                    "ok": False,
+                    "status": "API_ERROR",
+                    "texto": f"No se pudo obtener respuesta de IA (HTTP {resp.status_code}). Usa el modo manual mientras se restablece.",
+                    "desde_cache": False,
+                }
 
-        if cache_key:
-            _CACHE_RESPUESTAS[cache_key] = (time.time(), texto_out)
+            data = resp.json()
+            candidatos = data.get("candidates") or []
+            texto_out = ""
+            if candidatos:
+                partes_out = (candidatos[0].get("content") or {}).get("parts") or []
+                texto_out = "\n".join(p.get("text", "") for p in partes_out if p.get("text")).strip()
 
-        return {"ok": True, "status": "OK", "texto": texto_out, "desde_cache": False}
-    except Exception as e:
-        return {
-            "ok": False,
-            "status": "NETWORK_ERROR",
-            "texto": f"Error de conexión con servicio de IA: {e}",
-            "desde_cache": False,
-        }
+            if not texto_out:
+                return {"ok": False, "status": "EMPTY", "texto": "La IA no devolvió contenido utilizable.", "desde_cache": False}
+
+            _CONTEO_DIARIO[clave_usr] = usos_usr + 1
+            _ESTADO_CUOTA["consultas_hoy"] += 1
+            _ESTADO_CUOTA["cuota_agotada"] = False
+
+            if cache_key:
+                _CACHE_RESPUESTAS[cache_key] = (time.time(), texto_out)
+
+            return {"ok": True, "status": "OK", "texto": texto_out, "desde_cache": False}
+        except Exception as e:
+            ultimo_status = "NETWORK_ERROR"
+            ultimo_msg = f"Error de conexión con servicio de IA: {e}"
+            continue
+
+    return {
+        "ok": False,
+        "status": ultimo_status,
+        "texto": ultimo_msg,
+        "desde_cache": False,
+    }

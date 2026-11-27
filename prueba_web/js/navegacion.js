@@ -9,6 +9,7 @@
 // ==========================================
 function cambiarVista(idVista) {
     if (!idVista) return;
+    window._vproVistaActual = idVista;
 
     // Actualizar item activo en el menú lateral
     document.querySelectorAll('.sidebar-menu .nav-item').forEach(item => {

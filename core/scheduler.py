@@ -4,35 +4,37 @@ from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import text
 from core.database import engine_personal
 
-scheduler = BackgroundScheduler()
+TZ_CULIACAN = datetime.timezone(datetime.timedelta(hours=-7))
+scheduler = BackgroundScheduler(timezone=TZ_CULIACAN)
 
 def piloto_automatico_asistencias():
-    """Revisión automática de asistencias para personal en gira o evento."""
-    ahora = datetime.datetime.now()
+    """Revisión automática de asistencias para personal en gira o evento (hora local Culiacán UTC-7)."""
+    ahora = datetime.datetime.now(TZ_CULIACAN).replace(tzinfo=None)
     hora_actual = ahora.hour
     hoy_str = ahora.strftime('%Y-%m-%d')
-    print(f"[PILOTO AUTOMATICO] Despertando a las {ahora.strftime('%H:%M:%S')} para revision de Giras...")
+    print(f"[PILOTO AUTOMATICO] Despertando a las {ahora.strftime('%H:%M:%S')} (UTC-7) para revision de Giras...")
     
+    cond_evento = "(UPPER(COALESCE(estatus, '')) LIKE 'EN EVENTO%' OR UPPER(COALESCE(estatus, '')) LIKE 'GIRA%')"
     try:
         with engine_personal.begin() as conn:
             if hora_actual == 9:
                 conn.execute(
-                    text("UPDATE public.control_asistencia SET hora_entrada = '09:00:00' WHERE fecha = CAST(:hoy AS date) AND hora_entrada IS NULL AND estatus LIKE 'EN EVENTO%'"), 
+                    text(f"UPDATE public.control_asistencia SET hora_entrada = '09:00:00' WHERE fecha = CAST(:hoy AS date) AND hora_entrada IS NULL AND {cond_evento}"), 
                     {"hoy": hoy_str}
                 )
             elif hora_actual == 14:
                 conn.execute(
-                    text("UPDATE public.control_asistencia SET hora_salida = '14:00:00' WHERE fecha = CAST(:hoy AS date) AND hora_salida IS NULL AND estatus LIKE 'EN EVENTO%'"), 
+                    text(f"UPDATE public.control_asistencia SET hora_salida = '14:00:00' WHERE fecha = CAST(:hoy AS date) AND hora_salida IS NULL AND {cond_evento}"), 
                     {"hoy": hoy_str}
                 )
             elif hora_actual == 16:
                 conn.execute(
-                    text("UPDATE public.control_asistencia SET hora_entrada_v = '16:00:00' WHERE fecha = CAST(:hoy AS date) AND hora_entrada_v IS NULL AND estatus LIKE 'EN EVENTO%'"), 
+                    text(f"UPDATE public.control_asistencia SET hora_entrada_v = '16:00:00' WHERE fecha = CAST(:hoy AS date) AND hora_entrada_v IS NULL AND {cond_evento}"), 
                     {"hoy": hoy_str}
                 )
             elif hora_actual == 19: 
                 conn.execute(
-                    text("UPDATE public.control_asistencia SET hora_salida_v = '19:00:00', estatus = 'COMPLETO' WHERE fecha = CAST(:hoy AS date) AND hora_salida_v IS NULL AND estatus LIKE 'EN EVENTO%'"), 
+                    text(f"UPDATE public.control_asistencia SET hora_salida_v = '19:00:00', estatus = 'COMPLETO' WHERE fecha = CAST(:hoy AS date) AND hora_salida_v IS NULL AND {cond_evento}"), 
                     {"hoy": hoy_str}
                 )
         print("[PILOTO AUTOMATICO] Revision completada. Volviendo a dormir.")
@@ -115,10 +117,10 @@ def tarea_recordatorios_llamado_op():
 def init_scheduler():
     """Registra las tareas cron e inicia el scheduler si no está corriendo."""
     if not scheduler.running:
-        scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=9, minute=0), id="asistencia_0900", replace_existing=True)
-        scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=14, minute=0), id="asistencia_1400", replace_existing=True)
-        scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=16, minute=0), id="asistencia_1600", replace_existing=True)
-        scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=19, minute=0), id="asistencia_1900", replace_existing=True)
+        scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=9, minute=0, timezone=TZ_CULIACAN), id="asistencia_0900", replace_existing=True)
+        scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=14, minute=0, timezone=TZ_CULIACAN), id="asistencia_1400", replace_existing=True)
+        scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=16, minute=0, timezone=TZ_CULIACAN), id="asistencia_1600", replace_existing=True)
+        scheduler.add_job(piloto_automatico_asistencias, CronTrigger(hour=19, minute=0, timezone=TZ_CULIACAN), id="asistencia_1900", replace_existing=True)
         scheduler.add_job(tarea_limpiar_archivos_compartidos, 'interval', minutes=15, id="limpiar_transferencias_15m", replace_existing=True)
         scheduler.add_job(tarea_recordatorios_llamado_op, 'interval', minutes=15, id="recordatorios_llamado_15m", replace_existing=True)
         scheduler.start()

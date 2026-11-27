@@ -1,11 +1,12 @@
 import base64
 from io import BytesIO
 from typing import Dict, Any, List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from psycopg2.extras import RealDictCursor
 import qrcode
 
 from core.database import get_db_cursor, engine_personal
+from core.security import encriptar_password, requerir_roles
 from sqlalchemy import text
 
 router = APIRouter(prefix="/api/empleados", tags=["🦺 Gestión Personal"])
@@ -21,12 +22,12 @@ _asegurar_roles_productores()
 
 @router.get("")
 def obtener_empleados():
-    """Consulta la plantilla completa de empleados activos e inactivos."""
+    """Consulta la plantilla completa de empleados activos e inactivos (sin exponer hashes de contraseña)."""
     try:
         with get_db_cursor("db_personal", cursor_factory=RealDictCursor) as cursor:
             query = """
                 SELECT id_empleado, nombre, depto, email, cel, 
-                       fecha_nac, fecha_ing, licencia_vence, password, rol 
+                       fecha_nac, fecha_ing, licencia_vence, rol, estatus_empleado
                 FROM empleados 
                 ORDER BY id_empleado ASC;
             """
@@ -36,31 +37,44 @@ def obtener_empleados():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en BD: {str(e)}")
 
-from core.security import encriptar_password
-
 @router.post("/guardar")
-def guardar_empleado(payload: dict):
-    """Crea o actualiza el registro de un empleado."""
+def guardar_empleado(payload: dict, usuario: dict = Depends(requerir_roles("ADMIN", "RRHH"))):
+    """Crea o actualiza el registro de un empleado (solo ADMIN / RRHH)."""
     try:
-        if not payload.get("password", "").startswith("$2b$"):
-            payload["password"] = encriptar_password(payload["password"])
+        emp_id = str(payload.get("id_empleado") or "").strip()
+        if not emp_id:
+            raise HTTPException(status_code=400, detail="El id_empleado es obligatorio.")
+
+        raw_pwd = str(payload.get("password") or "").strip()
 
         with get_db_cursor("db_personal", commit=True) as cursor:
             cursor.execute(
-                "SELECT id_empleado FROM empleados WHERE id_empleado = %s;",
-                (payload["id_empleado"],),
+                "SELECT id_empleado FROM empleados WHERE TRIM(id_empleado) = %s;",
+                (emp_id,),
             )
             existe = cursor.fetchone()
 
             if existe:
-                query = """
+                if raw_pwd and not raw_pwd.startswith("$2b$"):
+                    payload["password"] = encriptar_password(raw_pwd)
+                    pwd_clause = ", password = %(password)s"
+                elif raw_pwd.startswith("$2b$"):
+                    pwd_clause = ", password = %(password)s"
+                else:
+                    pwd_clause = ""
+
+                query = f"""
                     UPDATE empleados SET
                         nombre = %(nombre)s, depto = %(depto)s, email = %(email)s,
                         cel = %(cel)s, fecha_nac = %(fecha_nac)s, fecha_ing = %(fecha_ing)s,
-                        licencia_vence = %(licencia_vence)s, password = %(password)s, rol = %(rol)s
-                    WHERE id_empleado = %(id_empleado)s;
+                        licencia_vence = %(licencia_vence)s, rol = %(rol)s{pwd_clause}
+                    WHERE TRIM(id_empleado) = %(id_empleado)s;
                 """
             else:
+                if not raw_pwd:
+                    raw_pwd = f"VPRO-{emp_id}"
+                if not raw_pwd.startswith("$2b$"):
+                    payload["password"] = encriptar_password(raw_pwd)
                 query = """
                     INSERT INTO empleados (
                         id_empleado, nombre, depto, email, cel, 
@@ -72,12 +86,14 @@ def guardar_empleado(payload: dict):
                 """
             cursor.execute(query, payload)
         return {"status": "ok", "mensaje": "Empleado guardado correctamente"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al guardar: {str(e)}")
 
 @router.delete("/eliminar/{id_empleado}")
-def eliminar_empleado(id_empleado: str):
-    """Elimina permanentemente a un empleado por su ID."""
+def eliminar_empleado(id_empleado: str, usuario: dict = Depends(requerir_roles("ADMIN", "RRHH"))):
+    """Elimina permanentemente a un empleado por su ID (solo ADMIN / RRHH)."""
     try:
         with get_db_cursor("db_personal", commit=True) as cursor:
             cursor.execute("DELETE FROM empleados WHERE id_empleado = %s;", (id_empleado,))

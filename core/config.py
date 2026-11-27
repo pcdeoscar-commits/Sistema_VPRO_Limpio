@@ -69,13 +69,17 @@ if DATA_DIR.resolve() != BASE_DIR.resolve():
 
 # Orígenes Permitidos para CORS
 CORS_ORIGINS = [
+    "https://vprocloud.com",
+    "https://www.vprocloud.com",
+    "https://sistemavprolimpio-production.up.railway.app",
     "https://172.16.0.20:8520",
     "https://localhost:8520",
     "http://localhost:8520",
     "http://172.16.0.20:8520",
     "http://localhost:8521",
+    "http://127.0.0.1:8521",
     "http://172.16.0.20:8521",
-    "*"
+    "http://172.16.0.8:8521",
 ]
 
 

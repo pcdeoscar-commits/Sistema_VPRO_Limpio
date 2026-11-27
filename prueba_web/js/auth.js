@@ -248,7 +248,12 @@ async function verificarAcceso() {
 
 function iniciarSesionExitosa(usuario) {
     usuarioLogueado = usuario;
-    try { localStorage.setItem("vpro_chat_usuario", JSON.stringify(usuario)); } catch(e) {}
+    try {
+        localStorage.setItem("vpro_chat_usuario", JSON.stringify(usuario));
+        if (usuario && usuario.access_token) {
+            localStorage.setItem("vpro_token", usuario.access_token);
+        }
+    } catch(e) {}
     document.getElementById("vista-login").style.display = "none";
     document.getElementById("sidebar").style.display = "flex";
     document.getElementById("vista-dashboard").style.display = "block";
@@ -301,7 +306,10 @@ function cerrarSesion() {
     if (btnSalirKiosco) btnSalirKiosco.style.display = "none";
     usuarioLogueado = null;
     empleadoSeleccionado = null;
-    try { localStorage.removeItem("vpro_chat_usuario"); } catch(e) {}
+    try {
+        localStorage.removeItem("vpro_chat_usuario");
+        localStorage.removeItem("vpro_token");
+    } catch(e) {}
 }
 
 function entrarModoKioscoDirecto() {
@@ -354,14 +362,10 @@ function salirModoKiosco() {
 }
 
 function esUsuarioVillarreal() {
-    if (!usuarioLogueado) return false;
-    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const id = String(usuarioLogueado.id_empleado || '').trim();
-    // Acceso total a auditoría y gestión de RH (Familia Villarreal y Cuauhtémoc Rivera Agúndez - ID 201)
-    return id === '201' ||
-           nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') ||
-           ((nombre.includes('CUAUHTEMOC') || nombre.includes('CUAHUTEMOC')) && nombre.includes('AGUNDEZ'));
+    // Matriz unificada por rol: los directivos cuentan con rol ADMIN
+    return (typeof esUsuarioRolAdmin === 'function')
+        ? esUsuarioRolAdmin()
+        : Boolean(usuarioLogueado && (usuarioLogueado.rol || '').toUpperCase().includes('ADMIN'));
 }
 
 function esUsuarioAnaLilia() {
@@ -389,38 +393,27 @@ window.puedeModificarExpedienteRH = puedeModificarExpedienteRH;
 
 function esUsuarioAutorizadoDireccion() {
     if (!usuarioLogueado) return false;
-    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const id = String(usuarioLogueado.id_empleado || '').trim();
-    return id === '201' || nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ');
+    const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
+    return rol === 'ADMIN' || rol.includes('ADMIN');
 }
 
 function esUsuarioAutorizadoGastos() {
     if (!usuarioLogueado) return false;
-    const nombre = (usuarioLogueado.nombre_completo || usuarioLogueado.nombre || '').toUpperCase().trim()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
     const puesto = (usuarioLogueado.puesto || '').toUpperCase().trim();
     const empId = String(usuarioLogueado.id_empleado || '').trim();
 
-    // 1. Directores y Administradores (Villarreal, Agundez, Admin)
-    const esDireccion = rol === 'ADMIN' || rol.includes('ADMIN') || 
-                        nombre.includes('VILLARREAL') || nombre.includes('VILLAREAL') || 
-                        nombre.includes('VILARREAL') || nombre.includes('AGUNDEZ');
-    if (esDireccion) return true;
+    if (rol === 'ADMIN' || rol.includes('ADMIN')) return true;
 
-    // 2. Productores autorizados de VPRO que rinden cuentas
-    const esProductor = rol.includes('PRODUCTOR') || puesto.includes('PRODUCTOR') ||
-                        ['107', '119', '102', '104', '201', '203'].includes(empId) ||
-                        nombre.includes('SANCHEZ ESTRADA') || nombre.includes('MADRID ZAZUETA') || nombre.includes('TORRES SANCHEZ');
-    return Boolean(esProductor);
+    // Productores / Coordinadores autorizados que rinden cuentas
+    return rol.includes('PRODUCTOR') || rol.includes('COORDINADOR') || puesto.includes('PRODUCTOR') ||
+           ['104', '107', '119'].includes(empId);
 }
 
 function esUsuarioAutorizadoRH() {
     if (!usuarioLogueado) return false;
     const rol = (usuarioLogueado.rol || '').toUpperCase().trim();
-    if (rol === 'ADMIN' || rol === 'RRHH' || rol.includes('ADMIN')) return true;
-    return esUsuarioAutorizadoDireccion();
+    return rol === 'ADMIN' || rol === 'RRHH' || rol.includes('ADMIN');
 }
 window.esUsuarioAutorizadoRH = esUsuarioAutorizadoRH;
 

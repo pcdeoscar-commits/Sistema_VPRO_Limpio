@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 
 from core.database import get_db_cursor
-from core.security import verificar_password, encriptar_password
+from core.security import verificar_password, encriptar_password, crear_token_jwt, obtener_usuario_actual
 from core.utils import safe_decode_hex
 
 router = APIRouter(prefix="/api/auth", tags=["Seguridad"])
@@ -95,13 +95,25 @@ def autenticar_usuario(datos: LoginRequest):
                 except Exception as err_log:
                     print(f"⚠️ Error registrando log_accesos: {err_log}")
 
+                rol_limpio = safe_decode_hex(row[3]).strip().upper()
+                depto_limpio = safe_decode_hex(row[1])
+                email_limpio = safe_decode_hex(row[5]).strip()
+                token_jwt = crear_token_jwt({
+                    "sub": db_id_emp,
+                    "nombre": db_nombre,
+                    "rol": rol_limpio,
+                    "depto": depto_limpio,
+                })
+
                 return {
                     "autenticado": True,
+                    "access_token": token_jwt,
+                    "token_type": "bearer",
                     "nombre_completo": db_nombre,
-                    "rol": safe_decode_hex(row[3]).strip().upper(),
-                    "depto": safe_decode_hex(row[1]),
+                    "rol": rol_limpio,
+                    "depto": depto_limpio,
                     "id_empleado": db_id_emp,
-                    "email": safe_decode_hex(row[5]).strip(),
+                    "email": email_limpio,
                     "requiere_cambio": requiere_cambio
                 }
         raise HTTPException(status_code=401, detail="El empleado no se encuentra registrado.")
@@ -109,6 +121,11 @@ def autenticar_usuario(datos: LoginRequest):
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/me")
+def obtener_usuario_sesion_actual(usuario: dict = Depends(obtener_usuario_actual)):
+    """Valida el token JWT vigente y retorna la identidad del usuario autenticado."""
+    return {"status": "SUCCESS", "usuario": usuario}
 
 @router.post("/cambiar-password")
 def cambiar_password(payload: dict):

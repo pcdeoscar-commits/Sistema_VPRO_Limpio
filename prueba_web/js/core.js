@@ -19,3 +19,24 @@ let empleadoSeleccionado = null;
 let memoriaKiosco = {}; 
 let intervaloReloj = null;
 
+// 🔐 Interceptor global de fetch: adjunta JWT Bearer automáticamente a peticiones hacia API_URL
+(function() {
+    const _fetchOriginal = window.fetch;
+    window.fetch = function(input, init = {}) {
+        try {
+            const url = typeof input === "string" ? input : (input && input.url ? input.url : "");
+            if (url && url.startsWith(API_URL)) {
+                const token = localStorage.getItem("vpro_token") || (usuarioLogueado && usuarioLogueado.access_token) || "";
+                if (token) {
+                    const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined) || {});
+                    if (!headers.has("Authorization")) {
+                        headers.set("Authorization", `Bearer ${token}`);
+                    }
+                    init = { ...init, headers };
+                }
+            }
+        } catch (e) {}
+        return _fetchOriginal.call(this, input, init);
+    };
+})();
+

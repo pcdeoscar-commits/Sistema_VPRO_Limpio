@@ -1036,7 +1036,7 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
         const tieneRegistroActivoHoy = (r) => {
             if (!r) return false;
             const est = String(r.estatus || '').toUpperCase();
-            if (['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(est)) return true;
+            if (['VACACIONES', 'PERMISO', 'INCAPACIDAD', 'DESCANSO'].includes(est)) return true;
             return esHoraValida(r.hora_entrada) || esHoraValida(r.hora_salida) || esHoraValida(r.hora_entrada_v) || esHoraValida(r.hora_salida_v);
         };
 
@@ -1077,9 +1077,9 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
             const esReciente = (idRecienRegistrado && String(emp.id_empleado).trim() === String(idRecienRegistrado).trim());
             const estiloFila = esReciente ? 'style="background: #f0fdf4; border-left: 4px solid #10b981; transition: background 0.6s ease;"' : '';
 
-            // 🌴 Si el colaborador se encuentra en periodo de Vacaciones, Permiso o Incapacidad (Y no asistió a laborar hoy)
+            // 🌴 Si el colaborador se encuentra en periodo de Vacaciones, Permiso, Incapacidad o Descanso (Y no asistió a laborar hoy)
             const noHaChecado = !esHoraValida(reg.hora_entrada) && !esHoraValida(reg.hora_entrada_v);
-            if (noHaChecado && ['VACACIONES', 'PERMISO', 'INCAPACIDAD'].includes(String(reg.estatus || '').toUpperCase())) {
+            if (noHaChecado && ['VACACIONES', 'PERMISO', 'INCAPACIDAD', 'DESCANSO'].includes(String(reg.estatus || '').toUpperCase())) {
                 const est = String(reg.estatus).toUpperCase();
                 let badgeTxt = '🌴 EN VACACIONES AUTORIZADAS';
                 let bgStyle = 'background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;';
@@ -1089,13 +1089,17 @@ async function cargarMatrizKiosco(idRecienRegistrado = null) {
                 } else if (est === 'INCAPACIDAD') {
                     badgeTxt = '🏥 INCAPACIDAD MÉDICA (IMSS)';
                     bgStyle = 'background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;';
+                } else if (est === 'DESCANSO') {
+                    badgeTxt = '🗓️ DÍA DE DESCANSO AUTORIZADO';
+                    bgStyle = 'background: #fef3c7; color: #92400e; border: 1px solid #fde68a;';
                 }
+                const detalleAusencia = reg.observaciones ? `<div style="font-weight: 500; font-size: 11px; margin-top: 2px; opacity: 0.9;">${reg.observaciones}</div>` : '';
 
                 tbody.innerHTML += `
                     <tr ${estiloFila}>
                         <td style="font-weight: 600; color: var(--text-main); text-align: left;">${emp.nombre}</td>
                         <td colspan="7" style="text-align: center; font-weight: 700; font-size: 12px; padding: 6px; ${bgStyle} border-radius: 6px;">
-                            ${badgeTxt}
+                            ${badgeTxt}${detalleAusencia}
                         </td>
                     </tr>
                 `;

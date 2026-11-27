@@ -124,14 +124,18 @@ function renderizarTablaAuditoria(lista) {
         const vOut = limpiaHora(r.hora_salida_v);
 
         const obs = (r.observaciones || '').toUpperCase();
+        const est = (r.estatus || '').toUpperCase();
+        const detalleObs = r.observaciones ? `<div style="font-size: 11px; color: #475569; margin-top: 2px;">${r.observaciones}</div>` : '';
         let badgeObs = r.observaciones || '--';
 
-        if (obs.includes("VACACIONES")) {
-            badgeObs = `<span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">🌴 VACACIONES</span>`;
-        } else if (obs.includes("PERMISO")) {
-            badgeObs = `<span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">⏱️ PERMISO</span>`;
-        } else if (obs.includes("INCAPACIDAD")) {
-            badgeObs = `<span style="background: #ffedd5; color: #c2410c; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">🏥 INCAPACIDAD</span>`;
+        if (est === "VACACIONES" || obs.includes("VACACIONES")) {
+            badgeObs = `<span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">🌴 VACACIONES</span>${detalleObs}`;
+        } else if (est === "DESCANSO" || obs.includes("DESCANSO")) {
+            badgeObs = `<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">🗓️ DESCANSO</span>${detalleObs}`;
+        } else if (est === "PERMISO" || obs.includes("PERMISO")) {
+            badgeObs = `<span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">⏱️ PERMISO</span>${detalleObs}`;
+        } else if (est === "INCAPACIDAD" || obs.includes("INCAPACIDAD")) {
+            badgeObs = `<span style="background: #ffedd5; color: #c2410c; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11.5px;">🏥 INCAPACIDAD</span>${detalleObs}`;
         } else if (obs.includes("OMISIÓN") || obs.includes("OMISION") || obs.includes("ADVERTENCIA")) {
             badgeObs = `<span style="color: #991b1b; font-weight: 600;">🚨 ${r.observaciones}</span>`;
         } else if (obs.includes("📍 [OP-") || r.folio_op) {

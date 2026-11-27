@@ -490,7 +490,7 @@ def extraer_estado_asistencia_diaria(id_empleado: str):
         with engine_personal.connect() as conn: 
             row = conn.execute(query, {"emp": id_empleado.strip(), "hoy": hoy_str}).mappings().first()
         if row:
-            es_rh_justificado = str(row["estatus"] or "").upper() in ("VACACIONES", "PERMISO", "INCAPACIDAD")
+            es_rh_justificado = str(row["estatus"] or "").upper() in ("VACACIONES", "PERMISO", "INCAPACIDAD", "DESCANSO")
             return {
                 "registrado": True, 
                 "id_registro": row["id_registro"],
@@ -838,11 +838,20 @@ def registrar_tarjetazo_asistencia(payload: ChecadaPayload):
                 }
 
             registro_hoy = conn.execute(text("""
-                SELECT id_registro, hora_entrada, hora_salida, hora_entrada_v, hora_salida_v 
+                SELECT id_registro, hora_entrada, hora_salida, hora_entrada_v, hora_salida_v, estatus, observaciones
                 FROM public.control_asistencia 
                 WHERE TRIM(id_empleado) = :emp AND fecha = CAST(:hoy AS date)
                 ORDER BY id_registro DESC LIMIT 1
             """), {"emp": payload.id_empleado.strip(), "hoy": hoy_str}).mappings().first()
+
+            if registro_hoy and str(registro_hoy.get("estatus") or "").upper() in ("VACACIONES", "PERMISO", "INCAPACIDAD", "DESCANSO"):
+                est_hoy = str(registro_hoy["estatus"]).upper()
+                obs_hoy = registro_hoy.get("observaciones") or f"Ausencia justificada ({est_hoy})"
+                return {
+                    "status": "WARNING",
+                    "mensaje": f"🗓️ Colaborador con {est_hoy} registrado hoy: {obs_hoy}",
+                    "tipo_rh": est_hoy
+                }
 
             if not registro_hoy:
                 # 🌙 REGLA DE MADRUGADA (< 06:00 AM): CRUCE DE MEDIANOCHE / JORNADA EXTENDIDA

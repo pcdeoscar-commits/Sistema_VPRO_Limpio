@@ -442,6 +442,35 @@ function filtrarUsoInventarioLocal() {
         (m.empleado || "").toUpperCase().includes(q) ||
         (m.depto || "").toUpperCase().includes(q)
     );
+
+    // Recalcular las 4 tarjetas KPI con base en los movimientos filtrados
+    const codigosDistintos = new Set();
+    const codigosConDano = new Set();
+    let danosCheckin = 0;
+
+    filtrados.forEach(m => {
+        const codKey = (m.codigo || "").toUpperCase();
+        if (codKey) codigosDistintos.add(codKey);
+        if (m.incidencia_checkout) danosCheckin += 1;
+        const est = (m.estado_equipo || "").toLowerCase();
+        if (
+            m.dano_abierto ||
+            m.incidencia_checkout ||
+            ["fuera de servicio", "funcional con limitaciones", "en reparación", "dañado"].includes(est)
+        ) {
+            if (codKey) codigosConDano.add(codKey);
+        }
+    });
+
+    const elSal = document.getElementById("kpi-uso-inv-salidas");
+    const elDis = document.getElementById("kpi-uso-inv-distintos");
+    const elDan = document.getElementById("kpi-uso-inv-danos");
+    const elInc = document.getElementById("kpi-uso-inv-incidencias");
+    if (elSal) elSal.innerText = filtrados.length;
+    if (elDis) elDis.innerText = codigosDistintos.size;
+    if (elDan) elDan.innerText = codigosConDano.size;
+    if (elInc) elInc.innerText = danosCheckin;
+
     renderTablaUsoInventarioCEO(filtrados);
 }
 

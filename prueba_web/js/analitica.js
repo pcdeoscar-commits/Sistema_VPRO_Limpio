@@ -473,8 +473,8 @@ function renderTablaUsoInventarioCEO(lista) {
     tbody.innerHTML = lista.map(m => {
         const reporteParts = [];
         if (m.dano_taller) reporteParts.push(`<div style="color:${m.dano_abierto ? '#dc2626' : '#92400e'}; font-weight:700; font-size:11.5px;">${m.dano_taller}</div>`);
-        if (m.incidencia_checkout) reporteParts.push(`<div style="color:#b91c1c; font-size:12px;">${m.incidencia_checkout}</div>`);
-        if (!reporteParts.length && m.notas_regreso) reporteParts.push(`<div style="color:#475569; font-size:12px;">${m.notas_regreso}</div>`);
+        if (m.incidencia_checkout) reporteParts.push(`<div style="color:#b91c1c; font-size:12px;">Check-in: ${m.incidencia_checkout}</div>`);
+        if (!reporteParts.length && m.notas_regreso) reporteParts.push(`<div style="color:#475569; font-size:12px;">Check-in: ${m.notas_regreso}</div>`);
         const reporteHtml = reporteParts.length ? reporteParts.join('') : '<span style="color:#64748b; font-size:12px;">Sin reporte de daño</span>';
 
         const statusBodegaTxt = `${m.estado_bodega || 'ENTREGADO'}${m.cotejado ? ' · ✅ Cotejado' : ' · ⏳ Pendiente'}`;

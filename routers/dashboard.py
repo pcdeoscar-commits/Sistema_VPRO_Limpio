@@ -536,8 +536,7 @@ def obtener_uso_inventario_ceo(
                 continue
 
             inc_det = _es_incidencia_real(f["inc_detalle"])
-            inc_gen = _es_incidencia_real(f["incidencias_generales"])
-            inc_texto = " | ".join(p for p in [inc_det, inc_gen] if p)
+            inc_texto = inc_det
             tiene_inc = bool(inc_texto)
             if tiene_inc:
                 total_incidencias_chk += 1

@@ -440,8 +440,11 @@ def obtener_uso_inventario_ceo(
 
             cur_i.execute("""
                 SELECT num_d_servicio, fecha_d_reporte, equipo_n_reparacion,
-                       estado_actual, descripcion_del_dano, costo_d_reparacion, reportante
+                       estado_actual, descripcion_del_dano, costo_d_reparacion,
+                       reportante, folio_vpro, tipo_mantenimiento
                 FROM public.reparaciones
+                WHERE UPPER(COALESCE(tipo_mantenimiento, '')) != 'PREVENTIVO'
+                  AND UPPER(COALESCE(folio_vpro, '')) != 'RUTINA_PREVENTIVA'
                 ORDER BY fecha_d_reporte DESC NULLS LAST;
             """)
             for rep in cur_i.fetchall():
@@ -450,13 +453,26 @@ def obtener_uso_inventario_ceo(
                     continue
                 est_rep = (rep["estado_actual"] or "").strip().upper()
                 abierto = est_rep not in estados_cerrados_taller
+                folio_raw = (rep["folio_vpro"] or "").strip().upper()
+                folio_norm = folio_raw.replace("OP-", "").replace("OP", "").strip() if folio_raw.startswith("OP") else folio_raw
+
+                rep_raw = (rep["reportante"] or "").strip()
+                if rep_raw.lower().startswith("empleado id:"):
+                    eid_rep = rep_raw.split(":", 1)[1].strip()
+                    rep_nombre = mapa_emp.get(eid_rep, {}).get("nombre") or rep_raw
+                elif rep_raw in mapa_emp:
+                    rep_nombre = mapa_emp[rep_raw]["nombre"]
+                else:
+                    rep_nombre = rep_raw
+
                 info_rep = {
                     "num_servicio": rep["num_d_servicio"],
                     "fecha": str(rep["fecha_d_reporte"] or ""),
                     "estado": rep["estado_actual"] or "",
                     "dano": (rep["descripcion_del_dano"] or "").strip(),
                     "costo": float(rep["costo_d_reparacion"] or 0.0),
-                    "reportante": (rep["reportante"] or "").strip(),
+                    "reportante": rep_nombre,
+                    "folio_op_norm": folio_norm,
                     "abierto": abierto,
                 }
                 mapa_rep_por_clave.setdefault(clave, []).append(info_rep)
@@ -606,17 +622,23 @@ def obtener_uso_inventario_ceo(
         movimientos_planos = []
         for eq in equipos_lista:
             tickets = eq["tickets_detalle"]
-            dano_taller_txt = ""
-            reportante_dano = ""
-            if tickets:
-                t0 = tickets[0]
-                reportante_dano = t0.get("reportante") or ""
-                if eq["dano_abierto"]:
-                    dano_taller_txt = f"⚠️ DAÑO ABIERTO [{t0['num_servicio']}]: {t0['dano'] or t0['estado']}"
-                else:
-                    dano_taller_txt = f"Taller ({len(tickets)}): {t0['num_servicio']} [{t0['estado']}]"
 
             for m in eq["movimientos"]:
+                op_str = str(m["folio_op"] or "").strip().upper()
+                tickets_op = [t for t in tickets if t.get("folio_op_norm") == op_str]
+
+                dano_taller_txt = ""
+                reportante_dano = ""
+                dano_abierto_op = False
+                if tickets_op:
+                    t0 = tickets_op[0]
+                    reportante_dano = t0.get("reportante") or ""
+                    dano_abierto_op = any(t["abierto"] for t in tickets_op)
+                    if dano_abierto_op:
+                        dano_taller_txt = f"⚠️ DAÑO ABIERTO [{t0['num_servicio']}]: {t0['dano'] or t0['estado']}"
+                    else:
+                        dano_taller_txt = f"Taller ({len(tickets_op)}): {t0['num_servicio']} [{t0['estado']}]"
+
                 rep_dano = reportante_dano or (m["empleado"] if m["incidencia"] else "")
                 movimientos_planos.append({
                     "fecha": m["fecha"],
@@ -634,7 +656,7 @@ def obtener_uso_inventario_ceo(
                     "cotejado": m["cotejado"],
                     "incidencia_checkout": m["incidencia"],
                     "notas_regreso": m["notas_regreso"],
-                    "dano_abierto": eq["dano_abierto"],
+                    "dano_abierto": dano_abierto_op,
                     "dano_taller": dano_taller_txt,
                 })
 

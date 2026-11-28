@@ -463,7 +463,9 @@ def obtener_uso_inventario_ceo(
         # 3. Checkouts + Eventos (db_eventos)
         with get_db_cursor("db_eventos", cursor_factory=RealDictCursor) as cur_ev:
             query_chk = """
-                SELECT cm.id_maestro, cm.folio_op, cm.id_empleado, cm.fecha, cm.hora,
+                SELECT cm.id_maestro, cm.folio_op, cm.id_empleado,
+                       COALESCE(TO_CHAR((cm.fecha + cm.hora) AT TIME ZONE 'America/Mazatlan', 'YYYY-MM-DD'), CAST(cm.fecha AS TEXT)) AS fecha_local,
+                       COALESCE(TO_CHAR((cm.fecha + cm.hora) AT TIME ZONE 'America/Mazatlan', 'HH24:MI'), '') AS hora_local,
                        cm.estado_bodega, cm.incidencias_generales,
                        cd.codigo_equipo, cd.cantidad, cd.cotejado,
                        cd.incidencias AS inc_detalle, cd.notas_regreso,
@@ -557,7 +559,7 @@ def obtener_uso_inventario_ceo(
                     "ubicacion": meta["ubicacion"] if meta else "",
                     "veces_usado": 0,
                     "unidades_totales": 0,
-                    "ultimo_uso_fecha": str(f["fecha"] or ""),
+                    "ultimo_uso_fecha": str(f["fecha_local"] or ""),
                     "ultimo_uso_op": f["folio_op"],
                     "ultimo_uso_evento": (f["nombre_evento"] or "").strip() or f"OP-{f['folio_op']}",
                     "ultimo_uso_empleado": emp_info["nombre"],
@@ -576,8 +578,8 @@ def obtener_uso_inventario_ceo(
                 item["incidencias_checkout"] += 1
 
             item["movimientos"].append({
-                "fecha": str(f["fecha"] or ""),
-                "hora": str(f["hora"] or "")[:5],
+                "fecha": str(f["fecha_local"] or ""),
+                "hora": str(f["hora_local"] or ""),
                 "folio_op": f["folio_op"],
                 "nombre_evento": (f["nombre_evento"] or "").strip() or "--",
                 "cliente": (f["para_q_cliente"] or "").strip() or "--",

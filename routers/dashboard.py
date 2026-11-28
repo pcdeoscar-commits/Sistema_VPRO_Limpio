@@ -440,7 +440,7 @@ def obtener_uso_inventario_ceo(
 
             cur_i.execute("""
                 SELECT num_d_servicio, fecha_d_reporte, equipo_n_reparacion,
-                       estado_actual, descripcion_del_dano, costo_d_reparacion
+                       estado_actual, descripcion_del_dano, costo_d_reparacion, reportante
                 FROM public.reparaciones
                 ORDER BY fecha_d_reporte DESC NULLS LAST;
             """)
@@ -456,6 +456,7 @@ def obtener_uso_inventario_ceo(
                     "estado": rep["estado_actual"] or "",
                     "dano": (rep["descripcion_del_dano"] or "").strip(),
                     "costo": float(rep["costo_d_reparacion"] or 0.0),
+                    "reportante": (rep["reportante"] or "").strip(),
                     "abierto": abierto,
                 }
                 mapa_rep_por_clave.setdefault(clave, []).append(info_rep)
@@ -606,14 +607,17 @@ def obtener_uso_inventario_ceo(
         for eq in equipos_lista:
             tickets = eq["tickets_detalle"]
             dano_taller_txt = ""
+            reportante_dano = ""
             if tickets:
                 t0 = tickets[0]
+                reportante_dano = t0.get("reportante") or ""
                 if eq["dano_abierto"]:
                     dano_taller_txt = f"⚠️ DAÑO ABIERTO [{t0['num_servicio']}]: {t0['dano'] or t0['estado']}"
                 else:
                     dano_taller_txt = f"Taller ({len(tickets)}): {t0['num_servicio']} [{t0['estado']}]"
 
             for m in eq["movimientos"]:
+                rep_dano = reportante_dano or (m["empleado"] if m["incidencia"] else "")
                 movimientos_planos.append({
                     "fecha": m["fecha"],
                     "hora": m["hora"],
@@ -624,6 +628,7 @@ def obtener_uso_inventario_ceo(
                     "descripcion": eq["descripcion"],
                     "empleado": m["empleado"],
                     "depto": m["depto"],
+                    "reportante_dano": rep_dano,
                     "estado_equipo": eq["estado_actual"],
                     "estado_bodega": m["estado_bodega"],
                     "cotejado": m["cotejado"],

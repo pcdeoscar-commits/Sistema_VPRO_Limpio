@@ -478,6 +478,9 @@ function renderTablaUsoInventarioCEO(lista) {
         const reporteHtml = reporteParts.length ? reporteParts.join('') : '<span style="color:#64748b; font-size:12px;">Sin reporte de daño</span>';
 
         const statusBodegaTxt = `${m.estado_bodega || 'ENTREGADO'}${m.cotejado ? ' · ✅ Cotejado' : ' · ⏳ Pendiente'}`;
+        const reportanteHtml = m.reportante_dano
+            ? `<b style="color:#991b1b;">${m.reportante_dano}</b><br><span style="color:#64748b; font-size:11px;">Checkout: ${m.empleado} (${m.depto})</span>`
+            : `<span style="color:#94a3b8;">Sin reporte</span><br><span style="color:#64748b; font-size:11px;">Checkout: ${m.empleado} (${m.depto})</span>`;
 
         return `
             <tr style="border-bottom:1px solid #e2e8f0;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
@@ -485,7 +488,7 @@ function renderTablaUsoInventarioCEO(lista) {
                 <td style="padding:10px 12px; font-weight:700; color:#1d4ed8; white-space:nowrap;">OP-${m.folio_op}</td>
                 <td style="padding:10px 12px;"><b>${m.nombre_evento}</b><br><span style="color:#64748b; font-size:11.5px;">${m.cliente}</span></td>
                 <td style="padding:10px 12px;"><span style="font-weight:700; color:#0f172a;">${m.codigo}</span><br><span style="color:#475569; font-size:12px;">${m.descripcion}</span></td>
-                <td style="padding:10px 12px;"><b>${m.empleado}</b><br><span style="color:#64748b; font-size:11.5px;">${m.depto}</span></td>
+                <td style="padding:10px 12px;">${reportanteHtml}</td>
                 <td style="padding:10px 12px; text-align:center;">${_badgeEstadoInventarioCEO(m.estado_equipo)}<div style="font-size:11px; color:#64748b; margin-top:4px;">${statusBodegaTxt}</div></td>
                 <td style="padding:10px 12px;">${reporteHtml}</td>
             </tr>
@@ -498,14 +501,14 @@ function exportarUsoInventarioCSV() {
         alert("No hay datos cargados para exportar.");
         return;
     }
-    const headers = ["Fecha", "Hora", "OP", "Evento", "Cliente", "Codigo_Equipo", "Descripcion_Equipo", "Checkout_Por", "Depto", "Status_Equipo", "Status_Bodega", "Cotejado", "Reporte_de_Dano_Incidencia", "Historial_Taller"];
+    const headers = ["Fecha", "Hora", "OP", "Evento", "Cliente", "Codigo_Equipo", "Descripcion_Equipo", "Quien_Reporto_Dano", "Checkout_Por", "Depto", "Status_Equipo", "Status_Bodega", "Cotejado", "Reporte_de_Dano", "Historial_Taller"];
     const filas = [headers.join(",")];
     const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
     memoriaUsoInventarioCEO.forEach(m => {
         filas.push([
             esc(m.fecha), esc(m.hora), esc(`OP-${m.folio_op}`), esc(m.nombre_evento),
-            esc(m.cliente), esc(m.codigo), esc(m.descripcion), esc(m.empleado), esc(m.depto),
+            esc(m.cliente), esc(m.codigo), esc(m.descripcion), esc(m.reportante_dano || "Sin reporte"), esc(m.empleado), esc(m.depto),
             esc(m.estado_equipo), esc(m.estado_bodega), esc(m.cotejado ? "SI" : "NO"),
             esc(m.incidencia_checkout || m.notas_regreso || "Sin reporte"), esc(m.dano_taller || "Sin tickets")
         ].join(","));

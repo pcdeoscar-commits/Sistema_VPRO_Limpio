@@ -421,27 +421,26 @@ async function cargarUsoInventarioCEO() {
         if (elDan) elDan.innerText = kpis.equipos_con_dano || 0;
         if (elInc) elInc.innerText = kpis.incidencias_checkouts || 0;
 
-        memoriaUsoInventarioCEO = data.equipos || [];
+        memoriaUsoInventarioCEO = data.movimientos || [];
         filtrarUsoInventarioLocal();
     } catch (e) {
         console.error("Error en uso de inventario:", e);
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#dc2626;">Error al cargar reporte: ${e.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:#dc2626;">Error al cargar reporte: ${e.message}</td></tr>`;
         }
     }
 }
 
 function filtrarUsoInventarioLocal() {
     const q = (document.getElementById("filtro-uso-inv-busq")?.value || "").trim().toUpperCase();
-    const filtrados = !q ? memoriaUsoInventarioCEO : memoriaUsoInventarioCEO.filter(eq =>
-        (eq.codigo || "").toUpperCase().includes(q) ||
-        (eq.descripcion || "").toUpperCase().includes(q) ||
-        (eq.movimientos || []).some(m =>
-            String(m.folio_op || "").toUpperCase().includes(q) ||
-            (m.nombre_evento || "").toUpperCase().includes(q) ||
-            (m.cliente || "").toUpperCase().includes(q) ||
-            (m.empleado || "").toUpperCase().includes(q)
-        )
+    const filtrados = !q ? memoriaUsoInventarioCEO : memoriaUsoInventarioCEO.filter(m =>
+        (m.codigo || "").toUpperCase().includes(q) ||
+        (m.descripcion || "").toUpperCase().includes(q) ||
+        String(m.folio_op || "").toUpperCase().includes(q) ||
+        (m.nombre_evento || "").toUpperCase().includes(q) ||
+        (m.cliente || "").toUpperCase().includes(q) ||
+        (m.empleado || "").toUpperCase().includes(q) ||
+        (m.depto || "").toUpperCase().includes(q)
     );
     renderTablaUsoInventarioCEO(filtrados);
 }
@@ -463,76 +462,35 @@ function _badgeEstadoInventarioCEO(estado) {
 function renderTablaUsoInventarioCEO(lista) {
     const tbody = document.getElementById("tbody-uso-inventario-ceo");
     const cont = document.getElementById("uso-inv-contador-filas");
-    if (cont) cont.innerText = `${lista.length} equipo(s)`;
+    if (cont) cont.innerText = `${lista.length} movimiento(s)`;
     if (!tbody) return;
 
     if (!lista || lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:#64748b;">No se encontraron salidas de inventario con esos filtros.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:#64748b;">No se encontraron movimientos de inventario con esos filtros.</td></tr>';
         return;
     }
 
-    tbody.innerHTML = lista.map((eq, idx) => {
-        const danoHtml = eq.dano_abierto
-            ? `<span style="background:#dc2626; color:white; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:700;">⚠️ DAÑO ABIERTO (${eq.tickets_taller})</span>`
-            : (eq.tickets_taller > 0 || eq.incidencias_checkout > 0)
-                ? `<span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:700;">${eq.tickets_taller} taller · ${eq.incidencias_checkout} inc.</span>`
-                : `<span style="color:#64748b; font-size:11.5px;">Sin reportes</span>`;
+    tbody.innerHTML = lista.map(m => {
+        const reporteParts = [];
+        if (m.dano_taller) reporteParts.push(`<div style="color:${m.dano_abierto ? '#dc2626' : '#92400e'}; font-weight:700; font-size:11.5px;">${m.dano_taller}</div>`);
+        if (m.incidencia_checkout) reporteParts.push(`<div style="color:#b91c1c; font-size:12px;">${m.incidencia_checkout}</div>`);
+        if (!reporteParts.length && m.notas_regreso) reporteParts.push(`<div style="color:#475569; font-size:12px;">${m.notas_regreso}</div>`);
+        const reporteHtml = reporteParts.length ? reporteParts.join('') : '<span style="color:#64748b; font-size:12px;">Sin reporte de daño</span>';
 
-        const movsHtml = (eq.movimientos || []).map(m => `
-            <tr style="background:#ffffff;">
-                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">${m.fecha} ${m.hora}</td>
-                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#1d4ed8;">OP-${m.folio_op}</td>
-                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">${m.nombre_evento} <span style="color:#64748b; font-size:11px;">(${m.cliente})</span></td>
-                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">${m.empleado} <span style="color:#64748b; font-size:11px;">[${m.depto}]</span></td>
-                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">${m.estado_bodega}${m.cotejado ? ' · ✅ Cotejado' : ' · ⏳ Pendiente'}</td>
-                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; color:${m.incidencia ? '#b91c1c' : '#64748b'};">${m.incidencia || m.notas_regreso || 'Sin novedad'}</td>
-            </tr>
-        `).join('');
-
-        const ticketsHtml = (eq.tickets_detalle || []).length === 0 ? '' : `
-            <div style="margin-top:10px; padding:10px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px;">
-                <div style="font-size:11.5px; font-weight:700; color:#991b1b; margin-bottom:6px;">🔧 Historial de Tickets en Taller (${eq.tickets_detalle.length}) — Costo total: $${Number(eq.costo_reparaciones || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
-                ${eq.tickets_detalle.map(t => `<div style="font-size:12px; color:#7f1d1d; margin-bottom:3px;">• <b>${t.num_servicio}</b> (${t.fecha}) [${t.estado}]: ${t.dano || 'Sin descripción'} — $${Number(t.costo || 0).toFixed(2)}</div>`).join('')}
-            </div>
-        `;
+        const statusBodegaTxt = `${m.estado_bodega || 'ENTREGADO'}${m.cotejado ? ' · ✅ Cotejado' : ' · ⏳ Pendiente'}`;
 
         return `
-            <tr onclick="toggleExpedienteUsoInv(${idx})" style="cursor:pointer; border-bottom:1px solid #e2e8f0; transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-                <td style="padding:10px 12px; font-weight:700; color:#0f172a; white-space:nowrap;">${eq.codigo}</td>
-                <td style="padding:10px 12px;">${eq.descripcion}</td>
-                <td style="padding:10px 12px; text-align:center;"><span style="background:#e0f2fe; color:#0369a1; padding:3px 10px; border-radius:999px; font-weight:800;">${eq.veces_usado}</span></td>
-                <td style="padding:10px 12px; font-size:12px;"><b>${eq.ultimo_uso_fecha}</b> · OP-${eq.ultimo_uso_op}<br><span style="color:#64748b;">${eq.ultimo_uso_empleado}</span></td>
-                <td style="padding:10px 12px; text-align:center;">${_badgeEstadoInventarioCEO(eq.estado_actual)}</td>
-                <td style="padding:10px 12px; text-align:center;">${danoHtml}</td>
-            </tr>
-            <tr id="exp-uso-inv-${idx}" style="display:none; background:#f8fafc;">
-                <td colspan="6" style="padding:12px 18px; border-bottom:2px solid #cbd5e1;">
-                    <div style="font-size:12px; font-weight:700; color:#334155; margin-bottom:8px;">📋 Expediente de Movimientos (${eq.movimientos.length} salidas)</div>
-                    <table style="width:100%; border-collapse:collapse; font-size:12px; border:1px solid #e2e8f0;">
-                        <thead>
-                            <tr style="background:#e2e8f0; color:#1e293b;">
-                                <th style="padding:6px 10px; text-align:left;">Fecha</th>
-                                <th style="padding:6px 10px; text-align:left;">OP</th>
-                                <th style="padding:6px 10px; text-align:left;">Evento (Cliente)</th>
-                                <th style="padding:6px 10px; text-align:left;">Checkout por</th>
-                                <th style="padding:6px 10px; text-align:left;">Status Bodega</th>
-                                <th style="padding:6px 10px; text-align:left;">Reporte / Incidencia</th>
-                            </tr>
-                        </thead>
-                        <tbody>${movsHtml}</tbody>
-                    </table>
-                    ${ticketsHtml}
-                </td>
+            <tr style="border-bottom:1px solid #e2e8f0;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                <td style="padding:10px 12px; white-space:nowrap;"><b>${m.fecha}</b><br><span style="color:#64748b; font-size:11.5px;">${m.hora || ''}</span></td>
+                <td style="padding:10px 12px; font-weight:700; color:#1d4ed8; white-space:nowrap;">OP-${m.folio_op}</td>
+                <td style="padding:10px 12px;"><b>${m.nombre_evento}</b><br><span style="color:#64748b; font-size:11.5px;">${m.cliente}</span></td>
+                <td style="padding:10px 12px;"><span style="font-weight:700; color:#0f172a;">${m.codigo}</span><br><span style="color:#475569; font-size:12px;">${m.descripcion}</span></td>
+                <td style="padding:10px 12px;"><b>${m.empleado}</b><br><span style="color:#64748b; font-size:11.5px;">${m.depto}</span></td>
+                <td style="padding:10px 12px; text-align:center;">${_badgeEstadoInventarioCEO(m.estado_equipo)}<div style="font-size:11px; color:#64748b; margin-top:4px;">${statusBodegaTxt}</div></td>
+                <td style="padding:10px 12px;">${reporteHtml}</td>
             </tr>
         `;
     }).join('');
-}
-
-function toggleExpedienteUsoInv(idx) {
-    const row = document.getElementById(`exp-uso-inv-${idx}`);
-    if (row) {
-        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
-    }
 }
 
 function exportarUsoInventarioCSV() {
@@ -540,27 +498,24 @@ function exportarUsoInventarioCSV() {
         alert("No hay datos cargados para exportar.");
         return;
     }
-    const headers = ["Codigo", "Descripcion", "Veces_Usado", "Status_Actual", "Fecha_Salida", "OP", "Evento", "Cliente", "Checkout_Por", "Depto", "Status_Bodega", "Cotejado", "Incidencia_o_Dano", "Tickets_Taller", "Dano_Abierto"];
+    const headers = ["Fecha", "Hora", "OP", "Evento", "Cliente", "Codigo_Equipo", "Descripcion_Equipo", "Checkout_Por", "Depto", "Status_Equipo", "Status_Bodega", "Cotejado", "Reporte_de_Dano_Incidencia", "Historial_Taller"];
     const filas = [headers.join(",")];
     const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
-    memoriaUsoInventarioCEO.forEach(eq => {
-        (eq.movimientos || []).forEach(m => {
-            filas.push([
-                esc(eq.codigo), esc(eq.descripcion), eq.veces_usado, esc(eq.estado_actual),
-                esc(`${m.fecha} ${m.hora}`), esc(`OP-${m.folio_op}`), esc(m.nombre_evento),
-                esc(m.cliente), esc(m.empleado), esc(m.depto), esc(m.estado_bodega),
-                esc(m.cotejado ? "SI" : "NO"), esc(m.incidencia || m.notas_regreso || "Sin novedad"),
-                eq.tickets_taller, esc(eq.dano_abierto ? "SI" : "NO")
-            ].join(","));
-        });
+    memoriaUsoInventarioCEO.forEach(m => {
+        filas.push([
+            esc(m.fecha), esc(m.hora), esc(`OP-${m.folio_op}`), esc(m.nombre_evento),
+            esc(m.cliente), esc(m.codigo), esc(m.descripcion), esc(m.empleado), esc(m.depto),
+            esc(m.estado_equipo), esc(m.estado_bodega), esc(m.cotejado ? "SI" : "NO"),
+            esc(m.incidencia_checkout || m.notas_regreso || "Sin reporte"), esc(m.dano_taller || "Sin tickets")
+        ].join(","));
     });
 
     const blob = new Blob(["\uFEFF" + filas.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Reporte_Uso_Inventario_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `Expediente_Uso_Inventario_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

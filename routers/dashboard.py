@@ -601,6 +601,39 @@ def obtener_uso_inventario_ceo(
             or x["estado_actual"].lower() in ("fuera de servicio", "funcional con limitaciones", "en reparación", "dañado")
         )
 
+        movimientos_planos = []
+        for eq in equipos_lista:
+            tickets = eq["tickets_detalle"]
+            dano_taller_txt = ""
+            if tickets:
+                t0 = tickets[0]
+                if eq["dano_abierto"]:
+                    dano_taller_txt = f"⚠️ DAÑO ABIERTO [{t0['num_servicio']}]: {t0['dano'] or t0['estado']}"
+                else:
+                    dano_taller_txt = f"Taller ({len(tickets)}): {t0['num_servicio']} [{t0['estado']}]"
+
+            for m in eq["movimientos"]:
+                movimientos_planos.append({
+                    "fecha": m["fecha"],
+                    "hora": m["hora"],
+                    "folio_op": m["folio_op"],
+                    "nombre_evento": m["nombre_evento"],
+                    "cliente": m["cliente"],
+                    "codigo": eq["codigo"],
+                    "descripcion": eq["descripcion"],
+                    "empleado": m["empleado"],
+                    "depto": m["depto"],
+                    "estado_equipo": eq["estado_actual"],
+                    "estado_bodega": m["estado_bodega"],
+                    "cotejado": m["cotejado"],
+                    "incidencia_checkout": m["incidencia"],
+                    "notas_regreso": m["notas_regreso"],
+                    "dano_abierto": eq["dano_abierto"],
+                    "dano_taller": dano_taller_txt,
+                })
+
+        movimientos_planos.sort(key=lambda x: (x["fecha"], x["hora"], str(x["folio_op"] or "")), reverse=True)
+
         return {
             "kpis": {
                 "total_salidas": total_salidas,
@@ -613,6 +646,7 @@ def obtener_uso_inventario_ceo(
                 "empleados": empleados_list,
             },
             "equipos": equipos_lista,
+            "movimientos": movimientos_planos,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en uso de inventario: {str(e)}")

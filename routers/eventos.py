@@ -224,6 +224,20 @@ def obtener_folios_activos_e_historicos():
             historicos_nuevos = conn.execute(query_historicos_nueva).mappings().fetchall()
             max_id_nuevo = conn.execute(query_max_id).scalar() or 1
             max_folio_nuevo = conn.execute(query_max_folio).scalar() or 1
+
+            def _clave_orden_folio(r):
+                s = str(r.get('folio') or '').strip().upper()
+                m = re.match(r'^(\d+)(.*)$', s)
+                if m:
+                    num = int(m.group(1))
+                    sufijo = m.group(2).lstrip('-').strip()
+                    m_suf = re.search(r'(\d+)$', sufijo)
+                    suf_num = int(m_suf.group(1)) if m_suf else 0
+                    return (num, 1 if not sufijo else 0, suf_num, sufijo)
+                return (0, 0, 0, s)
+
+            activos_nuevos = sorted(activos_nuevos, key=_clave_orden_folio, reverse=True)
+            historicos_nuevos = sorted(historicos_nuevos, key=_clave_orden_folio, reverse=True)
             
             def formatear_folio_label(r):
                 folio_val = r['folio'] or ''

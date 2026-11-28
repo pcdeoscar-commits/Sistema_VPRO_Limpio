@@ -15,7 +15,7 @@ let chartAnEmpleadosInstance = null;
 let chartAnEfectividadInstance = null;
 
 function cambiarPestanaAnalitica(tab) {
-    const tabs = ['finanzas', 'comercial', 'operaciones'];
+    const tabs = ['finanzas', 'comercial', 'operaciones', 'inventario'];
     tabs.forEach(t => {
         const btn = document.getElementById(`tab-an-btn-${t}`);
         const view = document.getElementById(`subvista-an-${t}`);
@@ -33,6 +33,13 @@ function cambiarPestanaAnalitica(tab) {
             }
         }
     });
+    const panelExtra = document.getElementById('an-panel-rrhh-equipos');
+    if (panelExtra) {
+        panelExtra.style.display = tab === 'inventario' ? 'none' : 'grid';
+    }
+    if (tab === 'inventario') {
+        cargarUsoInventarioCEO();
+    }
 }
 
 async function cargarModuloAnalitica() {
@@ -359,4 +366,205 @@ function renderEstadisticasAvanzadasFase3(av) {
         }
     }
 }
+
+// ==========================================
+// 16B. REPORTE USO DE INVENTARIO (CEO)
+// ==========================================
+let memoriaUsoInventarioCEO = [];
+let filtrosUsoInventarioCargados = false;
+
+async function cargarUsoInventarioCEO() {
+    const tbody = document.getElementById("tbody-uso-inventario-ceo");
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:#64748b;">Cargando uso de inventario y expedientes...</td></tr>';
+    }
+
+    const fIni = document.getElementById("filtro-analitica-desde")?.value || "";
+    const fFin = document.getElementById("filtro-analitica-hasta")?.value || "";
+    const depto = document.getElementById("filtro-uso-inv-depto")?.value || "";
+    const emp = document.getElementById("filtro-uso-inv-emp")?.value || "";
+    const soloMaestro = document.getElementById("filtro-uso-inv-solo-maestro")?.checked ? "true" : "false";
+
+    const params = new URLSearchParams();
+    if (fIni) params.append("fecha_inicio", fIni);
+    if (fFin) params.append("fecha_fin", fFin);
+    if (depto) params.append("departamento", depto);
+    if (emp) params.append("id_empleado", emp);
+    params.append("solo_maestro", soloMaestro);
+
+    try {
+        const res = await fetch(`${API_URL}/api/analitica/uso-inventario?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (!filtrosUsoInventarioCargados && data.filtros) {
+            const selDepto = document.getElementById("filtro-uso-inv-depto");
+            if (selDepto && Array.isArray(data.filtros.departamentos)) {
+                selDepto.innerHTML = '<option value="">Todos los deptos</option>' +
+                    data.filtros.departamentos.map(d => `<option value="${d}">${d}</option>`).join('');
+            }
+            const selEmp = document.getElementById("filtro-uso-inv-emp");
+            if (selEmp && Array.isArray(data.filtros.empleados)) {
+                selEmp.innerHTML = '<option value="">Todas las personas</option>' +
+                    data.filtros.empleados.map(e => `<option value="${e.id_empleado}">${e.nombre} (${e.depto})</option>`).join('');
+            }
+            filtrosUsoInventarioCargados = true;
+        }
+
+        const kpis = data.kpis || {};
+        const elSal = document.getElementById("kpi-uso-inv-salidas");
+        const elDis = document.getElementById("kpi-uso-inv-distintos");
+        const elDan = document.getElementById("kpi-uso-inv-danos");
+        const elInc = document.getElementById("kpi-uso-inv-incidencias");
+        if (elSal) elSal.innerText = kpis.total_salidas || 0;
+        if (elDis) elDis.innerText = kpis.equipos_distintos || 0;
+        if (elDan) elDan.innerText = kpis.equipos_con_dano || 0;
+        if (elInc) elInc.innerText = kpis.incidencias_checkouts || 0;
+
+        memoriaUsoInventarioCEO = data.equipos || [];
+        filtrarUsoInventarioLocal();
+    } catch (e) {
+        console.error("Error en uso de inventario:", e);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:#dc2626;">Error al cargar reporte: ${e.message}</td></tr>`;
+        }
+    }
+}
+
+function filtrarUsoInventarioLocal() {
+    const q = (document.getElementById("filtro-uso-inv-busq")?.value || "").trim().toUpperCase();
+    const filtrados = !q ? memoriaUsoInventarioCEO : memoriaUsoInventarioCEO.filter(eq =>
+        (eq.codigo || "").toUpperCase().includes(q) ||
+        (eq.descripcion || "").toUpperCase().includes(q) ||
+        (eq.movimientos || []).some(m =>
+            String(m.folio_op || "").toUpperCase().includes(q) ||
+            (m.nombre_evento || "").toUpperCase().includes(q) ||
+            (m.cliente || "").toUpperCase().includes(q) ||
+            (m.empleado || "").toUpperCase().includes(q)
+        )
+    );
+    renderTablaUsoInventarioCEO(filtrados);
+}
+
+function _badgeEstadoInventarioCEO(estado) {
+    const e = (estado || "").toLowerCase();
+    if (e.includes("fuera") || e.includes("dañ") || e.includes("dan")) {
+        return `<span style="background:#fee2e2; color:#991b1b; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700;">${estado}</span>`;
+    }
+    if (e.includes("limit") || e.includes("repar")) {
+        return `<span style="background:#fef3c7; color:#92400e; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700;">${estado}</span>`;
+    }
+    if (e.includes("baja")) {
+        return `<span style="background:#e2e8f0; color:#475569; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700;">${estado}</span>`;
+    }
+    return `<span style="background:#dcfce7; color:#166534; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700;">${estado || "Funcional"}</span>`;
+}
+
+function renderTablaUsoInventarioCEO(lista) {
+    const tbody = document.getElementById("tbody-uso-inventario-ceo");
+    const cont = document.getElementById("uso-inv-contador-filas");
+    if (cont) cont.innerText = `${lista.length} equipo(s)`;
+    if (!tbody) return;
+
+    if (!lista || lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:#64748b;">No se encontraron salidas de inventario con esos filtros.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = lista.map((eq, idx) => {
+        const danoHtml = eq.dano_abierto
+            ? `<span style="background:#dc2626; color:white; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:700;">⚠️ DAÑO ABIERTO (${eq.tickets_taller})</span>`
+            : (eq.tickets_taller > 0 || eq.incidencias_checkout > 0)
+                ? `<span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:700;">${eq.tickets_taller} taller · ${eq.incidencias_checkout} inc.</span>`
+                : `<span style="color:#64748b; font-size:11.5px;">Sin reportes</span>`;
+
+        const movsHtml = (eq.movimientos || []).map(m => `
+            <tr style="background:#ffffff;">
+                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">${m.fecha} ${m.hora}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; font-weight:700; color:#1d4ed8;">OP-${m.folio_op}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">${m.nombre_evento} <span style="color:#64748b; font-size:11px;">(${m.cliente})</span></td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">${m.empleado} <span style="color:#64748b; font-size:11px;">[${m.depto}]</span></td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9;">${m.estado_bodega}${m.cotejado ? ' · ✅ Cotejado' : ' · ⏳ Pendiente'}</td>
+                <td style="padding:7px 10px; border-bottom:1px solid #f1f5f9; color:${m.incidencia ? '#b91c1c' : '#64748b'};">${m.incidencia || m.notas_regreso || 'Sin novedad'}</td>
+            </tr>
+        `).join('');
+
+        const ticketsHtml = (eq.tickets_detalle || []).length === 0 ? '' : `
+            <div style="margin-top:10px; padding:10px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px;">
+                <div style="font-size:11.5px; font-weight:700; color:#991b1b; margin-bottom:6px;">🔧 Historial de Tickets en Taller (${eq.tickets_detalle.length}) — Costo total: $${Number(eq.costo_reparaciones || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
+                ${eq.tickets_detalle.map(t => `<div style="font-size:12px; color:#7f1d1d; margin-bottom:3px;">• <b>${t.num_servicio}</b> (${t.fecha}) [${t.estado}]: ${t.dano || 'Sin descripción'} — $${Number(t.costo || 0).toFixed(2)}</div>`).join('')}
+            </div>
+        `;
+
+        return `
+            <tr onclick="toggleExpedienteUsoInv(${idx})" style="cursor:pointer; border-bottom:1px solid #e2e8f0; transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                <td style="padding:10px 12px; font-weight:700; color:#0f172a; white-space:nowrap;">${eq.codigo}</td>
+                <td style="padding:10px 12px;">${eq.descripcion}</td>
+                <td style="padding:10px 12px; text-align:center;"><span style="background:#e0f2fe; color:#0369a1; padding:3px 10px; border-radius:999px; font-weight:800;">${eq.veces_usado}</span></td>
+                <td style="padding:10px 12px; font-size:12px;"><b>${eq.ultimo_uso_fecha}</b> · OP-${eq.ultimo_uso_op}<br><span style="color:#64748b;">${eq.ultimo_uso_empleado}</span></td>
+                <td style="padding:10px 12px; text-align:center;">${_badgeEstadoInventarioCEO(eq.estado_actual)}</td>
+                <td style="padding:10px 12px; text-align:center;">${danoHtml}</td>
+            </tr>
+            <tr id="exp-uso-inv-${idx}" style="display:none; background:#f8fafc;">
+                <td colspan="6" style="padding:12px 18px; border-bottom:2px solid #cbd5e1;">
+                    <div style="font-size:12px; font-weight:700; color:#334155; margin-bottom:8px;">📋 Expediente de Movimientos (${eq.movimientos.length} salidas)</div>
+                    <table style="width:100%; border-collapse:collapse; font-size:12px; border:1px solid #e2e8f0;">
+                        <thead>
+                            <tr style="background:#e2e8f0; color:#1e293b;">
+                                <th style="padding:6px 10px; text-align:left;">Fecha</th>
+                                <th style="padding:6px 10px; text-align:left;">OP</th>
+                                <th style="padding:6px 10px; text-align:left;">Evento (Cliente)</th>
+                                <th style="padding:6px 10px; text-align:left;">Checkout por</th>
+                                <th style="padding:6px 10px; text-align:left;">Status Bodega</th>
+                                <th style="padding:6px 10px; text-align:left;">Reporte / Incidencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>${movsHtml}</tbody>
+                    </table>
+                    ${ticketsHtml}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function toggleExpedienteUsoInv(idx) {
+    const row = document.getElementById(`exp-uso-inv-${idx}`);
+    if (row) {
+        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+    }
+}
+
+function exportarUsoInventarioCSV() {
+    if (!memoriaUsoInventarioCEO || memoriaUsoInventarioCEO.length === 0) {
+        alert("No hay datos cargados para exportar.");
+        return;
+    }
+    const headers = ["Codigo", "Descripcion", "Veces_Usado", "Status_Actual", "Fecha_Salida", "OP", "Evento", "Cliente", "Checkout_Por", "Depto", "Status_Bodega", "Cotejado", "Incidencia_o_Dano", "Tickets_Taller", "Dano_Abierto"];
+    const filas = [headers.join(",")];
+    const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+
+    memoriaUsoInventarioCEO.forEach(eq => {
+        (eq.movimientos || []).forEach(m => {
+            filas.push([
+                esc(eq.codigo), esc(eq.descripcion), eq.veces_usado, esc(eq.estado_actual),
+                esc(`${m.fecha} ${m.hora}`), esc(`OP-${m.folio_op}`), esc(m.nombre_evento),
+                esc(m.cliente), esc(m.empleado), esc(m.depto), esc(m.estado_bodega),
+                esc(m.cotejado ? "SI" : "NO"), esc(m.incidencia || m.notas_regreso || "Sin novedad"),
+                eq.tickets_taller, esc(eq.dano_abierto ? "SI" : "NO")
+            ].join(","));
+        });
+    });
+
+    const blob = new Blob(["\uFEFF" + filas.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Reporte_Uso_Inventario_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 

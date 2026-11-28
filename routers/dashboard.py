@@ -368,3 +368,253 @@ def obtener_estadisticas_avanzadas(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/api/analitica/uso-inventario", tags=["📊 Inteligencia de Negocio / CEO"])
+def obtener_uso_inventario_ceo(
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None,
+    departamento: Optional[str] = None,
+    id_empleado: Optional[str] = None,
+    busqueda: Optional[str] = None,
+    solo_maestro: bool = False,
+):
+    """
+    Reporte ejecutivo de uso de inventario: cuántas veces se ha usado cada equipo,
+    en qué OPs/eventos, quién hizo el checkout, su status actual y si presenta o tuvo daños.
+    """
+    try:
+        # 1. Empleados y departamentos (db_personal)
+        mapa_emp = {}
+        deptos_set = set()
+        empleados_list = []
+        with get_db_cursor("db_personal", cursor_factory=RealDictCursor) as cur_p:
+            cur_p.execute("SELECT id_empleado, nombre, depto FROM public.empleados ORDER BY nombre;")
+            for e in cur_p.fetchall():
+                eid = str(e["id_empleado"]).strip()
+                nombre = (e["nombre"] or "").strip()
+                depto = (e["depto"] or "SIN DEPTO").strip()
+                mapa_emp[eid] = {"nombre": nombre, "depto": depto}
+                if depto:
+                    deptos_set.add(depto)
+                empleados_list.append({"id_empleado": eid, "nombre": nombre, "depto": depto})
+
+        # 2. Catálogo maestro, kits y tickets de taller (db_inventario)
+        mapa_inv = {}
+        mapa_rep_por_clave = {}
+        estados_cerrados_taller = {
+            "RESUELTO", "REPARADO", "OK", "BAJA DEFINITIVA", "CERRADO", "COMPLETADO"
+        }
+
+        with get_db_cursor("db_inventario", cursor_factory=RealDictCursor) as cur_i:
+            cur_i.execute("""
+                SELECT codigo, descripcion, estado, ubicacion, responsable
+                FROM public.inventario;
+            """)
+            for r in cur_i.fetchall():
+                cod = (r["codigo"] or "").strip()
+                if not cod:
+                    continue
+                mapa_inv[cod.upper()] = {
+                    "codigo": cod,
+                    "descripcion": (r["descripcion"] or "").strip(),
+                    "estado": (r["estado"] or "Sin estado").strip(),
+                    "ubicacion": (r["ubicacion"] or "").strip(),
+                    "origen": "MAESTRO",
+                }
+
+            cur_i.execute("""
+                SELECT codigo_inv_kits, descripcion_inv_kits, estado_inv_kits, ubicacion_inv_kits
+                FROM public.inventario_kits;
+            """)
+            for r in cur_i.fetchall():
+                cod = (r["codigo_inv_kits"] or "").strip()
+                if not cod or cod.upper() in mapa_inv:
+                    continue
+                mapa_inv[cod.upper()] = {
+                    "codigo": cod,
+                    "descripcion": (r["descripcion_inv_kits"] or "").strip(),
+                    "estado": (r["estado_inv_kits"] or "Sin estado").strip(),
+                    "ubicacion": (r["ubicacion_inv_kits"] or "").strip(),
+                    "origen": "KIT",
+                }
+
+            cur_i.execute("""
+                SELECT num_d_servicio, fecha_d_reporte, equipo_n_reparacion,
+                       estado_actual, descripcion_del_dano, costo_d_reparacion
+                FROM public.reparaciones
+                ORDER BY fecha_d_reporte DESC NULLS LAST;
+            """)
+            for rep in cur_i.fetchall():
+                clave = (rep["equipo_n_reparacion"] or "").strip().upper()
+                if not clave:
+                    continue
+                est_rep = (rep["estado_actual"] or "").strip().upper()
+                abierto = est_rep not in estados_cerrados_taller
+                info_rep = {
+                    "num_servicio": rep["num_d_servicio"],
+                    "fecha": str(rep["fecha_d_reporte"] or ""),
+                    "estado": rep["estado_actual"] or "",
+                    "dano": (rep["descripcion_del_dano"] or "").strip(),
+                    "costo": float(rep["costo_d_reparacion"] or 0.0),
+                    "abierto": abierto,
+                }
+                mapa_rep_por_clave.setdefault(clave, []).append(info_rep)
+
+        # 3. Checkouts + Eventos (db_eventos)
+        with get_db_cursor("db_eventos", cursor_factory=RealDictCursor) as cur_ev:
+            query_chk = """
+                SELECT cm.id_maestro, cm.folio_op, cm.id_empleado, cm.fecha, cm.hora,
+                       cm.estado_bodega, cm.incidencias_generales,
+                       cd.codigo_equipo, cd.cantidad, cd.cotejado,
+                       cd.incidencias AS inc_detalle, cd.notas_regreso,
+                       ev.nombre_evento, ev.para_q_cliente, ev.estatus AS estatus_op
+                FROM public.checkouts_detalle cd
+                JOIN public.checkouts_maestro cm ON cd.id_maestro = cm.id_maestro
+                LEFT JOIN public.eventos ev ON TRIM(CAST(cm.folio_op AS TEXT)) = TRIM(ev.folio)
+                WHERE cd.codigo_equipo IS NOT NULL AND TRIM(cd.codigo_equipo) != ''
+            """
+            params = []
+            if fecha_inicio and fecha_fin:
+                query_chk += " AND cm.fecha BETWEEN %s AND %s"
+                params.extend([fecha_inicio, fecha_fin])
+            elif fecha_inicio:
+                query_chk += " AND cm.fecha >= %s"
+                params.append(fecha_inicio)
+            elif fecha_fin:
+                query_chk += " AND cm.fecha <= %s"
+                params.append(fecha_fin)
+
+            if id_empleado and id_empleado.strip():
+                query_chk += " AND TRIM(CAST(cm.id_empleado AS TEXT)) = %s"
+                params.append(id_empleado.strip())
+
+            query_chk += " ORDER BY cm.fecha DESC, cm.hora DESC, cm.id_maestro DESC;"
+            cur_ev.execute(query_chk, tuple(params))
+            filas_chk = cur_ev.fetchall()
+
+        # 4. Cruzar y agrupar por equipo
+        depto_filtro = (departamento or "").strip().upper()
+        busq_filtro = (busqueda or "").strip().upper()
+        agrupado = {}
+        total_salidas = 0
+        total_incidencias_chk = 0
+
+        def _es_incidencia_real(val: str) -> str:
+            t = (val or "").strip()
+            if not t:
+                return ""
+            tl = t.lower()
+            if tl in ("sin incidencias", "sin incidencia", "sin novedad", "ninguna", "ninguno", "n/a", "na", "ok", "-", "0", "none"):
+                return ""
+            if tl.startswith("no hubo incidencias"):
+                return ""
+            return t
+
+        for f in filas_chk:
+            cod_raw = (f["codigo_equipo"] or "").strip()
+            cod_key = cod_raw.split(" - ")[0].strip().upper() if " - " in cod_raw else cod_raw.upper()
+            meta = mapa_inv.get(cod_key) or mapa_inv.get(cod_raw.upper())
+
+            if solo_maestro and (not meta or meta["origen"] != "MAESTRO"):
+                continue
+
+            eid = str(f["id_empleado"] or "").strip()
+            emp_info = mapa_emp.get(eid, {"nombre": eid or "Sin asignar", "depto": "SIN DEPTO"})
+
+            if depto_filtro and emp_info["depto"].upper() != depto_filtro:
+                continue
+
+            desc_eq = meta["descripcion"] if meta else cod_raw
+            cod_mostrar = meta["codigo"] if meta else cod_raw
+
+            if busq_filtro and (
+                busq_filtro not in cod_mostrar.upper()
+                and busq_filtro not in desc_eq.upper()
+                and busq_filtro not in str(f["folio_op"] or "").upper()
+                and busq_filtro not in (f["nombre_evento"] or "").upper()
+            ):
+                continue
+
+            inc_det = _es_incidencia_real(f["inc_detalle"])
+            inc_gen = _es_incidencia_real(f["incidencias_generales"])
+            inc_texto = " | ".join(p for p in [inc_det, inc_gen] if p)
+            tiene_inc = bool(inc_texto)
+            if tiene_inc:
+                total_incidencias_chk += 1
+            total_salidas += 1
+
+            if cod_key not in agrupado:
+                tickets = list(mapa_rep_por_clave.get(cod_key, []))
+                if desc_eq:
+                    for t in mapa_rep_por_clave.get(desc_eq.upper(), []):
+                        if t not in tickets:
+                            tickets.append(t)
+
+                agrupado[cod_key] = {
+                    "codigo": cod_mostrar,
+                    "descripcion": desc_eq,
+                    "origen": meta["origen"] if meta else "EXTERNO",
+                    "estado_actual": meta["estado"] if meta else "No catalogado",
+                    "ubicacion": meta["ubicacion"] if meta else "",
+                    "veces_usado": 0,
+                    "unidades_totales": 0,
+                    "ultimo_uso_fecha": str(f["fecha"] or ""),
+                    "ultimo_uso_op": f["folio_op"],
+                    "ultimo_uso_evento": (f["nombre_evento"] or "").strip() or f"OP-{f['folio_op']}",
+                    "ultimo_uso_empleado": emp_info["nombre"],
+                    "incidencias_checkout": 0,
+                    "tickets_taller": len(tickets),
+                    "dano_abierto": any(t["abierto"] for t in tickets),
+                    "costo_reparaciones": sum(t["costo"] for t in tickets),
+                    "tickets_detalle": tickets,
+                    "movimientos": [],
+                }
+
+            item = agrupado[cod_key]
+            item["veces_usado"] += 1
+            item["unidades_totales"] += int(f["cantidad"] or 1)
+            if tiene_inc:
+                item["incidencias_checkout"] += 1
+
+            item["movimientos"].append({
+                "fecha": str(f["fecha"] or ""),
+                "hora": str(f["hora"] or "")[:5],
+                "folio_op": f["folio_op"],
+                "nombre_evento": (f["nombre_evento"] or "").strip() or "--",
+                "cliente": (f["para_q_cliente"] or "").strip() or "--",
+                "empleado": emp_info["nombre"],
+                "depto": emp_info["depto"],
+                "estado_bodega": (f["estado_bodega"] or "ENTREGADO").strip(),
+                "cotejado": bool(f["cotejado"]),
+                "incidencia": inc_texto,
+                "notas_regreso": (f["notas_regreso"] or "").strip(),
+            })
+
+        equipos_lista = sorted(
+            agrupado.values(),
+            key=lambda x: (-x["veces_usado"], -int(x["dano_abierto"]), x["codigo"])
+        )
+
+        equipos_con_dano = sum(
+            1 for x in equipos_lista
+            if x["dano_abierto"] or x["incidencias_checkout"] > 0
+            or x["estado_actual"].lower() in ("fuera de servicio", "funcional con limitaciones", "en reparación", "dañado")
+        )
+
+        return {
+            "kpis": {
+                "total_salidas": total_salidas,
+                "equipos_distintos": len(equipos_lista),
+                "equipos_con_dano": equipos_con_dano,
+                "incidencias_checkouts": total_incidencias_chk,
+            },
+            "filtros": {
+                "departamentos": sorted(list(deptos_set)),
+                "empleados": empleados_list,
+            },
+            "equipos": equipos_lista,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en uso de inventario: {str(e)}")
+
+
